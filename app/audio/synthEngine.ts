@@ -1,5 +1,5 @@
 export type WaveformType = 'sine' | 'triangle' | 'sawtooth' | 'square';
-export type SoundModel = 'piano-physical' | 'guitar-acoustic' | 'guitar-nylon' | 'guitar-electric' | 'synth-oscillator';
+export type SoundModel = 'piano-physical' | 'guitar-acoustic' | 'guitar-nylon' | 'guitar-electric' | 'flute' | 'synth-oscillator';
 
 export interface SynthSettings {
   soundModel: SoundModel;
@@ -34,6 +34,28 @@ export interface InstrumentPreset {
 }
 
 export const INSTRUMENT_PRESETS: InstrumentPreset[] = [
+  {
+    id: 'concert-flute',
+    name: 'Concert Flute',
+    category: 'Woodwind',
+    description: 'Acoustic concert flute with embouchure breath chiff, warm cylindrical tube body and expressive vibrato',
+    iconSymbol: '🪈',
+    settings: {
+      soundModel: 'flute',
+      waveform: 'sine',
+      attack: 0.045,
+      decay: 0.2,
+      sustain: 0.9,
+      release: 0.18,
+      filterCutoff: 5800,
+      reverbLevel: 0.45,
+      reverbDecay: 2.8,
+      echoLevel: 0.12,
+      echoTime: 0.32,
+      echoFeedback: 0.25,
+      strumSpeedMs: 0,
+    },
+  },
   {
     id: 'acoustic-guitar',
     name: 'Acoustic Guitar',
@@ -354,6 +376,23 @@ function createImpulseResponse(ctx: AudioContext, duration: number, decay: numbe
   return impulse;
 }
 
+// Generate short breath / chiff noise burst for flutes and woodwinds
+function createChiffBuffer(ctx: AudioContext, durationSec: number): AudioBuffer {
+  const sampleRate = ctx.sampleRate;
+  const length = Math.max(64, Math.floor(sampleRate * durationSec));
+  const buffer = ctx.createBuffer(1, length, sampleRate);
+  const data = buffer.getChannelData(0);
+
+  let noiseMemory = 0;
+  for (let i = 0; i < length; i++) {
+    const raw = Math.random() * 2 - 1;
+    const env = Math.sin((Math.PI * i) / (length - 1));
+    noiseMemory = 0.5 * noiseMemory + 0.5 * raw;
+    data[i] = noiseMemory * env * 0.5;
+  }
+  return buffer;
+}
+
 export class SynthEngine {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
@@ -374,26 +413,26 @@ export class SynthEngine {
   private activeVoices: Map<number, ActiveVoice> = new Map();
   private sustainedNotes: Set<number> = new Set();
   private settings: SynthSettings = {
-    soundModel: 'piano-physical',
-    waveform: 'triangle',
+    soundModel: 'flute',
+    waveform: 'sine',
     baseOctave: 4,
     pitchShiftSemi: 0,
     fineTuneCents: 0,
     pitchBend: 0,
-    attack: 0.005,
-    decay: 0.9,
-    sustain: 0.35,
-    release: 0.45,
+    attack: 0.045,
+    decay: 0.2,
+    sustain: 0.9,
+    release: 0.18,
     volume: 0.55,
-    filterCutoff: 4800,
+    filterCutoff: 5800,
     sustainPedal: false,
-    reverbLevel: 0.28,
-    reverbDecay: 2.2,
-    echoLevel: 0.04,
-    echoTime: 0.25,
-    echoFeedback: 0.15,
+    reverbLevel: 0.45,
+    reverbDecay: 2.8,
+    echoLevel: 0.12,
+    echoTime: 0.32,
+    echoFeedback: 0.25,
     strumSpeedMs: 0,
-    activePresetId: 'grand-piano',
+    activePresetId: 'concert-flute',
   };
 
   constructor() {}
@@ -549,7 +588,9 @@ export class SynthEngine {
 
     const soundModel = this.settings.soundModel;
 
-    if (soundModel === 'guitar-acoustic' || soundModel === 'guitar-nylon' || soundModel === 'guitar-electric') {
+    if (soundModel === 'flute') {
+      this.playPhysicalFlute(midiNote, freq, now);
+    } else if (soundModel === 'guitar-acoustic' || soundModel === 'guitar-nylon' || soundModel === 'guitar-electric') {
       this.playPhysicalGuitar(midiNote, freq, soundModel, now);
     } else if (soundModel === 'piano-physical') {
       this.playPhysicalPiano(midiNote, freq, now);
@@ -558,7 +599,124 @@ export class SynthEngine {
     }
   }
 
-  // 1. Acoustic / Nylon / Electric Guitar Model (Smooth, non-chirpy, well-balanced)
+  // 1. Physical Modeling Flute & Woodwind (Embouchure chiff breath + pure cylindrical tube + expressive LFO vibrato)
+  private playPhysicalFlute(midiNote: number, freq: number, now: number) {
+    const ctx = this.ctx!;
+
+    // 1. Embouchure Breath "Chiff" Noise Attack
+    const chiffBuffer = createChiffBuffer(ctx, 0.04);
+    const chiffSource = ctx.createBufferSource();
+    chiffSource.buffer = chiffBuffer;
+
+    const chiffFilter = ctx.createBiquadFilter();
+    chiffFilter.type = 'bandpass';
+    chiffFilter.frequency.setValueAtTime(Math.min(4500, freq * 3.0), now);
+    chiffFilter.Q.setValueAtTime(2.0, now);
+
+    const chiffGain = ctx.createGain();
+    chiffGain.gain.setValueAtTime(0.18, now);
+    chiffGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+
+    chiffSource.connect(chiffFilter);
+    chiffFilter.connect(chiffGain);
+
+    // 2. Pure Fundamental Pipe Oscillator (Sine)
+    const pipeOsc = ctx.createOscillator();
+    pipeOsc.type = 'sine';
+    pipeOsc.frequency.setValueAtTime(freq, now);
+
+    // 3. Warm Woodwind Overtone Oscillator (Triangle)
+    const overtoneOsc = ctx.createOscillator();
+    overtoneOsc.type = 'triangle';
+    overtoneOsc.frequency.setValueAtTime(freq, now);
+
+    const overtoneGain = ctx.createGain();
+    overtoneGain.gain.setValueAtTime(0.12, now);
+
+    // 4. Harmonic Second Octave Whistle (Air column 2nd mode)
+    const octaveOsc = ctx.createOscillator();
+    octaveOsc.type = 'sine';
+    octaveOsc.frequency.setValueAtTime(freq * 2.0, now);
+
+    const octaveGain = ctx.createGain();
+    octaveGain.gain.setValueAtTime(0.06, now);
+
+    // 5. Natural Flute Vibrato LFO (5.2 Hz gentle pitch modulation with 50ms smooth onset)
+    const lfo = ctx.createOscillator();
+    lfo.frequency.setValueAtTime(5.2, now);
+
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.setValueAtTime(0.0001, now);
+    lfoGain.gain.linearRampToValueAtTime(3.2, now + 0.12); // subtle +-3.2Hz vibrato
+
+    lfo.connect(lfoGain);
+    lfoGain.connect(pipeOsc.frequency);
+    lfoGain.connect(overtoneOsc.frequency);
+    lfoGain.connect(octaveOsc.frequency);
+
+    // 6. Cylindrical Woodwind Tube Filter (Smooth acoustic body)
+    const tubeFilter = ctx.createBiquadFilter();
+    tubeFilter.type = 'lowpass';
+    const tubeCutoff = Math.min(6500, freq * 4.5);
+    tubeFilter.frequency.setValueAtTime(tubeCutoff, now);
+    tubeFilter.Q.setValueAtTime(0.8, now);
+
+    // 7. Flute Breath Envelope (Gentle air rise & long expressive sustain)
+    const voiceGain = ctx.createGain();
+    const { attack, decay, sustain } = this.settings;
+    const peakGain = 0.28;
+
+    voiceGain.gain.setValueAtTime(0.0001, now);
+    voiceGain.gain.linearRampToValueAtTime(peakGain, now + Math.max(0.03, attack));
+    voiceGain.gain.exponentialRampToValueAtTime(Math.max(0.0001, sustain * peakGain), now + attack + Math.max(0.05, decay));
+
+    // Connect Audio Pipeline
+    pipeOsc.connect(tubeFilter);
+    overtoneOsc.connect(overtoneGain);
+    overtoneGain.connect(tubeFilter);
+    octaveOsc.connect(octaveGain);
+    octaveGain.connect(tubeFilter);
+    chiffGain.connect(tubeFilter);
+
+    tubeFilter.connect(voiceGain);
+
+    if (this.dryGain && this.effectsBus) {
+      voiceGain.connect(this.dryGain);
+      voiceGain.connect(this.effectsBus);
+    }
+
+    chiffSource.start(now);
+    pipeOsc.start(now);
+    overtoneOsc.start(now);
+    octaveOsc.start(now);
+    lfo.start(now);
+
+    const voice: ActiveVoice = {
+      nodesToDisconnect: [
+        chiffSource,
+        chiffFilter,
+        chiffGain,
+        pipeOsc,
+        overtoneOsc,
+        overtoneGain,
+        octaveOsc,
+        octaveGain,
+        lfo,
+        lfoGain,
+        tubeFilter,
+        voiceGain,
+      ],
+      gainNode: voiceGain,
+      midiNote,
+      startTime: now,
+      released: false,
+    };
+
+    this.activeVoices.set(midiNote, voice);
+    this.sustainedNotes.delete(midiNote);
+  }
+
+  // 2. Acoustic / Nylon / Electric Guitar Model
   private playPhysicalGuitar(
     midiNote: number,
     freq: number,
@@ -582,21 +740,21 @@ export class SynthEngine {
     const osc2Gain = ctx.createGain();
     osc2Gain.gain.setValueAtTime(isNylon ? 0.25 : 0.2, now);
 
-    // 3. String Body Lowpass Filter (Smooth Butterworth curve Q=0.8 - NO resonant chirps)
+    // 3. String Body Lowpass Filter
     const stringFilter = ctx.createBiquadFilter();
     stringFilter.type = 'lowpass';
     const initialCutoff = isNylon ? Math.min(3800, freq * 3.0) : isElectric ? Math.min(6500, freq * 5.0) : Math.min(4800, freq * 4.0);
     stringFilter.frequency.setValueAtTime(initialCutoff, now);
-    stringFilter.Q.setValueAtTime(0.8, now); // Gentle slope, zero laser chirp
+    stringFilter.Q.setValueAtTime(0.8, now);
 
-    // 4. Guitar Body Formant (Subtle wooden resonance)
+    // 4. Guitar Body Formant
     const bodyFilter = ctx.createBiquadFilter();
     bodyFilter.type = 'peaking';
     bodyFilter.frequency.setValueAtTime(isNylon ? 180 : isElectric ? 1800 : 220, now);
     bodyFilter.Q.setValueAtTime(1.5, now);
     bodyFilter.gain.setValueAtTime(isElectric ? 1.5 : 2.0, now);
 
-    // 5. Voice Output Gain Envelope (Balanced polyphonic amplitude: 0.22 peak)
+    // 5. Voice Output Gain Envelope
     const voiceGain = ctx.createGain();
     const { attack, decay, sustain } = this.settings;
     const peakGain = 0.24;
@@ -640,11 +798,11 @@ export class SynthEngine {
     this.sustainedNotes.delete(midiNote);
   }
 
-  // 2. Physical Modeling Grand Piano (Hammer felt strike + dual-string unison + smooth acoustic decay)
+  // 3. Physical Modeling Grand Piano
   private playPhysicalPiano(midiNote: number, freq: number, now: number) {
     const ctx = this.ctx!;
 
-    // 1. Dual-String Unison Oscillators (Fundamental + detuned string for acoustic warmth)
+    // 1. Dual-String Unison Oscillators
     const osc1 = ctx.createOscillator();
     osc1.type = 'triangle';
     osc1.frequency.setValueAtTime(freq, now);
@@ -656,7 +814,7 @@ export class SynthEngine {
     const osc2Gain = ctx.createGain();
     osc2Gain.gain.setValueAtTime(0.15, now);
 
-    // 2. Acoustic Lowpass Filter (Smooth Q=0.7 - natural acoustic string attenuation)
+    // 2. Acoustic Lowpass Filter
     const dynamicFilter = ctx.createBiquadFilter();
     dynamicFilter.type = 'lowpass';
     const pianoCutoff = Math.min(5000, freq * 4.0);
@@ -670,7 +828,7 @@ export class SynthEngine {
     soundboardFilter.Q.setValueAtTime(1.5, now);
     soundboardFilter.gain.setValueAtTime(1.8, now);
 
-    // 4. Piano Voice Output Envelope (Balanced polyphonic level: 0.26 peak)
+    // 4. Piano Voice Output Envelope
     const voiceGain = ctx.createGain();
     const { attack, decay, sustain } = this.settings;
     const peakGain = 0.26;
@@ -714,7 +872,7 @@ export class SynthEngine {
     this.sustainedNotes.delete(midiNote);
   }
 
-  // 3. Electronic Synthesizer Oscillator Model
+  // 4. Electronic Synthesizer Oscillator Model
   private playSynthOscillator(midiNote: number, freq: number, now: number) {
     const ctx = this.ctx!;
     const osc = ctx.createOscillator();

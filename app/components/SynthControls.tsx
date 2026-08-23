@@ -17,6 +17,7 @@ import {
   OctagonX,
   Radio,
   Repeat,
+  Info,
 } from 'lucide-react';
 
 interface SynthControlsProps {
@@ -24,6 +25,7 @@ interface SynthControlsProps {
   onUpdateSettings: (newSettings: Partial<SynthSettings>) => void;
   onResetPitch: () => void;
   onPanic: () => void;
+  onOpenInfoModal: () => void;
 }
 
 const WAVEFORMS: { type: WaveformType; label: string; icon: string }[] = [
@@ -38,6 +40,7 @@ export function SynthControls({
   onUpdateSettings,
   onResetPitch,
   onPanic,
+  onOpenInfoModal,
 }: SynthControlsProps) {
   const handleSelectPreset = (preset: InstrumentPreset) => {
     onUpdateSettings({
@@ -46,15 +49,32 @@ export function SynthControls({
     });
   };
 
+  const handleSliderRelease = (e: React.SyntheticEvent<HTMLInputElement>) => {
+    e.currentTarget.blur();
+  };
+
   return (
     <div className="w-full max-w-5xl bg-slate-900/90 backdrop-blur border border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4 text-slate-200">
       
       {/* 1. Instrument Presets Selector & Top Controls */}
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-          <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-slate-400">
-            <Sparkles className="w-4 h-4 text-cyan-400" />
-            <span>Instrument Presets</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-mono font-semibold uppercase tracking-wider text-slate-400">
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span>Instrument Presets</span>
+            </div>
+            {/* Info Button for Controls & Parameters */}
+            <button
+              type="button"
+              onClick={onOpenInfoModal}
+              className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-cyan-200 border border-slate-700 text-[11px] font-semibold transition-colors cursor-pointer shadow-xs"
+              title="Learn what each slider & parameter does (i)"
+              aria-label="Controls Information"
+            >
+              <Info className="w-3 h-3 text-cyan-400" />
+              <span>Controls Guide</span>
+            </button>
           </div>
           
           <div className="flex flex-wrap items-center gap-2">
@@ -109,7 +129,7 @@ export function SynthControls({
         </div>
 
         {/* Preset Cards Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-1.5 sm:gap-2">
           {INSTRUMENT_PRESETS.map((preset) => {
             const isSelected = settings.activePresetId === preset.id;
             return (
@@ -117,14 +137,14 @@ export function SynthControls({
                 key={preset.id}
                 type="button"
                 onClick={() => handleSelectPreset(preset)}
-                className={`p-2.5 rounded-xl flex flex-col items-center justify-center text-center transition-all border cursor-pointer ${
+                className={`p-2 sm:p-2.5 rounded-xl flex flex-col items-center justify-center text-center transition-all border cursor-pointer ${
                   isSelected
                     ? 'bg-cyan-500/15 border-cyan-400 text-white shadow-[0_0_14px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400/50'
                     : 'bg-slate-950/70 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-white'
                 }`}
               >
-                <span className="text-xl mb-1">{preset.iconSymbol}</span>
-                <span className="text-xs font-semibold leading-tight">{preset.name}</span>
+                <span className="text-lg sm:text-xl mb-0.5">{preset.iconSymbol}</span>
+                <span className="text-[11px] sm:text-xs font-semibold leading-tight">{preset.name}</span>
                 <span className="text-[9px] font-mono text-slate-400 mt-0.5">{preset.category}</span>
               </button>
             );
@@ -176,6 +196,9 @@ export function SynthControls({
               step="50"
               value={settings.filterCutoff}
               onChange={(e) => onUpdateSettings({ filterCutoff: Number(e.target.value), activePresetId: undefined })}
+              onMouseUp={handleSliderRelease}
+              onTouchEnd={handleSliderRelease}
+              onPointerUp={handleSliderRelease}
               className="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
             />
           </div>
@@ -231,6 +254,9 @@ export function SynthControls({
               step="1"
               value={settings.pitchShiftSemi}
               onChange={(e) => onUpdateSettings({ pitchShiftSemi: Number(e.target.value) })}
+              onMouseUp={handleSliderRelease}
+              onTouchEnd={handleSliderRelease}
+              onPointerUp={handleSliderRelease}
               className="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
             />
             <div className="flex justify-between text-[9px] font-mono text-slate-500 mt-0.5">
@@ -266,6 +292,9 @@ export function SynthControls({
               step="1"
               value={settings.fineTuneCents}
               onChange={(e) => onUpdateSettings({ fineTuneCents: Number(e.target.value) })}
+              onMouseUp={handleSliderRelease}
+              onTouchEnd={handleSliderRelease}
+              onPointerUp={handleSliderRelease}
               className="w-full accent-purple-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
             />
             <div className="flex justify-between text-[9px] font-mono text-slate-500 mt-0.5">
@@ -295,8 +324,18 @@ export function SynthControls({
               step="0.05"
               value={settings.pitchBend}
               onChange={(e) => onUpdateSettings({ pitchBend: Number(e.target.value) })}
-              onMouseUp={() => onUpdateSettings({ pitchBend: 0 })}
-              onTouchEnd={() => onUpdateSettings({ pitchBend: 0 })}
+              onMouseUp={(e) => {
+                onUpdateSettings({ pitchBend: 0 });
+                handleSliderRelease(e);
+              }}
+              onTouchEnd={(e) => {
+                onUpdateSettings({ pitchBend: 0 });
+                handleSliderRelease(e);
+              }}
+              onPointerUp={(e) => {
+                onUpdateSettings({ pitchBend: 0 });
+                handleSliderRelease(e);
+              }}
               className="w-full accent-emerald-400 h-2 bg-slate-800 rounded-lg cursor-pointer"
             />
             <p className="text-[9px] text-slate-500 mt-0.5 text-center">
@@ -328,6 +367,9 @@ export function SynthControls({
                   step="0.005"
                   value={settings.attack}
                   onChange={(e) => onUpdateSettings({ attack: Number(e.target.value), activePresetId: undefined })}
+                  onMouseUp={handleSliderRelease}
+                  onTouchEnd={handleSliderRelease}
+                  onPointerUp={handleSliderRelease}
                   className="w-full accent-cyan-400 h-1 bg-slate-800 rounded cursor-pointer"
                 />
               </div>
@@ -343,6 +385,9 @@ export function SynthControls({
                   step="0.02"
                   value={settings.release}
                   onChange={(e) => onUpdateSettings({ release: Number(e.target.value), activePresetId: undefined })}
+                  onMouseUp={handleSliderRelease}
+                  onTouchEnd={handleSliderRelease}
+                  onPointerUp={handleSliderRelease}
                   className="w-full accent-cyan-400 h-1 bg-slate-800 rounded cursor-pointer"
                 />
               </div>
@@ -364,6 +409,9 @@ export function SynthControls({
               step="0.01"
               value={settings.volume}
               onChange={(e) => onUpdateSettings({ volume: Number(e.target.value) })}
+              onMouseUp={handleSliderRelease}
+              onTouchEnd={handleSliderRelease}
+              onPointerUp={handleSliderRelease}
               className="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
             />
           </div>
@@ -389,6 +437,9 @@ export function SynthControls({
               step="0.02"
               value={settings.reverbLevel}
               onChange={(e) => onUpdateSettings({ reverbLevel: Number(e.target.value), activePresetId: undefined })}
+              onMouseUp={handleSliderRelease}
+              onTouchEnd={handleSliderRelease}
+              onPointerUp={handleSliderRelease}
               className="w-full accent-indigo-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-slate-400 mt-1">
@@ -402,6 +453,9 @@ export function SynthControls({
               step="0.2"
               value={settings.reverbDecay}
               onChange={(e) => onUpdateSettings({ reverbDecay: Number(e.target.value), activePresetId: undefined })}
+              onMouseUp={handleSliderRelease}
+              onTouchEnd={handleSliderRelease}
+              onPointerUp={handleSliderRelease}
               className="w-full accent-indigo-400 h-1 bg-slate-800 rounded cursor-pointer"
             />
           </div>
@@ -424,6 +478,9 @@ export function SynthControls({
               step="0.02"
               value={settings.echoLevel}
               onChange={(e) => onUpdateSettings({ echoLevel: Number(e.target.value), activePresetId: undefined })}
+              onMouseUp={handleSliderRelease}
+              onTouchEnd={handleSliderRelease}
+              onPointerUp={handleSliderRelease}
               className="w-full accent-teal-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-slate-400 mt-1">
@@ -437,6 +494,9 @@ export function SynthControls({
               step="0.02"
               value={settings.echoTime}
               onChange={(e) => onUpdateSettings({ echoTime: Number(e.target.value), activePresetId: undefined })}
+              onMouseUp={handleSliderRelease}
+              onTouchEnd={handleSliderRelease}
+              onPointerUp={handleSliderRelease}
               className="w-full accent-teal-400 h-1 bg-slate-800 rounded cursor-pointer"
             />
           </div>

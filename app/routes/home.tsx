@@ -7,6 +7,7 @@ import { ChordKeyboard, CHORD_DEFINITIONS, type ChordData } from '../components/
 import { SynthControls } from '../components/SynthControls';
 import { Visualizer } from '../components/Visualizer';
 import { ShortcutModal } from '../components/ShortcutModal';
+import { SynthInfoModal } from '../components/SynthInfoModal';
 import { Info, OctagonX, Sparkles } from 'lucide-react';
 
 export function meta({}: Route.MetaArgs) {
@@ -22,6 +23,7 @@ export default function Home() {
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const [activeChordIds, setActiveChordIds] = useState<Set<string>>(new Set());
   const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
+  const [isSynthInfoModalOpen, setIsSynthInfoModalOpen] = useState(false);
 
   // Keep track of physically held notes & chords (vs sustained notes)
   const heldNotesRef = useRef<Set<number>>(new Set());
@@ -202,14 +204,25 @@ export default function Home() {
     const pressedPhysicalKeys = new Set<string>();
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't capture when typing in inputs/sliders
-      if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+      const target = e.target as HTMLElement | null;
+      // Only ignore if the user is typing in a text field
+      const isTextInput =
+        target?.tagName === 'TEXTAREA' ||
+        target?.tagName === 'SELECT' ||
+        (target?.tagName === 'INPUT' && (target as HTMLInputElement).type !== 'range');
+
+      if (isTextInput) {
         return;
+      }
+
+      // If focused on a range slider, blur it so shortcuts and arrow keys work globally
+      if (target?.tagName === 'INPUT' && (target as HTMLInputElement).type === 'range') {
+        target.blur();
       }
 
       // Escape key triggers panic sound stop
       if (e.key === 'Escape') {
-        if (!isShortcutModalOpen) {
+        if (!isShortcutModalOpen && !isSynthInfoModalOpen) {
           handlePanic();
         }
         return;
@@ -417,6 +430,7 @@ export default function Home() {
           onUpdateSettings={handleUpdateSettings}
           onResetPitch={handleResetPitch}
           onPanic={handlePanic}
+          onOpenInfoModal={() => setIsSynthInfoModalOpen(true)}
         />
       </main>
 
@@ -424,6 +438,12 @@ export default function Home() {
       <ShortcutModal
         isOpen={isShortcutModalOpen}
         onClose={() => setIsShortcutModalOpen(false)}
+      />
+
+      {/* Modal for Controls & Parameter Guide */}
+      <SynthInfoModal
+        isOpen={isSynthInfoModalOpen}
+        onClose={() => setIsSynthInfoModalOpen(false)}
       />
     </div>
   );

@@ -259,21 +259,21 @@ export function ChordKeyboard({
     <div className="w-full select-none flex flex-col items-center">
       {/* Piano Outer Enclosure */}
       <div
-        className={`relative w-full max-w-5xl bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 p-3 sm:p-5 rounded-2xl shadow-2xl border-2 transition-all duration-200 ${
+        className={`relative w-full max-w-5xl bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 p-2.5 sm:p-3 rounded-2xl shadow-2xl border-2 transition-all duration-200 ${
           isKeyboardActive
             ? 'border-purple-500/70 shadow-[0_0_20px_rgba(168,85,247,0.25)]'
             : 'border-slate-700/80'
         }`}
       >
         {/* Felt Strip & Header Accent */}
-        <div className="w-full h-3 sm:h-3.5 bg-gradient-to-r from-purple-950 via-purple-800 to-purple-950 rounded-t-sm mb-1 shadow-inner border-b border-purple-900/50 flex items-center justify-between px-3">
+        <div className="w-full h-2 sm:h-2.5 bg-gradient-to-r from-purple-950 via-purple-800 to-purple-950 rounded-t-sm mb-1 shadow-inner border-b border-purple-900/50 flex items-center justify-between px-3">
           <div className="w-full h-0.5 bg-purple-400/40" />
         </div>
 
-        {/* White Chord Keys Row */}
+        {/* White Chord Keys Row (1/2 height) */}
         <div
           onMouseDown={() => setIsMouseDown(true)}
-          className="relative w-full h-36 sm:h-44 md:h-48 flex rounded-b-lg overflow-hidden bg-slate-950 shadow-[inset_0_-8px_16px_rgba(0,0,0,0.6)]"
+          className="relative w-full h-20 sm:h-24 md:h-28 flex rounded-b-lg overflow-hidden bg-slate-950 shadow-[inset_0_-8px_16px_rgba(0,0,0,0.6)]"
         >
           {CHORD_DEFINITIONS.map((chord) => {
             const isActive = activeChordIds.has(chord.id);
@@ -301,7 +301,7 @@ export function ChordKeyboard({
                   e.preventDefault();
                   handleKeyEnd(chord);
                 }}
-                className={`group relative flex-1 h-full border-r border-slate-300/60 last:border-r-0 rounded-b-md transition-all duration-75 flex flex-col justify-between py-2 sm:py-3 px-0.5 sm:px-1 items-center cursor-pointer ${
+                className={`group relative flex-1 h-full border-r border-slate-300/60 last:border-r-0 rounded-b-md transition-all duration-75 flex flex-col justify-between py-1.5 sm:py-2 px-0.5 items-center cursor-pointer ${
                   isActive
                     ? isMinor
                       ? 'bg-gradient-to-b from-purple-100 via-purple-200 to-purple-300 shadow-[inset_0_4px_12px_rgba(168,85,247,0.6),0_0_15px_rgba(168,85,247,0.8)] translate-y-1'
@@ -314,11 +314,11 @@ export function ChordKeyboard({
                   zIndex: isActive ? 2 : 1,
                 }}
               >
-                {/* Shortcut Key Badge - ONLY shown when Chords mode is active */}
-                <div className="h-6 flex items-center justify-center">
+                {/* Shortcut Key Badge */}
+                <div className="h-4 sm:h-5 flex items-center justify-center">
                   {isKeyboardActive ? (
                     <span
-                      className={`text-[9px] sm:text-[11px] font-mono font-bold px-1.5 py-0.5 rounded shadow-sm transition-all ${
+                      className={`text-[8px] sm:text-[10px] font-mono font-bold px-1 sm:px-1.5 py-0.2 rounded shadow-sm transition-all ${
                         isActive
                           ? 'bg-slate-900 text-purple-300 ring-1 ring-purple-400 scale-105'
                           : isMinor
@@ -329,39 +329,24 @@ export function ChordKeyboard({
                       {chord.displayShortcut}
                     </span>
                   ) : (
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-300/40" />
+                    <span className="w-1 h-1 rounded-full bg-slate-300/40" />
                   )}
                 </div>
 
                 {/* Chord Info Labels */}
-                <div className="flex flex-col items-center gap-0.5 pointer-events-none w-full">
-                  {/* Major / Minor Pill */}
-                  <span
-                    className={`text-[8px] sm:text-[9px] font-mono font-bold px-1 py-0.2 rounded uppercase ${
-                      isMinor
-                        ? isActive
-                          ? 'bg-purple-950 text-purple-200'
-                          : 'bg-purple-100 text-purple-700'
-                        : isActive
-                        ? 'bg-cyan-950 text-cyan-200'
-                        : 'bg-cyan-100 text-cyan-800'
-                    }`}
-                  >
-                    {chord.type === 'Major' ? 'Maj' : 'Min'}
-                  </span>
-
+                <div className="flex flex-col items-center gap-0 pointer-events-none w-full">
                   {/* Chord Full Name */}
                   <span
-                    className={`text-xs sm:text-sm font-bold tracking-tight ${
-                      isActive ? 'text-slate-950 font-black' : 'text-slate-800'
+                    className={`text-[11px] sm:text-xs font-bold tracking-tight ${
+                      isActive ? 'text-slate-950 font-black' : isMinor ? 'text-purple-900' : 'text-slate-800'
                     }`}
                   >
-                    {chord.rootName} {chord.type === 'Major' ? '' : 'm'}
+                    {chord.rootName}{chord.type === 'Major' ? '' : 'm'}
                   </span>
 
                   {/* Triad Notes (e.g. C • E • G) */}
                   <span
-                    className={`text-[8px] sm:text-[10px] font-mono tracking-tighter leading-tight ${
+                    className={`text-[7px] sm:text-[9px] font-mono tracking-tighter leading-none ${
                       isActive ? 'text-slate-900 font-bold' : 'text-slate-500'
                     }`}
                   >

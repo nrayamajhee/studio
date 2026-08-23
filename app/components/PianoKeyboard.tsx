@@ -82,22 +82,22 @@ export function PianoKeyboard({
     <div className="w-full select-none flex flex-col items-center">
       {/* Piano Outer Enclosure / Chassis */}
       <div
-        className={`relative w-full max-w-5xl bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 p-4 sm:p-6 rounded-2xl shadow-2xl border-2 transition-all duration-200 ${
+        className={`relative w-full max-w-5xl bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 p-3 sm:p-4 rounded-2xl shadow-2xl border-2 transition-all duration-200 ${
           isKeyboardActive
             ? 'border-cyan-500/70 shadow-[0_0_20px_rgba(6,182,212,0.25)]'
             : 'border-slate-700/80'
         }`}
       >
         {/* Felt Strip & Accent Top Bar */}
-        <div className="w-full h-3 sm:h-4 bg-gradient-to-r from-red-950 via-red-800 to-red-950 rounded-t-sm mb-1 shadow-inner border-b border-red-900/50 flex items-center justify-center">
+        <div className="w-full h-2.5 sm:h-3 bg-gradient-to-r from-red-950 via-red-800 to-red-950 rounded-t-sm mb-1 shadow-inner border-b border-red-900/50 flex items-center justify-center">
           <div className="w-full h-0.5 bg-red-600/40" />
         </div>
 
-        {/* Keys Enclosure */}
+        {/* Keys Enclosure (2/3 height) */}
         <div
           ref={containerRef}
           onMouseDown={() => setIsMouseDown(true)}
-          className="relative w-full h-56 sm:h-64 md:h-72 flex rounded-b-lg overflow-hidden bg-slate-950 shadow-[inset_0_-8px_16px_rgba(0,0,0,0.6)]"
+          className="relative w-full h-36 sm:h-44 md:h-48 flex rounded-b-lg overflow-hidden bg-slate-950 shadow-[inset_0_-8px_16px_rgba(0,0,0,0.6)]"
         >
           {/* 1. White Keys */}
           {whiteKeys.map(({ data, whiteIndex }) => {
@@ -124,7 +124,7 @@ export function PianoKeyboard({
                   e.preventDefault();
                   handleKeyEnd(data.midiNote);
                 }}
-                className={`group relative flex-1 h-full border-r border-slate-300/60 last:border-r-0 rounded-b-md transition-all duration-75 flex flex-col justify-end pb-3 items-center cursor-pointer ${
+                className={`group relative flex-1 h-full border-r border-slate-300/60 last:border-r-0 rounded-b-md transition-all duration-75 flex flex-col justify-end pb-2 sm:pb-2.5 items-center cursor-pointer ${
                   isActive
                     ? 'bg-gradient-to-b from-cyan-100 via-cyan-200 to-cyan-300 shadow-[inset_0_4px_12px_rgba(6,182,212,0.6),0_0_15px_rgba(6,182,212,0.8)] translate-y-1'
                     : 'bg-gradient-to-b from-white via-slate-50 to-slate-200 hover:from-slate-50 hover:to-slate-100 active:from-cyan-100 active:to-cyan-200 active:translate-y-1 shadow-[inset_0_-4px_6px_rgba(0,0,0,0.15),0_3px_5px_rgba(0,0,0,0.3)]'
