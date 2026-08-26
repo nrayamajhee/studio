@@ -88,11 +88,6 @@ export function PianoKeyboard({
             : 'border-slate-700/80'
         }`}
       >
-        {/* Felt Strip & Accent Top Bar */}
-        <div className="w-full h-2.5 sm:h-3 bg-gradient-to-r from-red-950 via-red-800 to-red-950 rounded-t-sm mb-1 shadow-inner border-b border-red-900/50 flex items-center justify-center">
-          <div className="w-full h-0.5 bg-red-600/40" />
-        </div>
-
         {/* Keys Enclosure (2/3 height) */}
         <div
           ref={containerRef}

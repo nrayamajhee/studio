@@ -4,6 +4,7 @@ import { synth, generatePianoKeys, type SynthSettings } from '../audio/synthEngi
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { PianoMiniMap } from '../components/PianoMiniMap';
 import { ChordKeyboard, CHORD_DEFINITIONS, type ChordData } from '../components/ChordKeyboard';
+import { ProgressionKeyboard } from '../components/ProgressionKeyboard';
 import { SynthControls } from '../components/SynthControls';
 import { Visualizer } from '../components/Visualizer';
 import { ShortcutModal } from '../components/ShortcutModal';
@@ -19,9 +20,12 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   const [settings, setSettings] = useState<SynthSettings>(synth.getSettings());
-  const [inputMode, setInputMode] = useState<'keys' | 'chords'>('keys');
+  const [inputMode, setInputMode] = useState<'keys' | 'chords' | 'progressions'>('keys');
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const [activeChordIds, setActiveChordIds] = useState<Set<string>>(new Set());
+  const [progressionHighlightIds, setProgressionHighlightIds] = useState<Set<string>>(new Set());
+  const [progressionStepById, setProgressionStepById] = useState<Map<string, { step: number; roman: string }>>(new Map());
+  const [activeProgressionChordId, setActiveProgressionChordId] = useState<string | null>(null);
   const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
   const [isSynthInfoModalOpen, setIsSynthInfoModalOpen] = useState(false);
 
@@ -136,6 +140,54 @@ export default function Home() {
     }
   }, [settings.baseOctave]);
 
+  // Progression step handlers (third level keys) — same strum/sustain logic as chords
+  const playProgressionNotes = useCallback((midiNotes: number[]) => {
+    const strumSpeed = settings.strumSpeedMs || 0;
+    if (strumSpeed > 0) {
+      midiNotes.forEach((midi, index) => {
+        const timeoutId = window.setTimeout(() => {
+          heldNotesRef.current.add(midi);
+          synth.noteOn(midi);
+          setActiveNotes((prev) => new Set(prev).add(midi));
+        }, index * strumSpeed);
+        strumTimeoutsRef.current.push(timeoutId);
+      });
+    } else {
+      midiNotes.forEach((midi) => {
+        heldNotesRef.current.add(midi);
+        synth.noteOn(midi);
+      });
+      setActiveNotes((prev) => {
+        const next = new Set(prev);
+        midiNotes.forEach((m) => next.add(m));
+        return next;
+      });
+    }
+  }, [settings.strumSpeedMs]);
+
+  const stopProgressionNotes = useCallback((midiNotes: number[]) => {
+    midiNotes.forEach((midi) => {
+      heldNotesRef.current.delete(midi);
+      synth.noteOff(midi);
+    });
+    if (!isSustainActiveRef.current) {
+      setActiveNotes((prev) => {
+        const next = new Set(prev);
+        midiNotes.forEach((m) => next.delete(m));
+        return next;
+      });
+    }
+  }, []);
+
+  const handleProgressionStateChange = useCallback(
+    (state: { highlightedIds: Set<string>; activeId: string | null; stepById: Map<string, { step: number; roman: string }> }) => {
+      setProgressionHighlightIds(state.highlightedIds);
+      setProgressionStepById(state.stepById);
+      setActiveProgressionChordId(state.activeId);
+    },
+    []
+  );
+
   // Release sustained notes when sustain pedal is released
   const releaseSustainPedal = useCallback(() => {
     handleUpdateSettings({ sustainPedal: false });
@@ -228,10 +280,10 @@ export default function Home() {
         return;
       }
 
-      // Tab key toggles between Keys mode and Chords mode
+      // Tab key cycles Keys → Chords → Progressions → Keys
       if (e.key === 'Tab') {
         e.preventDefault();
-        setInputMode((prev) => (prev === 'keys' ? 'chords' : 'keys'));
+        setInputMode((prev) => (prev === 'keys' ? 'chords' : prev === 'chords' ? 'progressions' : 'keys'));
         return;
       }
 
@@ -278,6 +330,10 @@ export default function Home() {
           pressedPhysicalKeys.add(`chord-${key}`);
           playChord(matchedChord);
         }
+      } else if (inputMode === 'progressions') {
+        // Progressions handled inside ProgressionKeyboard (QWER / 1-7 / P)
+        // Still allow global octave/pitch shortcuts above
+        return;
       } else {
         const mappedMidi = keyMap.get(key) ?? (e.key === 'Enter' ? keyMap.get('enter') : undefined);
         if (mappedMidi !== undefined) {
@@ -406,7 +462,35 @@ export default function Home() {
           onChangeOctave={(oct) => handleUpdateSettings({ baseOctave: oct })}
         />
 
-        {/* Main Interactive Piano Keyboard */}
+        {/* Input Mode Switcher — 3 Blocks */}
+        <div className="w-full max-w-5xl flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+          {(['keys','chords','progressions'] as const).map((mode) => {
+            const isActive = inputMode===mode;
+            const label = mode==='keys' ? '1: Piano Keys' : mode==='chords' ? '2: Chord Pads' : '3: Progressions';
+            const sub = mode==='keys' ? 'Single notes' : mode==='chords' ? '24 Maj/Min • chromatic' : '7 presets • auto-play';
+            return (
+              <button
+                key={mode}
+                type="button"
+                onClick={()=> setInputMode(mode)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  isActive
+                    ? mode==='keys' ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.5)]'
+                    : mode==='chords' ? 'bg-purple-500 text-white border-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.5)]'
+                    : 'bg-amber-500 text-slate-950 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.5)]'
+                    : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-white animate-pulse' : 'bg-slate-500'}`} />
+                {label}
+                <span className="hidden sm:inline text-[10px] font-mono font-normal opacity-70">{sub}</span>
+              </button>
+            );
+          })}
+          <span className="text-[10px] font-mono text-slate-500 ml-1 hidden md:inline">Tab to cycle • Hold Space for sustain</span>
+        </div>
+
+        {/* Block 1: Piano Keyboard (single notes) */}
         <PianoKeyboard
           baseOctave={settings.baseOctave}
           activeNotes={activeNotes}
@@ -415,13 +499,26 @@ export default function Home() {
           onNoteRelease={stopNote}
         />
 
-        {/* Chords Keyboard Section (Major & Minor Triads) */}
+        {/* Block 2+3 combined: Chord Pads + Progression highlights (progressions highlight pads above) */}
         <ChordKeyboard
           baseOctave={settings.baseOctave}
           activeChordIds={activeChordIds}
-          isKeyboardActive={inputMode === 'chords'}
+          isKeyboardActive={inputMode === 'chords' || inputMode === 'progressions'}
           onChordPress={playChord}
           onChordRelease={stopChord}
+          highlightedChordIds={progressionHighlightIds}
+          progressionStepById={progressionStepById}
+          activeProgressionChordId={activeProgressionChordId}
+        />
+
+        {/* Progression Controls — 7 presets, Tonic, Play/Loop, BPM (no separate pads, highlights section 2) */}
+        <ProgressionKeyboard
+          baseOctave={settings.baseOctave}
+          activeNotes={activeNotes}
+          isKeyboardActive={inputMode === 'progressions'}
+          onChordPress={playProgressionNotes}
+          onChordRelease={stopProgressionNotes}
+          onProgressionStateChange={handleProgressionStateChange}
         />
 
         {/* Synthesizer Parameters, Presets & Pitch Controls */}
