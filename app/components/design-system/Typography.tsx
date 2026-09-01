@@ -1,310 +1,161 @@
 import React, { forwardRef } from "react";
 import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
-// ==========================================
-// 1. TITLE COMPONENT
-// Slightly larger than 16px baseline paragraph
-// ==========================================
-
-export const titleVariants = cva("font-bold tracking-tight transition-colors", {
-  variants: {
-    size: {
-      default: "text-[20px] leading-snug",
-      sm: "text-[18px] leading-snug",
-      md: "text-[20px] leading-snug",
-      lg: "text-[24px] leading-tight",
-      xl: "text-[28px] leading-tight",
-      "2xl": "text-[32px] leading-tight",
-    },
-    color: {
-      primary: "text-[#1c1917] dark:text-[#fdfbf7]",
-      secondary: "text-[#78716c] dark:text-[#a8a29e]",
-      muted: "text-[#a8a29e] dark:text-[#78716c]",
-    },
-    align: {
-      left: "text-left",
-      center: "text-center",
-      right: "text-right",
-    },
-  },
-  defaultVariants: {
-    size: "default",
-    color: "primary",
-    align: "left",
-  },
-});
-
-export type TitleLevel = 1 | 2 | 3 | 4 | 5 | 6;
-export type TitleVariantsProps = VariantProps<typeof titleVariants>;
-
-export interface TitleProps
-  extends Omit<React.HTMLAttributes<HTMLHeadingElement>, "color">,
-    TitleVariantsProps {
-  level?: TitleLevel;
+export interface HeadingProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
   children: React.ReactNode;
 }
 
-export const Title = forwardRef<HTMLHeadingElement, TitleProps>(
-  (
-    {
-      level = 2,
-      size,
-      color,
-      align,
-      asChild = false,
-      className,
-      children,
-      ...props
-    },
-    ref
-  ) => {
-    const Component = asChild ? Slot : (`h${level}` as React.ElementType);
+export const Heading = forwardRef<HTMLDivElement, HeadingProps>(
+  ({ asChild = false, className, children, ...props }, ref) => {
+    const Component = asChild ? Slot : "div";
 
     return (
       <Component
         ref={ref}
-        className={cn(titleVariants({ size, color, align }), className)}
+        className={cn(
+          "text-6xl font-bold tracking-tight text-font dark:text-surface transition-colors",
+          className,
+        )}
         {...props}
       >
         {children}
       </Component>
     );
-  }
+  },
+);
+
+Heading.displayName = "Heading";
+
+export interface TitleProps extends React.HTMLAttributes<HTMLDivElement> {
+  asChild?: boolean;
+  children: React.ReactNode;
+}
+
+export const Title = forwardRef<HTMLDivElement, TitleProps>(
+  ({ asChild = false, className, children, ...props }, ref) => {
+    const Component = asChild ? Slot : "div";
+
+    return (
+      <Component
+        ref={ref}
+        className={cn(
+          "text-lg font-bold tracking-tight text-font dark:text-surface transition-colors",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </Component>
+    );
+  },
 );
 
 Title.displayName = "Title";
 
-// ==========================================
-// 2. SUBTITLE COMPONENT
-// Same 16px size as baseline paragraph, font-medium
-// ==========================================
-
-export const subtitleVariants = cva(
-  "text-[16px] leading-[1.5] font-medium transition-colors",
-  {
-    variants: {
-      color: {
-        primary: "text-[#1c1917] dark:text-[#fdfbf7]",
-        secondary: "text-[#78716c] dark:text-[#a8a29e]",
-        muted: "text-[#a8a29e] dark:text-[#78716c]",
-      },
-      align: {
-        left: "text-left",
-        center: "text-center",
-        right: "text-right",
-      },
-    },
-    defaultVariants: {
-      color: "primary",
-      align: "left",
-    },
-  }
-);
-
-export type SubtitleVariantsProps = VariantProps<typeof subtitleVariants>;
-
-export interface SubtitleProps
-  extends Omit<React.HTMLAttributes<HTMLParagraphElement>, "color">,
-    SubtitleVariantsProps {
+export interface SubtitleProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
   children: React.ReactNode;
 }
 
-export const Subtitle = forwardRef<HTMLParagraphElement, SubtitleProps>(
-  ({ color, align, asChild = false, className, children, ...props }, ref) => {
-    const Component = asChild ? Slot : "p";
+export const Subtitle = forwardRef<HTMLDivElement, SubtitleProps>(
+  ({ asChild = false, className, children, ...props }, ref) => {
+    const Component = asChild ? Slot : "div";
     return (
       <Component
         ref={ref}
-        className={cn(subtitleVariants({ color, align }), className)}
+        className={cn(
+          "text-base font-medium text-font dark:text-surface transition-colors",
+          className,
+        )}
         {...props}
       >
         {children}
       </Component>
     );
-  }
+  },
 );
 
 Subtitle.displayName = "Subtitle";
 
-// ==========================================
-// 3. PARAGRAPH COMPONENT
-// Baseline 16px font size with 1.5 line-height
-// ==========================================
-
-export const paragraphVariants = cva(
-  "text-[16px] leading-[1.5] font-normal transition-colors",
-  {
-    variants: {
-      color: {
-        primary: "text-[#1c1917] dark:text-[#fdfbf7]",
-        secondary: "text-[#78716c] dark:text-[#a8a29e]",
-        muted: "text-[#a8a29e] dark:text-[#78716c]",
-      },
-      align: {
-        left: "text-left",
-        center: "text-center",
-        right: "text-right",
-      },
-    },
-    defaultVariants: {
-      color: "primary",
-      align: "left",
-    },
-  }
-);
-
-export type ParagraphVariantsProps = VariantProps<typeof paragraphVariants>;
-
-export interface ParagraphProps
-  extends Omit<React.HTMLAttributes<HTMLParagraphElement>, "color">,
-    ParagraphVariantsProps {
+export interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
   asChild?: boolean;
   children: React.ReactNode;
 }
 
 export const Paragraph = forwardRef<HTMLParagraphElement, ParagraphProps>(
-  ({ color, align, asChild = false, className, children, ...props }, ref) => {
+  ({ asChild = false, className, children, ...props }, ref) => {
     const Component = asChild ? Slot : "p";
     return (
       <Component
         ref={ref}
-        className={cn(paragraphVariants({ color, align }), className)}
+        className={cn(
+          "text-base font-normal text-font dark:text-surface transition-colors",
+          className,
+        )}
         {...props}
       >
         {children}
       </Component>
     );
-  }
+  },
 );
 
 Paragraph.displayName = "Paragraph";
 
-// ==========================================
-// 4. LABEL COMPONENT
-// Smaller than p (14px) with gray text
-// ==========================================
-
-export const labelVariants = cva(
-  "inline-flex items-center gap-1.5 text-[14px] leading-normal font-medium text-[#78716c] dark:text-[#a8a29e] select-none transition-colors",
-  {
-    variants: {
-      color: {
-        primary: "text-[#1c1917] dark:text-[#fdfbf7]",
-        secondary: "text-[#78716c] dark:text-[#a8a29e]",
-        muted: "text-[#a8a29e] dark:text-[#78716c]",
-      },
-    },
-    defaultVariants: {
-      color: "secondary",
-    },
-  }
-);
-
-export type LabelVariantsProps = VariantProps<typeof labelVariants>;
-
-export interface LabelProps
-  extends Omit<React.LabelHTMLAttributes<HTMLLabelElement>, "color">,
-    LabelVariantsProps {
-  required?: boolean;
-  optional?: boolean;
+export interface LabelProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
   children: React.ReactNode;
 }
 
-export const Label = forwardRef<HTMLLabelElement, LabelProps>(
-  (
-    {
-      color,
-      required = false,
-      optional = false,
-      asChild = false,
-      className,
-      children,
-      ...props
-    },
-    ref
-  ) => {
-    const Component = asChild ? Slot : "label";
+export const Label = forwardRef<HTMLDivElement, LabelProps>(
+  ({ asChild = false, className, children, ...props }, ref) => {
+    const Component = asChild ? Slot : "div";
     return (
       <Component
         ref={ref}
-        className={cn(labelVariants({ color }), className)}
-        {...props}
-      >
-        <span>{children}</span>
-        {required && (
-          <span
-            className="text-rose-500 dark:text-rose-400 font-bold"
-            aria-hidden="true"
-          >
-            *
-          </span>
+        className={cn(
+          "inline-flex items-center gap-1.5 text-sm font-medium text-font-light dark:text-font-light select-none transition-colors",
+          className,
         )}
-        {optional && (
-          <span className="text-[12px] font-normal text-[#a8a29e] dark:text-[#78716c]">
-            (optional)
-          </span>
-        )}
-      </Component>
-    );
-  }
-);
-
-Label.displayName = "Label";
-
-// ==========================================
-// 5. CAPTION COMPONENT
-// Smaller than label (12px) with gray text
-// ==========================================
-
-export const captionVariants = cva(
-  "inline-block text-[12px] leading-normal font-normal text-[#a8a29e] dark:text-[#78716c] transition-colors",
-  {
-    variants: {
-      color: {
-        primary: "text-[#1c1917] dark:text-[#fdfbf7]",
-        secondary: "text-[#78716c] dark:text-[#a8a29e]",
-        muted: "text-[#a8a29e] dark:text-[#78716c]",
-      },
-    },
-    defaultVariants: {
-      color: "muted",
-    },
-  }
-);
-
-export type CaptionVariantsProps = VariantProps<typeof captionVariants>;
-
-export interface CaptionProps
-  extends Omit<React.HTMLAttributes<HTMLSpanElement>, "color">,
-    CaptionVariantsProps {
-  asChild?: boolean;
-  children: React.ReactNode;
-}
-
-export const Caption = forwardRef<HTMLSpanElement, CaptionProps>(
-  ({ color, asChild = false, className, children, ...props }, ref) => {
-    const Component = asChild ? Slot : "span";
-    return (
-      <Component
-        ref={ref}
-        className={cn(captionVariants({ color }), className)}
         {...props}
       >
         {children}
       </Component>
     );
-  }
+  },
+);
+
+Label.displayName = "Label";
+
+export interface CaptionProps extends React.HTMLAttributes<HTMLDivElement> {
+  asChild?: boolean;
+  children: React.ReactNode;
+}
+
+export const Caption = forwardRef<HTMLDivElement, CaptionProps>(
+  ({ asChild = false, className, children, ...props }, ref) => {
+    const Component = asChild ? Slot : "div";
+    return (
+      <Component
+        ref={ref}
+        className={cn(
+          "inline-block text-xs font-normal text-font-light dark:text-font-light transition-colors",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </Component>
+    );
+  },
 );
 
 Caption.displayName = "Caption";
 
-// Group export
 export const Typography = {
+  Heading,
   Title,
   Subtitle,
   Paragraph,

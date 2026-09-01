@@ -1,13 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "./Button";
-import {
-  Sparkles,
-  ArrowRight,
-  Plus,
-  ChevronRight,
-  Zap,
-  Lock,
-} from "lucide-react";
+import { Label } from "./Typography";
+import { Sparkles, ArrowRight, Plus, ChevronRight } from "lucide-react";
 
 const meta: Meta<typeof Button> = {
   title: "Design System/Button",
@@ -15,6 +9,13 @@ const meta: Meta<typeof Button> = {
   tags: ["autodocs"],
   parameters: {
     layout: "padded",
+  },
+  args: {
+    variant: "solid",
+    tone: "primary",
+    size: "md",
+    title: "Button",
+    rounded: false,
   },
   argTypes: {
     variant: {
@@ -24,7 +25,14 @@ const meta: Meta<typeof Button> = {
     },
     tone: {
       control: "select",
-      options: ["primary", "accent", "secondary", "success", "warning", "error"],
+      options: [
+        "primary",
+        "accent",
+        "secondary",
+        "success",
+        "warning",
+        "error",
+      ],
       description: "Color tone preset for the button",
     },
     size: {
@@ -32,9 +40,13 @@ const meta: Meta<typeof Button> = {
       options: ["sm", "md", "lg"],
       description: "Padding and sizing preset",
     },
+    rounded: {
+      control: "boolean",
+      description: "Pill-shaped rounded button",
+    },
     title: {
       control: "text",
-      description: "16px primary title",
+      description: "Primary title text",
     },
     subtitle: {
       control: "text",
@@ -52,42 +64,62 @@ const meta: Meta<typeof Button> = {
       control: "boolean",
       description: "Span full width",
     },
-  },
-  args: {
-    variant: "solid",
-    tone: "primary",
-    size: "md",
+    align: {
+      control: "select",
+      options: ["left", "center", "right", "between"],
+      description: "Content and text alignment",
+    },
   },
 };
 
 export default meta;
+type Story = StoryObj<typeof meta>;
 
-// ==========================================
-// STORY 1: Button Variants (Solid, Outline, Ghost)
-// ==========================================
-export const ButtonVariants: StoryObj = {
-  name: "Button Variants",
+export const Default: Story = {};
+
+export const Alignments: Story = {
+  name: "Alignments with Full Width",
   render: () => (
-    <div className="flex flex-wrap gap-4 items-center">
-      <Button variant="solid" tone="primary" title="Solid" />
-      <Button variant="outline" tone="primary" title="Outline" />
-      <Button variant="ghost" tone="primary" title="Ghost" />
+    <div className="flex flex-col gap-4 w-80 items-stretch">
+      <Button tone="primary" fullWidth align="left" title="Left Aligned" />
+      <Button tone="primary" fullWidth align="center" title="Center Aligned" />
+      <Button tone="primary" fullWidth align="right" title="Right Aligned" />
+      <Button
+        tone="secondary"
+        fullWidth
+        align="between"
+        trailingIcon={<span className="w-2 h-2 rounded-full bg-primary" />}
+      >
+        <span>Between Aligned</span>
+      </Button>
     </div>
   ),
 };
 
-// ==========================================
-// STORY 2: Layout Combinations & Anatomy (with descriptive labels)
-// ==========================================
-export const LayoutCombinations: StoryObj = {
+export const ButtonVariants: Story = {
+  name: "Button Variants",
+  render: () => (
+    <div className="flex flex-col gap-4 items-start">
+      <div className="flex flex-wrap gap-4 items-center">
+        <Button variant="solid" tone="primary" title="Solid" />
+        <Button variant="outline" tone="primary" title="Outline" />
+        <Button variant="ghost" tone="primary" title="Ghost" />
+      </div>
+      <div className="flex flex-wrap gap-4 items-center">
+        <Button variant="solid" tone="primary" rounded title="Solid" />
+        <Button variant="outline" tone="primary" rounded title="Outline" />
+        <Button variant="ghost" tone="primary" rounded title="Ghost" />
+      </div>
+    </div>
+  ),
+};
+
+export const LayoutCombinations: Story = {
   name: "Layout Combinations",
   render: () => (
     <div className="flex flex-col gap-6 items-start text-left">
-      {/* 1. Leading Icon + Title */}
       <div className="flex flex-col gap-2 items-start">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Leading Icon + Title
-        </span>
+        <Label>Leading icon with title</Label>
         <Button
           tone="primary"
           title="Create New Project"
@@ -95,11 +127,8 @@ export const LayoutCombinations: StoryObj = {
         />
       </div>
 
-      {/* 2. Title + Trailing Icon */}
       <div className="flex flex-col gap-2 items-start">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Title + Trailing Icon
-        </span>
+        <Label>Title with trailing icon</Label>
         <Button
           tone="primary"
           title="Explore Documentation"
@@ -107,11 +136,8 @@ export const LayoutCombinations: StoryObj = {
         />
       </div>
 
-      {/* 3. Title + Subtitle */}
       <div className="flex flex-col gap-2 items-start">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Title + Subtitle
-        </span>
+        <Label>Title with subtitle</Label>
         <Button
           tone="primary"
           title="Upgrade Workspace"
@@ -119,11 +145,10 @@ export const LayoutCombinations: StoryObj = {
         />
       </div>
 
-      {/* 4. Full Anatomy (Leading Icon + Title + Subtitle + Trailing Icon) */}
       <div className="flex flex-col gap-2 items-start">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Full Anatomy (Leading Icon + Title + Subtitle + Trailing Icon)
-        </span>
+        <Label>
+          Full anatomy with leading icon, title, subtitle, and trailing icon
+        </Label>
         <Button
           tone="primary"
           size="lg"
@@ -137,78 +162,28 @@ export const LayoutCombinations: StoryObj = {
   ),
 };
 
-// ==========================================
-// STORY 3: Button States (Loading & Disabled)
-// ==========================================
-export const ButtonStates: StoryObj = {
+export const ButtonStates: Story = {
   name: "Button States",
   render: () => (
     <div className="flex flex-col gap-6 items-start text-left">
-      {/* Loading State Section */}
       <div className="flex flex-col gap-2 items-start">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Loading State
-        </span>
+        <Label>Loading state</Label>
         <div className="flex flex-wrap gap-4 items-start">
-          {/* 1. Loading with just title */}
-          <Button tone="primary" title="Loading Title" isLoading />
-
-          {/* 2. Loading with trailing icon */}
-          <Button
-            tone="primary"
-            title="Loading Action"
-            trailingIcon={<ArrowRight className="w-5 h-5" />}
-            isLoading
-          />
-
-          {/* 3. Loading with title + subtitle + trailing icon */}
-          <Button
-            tone="primary"
-            size="lg"
-            title="Deploying Suite"
-            subtitle="Please wait while building"
-            trailingIcon={<ChevronRight className="w-5 h-5" />}
-            isLoading
-          />
+          <Button tone="primary" title="Loading..." isLoading />
         </div>
       </div>
 
-      {/* Disabled State Section */}
       <div className="flex flex-col gap-2 items-start">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Disabled State
-        </span>
+        <Label>Disabled state</Label>
         <div className="flex flex-wrap gap-4 items-start">
-          {/* 1. Disabled with just title */}
-          <Button tone="primary" title="Disabled Title" disabled />
-
-          {/* 2. Disabled with leading icon (middle component) */}
-          <Button
-            tone="primary"
-            title="Disabled Action"
-            leadingIcon={<Lock className="w-5 h-5" />}
-            disabled
-          />
-
-          {/* 3. Disabled with title + subtitle + trailing icon */}
-          <Button
-            tone="primary"
-            size="lg"
-            title="Disabled Suite"
-            subtitle="Permission required to execute"
-            trailingIcon={<ChevronRight className="w-5 h-5" />}
-            disabled
-          />
+          <Button tone="primary" title="Disabled" disabled />
         </div>
       </div>
     </div>
   ),
 };
 
-// ==========================================
-// STORY 4: Tone Variants (Primary, Accent, Secondary, Success, Warning, Error)
-// ==========================================
-export const ToneVariants: StoryObj = {
+export const ToneVariants: Story = {
   name: "Tone Variants",
   render: () => (
     <div className="flex flex-wrap gap-4 items-center">
@@ -222,66 +197,39 @@ export const ToneVariants: StoryObj = {
   ),
 };
 
-// ==========================================
-// STORY 5: Sizes (Small, Medium, Large)
-// ==========================================
-export const Sizes: StoryObj = {
+export const Sizes: Story = {
   name: "Button Sizes",
   render: () => (
     <div className="flex flex-col gap-6 items-start text-left">
-      {/* Row 1: Just title and leading icons */}
       <div className="flex flex-col gap-2 items-start">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Title only
-        </span>
+        <Label>Title only</Label>
         <div className="flex flex-wrap items-start gap-4">
-          <Button
-            tone="primary"
-            size="sm"
-            title="Small Button"
-            leadingIcon={<Plus className="w-4 h-4" />}
-          />
-          <Button
-            tone="primary"
-            size="md"
-            title="Medium Button (16px)"
-            leadingIcon={<Sparkles className="w-5 h-5 text-amber-300" />}
-          />
-          <Button
-            tone="primary"
-            size="lg"
-            title="Large Button"
-            leadingIcon={<Zap className="w-5 h-5 text-amber-300" />}
-          />
+          <Button tone="primary" size="sm" title="Small Button" />
+          <Button tone="primary" size="md" title="Medium Button" />
+          <Button tone="primary" size="lg" title="Large Button" />
         </div>
       </div>
 
-      {/* Row 2: Title, subtitle + trailing icons */}
       <div className="flex flex-col gap-2 items-start">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          With subtitle
-        </span>
+        <Label>With subtitle</Label>
         <div className="flex flex-wrap items-start gap-4">
           <Button
             tone="primary"
             size="sm"
             title="Small Button"
             subtitle="Compact padding"
-            trailingIcon={<ArrowRight className="w-4 h-4" />}
           />
           <Button
             tone="primary"
             size="md"
-            title="Medium Button (16px)"
+            title="Medium Button"
             subtitle="Standard padding"
-            trailingIcon={<ChevronRight className="w-5 h-5" />}
           />
           <Button
             tone="primary"
             size="lg"
             title="Large Button"
             subtitle="Generous padding"
-            trailingIcon={<ArrowRight className="w-5 h-5" />}
           />
         </div>
       </div>

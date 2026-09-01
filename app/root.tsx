@@ -36,7 +36,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             __html: `
               (function() {
                 try {
-                  const theme = localStorage.getItem('theme');
+                  let theme = localStorage.getItem('theme');
+                  try { theme = JSON.parse(theme); } catch (e) {}
                   const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                   if (theme === 'dark' || ((!theme || theme === 'system') && systemTheme === 'dark')) {
                     document.documentElement.classList.add('dark');
