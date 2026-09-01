@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import type { Route } from "./+types/home";
-import { Button } from "../components/Button";
-import { Card } from "../components/Card";
-import { Title, Subtitle, Paragraph } from "../components/Typography";
+import { Button } from "../components/design-system/Button";
+import { Card } from "../components/design-system/Card";
+import { Title, Subtitle, Paragraph } from "../components/design-system/Typography";
 import { Sun, Moon } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
@@ -44,7 +44,7 @@ export default function Home() {
       {/* Top Floating Regular Button as Theme Switcher */}
       <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50">
         <Button
-          variant="secondary"
+          tone="secondary"
           size="sm"
           leadingIcon={
             isDark ? (
@@ -59,14 +59,14 @@ export default function Home() {
       </div>
 
       <main className="w-full max-w-md">
-        <Card variant="bordered" padding="lg" rounded="xl" className="flex flex-col gap-3">
+        <Card className="flex flex-col gap-3">
           <Title level={1} size="2xl">
             Studio Design System
           </Title>
-          <Subtitle size="md">
+          <Subtitle>
             Minimal, composable, accessible UI components.
           </Subtitle>
-          <Paragraph size="md">
+          <Paragraph>
             Built with React 19, Tailwind CSS v4, and Storybook. All components feature centralized atmospheric color tokens, strict typography hierarchy, and dark mode support.
           </Paragraph>
         </Card>

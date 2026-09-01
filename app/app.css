@@ -7,79 +7,39 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
   /* Primary: Blue Hour Blue (Twilight Cobalt) */
-  --color-primary-50: #eff4fe;
-  --color-primary-100: #dbe6fd;
-  --color-primary-200: #bfd3fc;
-  --color-primary-300: #93b8f9;
-  --color-primary-400: #6093f4;
-  --color-primary-500: #3b71ee;
-  --color-primary-600: #2554d7;
-  --color-primary-700: #1d41b8;
-  --color-primary-800: #1b3695;
-  --color-primary-900: #1b3076;
   --color-primary: #2554d7;
   --color-primary-hover: #3b71ee;
   --color-primary-active: #1d41b8;
 
   /* Accent: Twilight Dusk Purple */
-  --color-accent-50: #faf5ff;
-  --color-accent-100: #f3e8ff;
-  --color-accent-200: #e9d5ff;
-  --color-accent-300: #d8b4fe;
-  --color-accent-400: #c084fc;
-  --color-accent-500: #a855f7;
-  --color-accent-600: #7c3aed;
-  --color-accent-700: #6d28d9;
-  --color-accent-800: #5b21b6;
-  --color-accent-900: #4c1d95;
   --color-accent: #7c3aed;
   --color-accent-hover: #a855f7;
   --color-accent-active: #6d28d9;
 
   /* Warning: Sunset Glow Orange */
-  --color-warning-50: #fff7ed;
-  --color-warning-100: #ffedd5;
-  --color-warning-200: #fed7aa;
-  --color-warning-300: #fdba74;
-  --color-warning-400: #fb923c;
-  --color-warning-500: #f97316;
-  --color-warning-600: #ea580c;
-  --color-warning-700: #c2410c;
-  --color-warning-800: #9a3412;
-  --color-warning-900: #7c2d12;
   --color-warning: #ea580c;
   --color-warning-hover: #f97316;
   --color-warning-active: #c2410c;
 
   /* Error: Sunset Crimson Red */
-  --color-error-50: #fef2f2;
-  --color-error-100: #fee2e2;
-  --color-error-200: #fecaca;
-  --color-error-300: #fca5a5;
-  --color-error-400: #f87171;
-  --color-error-500: #ef4444;
-  --color-error-600: #dc2626;
-  --color-error-700: #b91c1c;
-  --color-error-800: #991b1b;
-  --color-error-900: #7f1d1d;
   --color-error: #dc2626;
   --color-error-hover: #ef4444;
   --color-error-active: #b91c1c;
 
   /* Success: Natural Forest Emerald Green */
-  --color-success-50: #ecfdf5;
-  --color-success-100: #d1fae5;
-  --color-success-200: #a7f3d0;
-  --color-success-300: #6ee7b7;
-  --color-success-400: #34d399;
-  --color-success-500: #10b981;
-  --color-success-600: #059669;
-  --color-success-700: #047857;
-  --color-success-800: #065f46;
-  --color-success-900: #064e3b;
   --color-success: #059669;
   --color-success-hover: #10b981;
   --color-success-active: #047857;
+
+  /* 3 Background Colors */
+  --color-bg-canvas: #f6f4f0;
+  --color-bg-surface: #ffffff;
+  --color-bg-subtle: #fdfbf7;
+
+  /* 3 Text Colors */
+  --color-text-primary: #1c1917;
+  --color-text-secondary: #78716c;
+  --color-text-muted: #a8a29e;
 
   /* Warm Cream White */
   --color-cream: #fdfbf7;

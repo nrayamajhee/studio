@@ -19,18 +19,13 @@ const meta: Meta<typeof Button> = {
   argTypes: {
     variant: {
       control: "select",
-      options: [
-        "primary",
-        "accent",
-        "warning",
-        "error",
-        "success",
-        "secondary",
-        "outline",
-        "ghost",
-      ],
-      description:
-        "Color palette and visual style variants (all with 2px border)",
+      options: ["solid", "outline", "ghost"],
+      description: "Visual style variant of the button (Solid, Outline, Ghost)",
+    },
+    tone: {
+      control: "select",
+      options: ["primary", "accent", "secondary", "success", "warning", "error"],
+      description: "Color tone preset for the button",
     },
     size: {
       control: "radio",
@@ -58,12 +53,31 @@ const meta: Meta<typeof Button> = {
       description: "Span full width",
     },
   },
+  args: {
+    variant: "solid",
+    tone: "primary",
+    size: "md",
+  },
 };
 
 export default meta;
 
 // ==========================================
-// STORY 1: Layout Combinations & Anatomy (with descriptive labels)
+// STORY 1: Button Variants (Solid, Outline, Ghost)
+// ==========================================
+export const ButtonVariants: StoryObj = {
+  name: "Button Variants",
+  render: () => (
+    <div className="flex flex-wrap gap-4 items-center">
+      <Button variant="solid" tone="primary" title="Solid" />
+      <Button variant="outline" tone="primary" title="Outline" />
+      <Button variant="ghost" tone="primary" title="Ghost" />
+    </div>
+  ),
+};
+
+// ==========================================
+// STORY 2: Layout Combinations & Anatomy (with descriptive labels)
 // ==========================================
 export const LayoutCombinations: StoryObj = {
   name: "Layout Combinations",
@@ -75,7 +89,7 @@ export const LayoutCombinations: StoryObj = {
           Leading Icon + Title
         </span>
         <Button
-          variant="primary"
+          tone="primary"
           title="Create New Project"
           leadingIcon={<Plus className="w-5 h-5" />}
         />
@@ -87,7 +101,7 @@ export const LayoutCombinations: StoryObj = {
           Title + Trailing Icon
         </span>
         <Button
-          variant="primary"
+          tone="primary"
           title="Explore Documentation"
           trailingIcon={<ArrowRight className="w-5 h-5" />}
         />
@@ -99,7 +113,7 @@ export const LayoutCombinations: StoryObj = {
           Title + Subtitle
         </span>
         <Button
-          variant="primary"
+          tone="primary"
           title="Upgrade Workspace"
           subtitle="Access advanced agent workflows"
         />
@@ -111,7 +125,7 @@ export const LayoutCombinations: StoryObj = {
           Full Anatomy (Leading Icon + Title + Subtitle + Trailing Icon)
         </span>
         <Button
-          variant="primary"
+          tone="primary"
           size="lg"
           title="Deploy Application Suite"
           subtitle="Automatic build & live verification"
@@ -124,7 +138,7 @@ export const LayoutCombinations: StoryObj = {
 };
 
 // ==========================================
-// STORY 2: Button States (Loading & Disabled)
+// STORY 3: Button States (Loading & Disabled)
 // ==========================================
 export const ButtonStates: StoryObj = {
   name: "Button States",
@@ -137,11 +151,11 @@ export const ButtonStates: StoryObj = {
         </span>
         <div className="flex flex-wrap gap-4 items-start">
           {/* 1. Loading with just title */}
-          <Button variant="primary" title="Loading Title" isLoading />
+          <Button tone="primary" title="Loading Title" isLoading />
 
           {/* 2. Loading with trailing icon */}
           <Button
-            variant="primary"
+            tone="primary"
             title="Loading Action"
             trailingIcon={<ArrowRight className="w-5 h-5" />}
             isLoading
@@ -149,7 +163,7 @@ export const ButtonStates: StoryObj = {
 
           {/* 3. Loading with title + subtitle + trailing icon */}
           <Button
-            variant="primary"
+            tone="primary"
             size="lg"
             title="Deploying Suite"
             subtitle="Please wait while building"
@@ -166,11 +180,11 @@ export const ButtonStates: StoryObj = {
         </span>
         <div className="flex flex-wrap gap-4 items-start">
           {/* 1. Disabled with just title */}
-          <Button variant="primary" title="Disabled Title" disabled />
+          <Button tone="primary" title="Disabled Title" disabled />
 
           {/* 2. Disabled with leading icon (middle component) */}
           <Button
-            variant="primary"
+            tone="primary"
             title="Disabled Action"
             leadingIcon={<Lock className="w-5 h-5" />}
             disabled
@@ -178,7 +192,7 @@ export const ButtonStates: StoryObj = {
 
           {/* 3. Disabled with title + subtitle + trailing icon */}
           <Button
-            variant="primary"
+            tone="primary"
             size="lg"
             title="Disabled Suite"
             subtitle="Permission required to execute"
@@ -192,32 +206,24 @@ export const ButtonStates: StoryObj = {
 };
 
 // ==========================================
-// STORY 3: Color Variants (Primary, Accent, Success, Warning, Error)
+// STORY 4: Tone Variants (Primary, Accent, Secondary, Success, Warning, Error)
 // ==========================================
-export const ColorVariants: StoryObj = {
-  name: "Color Variants",
+export const ToneVariants: StoryObj = {
+  name: "Tone Variants",
   render: () => (
-    <div className="flex flex-col gap-4 items-start text-left">
-      {/* Primary Palette */}
-      <Button variant="primary" title="Primary" />
-
-      {/* Accent Palette */}
-      <Button variant="accent" title="Accent" />
-
-      {/* Success Palette */}
-      <Button variant="success" title="Success" />
-
-      {/* Warning Palette */}
-      <Button variant="warning" title="Warning" />
-
-      {/* Error Palette */}
-      <Button variant="error" title="Error" />
+    <div className="flex flex-wrap gap-4 items-center">
+      <Button tone="primary" title="Primary" />
+      <Button tone="accent" title="Accent" />
+      <Button tone="secondary" title="Secondary" />
+      <Button tone="success" title="Success" />
+      <Button tone="warning" title="Warning" />
+      <Button tone="error" title="Error" />
     </div>
   ),
 };
 
 // ==========================================
-// STORY 4: Sizes (Small, Medium, Large)
+// STORY 5: Sizes (Small, Medium, Large)
 // ==========================================
 export const Sizes: StoryObj = {
   name: "Button Sizes",
@@ -230,19 +236,19 @@ export const Sizes: StoryObj = {
         </span>
         <div className="flex flex-wrap items-start gap-4">
           <Button
-            variant="primary"
+            tone="primary"
             size="sm"
             title="Small Button"
             leadingIcon={<Plus className="w-4 h-4" />}
           />
           <Button
-            variant="primary"
+            tone="primary"
             size="md"
             title="Medium Button (16px)"
             leadingIcon={<Sparkles className="w-5 h-5 text-amber-300" />}
           />
           <Button
-            variant="primary"
+            tone="primary"
             size="lg"
             title="Large Button"
             leadingIcon={<Zap className="w-5 h-5 text-amber-300" />}
@@ -257,21 +263,21 @@ export const Sizes: StoryObj = {
         </span>
         <div className="flex flex-wrap items-start gap-4">
           <Button
-            variant="primary"
+            tone="primary"
             size="sm"
             title="Small Button"
             subtitle="Compact padding"
             trailingIcon={<ArrowRight className="w-4 h-4" />}
           />
           <Button
-            variant="primary"
+            tone="primary"
             size="md"
             title="Medium Button (16px)"
             subtitle="Standard padding"
             trailingIcon={<ChevronRight className="w-5 h-5" />}
           />
           <Button
-            variant="primary"
+            tone="primary"
             size="lg"
             title="Large Button"
             subtitle="Generous padding"
