@@ -3,61 +3,48 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
-  /* Primary: Blue Hour Blue (Twilight Cobalt) */
   --color-primary: #2554d7;
-  --color-primary-hover: #3b71ee;
-  --color-primary-active: #1d41b8;
+  --color-primary-light: #3b71ee;
+  --color-primary-dark: #1d41b8;
 
-  /* Accent: Twilight Dusk Purple */
   --color-accent: #7c3aed;
-  --color-accent-hover: #a855f7;
-  --color-accent-active: #6d28d9;
+  --color-accent-light: #a855f7;
+  --color-accent-dark: #6d28d9;
 
-  /* Warning: Sunset Glow Orange */
   --color-warning: #ea580c;
-  --color-warning-hover: #f97316;
-  --color-warning-active: #c2410c;
+  --color-warning-light: #f97316;
+  --color-warning-dark: #c2410c;
 
-  /* Error: Sunset Crimson Red */
   --color-error: #dc2626;
-  --color-error-hover: #ef4444;
-  --color-error-active: #b91c1c;
+  --color-error-light: #ef4444;
+  --color-error-dark: #b91c1c;
 
-  /* Success: Natural Forest Emerald Green */
   --color-success: #059669;
-  --color-success-hover: #10b981;
-  --color-success-active: #047857;
+  --color-success-light: #10b981;
+  --color-success-dark: #047857;
 
-  /* 3 Background Colors */
-  --color-bg-canvas: #f6f4f0;
-  --color-bg-surface: #ffffff;
-  --color-bg-subtle: #fdfbf7;
+  --color-surface: #fdfbf7;
+  --color-surface-light: #ffffff;
+  --color-surface-dark: #141211;
 
-  /* 3 Text Colors */
-  --color-text-primary: #1c1917;
-  --color-text-secondary: #78716c;
-  --color-text-muted: #a8a29e;
+  --color-font: #1c1917;
+  --color-font-light: #78716c;
+  --color-font-dark: #141211;
 
-  /* Warm Cream White */
-  --color-cream: #fdfbf7;
-  --color-cream-pure: #fffefc;
-  --color-cream-soft: #f9f7f2;
-
-  /* Grayscale Background with Subtle Warm Brown Tone */
-  --color-warm-bg-light: #f6f4f0;
-  --color-warm-bg-dark: #141211;
-  --color-warm-surface-light: #ffffff;
-  --color-warm-surface-dark: #1c1917;
-  --color-warm-border-light: #e7e5e1;
-  --color-warm-border-dark: #292524;
+  --shadow-low: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  --shadow-mid:
+    0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+  --shadow-high:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 html,
 body {
-  @apply bg-[#f6f4f0] text-[#1c1917] dark:bg-[#141211] dark:text-[#fdfbf7];
+  @apply bg-surface text-font dark:bg-surface-dark dark:text-surface;
 
   @media (prefers-color-scheme: dark) {
     color-scheme: dark;

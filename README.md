@@ -1,87 +1,61 @@
-# Welcome to React Router!
+# Studio
 
-A modern, production-ready template for building full-stack React applications using React Router.
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
-
-## Features
-
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
-
-## Getting Started
-
-### Installation
-
-Install the dependencies:
+## Installation
 
 ```bash
 npm install
 ```
 
-### Development
+## Development
 
-Start the development server with HMR:
+- **App Dev Server**: Runs on port `5173` (`http://localhost:5173`)
 
-```bash
-npm run dev
-```
+  ```bash
+  npm run dev
+  ```
 
-Your application will be available at `http://localhost:5173`.
+- **Storybook**: Runs on port `6006` (`http://localhost:6006`)
+  ```bash
+  npm run storybook
+  ```
 
-## Building for Production
+## Build
 
-Create a production build:
+- **Build App**:
 
-```bash
-npm run build
-```
+  ```bash
+  npm run build
+  ```
 
-## Deployment
+- **Build Storybook**:
+  ```bash
+  npm run build-storybook
+  ```
 
-### Docker Deployment
+## Clean
 
-To build and run using Docker:
+- **Clean Artifacts & Dependencies**:
+  ```bash
+  npm run clean
+  ```
 
-```bash
-docker build -t my-app .
+## Agent Guidelines
 
-# Run the container
-docker run -p 3000:3000 my-app
-```
+### 1. Storybook & Component Story Structure
 
-The containerized application can be deployed to any platform that supports Docker, including:
+- **Start with a Default Story**: Every component must start with a `Default` story that cleanly binds to the component's props, allowing Storybook's Autodocs and Controls panel to interactively manipulate props out of the box.
+- **Minimal, Focused Variants**: Follow the default story with a minimal set of variant stories. Avoid bloated or unnecessary permutations.
+- **Avoid Redundant Prop Combinations**:
+  - Each story must focus strictly on the feature or state it demonstrates.
+  - For example, in a button states story (like disabled or loading states), do not add leading/trailing icons or subtitles if they are irrelevant to demonstrating the state, since layout combinations are already covered elsewhere.
+  - Similarly, in a title-with-subtitle story, leave out extraneous icons unless specifically showcasing full anatomy.
 
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
+### 2. Comment Removal & Clean Code Policy
 
-### DIY Deployment
+- **Strip Thinking/Scratch Comments**: After code has been generated, all comments that were part of the thinking process, section dividers, or obvious restatements of code must be removed.
+- **Preserve Only Critical Comments**: Only keep essential comments such as `TODO`, `FIXME`, and explanations of non-obvious tricky logic or magic numbers.
 
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
+### 3. Testing Guidelines
 
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+- **No Automatic Interaction Tests**: Do not generate interaction tests (such as Storybook `play` functions or automated interaction suites) during initial component and story code generation.
+- **Prompt the User First**: Always ask the user in a follow-up question whether interaction or unit tests should be added.
