@@ -1,6 +1,7 @@
 import type { Route } from "./+types/home";
 import { Link } from "react-router";
 import { useTheme } from "../hooks/useTheme";
+import { Card } from "../components/design-system/Card";
 import { Button } from "../components/design-system/Button";
 import {
   Heading,
@@ -26,10 +27,11 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-white via-blue-100 to-blue-300 dark:from-blue-900 dark:via-blue-950 dark:to-stone-950 text-font dark:text-surface flex flex-col items-center justify-center p-4 sm:p-8 font-sans transition-colors duration-200 selection:bg-primary/30">
       <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50">
         <Button
-          variant="outline"
+          variant="solid"
           tone="secondary"
           rounded
           size="sm"
+          className="bg-white/80 dark:bg-stone-800/80 backdrop-blur shadow-sm hover:bg-white dark:hover:bg-stone-700"
           leadingIcon={
             nextTheme === "light" ? (
               <Sun className="w-4 h-4 fill-current" />
@@ -45,15 +47,20 @@ export default function Home() {
       </div>
 
       <main className="flex flex-col items-center text-center gap-6">
-        <div className="flex flex-col items-center gap-1">
-          <Paragraph>{"Nishan's"}</Paragraph>
-          <Heading>Studio</Heading>
-          <Subtitle>A quiet, minimal canvas for loud ideas.</Subtitle>
-        </div>
+        <Card
+          elevation="high"
+          className="flex flex-col items-center text-center gap-6 p-8 sm:p-12 rounded-2xl bg-white/70 dark:bg-stone-900/70 backdrop-blur-md border border-stone-200/60 dark:border-stone-800/60 shadow-xl max-w-md"
+        >
+          <div className="flex flex-col items-center gap-1">
+            <Paragraph>{"Nishan's"}</Paragraph>
+            <Heading>Studio</Heading>
+            <Subtitle>A quiet, minimal canvas for loud ideas.</Subtitle>
+          </div>
 
-        <Button asChild tone="primary" size="sm" rounded>
-          <Link to="/mixer">Getting Started</Link>
-        </Button>
+          <Button asChild tone="primary" size="sm" rounded>
+            <Link to="/mixer">Getting Started</Link>
+          </Button>
+        </Card>
       </main>
     </div>
   );

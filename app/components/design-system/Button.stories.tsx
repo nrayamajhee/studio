@@ -64,6 +64,10 @@ const meta: Meta<typeof Button> = {
       control: "boolean",
       description: "Span full width",
     },
+    iconOnly: {
+      control: "boolean",
+      description: "Icon-only button styling (square aspect ratio)",
+    },
     align: {
       control: "select",
       options: ["left", "center", "right", "between"],
@@ -123,6 +127,16 @@ export const LayoutCombinations: Story = {
         <Button
           tone="primary"
           title="Create New Project"
+          leadingIcon={<Plus className="w-5 h-5" />}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2 items-start">
+        <Label>Icon only</Label>
+        <Button
+          tone="primary"
+          iconOnly
+          title="Add New"
           leadingIcon={<Plus className="w-5 h-5" />}
         />
       </div>
