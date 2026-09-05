@@ -58,7 +58,9 @@ export default function Home() {
           </div>
 
           <Button asChild tone="primary" size="sm" rounded>
-            <Link to="/mixer">Getting Started</Link>
+            <Link to="/mixer" replace>
+              Getting Started
+            </Link>
           </Button>
         </Card>
       </main>

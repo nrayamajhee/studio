@@ -247,209 +247,215 @@ export default function Mixer() {
   return (
     <div className="h-screen w-screen max-w-full overflow-hidden bg-surface text-font dark:bg-surface-dark dark:text-surface flex flex-col font-sans transition-colors duration-200">
       <header className="w-full flex items-center justify-between px-3 sm:px-6 py-2 border-b border-stone-200 dark:border-stone-800 bg-surface-light/95 dark:bg-stone-900/95 backdrop-blur-sm flex-shrink-0 z-50">
-        <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800/80 p-1 rounded-lg border border-stone-200 dark:border-stone-700">
+        <div className="flex items-center gap-2">
           <Button
             asChild
             variant="solid"
             tone="secondary"
             size="sm"
+            rounded
             iconOnly
             title="Home"
             aria-label="Home"
-            className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100"
+            className="p-1.5 h-8 w-8 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-100 shadow-sm"
           >
             <Link to="/">
-              <Home className="w-3.5 h-3.5 fill-current" />
+              <Home className="w-4 h-4 fill-current" />
             </Link>
           </Button>
 
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            iconOnly
-            onClick={handleSkipToFirst}
-            title="Skip to Start (Step 1)"
-            aria-label="Skip to first step"
-            className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100"
-          >
-            <SkipBack className="w-3.5 h-3.5 fill-current" />
-          </Button>
-
-          <Button
-            variant="solid"
-            tone={isPlaying ? "primary" : "secondary"}
-            size="sm"
-            iconOnly
-            onClick={handlePlayToggle}
-            title={isPlaying ? "Pause Sequencer" : "Play Sequencer"}
-            aria-label={isPlaying ? "Pause" : "Play"}
-            className={cn(
-              "p-1.5 h-auto rounded",
-              !isPlaying &&
-                "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
-            )}
-          >
-            {isPlaying ? (
-              <Pause className="w-3.5 h-3.5 fill-current" />
-            ) : (
-              <Play className="w-3.5 h-3.5 fill-current" />
-            )}
-          </Button>
-
-          <Button
-            variant="solid"
-            tone={isLooping ? "accent" : "secondary"}
-            size="sm"
-            iconOnly
-            onClick={() => setIsLooping((prev) => !prev)}
-            title={isLooping ? "Loop Enabled" : "Loop Disabled"}
-            aria-label="Toggle loop"
-            className={cn(
-              "p-1.5 h-auto rounded",
-              isLooping
-                ? "bg-[#d4a359] text-stone-950 ring-1 ring-[#f1c784]"
-                : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
-            )}
-          >
-            <Repeat className="w-3.5 h-3.5 fill-current" />
-          </Button>
-
-          <Button
-            variant="solid"
-            tone={isRecording ? "error" : "secondary"}
-            size="sm"
-            iconOnly
-            onClick={handleRecordToggle}
-            title={isRecording ? "Recording Active" : "Arm Record"}
-            aria-label="Toggle record"
-            className={cn(
-              "p-1.5 h-auto rounded",
-              isRecording
-                ? "animate-pulse"
-                : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
-            )}
-          >
-            <Circle className="w-3.5 h-3.5 fill-current" />
-          </Button>
-
-          <Button
-            variant="solid"
-            tone={isMetronomeOn ? "accent" : "secondary"}
-            size="sm"
-            iconOnly
-            onClick={handleMetronomeToggle}
-            title={isMetronomeOn ? "Metronome On" : "Metronome Off"}
-            aria-label="Toggle metronome"
-            className={cn(
-              "p-1.5 h-auto rounded",
-              isMetronomeOn
-                ? "bg-[#d4a359] text-stone-950 ring-1 ring-[#f1c784]"
-                : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
-            )}
-          >
-            <Timer className="w-3.5 h-3.5 fill-current" />
-          </Button>
-
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            iconOnly
-            onClick={cycleBpm}
-            onWheel={handleBpmWheel}
-            title={`Tempo: ${bpm} BPM (Click to cycle: 90, 105, 120, 130, 140, 160)`}
-            aria-label={`Tempo: ${bpm} BPM`}
-            className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100"
-          >
-            <Gauge className="w-3.5 h-3.5 fill-current" />
-          </Button>
-
-          <Button
-            variant="solid"
-            tone="error"
-            size="sm"
-            iconOnly
-            onClick={handlePanicStop}
-            title="Panic Stop (Kill all sounds immediately)"
-            aria-label="Panic stop"
-            className="p-1.5 h-auto rounded bg-red-600 hover:bg-red-700 text-white shadow-sm"
-          >
-            <OctagonAlert className="w-3.5 h-3.5 fill-current" />
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800/80 p-1 rounded-lg border border-stone-200 dark:border-stone-700">
-          <div
-            className="flex items-center gap-1.5 px-0.5"
-            onWheel={handleVolumeWheel}
-          >
+          <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800/80 p-1 rounded-lg border border-stone-200 dark:border-stone-700">
             <Button
               variant="solid"
               tone="secondary"
               size="sm"
               iconOnly
-              onClick={handleVolumeToggleMute}
-              title={`Master Volume: ${Math.round(volume * 100)}% (Click to toggle mute, scroll to adjust)`}
-              aria-label={`Master Volume: ${Math.round(volume * 100)}%`}
-              className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100 flex-shrink-0"
+              onClick={handleSkipToFirst}
+              title="Skip to Start (Step 1)"
+              aria-label="Skip to first step"
+              className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100"
             >
-              {volume === 0 ? (
-                <VolumeX className="w-3.5 h-3.5 fill-current text-stone-400" />
-              ) : volume <= 0.5 ? (
-                <Volume1 className="w-3.5 h-3.5 fill-current" />
+              <SkipBack className="w-3.5 h-3.5 fill-current" />
+            </Button>
+
+            <Button
+              variant="solid"
+              tone={isPlaying ? "primary" : "secondary"}
+              size="sm"
+              iconOnly
+              onClick={handlePlayToggle}
+              title={isPlaying ? "Pause Sequencer" : "Play Sequencer"}
+              aria-label={isPlaying ? "Pause" : "Play"}
+              className={cn(
+                "p-1.5 h-auto rounded",
+                !isPlaying &&
+                  "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
+              )}
+            >
+              {isPlaying ? (
+                <Pause className="w-3.5 h-3.5 fill-current" />
               ) : (
-                <Volume2 className="w-3.5 h-3.5 fill-current" />
+                <Play className="w-3.5 h-3.5 fill-current" />
               )}
             </Button>
 
-            <Slider
-              tone="accent"
+            <Button
+              variant="solid"
+              tone={isLooping ? "accent" : "secondary"}
               size="sm"
-              min={0}
-              max={1}
-              step={0.01}
-              value={volume}
-              onChange={(val) => handleVolumeChange(val)}
-              className="w-14 sm:w-20"
-            />
+              iconOnly
+              onClick={() => setIsLooping((prev) => !prev)}
+              title={isLooping ? "Loop Enabled" : "Loop Disabled"}
+              aria-label="Toggle loop"
+              className={cn(
+                "p-1.5 h-auto rounded",
+                isLooping
+                  ? "bg-[#d4a359] text-stone-950 ring-1 ring-[#f1c784]"
+                  : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
+              )}
+            >
+              <Repeat className="w-3.5 h-3.5 fill-current" />
+            </Button>
 
-            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400 w-7 text-right select-none flex-shrink-0">
-              {Math.round(volume * 100)}%
-            </span>
+            <Button
+              variant="solid"
+              tone={isRecording ? "error" : "secondary"}
+              size="sm"
+              iconOnly
+              onClick={handleRecordToggle}
+              title={isRecording ? "Recording Active" : "Arm Record"}
+              aria-label="Toggle record"
+              className={cn(
+                "p-1.5 h-auto rounded",
+                isRecording
+                  ? "animate-pulse"
+                  : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
+              )}
+            >
+              <Circle className="w-3.5 h-3.5 fill-current" />
+            </Button>
+
+            <Button
+              variant="solid"
+              tone={isMetronomeOn ? "accent" : "secondary"}
+              size="sm"
+              iconOnly
+              onClick={handleMetronomeToggle}
+              title={isMetronomeOn ? "Metronome On" : "Metronome Off"}
+              aria-label="Toggle metronome"
+              className={cn(
+                "p-1.5 h-auto rounded",
+                isMetronomeOn
+                  ? "bg-[#d4a359] text-stone-950 ring-1 ring-[#f1c784]"
+                  : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
+              )}
+            >
+              <Timer className="w-3.5 h-3.5 fill-current" />
+            </Button>
+
+            <Button
+              variant="solid"
+              tone="secondary"
+              size="sm"
+              iconOnly
+              onClick={cycleBpm}
+              onWheel={handleBpmWheel}
+              title={`Tempo: ${bpm} BPM (Click to cycle: 90, 105, 120, 130, 140, 160)`}
+              aria-label={`Tempo: ${bpm} BPM`}
+              className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100"
+            >
+              <Gauge className="w-3.5 h-3.5 fill-current" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800/80 p-1 rounded-lg border border-stone-200 dark:border-stone-700">
+            <div
+              className="flex items-center gap-1.5 px-0.5"
+              onWheel={handleVolumeWheel}
+            >
+              <Button
+                variant="solid"
+                tone="secondary"
+                size="sm"
+                iconOnly
+                onClick={handleVolumeToggleMute}
+                title={`Master Volume: ${Math.round(volume * 100)}% (Click to toggle mute, scroll to adjust)`}
+                aria-label={`Master Volume: ${Math.round(volume * 100)}%`}
+                className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100 flex-shrink-0"
+              >
+                {volume === 0 ? (
+                  <VolumeX className="w-3.5 h-3.5 fill-current text-stone-400" />
+                ) : volume <= 0.5 ? (
+                  <Volume1 className="w-3.5 h-3.5 fill-current" />
+                ) : (
+                  <Volume2 className="w-3.5 h-3.5 fill-current" />
+                )}
+              </Button>
+
+              <Slider
+                tone="accent"
+                size="sm"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volume}
+                onChange={(val) => handleVolumeChange(val)}
+                className="w-14 sm:w-20"
+              />
+
+              <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400 w-7 text-right select-none flex-shrink-0">
+                {Math.round(volume * 100)}%
+              </span>
+            </div>
+
+            <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
+            <Button
+              variant="solid"
+              tone="error"
+              size="sm"
+              iconOnly
+              onClick={handlePanicStop}
+              title="Panic Stop (Kill all sounds immediately)"
+              aria-label="Panic stop"
+              className="p-1.5 h-auto rounded bg-red-600 hover:bg-red-700 text-white shadow-sm"
+            >
+              <OctagonAlert className="w-3.5 h-3.5 fill-current" />
+            </Button>
+
+            <Button
+              variant="solid"
+              tone="secondary"
+              size="sm"
+              iconOnly
+              onClick={handleClearNotes}
+              title="Clear all recorded notes"
+              aria-label="Clear notes"
+              className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-red-500 hover:text-white dark:hover:bg-red-600 text-stone-700 dark:text-stone-300"
+            >
+              <Trash2 className="w-3.5 h-3.5 fill-current" />
+            </Button>
           </div>
 
-          <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
-
           <Button
             variant="solid"
             tone="secondary"
             size="sm"
+            rounded
             iconOnly
-            onClick={handleClearNotes}
-            title="Clear all recorded notes"
-            aria-label="Clear notes"
-            className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-red-500 hover:text-white dark:hover:bg-red-600 text-stone-700 dark:text-stone-300"
-          >
-            <Trash2 className="w-3.5 h-3.5 fill-current" />
-          </Button>
-
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            iconOnly
-            className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100"
+            className="p-1.5 h-8 w-8 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-100 shadow-sm"
             title={`Theme: ${theme}. Click to switch to ${nextTheme}.`}
             aria-label={`Theme: ${theme}. Click to switch to ${nextTheme}.`}
             onClick={cycleTheme}
           >
             {nextTheme === "light" ? (
-              <Sun className="w-3.5 h-3.5 fill-current" />
+              <Sun className="w-4 h-4 fill-current" />
             ) : nextTheme === "dark" ? (
-              <Moon className="w-3.5 h-3.5 fill-current" />
+              <Moon className="w-4 h-4 fill-current" />
             ) : (
-              <Monitor className="w-3.5 h-3.5 fill-current" />
+              <Monitor className="w-4 h-4 fill-current" />
             )}
           </Button>
         </div>
@@ -489,7 +495,7 @@ export default function Mixer() {
                   onClick={() => setIsInstrumentsCollapsed(false)}
                   title="Expand instruments panel"
                   aria-label="Expand instruments panel"
-                  className="self-stretch px-2.5 sm:px-3 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white text-xs font-mono font-medium rounded-xl flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
+                  className="self-center h-8 px-2.5 sm:px-3 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white text-xs font-mono font-medium rounded-lg flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
                 >
                   <PanelLeftOpen className="w-3.5 h-3.5 text-amber-700 dark:text-[#d4a359]" />
                   <span className="text-[11px]">Instruments</span>
@@ -503,7 +509,7 @@ export default function Mixer() {
                   onClick={() => setIsPlayerCollapsed(false)}
                   title="Expand player panel"
                   aria-label="Expand player panel"
-                  className="self-stretch px-2.5 sm:px-3 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white text-xs font-mono font-medium rounded-xl flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
+                  className="self-center h-8 px-2.5 sm:px-3 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white text-xs font-mono font-medium rounded-lg flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
                 >
                   <span className="text-[11px]">Player</span>
                   <PanelRightOpen className="w-3.5 h-3.5 text-amber-700 dark:text-[#d4a359]" />

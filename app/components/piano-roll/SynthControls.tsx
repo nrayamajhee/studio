@@ -111,7 +111,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
       )}
     >
       {/* Waveform Canvas Container & Expansion Slots */}
-      <div className="flex items-stretch gap-2 flex-shrink-0 w-full">
+      <div className="flex items-center gap-2 flex-shrink-0 w-full">
         {leftHeaderSlot}
         <Card
           elevation="low"
