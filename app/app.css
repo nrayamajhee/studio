@@ -2,6 +2,16 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+:root {
+  --slider-track: #e2e8f0;
+  --slider-track-accent: #e7e5e4;
+}
+
+:is(.dark, .dark *) {
+  --slider-track: #27272a;
+  --slider-track-accent: #232a3b;
+}
+
 @theme {
   --font-sans:
     "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",

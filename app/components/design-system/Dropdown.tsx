@@ -10,7 +10,7 @@ export const dropdownVariants = cva(
     variants: {
       tone: {
         accent:
-          "bg-[#0a0d14] text-[#e6e8ec] border-[#232a3b] hover:border-[#38435d] focus-visible:border-[#d4a359] focus-visible:ring-1 focus-visible:ring-[#d4a359] data-[state=open]:border-[#d4a359]",
+          "bg-stone-50 text-stone-900 border-stone-200 dark:bg-[#0a0d14] dark:text-[#e6e8ec] dark:border-[#232a3b] hover:border-amber-400 dark:hover:border-[#38435d] focus-visible:border-[#d4a359] focus-visible:ring-1 focus-visible:ring-[#d4a359] data-[state=open]:border-[#d4a359]",
         primary:
           "bg-surface text-font border-stone-300 dark:bg-stone-900 dark:text-stone-100 dark:border-stone-700 hover:border-stone-400 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary data-[state=open]:border-primary",
         secondary:
@@ -153,7 +153,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
             className={cn(
               "z-50 min-w-[var(--radix-popover-trigger-width)] max-h-56 overflow-y-auto rounded-lg p-1 text-xs shadow-xl backdrop-blur-md outline-none",
               tone === "accent" &&
-                "bg-[#0a0d14]/95 border border-[#232a3b] text-stone-200",
+                "bg-white/95 dark:bg-[#0a0d14]/95 border border-stone-200 dark:border-[#232a3b] text-stone-900 dark:text-stone-200",
               tone === "primary" &&
                 "bg-white/95 dark:bg-stone-900/95 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100",
               tone === "secondary" &&
@@ -178,7 +178,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                           ? "bg-[#d4a359] text-stone-950 font-bold shadow-sm"
                           : "bg-primary text-white font-bold shadow-sm"
                         : tone === "accent"
-                          ? "text-stone-300 hover:bg-[#181f2c] hover:text-white"
+                          ? "text-stone-700 dark:text-stone-300 hover:bg-amber-50 dark:hover:bg-[#181f2c] hover:text-stone-900 dark:hover:text-white"
                           : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-white",
                     )}
                   >

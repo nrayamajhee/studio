@@ -211,11 +211,11 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
     <Card
       elevation="mid"
       className={cn(
-        "flex flex-col h-full w-full bg-[#0a0c10] border border-[#1f2533] rounded-xl overflow-hidden shadow-lg text-stone-100 p-2.5 gap-2 select-none",
+        "flex flex-col h-full w-full bg-white dark:bg-[#0a0c10] border border-stone-200 dark:border-[#1f2533] rounded-xl overflow-hidden shadow-sm dark:shadow-lg text-stone-900 dark:text-stone-100 p-2.5 gap-2 select-none",
         className,
       )}
     >
-      <div className="flex flex-col gap-1.5 pb-1 border-b border-[#1f2533]">
+      <div className="flex flex-col gap-1.5 pb-1 border-b border-stone-200 dark:border-[#1f2533]">
         {isRecording && (
           <div className="flex items-center justify-end">
             <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 animate-pulse bg-red-950/40 px-1.5 py-0.5 rounded border border-red-800/50">
@@ -233,7 +233,7 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
             onClick={() => setBaseOctave((prev) => Math.max(1, prev - 1))}
             disabled={baseOctave <= 1}
             aria-label="Scroll octave left"
-            className="p-1 h-auto rounded bg-[#161a24] hover:bg-[#232a3b] border border-[#232a3b] text-stone-300"
+            className="p-1 h-auto rounded bg-stone-100 hover:bg-stone-200 dark:bg-[#161a24] dark:hover:bg-[#232a3b] border border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300"
           >
             <ChevronLeft className="w-3.5 h-3.5 fill-current" />
           </Button>
@@ -250,13 +250,13 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
             onMouseDown={handleMiniMapMouseDown}
             onWheel={handleMiniMapWheel}
             title="Mini Piano Map: Click or drag to scroll octaves"
-            className="relative flex-1 h-6 bg-[#07080c] border border-[#1f2533] rounded-md overflow-hidden cursor-pointer flex items-end shadow-inner focus-visible:ring-1 focus-visible:ring-[#d4a359]"
+            className="relative flex-1 h-6 bg-stone-100 dark:bg-[#07080c] border border-stone-200 dark:border-[#1f2533] rounded-md overflow-hidden cursor-pointer flex items-end shadow-inner focus-visible:ring-1 focus-visible:ring-[#d4a359]"
           >
             <div className="absolute inset-0 flex">
               {MINI_MAP_OCTAVES.map((oct) => (
                 <div
                   key={oct}
-                  className="flex-1 relative border-r border-stone-800/80 flex"
+                  className="flex-1 relative border-r border-stone-300 dark:border-stone-800/80 flex"
                 >
                   {WHITE_NOTES_PER_OCT.map((noteName) => {
                     const noteKey = `${noteName}${oct}`;
@@ -266,10 +266,10 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
                       <div
                         key={noteName}
                         className={cn(
-                          "flex-1 h-full border-r border-stone-900 transition-colors",
+                          "flex-1 h-full border-r border-stone-300 dark:border-stone-900 transition-colors",
                           isActive
                             ? "bg-[#d4a359]"
-                            : "bg-[#dadce3] dark:bg-stone-300",
+                            : "bg-white dark:bg-stone-300",
                         )}
                       />
                     );
@@ -320,7 +320,7 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
             onClick={() => setBaseOctave((prev) => Math.min(6, prev + 1))}
             disabled={baseOctave >= 6}
             aria-label="Scroll octave right"
-            className="p-1 h-auto rounded bg-[#161a24] hover:bg-[#232a3b] border border-[#232a3b] text-stone-300"
+            className="p-1 h-auto rounded bg-stone-100 hover:bg-stone-200 dark:bg-[#161a24] dark:hover:bg-[#232a3b] border border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300"
           >
             <ChevronRight className="w-3.5 h-3.5 fill-current" />
           </Button>
@@ -328,7 +328,7 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
       </div>
 
       <div className="flex-1 flex items-center justify-center overflow-x-auto py-1">
-        <div className="relative flex items-start bg-[#06080c] p-1.5 rounded-lg border border-[#1f2533] shadow-inner">
+        <div className="relative flex items-start bg-stone-100 dark:bg-[#06080c] p-1.5 rounded-lg border border-stone-200 dark:border-[#1f2533] shadow-inner">
           {currentKeys.map((item) => {
             const isPressed =
               pressedKeys.has(item.fullName) ||
@@ -407,62 +407,62 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
         </div>
       </div>
 
-      <div className="text-[10px] text-stone-400 text-center flex flex-wrap items-center justify-center gap-2 pt-1 border-t border-[#1f2533]">
+      <div className="text-[10px] text-stone-500 dark:text-stone-400 text-center flex flex-wrap items-center justify-center gap-2 pt-1 border-t border-stone-200 dark:border-[#1f2533]">
         <span>
           White:{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             A
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             S
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             D
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             F
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             G
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             H
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             J
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             K
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             L
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             ;
           </kbd>
         </span>
-        <span className="text-stone-600">|</span>
+        <span className="text-stone-300 dark:text-stone-600">|</span>
         <span>
           Black:{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             W
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             E
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             T
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             Y
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             U
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             O
           </kbd>{" "}
-          <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">
+          <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">
             P
           </kbd>
         </span>

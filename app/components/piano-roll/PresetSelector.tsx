@@ -82,12 +82,12 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
     <Card
       elevation="mid"
       className={cn(
-        "flex flex-col h-full w-full bg-[#07090e] border border-[#1f2533] rounded-xl p-1.5 shadow-lg text-stone-200 select-none overflow-hidden",
+        "flex flex-col h-full w-full bg-white dark:bg-[#07090e] border border-stone-200 dark:border-[#1f2533] rounded-xl p-1.5 shadow-sm dark:shadow-lg text-stone-800 dark:text-stone-200 select-none overflow-hidden",
         className,
       )}
     >
-      <div className="flex items-center justify-between px-1 pb-1 mb-1 border-b border-[#1a202c] flex-shrink-0">
-        <span className="text-[9px] font-mono tracking-wider text-stone-500 uppercase font-bold">
+      <div className="flex items-center justify-between px-1 pb-1 mb-1 border-b border-stone-200 dark:border-[#1a202c] flex-shrink-0">
+        <span className="text-[9px] font-mono tracking-wider text-stone-600 dark:text-stone-400 uppercase font-bold">
           Instruments
         </span>
         {onCollapse && (
@@ -96,7 +96,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
             onClick={onCollapse}
             title="Collapse instruments panel"
             aria-label="Collapse instruments panel"
-            className="p-0.5 rounded text-stone-500 hover:text-[#d4a359] hover:bg-[#161c28] transition-colors cursor-pointer"
+            className="p-0.5 rounded text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-[#d4a359] hover:bg-stone-100 dark:hover:bg-[#161c28] transition-colors cursor-pointer"
           >
             <PanelLeftClose className="w-3 h-3" />
           </button>
@@ -126,7 +126,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
                     "p-0.5 rounded flex items-center justify-center flex-shrink-0",
                     isSelected
                       ? "text-stone-950"
-                      : "text-[#d4a359]",
+                      : "text-amber-700 dark:text-[#d4a359]",
                   )}
                 >
                   <IconComp className="w-3 h-3 fill-current" />
@@ -137,7 +137,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
                 "w-full h-7 sm:h-8 px-2 justify-start text-left rounded-lg transition-all border text-[10px] sm:text-[11px]",
                 isSelected
                   ? "bg-[#d4a359] text-stone-950 border-[#f1c784] shadow-sm font-bold ring-1 ring-[#f1c784]"
-                  : "bg-[#0d1017] text-stone-300 border-[#1a202c] hover:bg-[#161c28] hover:text-white",
+                  : "bg-stone-100 dark:bg-[#0d1017] text-stone-700 dark:text-stone-300 border-stone-200/80 dark:border-[#1a202c] hover:bg-stone-200/70 dark:hover:bg-[#161c28] hover:text-stone-950 dark:hover:text-white",
               )}
             >
               <span className="truncate">{inst.name}</span>

@@ -489,9 +489,9 @@ export default function Mixer() {
                   onClick={() => setIsInstrumentsCollapsed(false)}
                   title="Expand instruments panel"
                   aria-label="Expand instruments panel"
-                  className="self-stretch px-2.5 sm:px-3 bg-[#0a0d14] border border-[#1f2533] hover:border-[#38435d] hover:bg-[#111520] text-stone-300 hover:text-white text-xs font-mono font-medium rounded-xl flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
+                  className="self-stretch px-2.5 sm:px-3 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white text-xs font-mono font-medium rounded-xl flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
                 >
-                  <PanelLeftOpen className="w-3.5 h-3.5 text-[#d4a359]" />
+                  <PanelLeftOpen className="w-3.5 h-3.5 text-amber-700 dark:text-[#d4a359]" />
                   <span className="text-[11px]">Instruments</span>
                 </button>
               ) : undefined
@@ -503,10 +503,10 @@ export default function Mixer() {
                   onClick={() => setIsPlayerCollapsed(false)}
                   title="Expand player panel"
                   aria-label="Expand player panel"
-                  className="self-stretch px-2.5 sm:px-3 bg-[#0a0d14] border border-[#1f2533] hover:border-[#38435d] hover:bg-[#111520] text-stone-300 hover:text-white text-xs font-mono font-medium rounded-xl flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
+                  className="self-stretch px-2.5 sm:px-3 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white text-xs font-mono font-medium rounded-xl flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
                 >
                   <span className="text-[11px]">Player</span>
-                  <PanelRightOpen className="w-3.5 h-3.5 text-[#d4a359]" />
+                  <PanelRightOpen className="w-3.5 h-3.5 text-amber-700 dark:text-[#d4a359]" />
                 </button>
               ) : undefined
             }
@@ -525,12 +525,12 @@ export default function Mixer() {
                   onClick={() => setIsPlayerCollapsed(true)}
                   title="Collapse player panel"
                   aria-label="Collapse player panel"
-                  className="p-0.5 rounded text-stone-500 hover:text-[#d4a359] hover:bg-[#161c28] transition-colors cursor-pointer"
+                  className="p-0.5 rounded text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-[#d4a359] hover:bg-stone-200/60 dark:hover:bg-[#161c28] transition-colors cursor-pointer"
                 >
                   <PanelRightClose className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <div className="flex items-center gap-1 bg-[#0a0c10] p-0.5 rounded-lg border border-[#1f2533]">
+              <div className="flex items-center gap-1 bg-stone-200/80 dark:bg-[#0a0c10] p-0.5 rounded-lg border border-stone-300 dark:border-[#1f2533]">
                 <Button
                   variant="solid"
                   tone={playerView === "keys" ? "accent" : "secondary"}
@@ -541,7 +541,7 @@ export default function Mixer() {
                     "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
                     playerView === "keys"
                       ? "bg-[#d4a359] text-stone-950 font-bold border border-[#f1c784]"
-                      : "bg-transparent text-stone-400 hover:text-white border border-transparent",
+                      : "bg-transparent text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white border border-transparent",
                   )}
                 >
                   <Piano className="w-3 h-3 mr-1 inline" />
@@ -557,7 +557,7 @@ export default function Mixer() {
                     "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
                     playerView === "drums"
                       ? "bg-[#d4a359] text-stone-950 font-bold border border-[#f1c784]"
-                      : "bg-transparent text-stone-400 hover:text-white border border-transparent",
+                      : "bg-transparent text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white border border-transparent",
                   )}
                 >
                   <Drum className="w-3 h-3 mr-1 inline" />

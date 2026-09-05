@@ -337,20 +337,20 @@ export const DrumPad: React.FC<DrumPadProps> = ({
 
     switch (pad.colorTone) {
       case "rose":
-        return "bg-[#181014] text-rose-200 border-rose-900/40 hover:bg-rose-950/50 hover:border-rose-700/60";
+        return "bg-rose-50 dark:bg-[#181014] text-rose-950 dark:text-rose-200 border-rose-200 dark:border-rose-900/40 hover:bg-rose-100 dark:hover:bg-rose-950/50 hover:border-rose-300 dark:hover:border-rose-700/60";
       case "cyan":
-        return "bg-[#0c1619] text-cyan-200 border-cyan-900/40 hover:bg-cyan-950/50 hover:border-cyan-700/60";
+        return "bg-cyan-50 dark:bg-[#0c1619] text-cyan-950 dark:text-cyan-200 border-cyan-200 dark:border-cyan-900/40 hover:bg-cyan-100 dark:hover:bg-cyan-950/50 hover:border-cyan-300 dark:hover:border-cyan-700/60";
       case "yellow":
-        return "bg-[#17160d] text-amber-200 border-amber-900/40 hover:bg-amber-950/50 hover:border-amber-700/60";
+        return "bg-amber-50 dark:bg-[#17160d] text-amber-950 dark:text-amber-200 border-amber-200 dark:border-amber-900/40 hover:bg-amber-100 dark:hover:bg-amber-950/50 hover:border-amber-300 dark:hover:border-amber-700/60";
       case "emerald":
-        return "bg-[#0d1712] text-emerald-200 border-emerald-900/40 hover:bg-emerald-950/50 hover:border-emerald-700/60";
+        return "bg-emerald-50 dark:bg-[#0d1712] text-emerald-950 dark:text-emerald-200 border-emerald-200 dark:border-emerald-900/40 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 hover:border-emerald-300 dark:hover:border-emerald-700/60";
       case "violet":
-        return "bg-[#14101a] text-purple-200 border-purple-900/40 hover:bg-purple-950/50 hover:border-purple-700/60";
+        return "bg-purple-50 dark:bg-[#14101a] text-purple-950 dark:text-purple-200 border-purple-200 dark:border-purple-900/40 hover:bg-purple-100 dark:hover:bg-purple-950/50 hover:border-purple-300 dark:hover:border-purple-700/60";
       case "sky":
-        return "bg-[#0d141a] text-sky-200 border-sky-900/40 hover:bg-sky-950/50 hover:border-sky-700/60";
+        return "bg-sky-50 dark:bg-[#0d141a] text-sky-950 dark:text-sky-200 border-sky-200 dark:border-sky-900/40 hover:bg-sky-100 dark:hover:bg-sky-950/50 hover:border-sky-300 dark:hover:border-sky-700/60";
       case "amber":
       default:
-        return "bg-[#15130d] text-[#e4be78] border-[#382d19] hover:bg-[#201c13] hover:border-[#d4a359]/60";
+        return "bg-amber-50 dark:bg-[#15130d] text-amber-950 dark:text-[#e4be78] border-amber-200 dark:border-[#382d19] hover:bg-amber-100 dark:hover:bg-[#201c13] hover:border-amber-300 dark:hover:border-[#d4a359]/60";
     }
   };
 
@@ -358,17 +358,17 @@ export const DrumPad: React.FC<DrumPadProps> = ({
     <Card
       elevation="mid"
       className={cn(
-        "flex flex-col h-full w-full bg-[#0a0c10] border border-[#1f2533] rounded-xl overflow-hidden shadow-lg text-stone-100 p-2.5 gap-2 select-none",
+        "flex flex-col h-full w-full bg-white dark:bg-[#0a0c10] border border-stone-200 dark:border-[#1f2533] rounded-xl overflow-hidden shadow-sm dark:shadow-lg text-stone-900 dark:text-stone-100 p-2.5 gap-2 select-none",
         className,
       )}
     >
-      <div className="flex items-center justify-between pb-1 border-b border-[#1f2533] flex-shrink-0">
+      <div className="flex items-center justify-between pb-1 border-b border-stone-200 dark:border-[#1f2533] flex-shrink-0">
         <div className="flex items-center gap-1.5">
-          <span className="flex items-center gap-1 text-[11px] font-bold tracking-wider text-[#d4a359] uppercase">
-            <Layers className="w-3.5 h-3.5 text-[#d4a359]" />
+          <span className="flex items-center gap-1 text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase">
+            <Layers className="w-3.5 h-3.5 text-amber-700 dark:text-[#d4a359]" />
             {isDrumKit ? "MPC Drum Kit" : "Pad Matrix"}
           </span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#161a24] text-stone-400 border border-[#232a3b]">
+          <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-100 dark:bg-[#161a24] text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-[#232a3b]">
             Bank {bank === 0 ? "A" : "B"}
           </span>
         </div>
@@ -393,7 +393,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
                 "px-2 py-0.5 h-6 text-[10px] rounded border transition-colors",
                 bank === 0
                   ? "bg-[#d4a359] text-stone-950 border-[#f1c784] font-bold"
-                  : "bg-[#161a24] text-stone-300 border-[#232a3b] hover:bg-[#232a3b]",
+                  : "bg-stone-100 hover:bg-stone-200 dark:bg-[#161a24] dark:hover:bg-[#232a3b] border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300",
               )}
             >
               A
@@ -409,7 +409,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
                 "px-2 py-0.5 h-6 text-[10px] rounded border transition-colors",
                 bank === 1
                   ? "bg-[#d4a359] text-stone-950 border-[#f1c784] font-bold"
-                  : "bg-[#161a24] text-stone-300 border-[#232a3b] hover:bg-[#232a3b]",
+                  : "bg-stone-100 hover:bg-stone-200 dark:bg-[#161a24] dark:hover:bg-[#232a3b] border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300",
               )}
             >
               B
@@ -418,7 +418,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 grid grid-cols-4 grid-rows-4 gap-1.5 p-1 bg-[#06080c] rounded-lg border border-[#1f2533] shadow-inner">
+      <div className="flex-1 min-h-0 grid grid-cols-4 grid-rows-4 gap-1.5 p-1 bg-stone-100 dark:bg-[#06080c] rounded-lg border border-stone-200 dark:border-[#1f2533] shadow-inner">
         {pads.map((pad) => {
           const isActive =
             pressedPads.has(pad.note) || activeNotesSet.has(pad.note);
@@ -452,7 +452,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
                     "text-[8px] font-mono px-1 py-0.2 rounded uppercase leading-tight font-bold",
                     isActive
                       ? "bg-black/20 text-stone-950"
-                      : "bg-stone-900/80 text-stone-400 border border-stone-800",
+                      : "bg-stone-200/90 dark:bg-stone-900/80 text-stone-700 dark:text-stone-400 border border-stone-300 dark:border-stone-800",
                   )}
                 >
                   {pad.key}
@@ -460,7 +460,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
                 <span
                   className={cn(
                     "text-[8px] font-mono leading-tight",
-                    isActive ? "text-stone-900 font-bold" : "opacity-60",
+                    isActive ? "text-stone-900 font-bold" : "text-stone-600 dark:text-stone-300 opacity-70",
                   )}
                 >
                   {pad.note}
@@ -483,7 +483,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
                   "absolute top-1 right-1 w-1.5 h-1.5 rounded-full pointer-events-none transition-colors",
                   isActive
                     ? "bg-stone-950 shadow-[0_0_6px_#fff]"
-                    : "bg-stone-700/50",
+                    : "bg-stone-300 dark:bg-stone-700/50",
                 )}
               />
             </Button>
@@ -491,11 +491,11 @@ export const DrumPad: React.FC<DrumPadProps> = ({
         })}
       </div>
 
-      <div className="text-[10px] text-stone-400 text-center flex items-center justify-between pt-1 border-t border-[#1f2533] flex-shrink-0">
+      <div className="text-[10px] text-stone-500 dark:text-stone-400 text-center flex items-center justify-between pt-1 border-t border-stone-200 dark:border-[#1f2533] flex-shrink-0">
         <span className="truncate">
-          Keys: <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">1-4</kbd> <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">Q-R</kbd> <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">A-F</kbd> <kbd className="bg-[#161a24] px-1 py-0.5 rounded border border-[#232a3b]">Z-V</kbd>
+          Keys: <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">1-4</kbd> <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">Q-R</kbd> <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">A-F</kbd> <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">Z-V</kbd>
         </span>
-        <span className="text-[9px] text-[#d4a359] font-mono font-medium">
+        <span className="text-[9px] text-amber-700 dark:text-[#d4a359] font-mono font-medium">
           4x4 Dynamic
         </span>
       </div>

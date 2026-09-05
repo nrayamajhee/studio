@@ -88,7 +88,10 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
     };
 
     const fillColor = toneFillColors[tone || "primary"];
-    const trackColor = tone === "accent" ? "#232a3b" : "#e2e8f0";
+    const trackColor =
+      tone === "accent"
+        ? "var(--slider-track-accent, #e7e5e4)"
+        : "var(--slider-track, #e2e8f0)";
 
     const fillStyle: React.CSSProperties = showFill
       ? {

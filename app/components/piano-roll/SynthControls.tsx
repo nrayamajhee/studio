@@ -41,12 +41,13 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
       const width = canvas.width;
       const height = canvas.height;
 
-      ctx.fillStyle = "#07090e";
+      const isDark = document.documentElement.classList.contains("dark");
+      ctx.fillStyle = isDark ? "#07090e" : "#0f172a";
       ctx.fillRect(0, 0, width, height);
 
       // Baseline glowing amber wire
       ctx.lineWidth = 1;
-      ctx.strokeStyle = "#251d12";
+      ctx.strokeStyle = isDark ? "#251d12" : "#334155";
       ctx.beginPath();
       ctx.moveTo(0, height / 2);
       ctx.lineTo(width, height / 2);
@@ -114,13 +115,13 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         {leftHeaderSlot}
         <Card
           elevation="low"
-          className="flex-1 bg-[#0b0e14] border border-[#1f2533] rounded-xl p-1.5 flex flex-col justify-center flex-shrink-0 shadow-inner min-w-0"
+          className="flex-1 bg-stone-100 dark:bg-[#0b0e14] border border-stone-200 dark:border-[#1f2533] rounded-xl p-1.5 flex flex-col justify-center flex-shrink-0 shadow-inner min-w-0"
         >
           <canvas
             ref={canvasRef}
             width={640}
             height={48}
-            className="w-full h-11 rounded-lg bg-[#05070a] border border-[#171c26]"
+            className="w-full h-11 rounded-lg bg-[#0f172a] dark:bg-[#05070a] border border-stone-300 dark:border-[#171c26]"
           />
         </Card>
         {rightHeaderSlot}
@@ -131,9 +132,9 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         {/* 1. Exciter / Click */}
         <Card
           elevation="low"
-          className="bg-[#0e121a] border border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
+          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-[#d4a359] uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase mb-1 block">
             1. Exciter / Click
           </span>
 
@@ -190,9 +191,9 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         {/* 2. Tone Core */}
         <Card
           elevation="low"
-          className="bg-[#0e121a] border border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
+          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-[#d4a359] uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase mb-1 block">
             2. Tone Core
           </span>
 
@@ -258,9 +259,9 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         {/* 3. Filter Matrix */}
         <Card
           elevation="low"
-          className="bg-[#0e121a] border border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
+          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-[#d4a359] uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase mb-1 block">
             3. Filter Matrix
           </span>
 
@@ -318,9 +319,9 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         {/* 4. LFO & Mod */}
         <Card
           elevation="low"
-          className="bg-[#0e121a] border border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
+          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-[#d4a359] uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase mb-1 block">
             4. LFO & Mod
           </span>
 
@@ -375,9 +376,9 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         {/* 5. Amplitude ADSR */}
         <Card
           elevation="low"
-          className="bg-[#0e121a] border border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
+          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-[#d4a359] uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase mb-1 block">
             5. Amplitude ADSR
           </span>
 
@@ -431,9 +432,9 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         {/* 6. Body & Space */}
         <Card
           elevation="low"
-          className="bg-[#0e121a] border border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
+          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-[#d4a359] uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase mb-1 block">
             6. Body & Space
           </span>
 
