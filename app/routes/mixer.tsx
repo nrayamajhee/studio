@@ -32,7 +32,6 @@ import {
   Piano,
   Drum,
   PanelRightClose,
-  PanelRightOpen,
 } from "lucide-react";
 
 export function meta(_args: Route.MetaArgs) {
@@ -596,11 +595,15 @@ export default function Mixer() {
                 <button
                   type="button"
                   onClick={() => setIsPlayerCollapsed(false)}
-                  title="Expand player panel"
-                  aria-label="Expand player panel"
-                  className="self-center h-8 w-8 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
+                  title={playerView === "drums" ? "Expand Drum Pad" : "Expand Piano Keys"}
+                  aria-label={playerView === "drums" ? "Expand Drum Pad" : "Expand Piano Keys"}
+                  className="self-center h-8 w-8 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm transition-all cursor-pointer select-none group"
                 >
-                  <PanelRightOpen className="w-4 h-4 text-stone-600 dark:text-stone-400" />
+                  {playerView === "drums" ? (
+                    <Drum className="w-4 h-4 text-stone-600 dark:text-stone-400 group-hover:text-stone-900 dark:group-hover:text-white transition-colors" />
+                  ) : (
+                    <Piano className="w-4 h-4 text-stone-600 dark:text-stone-400 group-hover:text-stone-900 dark:group-hover:text-white transition-colors" />
+                  )}
                 </button>
               ) : undefined
             }

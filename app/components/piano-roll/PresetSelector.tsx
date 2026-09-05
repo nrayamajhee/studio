@@ -1,6 +1,5 @@
 import React from "react";
 import { synth } from "../../lib/synth";
-import { Card } from "../design-system/Card";
 import { cn } from "../../lib/utils";
 import {
   Piano,
@@ -110,10 +109,9 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
   };
 
   return (
-    <Card
-      elevation="mid"
+    <div
       className={cn(
-        "flex flex-col h-full w-full max-w-[72px] bg-white dark:bg-[#07090e] border border-stone-200 dark:border-[#1f2533] rounded-xl p-1 shadow-sm dark:shadow-lg text-stone-800 dark:text-stone-200 select-none overflow-hidden",
+        "flex flex-col h-full w-full max-w-[72px] select-none overflow-hidden",
         className,
       )}
     >
@@ -162,7 +160,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
           );
         })}
       </div>
-    </Card>
+    </div>
   );
 };
 
