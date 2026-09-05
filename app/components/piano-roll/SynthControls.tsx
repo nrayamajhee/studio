@@ -136,7 +136,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           elevation="low"
           className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-1 block">
             1. Exciter / Click
           </span>
 
@@ -195,7 +195,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           elevation="low"
           className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-1 block">
             2. Tone Core
           </span>
 
@@ -263,7 +263,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           elevation="low"
           className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-1 block">
             3. Filter Matrix
           </span>
 
@@ -323,7 +323,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           elevation="low"
           className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-1 block">
             4. LFO & Mod
           </span>
 
@@ -380,7 +380,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           elevation="low"
           className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-1 block">
             5. Amplitude ADSR
           </span>
 
@@ -436,7 +436,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           elevation="low"
           className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-1 block">
             6. Body & Space
           </span>
 

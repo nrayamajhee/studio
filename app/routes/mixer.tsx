@@ -579,7 +579,7 @@ export default function Mixer() {
                   aria-label="Expand instruments panel"
                   className="self-center h-8 px-2.5 sm:px-3 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white text-xs font-mono font-medium rounded-lg flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
                 >
-                  <PanelLeftOpen className="w-3.5 h-3.5 text-primary dark:text-primary-light" />
+                  <PanelLeftOpen className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
                   <span className="text-[11px]">Instruments</span>
                 </button>
               ) : undefined
@@ -594,7 +594,7 @@ export default function Mixer() {
                   className="self-center h-8 px-2.5 sm:px-3 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white text-xs font-mono font-medium rounded-lg flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
                 >
                   <span className="text-[11px]">Player</span>
-                  <PanelRightOpen className="w-3.5 h-3.5 text-primary dark:text-primary-light" />
+                  <PanelRightOpen className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
                 </button>
               ) : undefined
             }
@@ -613,7 +613,7 @@ export default function Mixer() {
                   onClick={() => setIsPlayerCollapsed(true)}
                   title="Collapse player panel"
                   aria-label="Collapse player panel"
-                  className="p-0.5 rounded text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-primary-light hover:bg-stone-200/60 dark:hover:bg-[#161c28] transition-colors cursor-pointer"
+                  className="p-0.5 rounded text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-[#161c28] transition-colors cursor-pointer"
                 >
                   <PanelRightClose className="w-3.5 h-3.5" />
                 </button>

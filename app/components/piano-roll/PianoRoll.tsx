@@ -432,7 +432,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             size="sm"
             onClick={randomizeNotes}
             title="Randomize in-key notes"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-primary-light"
+            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
           >
             <Shuffle className="w-3 h-3" />
             Rnd
@@ -449,7 +449,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             size="sm"
             onClick={() => scrollToOctave(4)}
             title="Jump to C4 (Piano/Mid)"
-            className="px-1.5 py-0.5 h-6 text-[10px] font-mono rounded bg-[#12151c] text-primary dark:text-primary-light border border-[#1f2533] hover:text-white"
+            className="px-1.5 py-0.5 h-6 text-[10px] font-mono rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
           >
             C4
           </Button>
@@ -483,7 +483,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
               title={`Velocity: ${velocity}%`}
               className="w-16 h-1 bg-stone-300 dark:bg-stone-700 rounded-lg appearance-none cursor-pointer accent-primary"
             />
-            <span className="text-[10px] font-mono font-bold text-primary dark:text-primary-light min-w-[28px] text-right select-none">
+            <span className="text-[10px] font-mono font-bold text-stone-700 dark:text-stone-300 min-w-[28px] text-right select-none">
               {velocity}%
             </span>
           </div>
@@ -521,7 +521,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
               <span className="text-[10px] font-mono font-bold text-stone-400">
                 PITCH
               </span>
-              <span className="text-[10px] font-mono font-bold text-primary dark:text-primary-light">
+              <span className="text-[10px] font-mono font-bold text-stone-700 dark:text-stone-300">
                 {rootKey} {scale !== "chromatic" ? scale : ""}
               </span>
             </div>
@@ -616,7 +616,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                               isC &&
                                 "border-b-2 border-b-primary/60 dark:border-b-primary/60 font-bold",
                               (hasActiveNote || isPressed) &&
-                                "!bg-blue-100 dark:!bg-blue-950/80 ring-2 ring-primary ring-inset !from-blue-100 !to-blue-200 dark:!from-blue-950/80 dark:!to-blue-900/80 !text-primary dark:!text-blue-200 font-bold",
+                                "!bg-blue-100 dark:!bg-blue-950/80 ring-2 ring-primary ring-inset !from-blue-100 !to-blue-200 dark:!from-blue-950/80 dark:!to-blue-900/80 !text-stone-900 dark:!text-white font-bold",
                             )}
                           >
                             <span className="flex items-center gap-1.5">
@@ -629,7 +629,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                               <span
                                 className={cn(
                                   isC
-                                    ? "font-bold text-primary dark:text-primary"
+                                    ? "font-bold text-stone-900 dark:text-stone-900"
                                     : "text-stone-800 dark:text-stone-800 font-semibold",
                                 )}
                               >

@@ -364,8 +364,8 @@ export const DrumPad: React.FC<DrumPadProps> = ({
     >
       <div className="flex items-center justify-between pb-1 border-b border-stone-200 dark:border-[#1f2533] flex-shrink-0">
         <div className="flex items-center gap-1.5">
-          <span className="flex items-center gap-1 text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase">
-            <Layers className="w-3.5 h-3.5 text-primary dark:text-primary-light" />
+          <span className="flex items-center gap-1 text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase">
+            <Layers className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
             {isDrumKit ? "MPC Drum Kit" : "Pad Matrix"}
           </span>
           <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-100 dark:bg-[#161a24] text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-[#232a3b]">
@@ -495,7 +495,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
         <span className="truncate">
           Keys: <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">1-4</kbd> <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">Q-R</kbd> <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">A-F</kbd> <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">Z-V</kbd>
         </span>
-        <span className="text-[9px] text-primary dark:text-primary-light font-mono font-medium">
+        <span className="text-[9px] text-stone-500 dark:text-stone-400 font-mono font-medium">
           4x4 Dynamic
         </span>
       </div>

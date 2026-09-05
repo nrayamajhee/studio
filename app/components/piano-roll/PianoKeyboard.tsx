@@ -113,7 +113,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                       <span className="flex items-center gap-1.5">
                         <span
                           className={cn(
-                            isC ? "font-bold text-primary" : "text-stone-700",
+                            isC ? "font-bold text-stone-900" : "text-stone-700",
                           )}
                         >
                           {showLabels === "all" ||
@@ -221,7 +221,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                         className={cn(
                           "text-[11px] font-mono font-medium",
                           isC
-                            ? "font-bold text-primary px-1.5 py-0.5 rounded bg-primary/10 border border-primary/30"
+                            ? "font-bold text-stone-900 dark:text-stone-100 px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 border border-stone-300 dark:border-stone-700"
                             : "text-stone-500",
                         )}
                       >
@@ -292,7 +292,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                   )}
                 >
                   {showLabels !== "none" && (
-                    <span className="text-[11px] font-mono font-bold text-primary px-1.5 py-0.5 rounded bg-primary/10 border border-primary/30">
+                    <span className="text-[11px] font-mono font-bold text-stone-900 dark:text-stone-100 px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 border border-stone-300 dark:border-stone-700">
                       {endNoteName}
                     </span>
                   )}

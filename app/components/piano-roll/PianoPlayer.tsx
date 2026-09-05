@@ -392,7 +392,7 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
                   "relative z-10 w-9 sm:w-10 h-36 sm:h-40 flex flex-col justify-end items-center pb-2.5 rounded-none rounded-b-md border-0 border-x border-b border-stone-400 transition-all cursor-pointer select-none p-0",
                   "bg-gradient-to-b from-stone-50 via-white to-stone-200 hover:from-blue-50 hover:to-white text-stone-900 shadow-sm",
                   isPressed &&
-                    "!bg-blue-100 ring-2 ring-primary ring-inset !from-blue-100 !to-blue-200 !text-primary font-bold translate-y-0.5",
+                    "!bg-blue-100 ring-2 ring-primary ring-inset !from-blue-100 !to-blue-200 !text-stone-900 font-bold translate-y-0.5",
                 )}
               >
                 <kbd className="text-[9px] font-mono px-1 rounded bg-stone-200 text-stone-700 uppercase mb-1 font-semibold">

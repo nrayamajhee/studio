@@ -99,7 +99,7 @@ export const PianoKey: React.FC<PianoKeyProps> = ({
           )}
           {showLabel && (
             <span
-              className={cn(isC ? "font-bold text-primary" : "text-stone-700")}
+              className={cn(isC ? "font-bold text-stone-900" : "text-stone-700")}
             >
               {note}
             </span>
@@ -172,7 +172,7 @@ export const PianoKey: React.FC<PianoKeyProps> = ({
           className={cn(
             "text-[11px] font-mono font-medium",
             isC
-              ? "font-bold text-primary px-1.5 py-0.5 rounded bg-primary/10 border border-primary/30"
+              ? "font-bold text-stone-900 dark:text-stone-100 px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 border border-stone-300 dark:border-stone-700"
               : "text-stone-500",
           )}
         >
