@@ -74,13 +74,33 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
         return new Set(initialActiveNotes);
       }
       return new Set([
+        "C3-0",
         "C4-0",
+        "E4-0",
+        "G4-0",
+        "C4-2",
         "E4-2",
-        "G4-4",
-        "B4-6",
-        "C5-8",
-        "G4-10",
-        "E4-12",
+        "G4-2",
+        "G2-4",
+        "G3-4",
+        "B3-4",
+        "D4-4",
+        "G3-6",
+        "B3-6",
+        "D4-6",
+        "A2-8",
+        "A3-8",
+        "C4-8",
+        "E4-8",
+        "A3-10",
+        "C4-10",
+        "E4-10",
+        "F2-12",
+        "F3-12",
+        "A3-12",
+        "C4-12",
+        "F3-14",
+        "A3-14",
         "C4-14",
       ]);
     },
@@ -211,13 +231,21 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   const loadPattern = (presetId: string) => {
     const pattern = PATTERN_PRESETS.find((p) => p.id === presetId);
     if (!pattern) return;
+
+    const rootIndex = ROOT_KEYS.indexOf(rootKey as (typeof ROOT_KEYS)[number]);
+    const semitoneOffset = rootIndex !== -1 ? rootIndex : 0;
+
     const next = new Set<string>();
     for (const item of pattern.notes) {
       const lastDash = item.lastIndexOf("-");
       if (lastDash === -1) continue;
+      let noteName = item.slice(0, lastDash);
       const step = parseInt(item.slice(lastDash + 1), 10);
       if (step < totalSteps) {
-        next.add(item);
+        if (pattern.category === "chord" && semitoneOffset !== 0) {
+          noteName = transposeNote(noteName, semitoneOffset);
+        }
+        next.add(`${noteName}-${step}`);
       }
     }
     updateNotes(next);
@@ -303,7 +331,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
         <div className="flex items-center gap-1 flex-shrink-0">
           <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Pattern:
+            Presets:
           </span>
           <Dropdown
             size="xs"
@@ -316,7 +344,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
               value: p.id,
               label: p.name,
             }))}
-            className="w-36"
+            className="w-48 sm:w-52"
           />
         </div>
 
