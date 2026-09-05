@@ -24,7 +24,7 @@ export const dropdownVariants = cva(
       },
     },
     defaultVariants: {
-      tone: "accent",
+      tone: "primary",
       size: "sm",
     },
   },
@@ -64,7 +64,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   value,
   defaultValue,
   onChange,
-  tone = "accent",
+  tone = "primary",
   size = "sm",
   id: customId,
   disabled,
@@ -114,7 +114,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
       {label && (
         <label
           htmlFor={id}
-          className="text-[10px] font-medium text-[#858b9c] dark:text-[#858b9c] mb-1 truncate block"
+          className="text-[10px] font-medium text-stone-700 dark:text-stone-300 mb-1 truncate block"
         >
           {label}
         </label>
@@ -151,13 +151,13 @@ export const Dropdown: React.FC<DropdownProps> = ({
             side={side}
             sideOffset={sideOffset}
             className={cn(
-              "z-50 min-w-[var(--radix-popover-trigger-width)] max-h-56 overflow-y-auto rounded-lg p-1 text-xs shadow-2xl backdrop-blur-md outline-none",
+              "z-50 min-w-[var(--radix-popover-trigger-width)] max-h-56 overflow-y-auto rounded-lg p-1 text-xs shadow-xl backdrop-blur-md outline-none",
               tone === "accent" &&
                 "bg-[#0a0d14]/95 border border-[#232a3b] text-stone-200",
               tone === "primary" &&
-                "bg-surface/95 dark:bg-stone-900/95 border border-stone-300 dark:border-stone-700 text-font dark:text-stone-100",
+                "bg-white/95 dark:bg-stone-900/95 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100",
               tone === "secondary" &&
-                "bg-stone-100/95 dark:bg-stone-800/95 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100",
+                "bg-stone-50/95 dark:bg-stone-800/95 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100",
               contentClassName,
             )}
           >
@@ -174,13 +174,22 @@ export const Dropdown: React.FC<DropdownProps> = ({
                     className={cn(
                       "w-full flex items-center justify-between px-2 py-1 rounded text-[11px] font-mono transition-colors text-left select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed",
                       isSelected
-                        ? "bg-[#d4a359] text-stone-950 font-bold shadow-sm"
-                        : "text-stone-300 hover:bg-[#181f2c] hover:text-white",
+                        ? tone === "accent"
+                          ? "bg-[#d4a359] text-stone-950 font-bold shadow-sm"
+                          : "bg-primary text-white font-bold shadow-sm"
+                        : tone === "accent"
+                          ? "text-stone-300 hover:bg-[#181f2c] hover:text-white"
+                          : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-white",
                     )}
                   >
                     <span className="truncate">{opt.label}</span>
                     {isSelected && (
-                      <Check className="w-3 h-3 flex-shrink-0 ml-1.5 text-stone-950" />
+                      <Check
+                        className={cn(
+                          "w-3 h-3 flex-shrink-0 ml-1.5",
+                          tone === "accent" ? "text-stone-950" : "text-white",
+                        )}
+                      />
                     )}
                   </button>
                 );

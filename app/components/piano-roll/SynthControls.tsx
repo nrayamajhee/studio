@@ -132,6 +132,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
           <div className="space-y-1.5 flex-1 flex flex-col justify-between">
             <Dropdown
+              tone="accent"
               label="Exciter Mode"
               value={params.exciterMode}
               onChange={(val) => handleParamChange("exciterMode", val as never)}
@@ -145,6 +146,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Exciter Amount"
               valueDisplay={`${Math.round(params.exciterVol * 100)}%`}
               min={0}
@@ -155,6 +157,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Impulse Tone"
               valueDisplay={`${Math.round(params.exciterFreq)} Hz`}
               min={30}
@@ -165,6 +168,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Impulse Decay"
               valueDisplay={`${params.exciterDecay.toFixed(3)} s`}
               min={0.005}
@@ -187,6 +191,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
           <div className="space-y-1.5 flex-1 flex flex-col justify-between">
             <Dropdown
+              tone="accent"
               label="Osc 1 Waveform"
               value={params.osc1Wave}
               onChange={(val) =>
@@ -201,6 +206,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Dropdown
+              tone="accent"
               label="Osc 2 Waveform"
               value={params.osc2Wave}
               onChange={(val) =>
@@ -216,6 +222,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Osc 2 Detune"
               valueDisplay={`${params.detune.toFixed(1)} cents`}
               min={0}
@@ -226,6 +233,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Dropdown
+              tone="accent"
               label="Osc 2 Octave"
               value={params.osc2Oct}
               onChange={(val) =>
@@ -251,6 +259,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
           <div className="space-y-1.5 flex-1 flex flex-col justify-between">
             <Dropdown
+              tone="accent"
               label="Filter Mode"
               value={params.filterType}
               onChange={(val) =>
@@ -265,6 +274,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Base Cutoff"
               valueDisplay={`${Math.round(params.cutoff)} Hz`}
               min={80}
@@ -275,6 +285,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Env Sweep Peak"
               valueDisplay={`${Math.round(params.envMod)} Hz`}
               min={0}
@@ -285,6 +296,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Keytracking"
               valueDisplay={`${Math.round(params.keytrack * 100)}%`}
               min={-1}
@@ -307,6 +319,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
           <div className="space-y-1.5 flex-1 flex flex-col justify-between">
             <Dropdown
+              tone="accent"
               label="LFO Destination"
               value={params.lfoDest}
               onChange={(val) => handleParamChange("lfoDest", val as never)}
@@ -318,6 +331,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="LFO Rate"
               valueDisplay={`${params.lfoRate.toFixed(1)} Hz`}
               min={0.1}
@@ -328,6 +342,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="LFO Depth"
               valueDisplay={`${params.lfoDepth.toFixed(1)}`}
               min={0}
@@ -338,6 +353,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Waveguide Feedback"
               valueDisplay={`${Math.round(params.ksFeed * 100)}%`}
               min={0}
@@ -360,6 +376,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
           <div className="space-y-1.5 flex-1 flex flex-col justify-between">
             <Slider
+              tone="accent"
               label="Attack"
               valueDisplay={`${params.attack.toFixed(3)} s`}
               min={0.001}
@@ -370,6 +387,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Decay"
               valueDisplay={`${params.decay.toFixed(1)} s`}
               min={0.05}
@@ -380,6 +398,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Sustain"
               valueDisplay={`${params.sustain.toFixed(2)}`}
               min={0}
@@ -390,6 +409,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Release"
               valueDisplay={`${params.release.toFixed(2)} s`}
               min={0.02}
@@ -412,6 +432,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
           <div className="space-y-1.5 flex-1 flex flex-col justify-between">
             <Slider
+              tone="accent"
               label="Soundboard EQ"
               valueDisplay={`${params.lowEq >= 0 ? `+${params.lowEq.toFixed(1)}` : params.lowEq.toFixed(1)} dB`}
               min={-12}
@@ -422,6 +443,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Tube Drive"
               valueDisplay={`${Math.round(params.drive * 100)}%`}
               min={0}
@@ -432,6 +454,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Reverb Ambience"
               valueDisplay={`${Math.round(params.reverb * 100)}%`}
               min={0}
@@ -442,6 +465,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
+              tone="accent"
               label="Master Output"
               valueDisplay={`${Math.round(params.masterVol * 100)}%`}
               min={0}

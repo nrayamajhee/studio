@@ -21,7 +21,7 @@ export const sliderVariants = cva(
       },
     },
     defaultVariants: {
-      tone: "accent",
+      tone: "primary",
       size: "sm",
     },
   },
@@ -54,7 +54,7 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
       value,
       defaultValue,
       onChange,
-      tone = "accent",
+      tone = "primary",
       size = "sm",
       id: customId,
       showFill = true,
@@ -87,8 +87,8 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
       secondary: "#71717a",
     };
 
-    const fillColor = toneFillColors[tone || "accent"];
-    const trackColor = "#232a3b";
+    const fillColor = toneFillColors[tone || "primary"];
+    const trackColor = tone === "accent" ? "#232a3b" : "#e2e8f0";
 
     const fillStyle: React.CSSProperties = showFill
       ? {
@@ -113,7 +113,7 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
             {label && (
               <label
                 htmlFor={id}
-                className="font-medium text-[#858b9c] dark:text-[#858b9c] truncate"
+                className="font-medium text-stone-700 dark:text-[#858b9c] truncate"
               >
                 {label}
               </label>

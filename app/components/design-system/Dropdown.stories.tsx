@@ -46,6 +46,23 @@ type Story = StoryObj<typeof Dropdown>;
 
 export const Default: Story = {
   args: {
+    label: "Waveform Option",
+    options: sampleOptions,
+    defaultValue: "triangle",
+    tone: "primary",
+    size: "sm",
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-64">
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const AccentTone: Story = {
+  args: {
     label: "Osc 1 Waveform",
     options: sampleOptions,
     defaultValue: "triangle",
@@ -61,37 +78,16 @@ export const Default: Story = {
   ],
 };
 
-export const PrimaryTone: Story = {
-  args: {
-    label: "Filter Type",
-    options: [
-      { value: "lowpass", label: "Lowpass (24dB)" },
-      { value: "bandpass", label: "Bandpass (12dB)" },
-      { value: "highpass", label: "Highpass (12dB)" },
-    ],
-    defaultValue: "lowpass",
-    tone: "primary",
-    size: "md",
-  },
-  decorators: [
-    (Story) => (
-      <div className="w-64 p-4 bg-surface-light dark:bg-[#0a0c10] rounded-xl border border-stone-300 dark:border-stone-800">
-        <Story />
-      </div>
-    ),
-  ],
-};
-
 export const Disabled: Story = {
   args: {
-    label: "Osc 2 Waveform",
+    label: "Disabled Dropdown",
     options: sampleOptions,
     defaultValue: "sine",
     disabled: true,
   },
   decorators: [
     (Story) => (
-      <div className="w-64 p-4 bg-[#0a0c10] rounded-xl border border-stone-800">
+      <div className="w-64">
         <Story />
       </div>
     ),

@@ -51,6 +51,26 @@ type Story = StoryObj<typeof Slider>;
 
 export const Default: Story = {
   args: {
+    label: "Volume",
+    valueDisplay: "75%",
+    min: 0,
+    max: 100,
+    step: 1,
+    defaultValue: 75,
+    tone: "primary",
+    size: "sm",
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-64">
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const AccentTone: Story = {
+  args: {
     label: "Cutoff Frequency",
     valueDisplay: "900 Hz",
     min: 80,
@@ -69,35 +89,16 @@ export const Default: Story = {
   ],
 };
 
-export const PrimaryTone: Story = {
-  args: {
-    label: "Exciter Amount",
-    valueDisplay: "75%",
-    min: 0,
-    max: 100,
-    defaultValue: 75,
-    tone: "primary",
-    size: "md",
-  },
-  decorators: [
-    (Story) => (
-      <div className="w-64 p-4 bg-surface-light dark:bg-[#0a0c10] rounded-xl border border-stone-300 dark:border-stone-800">
-        <Story />
-      </div>
-    ),
-  ],
-};
-
 export const Disabled: Story = {
   args: {
-    label: "Tube Drive",
+    label: "Disabled Slider",
     valueDisplay: "0%",
     defaultValue: 0,
     disabled: true,
   },
   decorators: [
     (Story) => (
-      <div className="w-64 p-4 bg-[#0a0c10] rounded-xl border border-stone-800">
+      <div className="w-64">
         <Story />
       </div>
     ),
