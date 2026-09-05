@@ -348,7 +348,7 @@ export default function Mixer() {
 
             <Button
               variant="solid"
-              tone={isLooping ? "accent" : "secondary"}
+              tone={isLooping ? "primary" : "secondary"}
               size="sm"
               iconOnly
               onClick={() => setIsLooping((prev) => !prev)}
@@ -357,7 +357,7 @@ export default function Mixer() {
               className={cn(
                 "p-1.5 h-auto rounded",
                 isLooping
-                  ? "bg-[#d4a359] text-stone-950 ring-1 ring-[#f1c784]"
+                  ? "bg-primary text-white ring-1 ring-primary-light shadow-sm"
                   : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
               )}
             >
@@ -384,7 +384,7 @@ export default function Mixer() {
 
             <Button
               variant="solid"
-              tone={isMetronomeOn ? "accent" : "secondary"}
+              tone={isMetronomeOn ? "primary" : "secondary"}
               size="sm"
               iconOnly
               onClick={handleMetronomeToggle}
@@ -393,7 +393,7 @@ export default function Mixer() {
               className={cn(
                 "p-1.5 h-auto rounded",
                 isMetronomeOn
-                  ? "bg-[#d4a359] text-stone-950 ring-1 ring-[#f1c784]"
+                  ? "bg-primary text-white ring-1 ring-primary-light shadow-sm"
                   : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
               )}
             >
@@ -551,7 +551,7 @@ export default function Mixer() {
 
       <footer className="flex-1 min-h-0 w-full flex flex-col md:flex-row gap-2.5 p-2.5 bg-stone-100/60 dark:bg-[#06080c] overflow-hidden flex-shrink-0">
         {!isInstrumentsCollapsed && (
-          <div className="w-full md:w-28 lg:w-32 xl:w-36 h-full min-h-0 flex-shrink-0 overflow-hidden">
+          <div className="w-full md:w-16 lg:w-18 h-full min-h-0 flex-shrink-0 overflow-hidden">
             <PresetSelector
               selectedPreset={selectedPreset}
               onPresetChange={setSelectedPreset}
@@ -572,7 +572,7 @@ export default function Mixer() {
                   aria-label="Expand instruments panel"
                   className="self-center h-8 px-2.5 sm:px-3 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white text-xs font-mono font-medium rounded-lg flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
                 >
-                  <PanelLeftOpen className="w-3.5 h-3.5 text-amber-700 dark:text-[#d4a359]" />
+                  <PanelLeftOpen className="w-3.5 h-3.5 text-primary dark:text-primary-light" />
                   <span className="text-[11px]">Instruments</span>
                 </button>
               ) : undefined
@@ -587,7 +587,7 @@ export default function Mixer() {
                   className="self-center h-8 px-2.5 sm:px-3 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white text-xs font-mono font-medium rounded-lg flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
                 >
                   <span className="text-[11px]">Player</span>
-                  <PanelRightOpen className="w-3.5 h-3.5 text-amber-700 dark:text-[#d4a359]" />
+                  <PanelRightOpen className="w-3.5 h-3.5 text-primary dark:text-primary-light" />
                 </button>
               ) : undefined
             }
@@ -598,15 +598,15 @@ export default function Mixer() {
           <div className="w-full md:w-[330px] lg:w-[380px] xl:w-[420px] h-full min-h-0 flex-shrink-0 flex flex-col gap-1 overflow-hidden">
             <div className="flex items-center justify-between px-1 flex-shrink-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-                  Player View
+                <span className="text-xs font-mono font-bold tracking-wider text-stone-700 dark:text-stone-300">
+                  PLAYER
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsPlayerCollapsed(true)}
                   title="Collapse player panel"
                   aria-label="Collapse player panel"
-                  className="p-0.5 rounded text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-[#d4a359] hover:bg-stone-200/60 dark:hover:bg-[#161c28] transition-colors cursor-pointer"
+                  className="p-0.5 rounded text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-primary-light hover:bg-stone-200/60 dark:hover:bg-[#161c28] transition-colors cursor-pointer"
                 >
                   <PanelRightClose className="w-3.5 h-3.5" />
                 </button>
@@ -614,14 +614,14 @@ export default function Mixer() {
               <div className="flex items-center gap-1 bg-stone-200/80 dark:bg-[#0a0c10] p-0.5 rounded-lg border border-stone-300 dark:border-[#1f2533]">
                 <Button
                   variant="solid"
-                  tone={playerView === "keys" ? "accent" : "secondary"}
+                  tone={playerView === "keys" ? "primary" : "secondary"}
                   size="sm"
                   onClick={() => setPlayerView("keys")}
                   aria-label="Piano keyboard view"
                   className={cn(
                     "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
                     playerView === "keys"
-                      ? "bg-[#d4a359] text-stone-950 font-bold border border-[#f1c784]"
+                      ? "bg-primary text-white font-bold border border-primary-light shadow-sm"
                       : "bg-transparent text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white border border-transparent",
                   )}
                 >
@@ -630,14 +630,14 @@ export default function Mixer() {
                 </Button>
                 <Button
                   variant="solid"
-                  tone={playerView === "drums" ? "accent" : "secondary"}
+                  tone={playerView === "drums" ? "primary" : "secondary"}
                   size="sm"
                   onClick={() => setPlayerView("drums")}
                   aria-label="Drum pad view"
                   className={cn(
                     "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
                     playerView === "drums"
-                      ? "bg-[#d4a359] text-stone-950 font-bold border border-[#f1c784]"
+                      ? "bg-primary text-white font-bold border border-primary-light shadow-sm"
                       : "bg-transparent text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white border border-transparent",
                   )}
                 >

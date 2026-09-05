@@ -47,7 +47,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
       // Baseline glowing amber wire
       ctx.lineWidth = 1;
-      ctx.strokeStyle = isDark ? "#251d12" : "#334155";
+      ctx.strokeStyle = isDark ? "#1e293b" : "#e2e8f0";
       ctx.beginPath();
       ctx.moveTo(0, height / 2);
       ctx.lineTo(width, height / 2);
@@ -59,8 +59,10 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         analyser.getByteTimeDomainData(dataArray);
 
         ctx.lineWidth = 2.5;
-        ctx.strokeStyle = "#d4a359";
-        ctx.shadowColor = "rgba(212, 163, 89, 0.65)";
+        ctx.strokeStyle = isDark ? "#60a5fa" : "#2554d7";
+        ctx.shadowColor = isDark
+          ? "rgba(96, 165, 250, 0.65)"
+          : "rgba(37, 84, 215, 0.5)";
         ctx.shadowBlur = 8;
         ctx.beginPath();
 
@@ -134,13 +136,13 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           elevation="low"
           className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase mb-1 block">
             1. Exciter / Click
           </span>
 
           <div className="space-y-1.5 flex-1 flex flex-col justify-between">
             <Dropdown
-              tone="accent"
+              tone="primary"
               label="Exciter Mode"
               value={params.exciterMode}
               onChange={(val) => handleParamChange("exciterMode", val as never)}
@@ -154,7 +156,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Exciter Amount"
               valueDisplay={`${Math.round(params.exciterVol * 100)}%`}
               min={0}
@@ -165,7 +167,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Impulse Tone"
               valueDisplay={`${Math.round(params.exciterFreq)} Hz`}
               min={30}
@@ -176,7 +178,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Impulse Decay"
               valueDisplay={`${params.exciterDecay.toFixed(3)} s`}
               min={0.005}
@@ -193,13 +195,13 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           elevation="low"
           className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase mb-1 block">
             2. Tone Core
           </span>
 
           <div className="space-y-1.5 flex-1 flex flex-col justify-between">
             <Dropdown
-              tone="accent"
+              tone="primary"
               label="Osc 1 Waveform"
               value={params.osc1Wave}
               onChange={(val) =>
@@ -214,7 +216,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Dropdown
-              tone="accent"
+              tone="primary"
               label="Osc 2 Waveform"
               value={params.osc2Wave}
               onChange={(val) =>
@@ -230,7 +232,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Osc 2 Detune"
               valueDisplay={`${params.detune.toFixed(1)} cents`}
               min={0}
@@ -241,7 +243,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Dropdown
-              tone="accent"
+              tone="primary"
               label="Osc 2 Octave"
               value={params.osc2Oct}
               onChange={(val) =>
@@ -261,13 +263,13 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           elevation="low"
           className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase mb-1 block">
             3. Filter Matrix
           </span>
 
           <div className="space-y-1.5 flex-1 flex flex-col justify-between">
             <Dropdown
-              tone="accent"
+              tone="primary"
               label="Filter Mode"
               value={params.filterType}
               onChange={(val) =>
@@ -282,7 +284,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Base Cutoff"
               valueDisplay={`${Math.round(params.cutoff)} Hz`}
               min={80}
@@ -293,7 +295,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Env Sweep Peak"
               valueDisplay={`${Math.round(params.envMod)} Hz`}
               min={0}
@@ -304,7 +306,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Keytracking"
               valueDisplay={`${Math.round(params.keytrack * 100)}%`}
               min={-1}
@@ -321,13 +323,13 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           elevation="low"
           className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase mb-1 block">
             4. LFO & Mod
           </span>
 
           <div className="space-y-1.5 flex-1 flex flex-col justify-between">
             <Dropdown
-              tone="accent"
+              tone="primary"
               label="LFO Destination"
               value={params.lfoDest}
               onChange={(val) => handleParamChange("lfoDest", val as never)}
@@ -339,7 +341,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="LFO Rate"
               valueDisplay={`${params.lfoRate.toFixed(1)} Hz`}
               min={0.1}
@@ -350,7 +352,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="LFO Depth"
               valueDisplay={`${params.lfoDepth.toFixed(1)}`}
               min={0}
@@ -361,7 +363,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Waveguide Feedback"
               valueDisplay={`${Math.round(params.ksFeed * 100)}%`}
               min={0}
@@ -378,13 +380,13 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           elevation="low"
           className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase mb-1 block">
             5. Amplitude ADSR
           </span>
 
           <div className="space-y-1.5 flex-1 flex flex-col justify-between">
             <Slider
-              tone="accent"
+              tone="primary"
               label="Attack"
               valueDisplay={`${params.attack.toFixed(3)} s`}
               min={0.001}
@@ -395,7 +397,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Decay"
               valueDisplay={`${params.decay.toFixed(1)} s`}
               min={0.05}
@@ -406,7 +408,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Sustain"
               valueDisplay={`${params.sustain.toFixed(2)}`}
               min={0}
@@ -417,7 +419,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Release"
               valueDisplay={`${params.release.toFixed(2)} s`}
               min={0.02}
@@ -434,13 +436,13 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           elevation="low"
           className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
         >
-          <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase mb-1 block">
+          <span className="text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase mb-1 block">
             6. Body & Space
           </span>
 
           <div className="space-y-1.5 flex-1 flex flex-col justify-between">
             <Slider
-              tone="accent"
+              tone="primary"
               label="Soundboard EQ"
               valueDisplay={`${params.lowEq >= 0 ? `+${params.lowEq.toFixed(1)}` : params.lowEq.toFixed(1)} dB`}
               min={-12}
@@ -451,7 +453,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Tube Drive"
               valueDisplay={`${Math.round(params.drive * 100)}%`}
               min={0}
@@ -462,7 +464,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Reverb Ambience"
               valueDisplay={`${Math.round(params.reverb * 100)}%`}
               min={0}
@@ -473,7 +475,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
             />
 
             <Slider
-              tone="accent"
+              tone="primary"
               label="Master Output"
               valueDisplay={`${Math.round(params.masterVol * 100)}%`}
               min={0}

@@ -290,13 +290,13 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             <Button
               key={steps}
               variant="solid"
-              tone={totalSteps === steps ? "accent" : "secondary"}
+              tone={totalSteps === steps ? "primary" : "secondary"}
               size="sm"
               onClick={() => setTotalSteps(steps)}
               className={cn(
                 "px-2 py-0.5 h-6 text-[10px] font-mono rounded border transition-colors",
                 totalSteps === steps
-                  ? "bg-[#d4a359] text-stone-950 border-[#f1c784] font-bold"
+                  ? "bg-primary text-white border-primary-light font-bold shadow-sm ring-1 ring-primary/40"
                   : "bg-[#12151c] text-stone-300 border-[#1f2533] hover:text-white",
               )}
             >
@@ -413,7 +413,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             size="sm"
             onClick={randomizeNotes}
             title="Randomize in-key notes"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-[#d4a359]"
+            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-primary-light"
           >
             <Shuffle className="w-3 h-3" />
             Rnd
@@ -450,7 +450,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             size="sm"
             onClick={() => scrollToOctave(4)}
             title="Jump to C4 (Piano/Mid)"
-            className="px-1.5 py-0.5 h-6 text-[10px] font-mono rounded bg-[#12151c] text-[#d4a359] border border-[#1f2533] hover:text-white"
+            className="px-1.5 py-0.5 h-6 text-[10px] font-mono rounded bg-[#12151c] text-primary dark:text-primary-light border border-[#1f2533] hover:text-white"
           >
             C4
           </Button>
@@ -499,7 +499,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
               <span className="text-[10px] font-mono font-bold text-stone-400">
                 PITCH
               </span>
-              <span className="text-[10px] font-mono font-bold text-[#d4a359]">
+              <span className="text-[10px] font-mono font-bold text-primary dark:text-primary-light">
                 {rootKey} {scale !== "chromatic" ? scale : ""}
               </span>
             </div>
@@ -594,12 +594,12 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                               isC &&
                                 "border-b-2 border-b-primary/60 dark:border-b-primary/60 font-bold",
                               (hasActiveNote || isPressed) &&
-                                "!bg-[#f1c784] dark:!bg-[#f1c784] ring-2 ring-[#d4a359] ring-inset !from-[#f1c784] !to-[#f1c784] dark:!from-[#f1c784] dark:!to-[#f1c784]",
+                                "!bg-blue-100 dark:!bg-blue-950/80 ring-2 ring-primary ring-inset !from-blue-100 !to-blue-200 dark:!from-blue-950/80 dark:!to-blue-900/80 !text-primary dark:!text-blue-200 font-bold",
                             )}
                           >
                             <span className="flex items-center gap-1.5">
                               {inKey && scale !== "chromatic" && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#d4a359]" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                               )}
                               {hasActiveNote && (
                                 <span className="w-1.5 h-1.5 rounded-full bg-primary" />
@@ -647,7 +647,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                             "absolute left-0 z-20 w-20 sm:w-24 px-2.5 text-xs font-mono rounded-none rounded-r border-0 border-y border-r border-stone-700 cursor-pointer select-none transition-all justify-between active:translate-y-0",
                             "!bg-gradient-to-r !from-stone-800 !via-stone-900 !to-black !text-stone-200 shadow-md shadow-black/80 hover:brightness-125 active:brightness-90",
                             (hasActiveNote || isPressed) &&
-                              "!from-[#d4a359] !to-[#b5873e] !text-stone-950 !shadow-[#d4a359]/50 ring-1 ring-[#f1c784]",
+                              "!from-primary-dark !to-primary !text-white !shadow-primary/50 ring-1 ring-primary-light",
                           )}
                         >
                           <span className="text-[10px] font-medium opacity-90">
@@ -655,7 +655,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                           </span>
                           <span className="flex items-center gap-1">
                             {inKey && scale !== "chromatic" && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#d4a359]" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary-light" />
                             )}
                             <span
                               className={cn(
@@ -692,7 +692,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                       note.isC &&
                         "border-b-2 border-b-primary/40 dark:border-b-primary/40",
                       inKey && scale !== "chromatic"
-                        ? "bg-[#d4a359]/[0.03] dark:bg-[#d4a359]/[0.05]"
+                        ? "bg-primary/[0.04] dark:bg-primary/[0.06]"
                         : scale !== "chromatic"
                           ? "opacity-60 dark:opacity-50"
                           : "",

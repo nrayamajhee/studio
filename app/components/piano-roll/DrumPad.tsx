@@ -332,7 +332,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
 
   const getPadColorClasses = (pad: PadConfig, isActive: boolean) => {
     if (isActive) {
-      return "bg-[#f1c784] text-stone-950 border-[#f1c784] ring-2 ring-[#d4a359] shadow-lg shadow-[#d4a359]/50 translate-y-0.5";
+      return "bg-primary text-white border-primary-light ring-2 ring-primary-light shadow-lg shadow-primary/40 translate-y-0.5";
     }
 
     switch (pad.colorTone) {
@@ -350,7 +350,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
         return "bg-sky-50 dark:bg-[#0d141a] text-sky-950 dark:text-sky-200 border-sky-200 dark:border-sky-900/40 hover:bg-sky-100 dark:hover:bg-sky-950/50 hover:border-sky-300 dark:hover:border-sky-700/60";
       case "amber":
       default:
-        return "bg-amber-50 dark:bg-[#15130d] text-amber-950 dark:text-[#e4be78] border-amber-200 dark:border-[#382d19] hover:bg-amber-100 dark:hover:bg-[#201c13] hover:border-amber-300 dark:hover:border-[#d4a359]/60";
+        return "bg-amber-50 dark:bg-[#15130d] text-amber-950 dark:text-[#e4be78] border-amber-200 dark:border-[#382d19] hover:bg-amber-100 dark:hover:bg-[#201c13] hover:border-amber-300 dark:hover:border-amber-500/60";
     }
   };
 
@@ -364,8 +364,8 @@ export const DrumPad: React.FC<DrumPadProps> = ({
     >
       <div className="flex items-center justify-between pb-1 border-b border-stone-200 dark:border-[#1f2533] flex-shrink-0">
         <div className="flex items-center gap-1.5">
-          <span className="flex items-center gap-1 text-[11px] font-bold tracking-wider text-amber-700 dark:text-[#d4a359] uppercase">
-            <Layers className="w-3.5 h-3.5 text-amber-700 dark:text-[#d4a359]" />
+          <span className="flex items-center gap-1 text-[11px] font-bold tracking-wider text-primary dark:text-primary-light uppercase">
+            <Layers className="w-3.5 h-3.5 text-primary dark:text-primary-light" />
             {isDrumKit ? "MPC Drum Kit" : "Pad Matrix"}
           </span>
           <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-100 dark:bg-[#161a24] text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-[#232a3b]">
@@ -384,7 +384,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
           <div className="flex items-center gap-1">
             <Button
               variant="solid"
-              tone="secondary"
+              tone={bank === 0 ? "primary" : "secondary"}
               size="sm"
               onClick={() => setBank(0)}
               disabled={bank === 0}
@@ -392,7 +392,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
               className={cn(
                 "px-2 py-0.5 h-6 text-[10px] rounded border transition-colors",
                 bank === 0
-                  ? "bg-[#d4a359] text-stone-950 border-[#f1c784] font-bold"
+                  ? "bg-primary text-white border-primary-light font-bold shadow-sm"
                   : "bg-stone-100 hover:bg-stone-200 dark:bg-[#161a24] dark:hover:bg-[#232a3b] border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300",
               )}
             >
@@ -400,7 +400,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
             </Button>
             <Button
               variant="solid"
-              tone="secondary"
+              tone={bank === 1 ? "primary" : "secondary"}
               size="sm"
               onClick={() => setBank(1)}
               disabled={bank === 1}
@@ -408,7 +408,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
               className={cn(
                 "px-2 py-0.5 h-6 text-[10px] rounded border transition-colors",
                 bank === 1
-                  ? "bg-[#d4a359] text-stone-950 border-[#f1c784] font-bold"
+                  ? "bg-primary text-white border-primary-light font-bold shadow-sm"
                   : "bg-stone-100 hover:bg-stone-200 dark:bg-[#161a24] dark:hover:bg-[#232a3b] border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300",
               )}
             >
@@ -495,7 +495,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
         <span className="truncate">
           Keys: <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">1-4</kbd> <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">Q-R</kbd> <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">A-F</kbd> <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">Z-V</kbd>
         </span>
-        <span className="text-[9px] text-amber-700 dark:text-[#d4a359] font-mono font-medium">
+        <span className="text-[9px] text-primary dark:text-primary-light font-mono font-medium">
           4x4 Dynamic
         </span>
       </div>
