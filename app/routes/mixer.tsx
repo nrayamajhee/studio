@@ -437,7 +437,7 @@ export default function Mixer() {
       </main>
 
       <footer className="flex-1 min-h-0 w-full flex flex-col md:flex-row gap-2.5 p-2.5 bg-stone-100/60 dark:bg-[#06080c] overflow-hidden flex-shrink-0">
-        <div className="w-full md:w-44 lg:w-48 xl:w-52 h-full min-h-0 flex-shrink-0 overflow-hidden">
+        <div className="w-full md:w-28 lg:w-32 xl:w-36 h-full min-h-0 flex-shrink-0 overflow-hidden">
           <PresetSelector
             selectedPreset={selectedPreset}
             onPresetChange={setSelectedPreset}

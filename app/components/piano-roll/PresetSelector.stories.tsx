@@ -13,29 +13,13 @@ const meta: Meta<typeof PresetSelector> = {
       control: "select",
       options: [
         "grand_piano",
-        "electronic_pino",
-        "rhodes_piano",
-        "lofi_keys",
-        "organ",
-        "drum_set",
-        "drum_808",
-        "trap_kit",
-        "electronic_drums",
-        "acoustic_percussion",
-        "vintage_synth",
-        "acid_bass",
-        "pluck_synth",
-        "electric_guitar",
         "acoustic_guitar",
-        "classical_guitar",
-        "ukelele",
         "base_guitar",
-        "strings_ensemble",
-        "marimba",
+        "drum_set",
         "flute",
         "saxophone",
       ],
-      description: "Active preset identifier",
+      description: "Active instrument preset identifier",
     },
   },
 };
@@ -49,33 +33,33 @@ export const Default: Story = {
   },
   decorators: [
     (Story) => (
-      <div className="w-56 h-[400px]">
+      <div className="w-36 h-[260px]">
         <Story />
       </div>
     ),
   ],
 };
 
-export const TrapKitSelected: Story = {
+export const GuitarSelected: Story = {
   args: {
-    selectedPreset: "trap_kit",
+    selectedPreset: "acoustic_guitar",
   },
   decorators: [
     (Story) => (
-      <div className="w-56 h-[400px]">
+      <div className="w-36 h-[260px]">
         <Story />
       </div>
     ),
   ],
 };
 
-export const VintageSynthSelected: Story = {
+export const DrumsSelected: Story = {
   args: {
-    selectedPreset: "vintage_synth",
+    selectedPreset: "drum_set",
   },
   decorators: [
     (Story) => (
-      <div className="w-56 h-[400px]">
+      <div className="w-36 h-[260px]">
         <Story />
       </div>
     ),

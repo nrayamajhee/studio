@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { synth, SYNTH_PRESETS } from "../../lib/synth";
+import React from "react";
+import { synth } from "../../lib/synth";
 import { Button } from "../design-system/Button";
 import { Card } from "../design-system/Card";
 import { cn } from "../../lib/utils";
@@ -8,15 +8,8 @@ import {
   Guitar,
   Zap,
   Drum,
-  Disc,
   Wind,
   Volume2,
-  Music,
-  Sparkles,
-  Radio,
-  Layers,
-  Activity,
-  Flame,
 } from "lucide-react";
 
 export interface PresetSelectorProps {
@@ -25,134 +18,48 @@ export interface PresetSelectorProps {
   onPresetChange?: (presetKey: string) => void;
 }
 
-export type PresetCategory = "all" | "keys" | "drums" | "synths" | "strings" | "acoustic";
-
-interface PresetMeta {
+interface InstrumentDef {
+  key: string;
   name: string;
-  category: PresetCategory;
+  aliases?: string[];
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const PRESET_METAS: Record<string, PresetMeta> = {
-  grand_piano: {
+const INSTRUMENTS: InstrumentDef[] = [
+  {
+    key: "grand_piano",
     name: "Grand Piano",
-    category: "keys",
+    aliases: ["piano"],
     icon: Piano,
   },
-  electronic_pino: {
-    name: "Electronic Piano",
-    category: "keys",
-    icon: Piano,
-  },
-  rhodes_piano: {
-    name: "Rhodes Electric Tines",
-    category: "keys",
-    icon: Sparkles,
-  },
-  lofi_keys: {
-    name: "Lo-Fi Wobbly Keys",
-    category: "keys",
-    icon: Radio,
-  },
-  organ: {
-    name: "Drawbar Organ",
-    category: "keys",
-    icon: Layers,
-  },
-  drum_set: {
-    name: "Drum Set",
-    category: "drums",
-    icon: Drum,
-  },
-  drum_808: {
-    name: "808 Drum",
-    category: "drums",
-    icon: Disc,
-  },
-  trap_kit: {
-    name: "Trap 808 & Hats",
-    category: "drums",
-    icon: Flame,
-  },
-  electronic_drums: {
-    name: "Electronic Drums",
-    category: "drums",
-    icon: Activity,
-  },
-  acoustic_percussion: {
-    name: "Acoustic Percussion",
-    category: "drums",
-    icon: Drum,
-  },
-  vintage_synth: {
-    name: "Vintage Poly Synth",
-    category: "synths",
-    icon: Sparkles,
-  },
-  acid_bass: {
-    name: "Acid 303 Bass",
-    category: "synths",
-    icon: Zap,
-  },
-  pluck_synth: {
-    name: "Digital Pluck",
-    category: "synths",
-    icon: Music,
-  },
-  electric_guitar: {
-    name: "Electric Guitar",
-    category: "strings",
+  {
+    key: "acoustic_guitar",
+    name: "Guitar",
+    aliases: ["guitar", "electric_guitar", "classical_guitar"],
     icon: Guitar,
   },
-  acoustic_guitar: {
-    name: "Acoustic Guitar",
-    category: "strings",
-    icon: Guitar,
-  },
-  classical_guitar: {
-    name: "Classical Guitar",
-    category: "strings",
-    icon: Music,
-  },
-  ukelele: {
-    name: "Ukulele",
-    category: "strings",
-    icon: Music,
-  },
-  base_guitar: {
-    name: "Bass Guitar",
-    category: "strings",
+  {
+    key: "base_guitar",
+    name: "Bass",
+    aliases: ["bass"],
     icon: Zap,
   },
-  strings_ensemble: {
-    name: "Strings Ensemble",
-    category: "acoustic",
-    icon: Layers,
+  {
+    key: "drum_set",
+    name: "Drums",
+    aliases: ["drums", "drum_808", "trap_kit", "electronic_drums", "acoustic_percussion"],
+    icon: Drum,
   },
-  marimba: {
-    name: "Marimba / Mallet",
-    category: "acoustic",
-    icon: Music,
-  },
-  flute: {
+  {
+    key: "flute",
     name: "Flute",
-    category: "acoustic",
     icon: Wind,
   },
-  saxophone: {
+  {
+    key: "saxophone",
     name: "Saxophone",
-    category: "acoustic",
     icon: Volume2,
   },
-};
-
-const CATEGORIES: { key: PresetCategory; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "keys", label: "Keys" },
-  { key: "drums", label: "Drums" },
-  { key: "synths", label: "Synths" },
-  { key: "strings", label: "Strings" },
-  { key: "acoustic", label: "Acoustic" },
 ];
 
 export const PresetSelector: React.FC<PresetSelectorProps> = ({
@@ -160,8 +67,6 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
   selectedPreset = "grand_piano",
   onPresetChange,
 }) => {
-  const [activeCategory, setActiveCategory] = useState<PresetCategory>("all");
-
   const handleSelect = (key: string) => {
     synth.loadPreset(key);
     synth.playNote("C4", undefined, 0.35);
@@ -170,80 +75,59 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
     }
   };
 
-  const filteredPresets = Object.entries(SYNTH_PRESETS).filter(([key]) => {
-    if (activeCategory === "all") return true;
-    const meta = PRESET_METAS[key];
-    return meta?.category === activeCategory;
-  });
-
   return (
     <Card
       elevation="mid"
       className={cn(
-        "flex flex-col h-full w-full bg-[#0a0c10] border border-[#1f2533] rounded-xl p-2 shadow-lg text-stone-200 select-none overflow-hidden",
+        "flex flex-col h-full w-full bg-[#07090e] border border-[#1f2533] rounded-xl p-1.5 shadow-lg text-stone-200 select-none overflow-hidden",
         className,
       )}
     >
-      <div className="flex items-center gap-1 pb-1.5 mb-1.5 border-b border-[#1f2533] overflow-x-auto flex-shrink-0 no-scrollbar">
-        {CATEGORIES.map((cat) => (
-          <Button
-            key={cat.key}
-            variant="solid"
-            tone={activeCategory === cat.key ? "accent" : "secondary"}
-            size="sm"
-            onClick={() => setActiveCategory(cat.key)}
-            className={cn(
-              "px-2 py-0.5 h-6 text-[10px] font-medium rounded-md whitespace-nowrap transition-colors border",
-              activeCategory === cat.key
-                ? "bg-[#d4a359] text-stone-950 border-[#f1c784] font-bold"
-                : "bg-[#12151c] text-stone-400 border-[#1f2533] hover:text-stone-200",
-            )}
-          >
-            {cat.label}
-          </Button>
-        ))}
+      <div className="flex items-center justify-between px-1 pb-1 mb-1 border-b border-[#1a202c] flex-shrink-0">
+        <span className="text-[9px] font-mono tracking-wider text-stone-500 uppercase font-bold">
+          Instruments
+        </span>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-0.5">
-        {filteredPresets.map(([key, preset]) => {
-          const meta = PRESET_METAS[key] || {
-            name: preset.name,
-            category: "keys",
-            icon: Piano,
-          };
-          const IconComp = meta.icon;
-          const isSelected = selectedPreset === key;
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-0.5 no-scrollbar">
+        {INSTRUMENTS.map((inst) => {
+          const IconComp = inst.icon;
+          const isSelected =
+            selectedPreset === inst.key ||
+            (inst.aliases && inst.aliases.includes(selectedPreset));
 
           return (
             <Button
-              key={key}
+              key={inst.key}
               variant="solid"
               tone={isSelected ? "accent" : "secondary"}
               size="sm"
               align="left"
               fullWidth
-              onClick={() => handleSelect(key)}
+              onClick={() => handleSelect(inst.key)}
               aria-pressed={isSelected}
               leadingIcon={
                 <div
                   className={cn(
-                    "p-1 rounded flex items-center justify-center flex-shrink-0",
+                    "p-0.5 rounded flex items-center justify-center flex-shrink-0",
                     isSelected
-                      ? "bg-black/15 text-stone-950"
-                      : "bg-stone-800/80 text-[#d4a359]",
+                      ? "text-stone-950"
+                      : "text-[#d4a359]",
                   )}
                 >
-                  <IconComp className="w-3.5 h-3.5 fill-current" />
+                  <IconComp className="w-3 h-3 fill-current" />
                 </div>
               }
-              title={meta.name}
+              title={inst.name}
               className={cn(
-                "w-full h-9 px-2.5 justify-start text-left rounded-lg transition-all border",
+                "w-full h-7 sm:h-8 px-2 justify-start text-left rounded-lg transition-all border text-[10px] sm:text-[11px]",
                 isSelected
-                  ? "bg-[#d4a359] text-stone-950 border-[#f1c784] shadow-md shadow-[#d4a359]/20 font-bold ring-1 ring-[#f1c784]"
-                  : "bg-[#12151c] text-stone-300 border-[#1f2533] hover:bg-[#1a202c] hover:text-white",
+                  ? "bg-[#d4a359] text-stone-950 border-[#f1c784] shadow-sm font-bold ring-1 ring-[#f1c784]"
+                  : "bg-[#0d1017] text-stone-300 border-[#1a202c] hover:bg-[#161c28] hover:text-white",
               )}
-            />
+            >
+              <span className="truncate">{inst.name}</span>
+            </Button>
           );
         })}
       </div>
