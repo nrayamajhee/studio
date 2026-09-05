@@ -23,7 +23,7 @@ import {
   Monitor,
   Trash2,
   OctagonAlert,
-  Timer,
+  Metronome,
   Volume1,
   Volume2,
   VolumeX,
@@ -260,7 +260,7 @@ export default function Mixer() {
             className="p-1.5 h-8 w-8 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-100 shadow-sm"
           >
             <Link to="/">
-              <Home className="w-4 h-4 fill-current" />
+              <Home className="w-4 h-4" />
             </Link>
           </Button>
 
@@ -275,7 +275,7 @@ export default function Mixer() {
               aria-label="Skip to first step"
               className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100"
             >
-              <SkipBack className="w-3.5 h-3.5 fill-current" />
+              <SkipBack className="w-3.5 h-3.5" />
             </Button>
 
             <Button
@@ -293,9 +293,9 @@ export default function Mixer() {
               )}
             >
               {isPlaying ? (
-                <Pause className="w-3.5 h-3.5 fill-current" />
+                <Pause className="w-3.5 h-3.5" />
               ) : (
-                <Play className="w-3.5 h-3.5 fill-current" />
+                <Play className="w-3.5 h-3.5" />
               )}
             </Button>
 
@@ -314,7 +314,7 @@ export default function Mixer() {
                   : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
               )}
             >
-              <Repeat className="w-3.5 h-3.5 fill-current" />
+              <Repeat className="w-3.5 h-3.5" />
             </Button>
 
             <Button
@@ -332,7 +332,7 @@ export default function Mixer() {
                   : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
               )}
             >
-              <Circle className="w-3.5 h-3.5 fill-current" />
+              <Circle className="w-3.5 h-3.5" />
             </Button>
 
             <Button
@@ -350,7 +350,7 @@ export default function Mixer() {
                   : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
               )}
             >
-              <Timer className="w-3.5 h-3.5 fill-current" />
+              <Metronome className="w-3.5 h-3.5" />
             </Button>
 
             <Button
@@ -364,7 +364,7 @@ export default function Mixer() {
               aria-label={`Tempo: ${bpm} BPM`}
               className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100"
             >
-              <Gauge className="w-3.5 h-3.5 fill-current" />
+              <Gauge className="w-3.5 h-3.5" />
             </Button>
           </div>
         </div>
@@ -386,11 +386,11 @@ export default function Mixer() {
                 className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100 flex-shrink-0"
               >
                 {volume === 0 ? (
-                  <VolumeX className="w-3.5 h-3.5 fill-current text-stone-400" />
+                  <VolumeX className="w-3.5 h-3.5 text-stone-400" />
                 ) : volume <= 0.5 ? (
-                  <Volume1 className="w-3.5 h-3.5 fill-current" />
+                  <Volume1 className="w-3.5 h-3.5" />
                 ) : (
-                  <Volume2 className="w-3.5 h-3.5 fill-current" />
+                  <Volume2 className="w-3.5 h-3.5" />
                 )}
               </Button>
 
@@ -422,7 +422,7 @@ export default function Mixer() {
               aria-label="Panic stop"
               className="p-1.5 h-auto rounded bg-red-600 hover:bg-red-700 text-white shadow-sm"
             >
-              <OctagonAlert className="w-3.5 h-3.5 fill-current" />
+              <OctagonAlert className="w-3.5 h-3.5" />
             </Button>
 
             <Button
@@ -435,7 +435,7 @@ export default function Mixer() {
               aria-label="Clear notes"
               className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-red-500 hover:text-white dark:hover:bg-red-600 text-stone-700 dark:text-stone-300"
             >
-              <Trash2 className="w-3.5 h-3.5 fill-current" />
+              <Trash2 className="w-3.5 h-3.5" />
             </Button>
           </div>
 
@@ -451,11 +451,11 @@ export default function Mixer() {
             onClick={cycleTheme}
           >
             {nextTheme === "light" ? (
-              <Sun className="w-4 h-4 fill-current" />
+              <Sun className="w-4 h-4" />
             ) : nextTheme === "dark" ? (
-              <Moon className="w-4 h-4 fill-current" />
+              <Moon className="w-4 h-4" />
             ) : (
-              <Monitor className="w-4 h-4 fill-current" />
+              <Monitor className="w-4 h-4" />
             )}
           </Button>
         </div>

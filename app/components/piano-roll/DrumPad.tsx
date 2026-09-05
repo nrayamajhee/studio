@@ -376,7 +376,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
         <div className="flex items-center gap-1.5">
           {isRecording && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 animate-pulse bg-red-950/40 px-1.5 py-0.5 rounded border border-red-800/50">
-              <Radio className="w-3 h-3 fill-current" />
+              <Radio className="w-3 h-3" />
               REC
             </span>
           )}

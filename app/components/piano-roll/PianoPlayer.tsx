@@ -219,7 +219,7 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
         {isRecording && (
           <div className="flex items-center justify-end">
             <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 animate-pulse bg-red-950/40 px-1.5 py-0.5 rounded border border-red-800/50">
-              <Radio className="w-3 h-3 fill-current" />
+              <Radio className="w-3 h-3" />
               REC
             </span>
           </div>
@@ -235,7 +235,7 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
             aria-label="Scroll octave left"
             className="p-1 h-auto rounded bg-stone-100 hover:bg-stone-200 dark:bg-[#161a24] dark:hover:bg-[#232a3b] border border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300"
           >
-            <ChevronLeft className="w-3.5 h-3.5 fill-current" />
+            <ChevronLeft className="w-3.5 h-3.5" />
           </Button>
 
           <div
@@ -322,7 +322,7 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
             aria-label="Scroll octave right"
             className="p-1 h-auto rounded bg-stone-100 hover:bg-stone-200 dark:bg-[#161a24] dark:hover:bg-[#232a3b] border border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300"
           >
-            <ChevronRight className="w-3.5 h-3.5 fill-current" />
+            <ChevronRight className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>

@@ -34,11 +34,11 @@ export default function Home() {
           className="bg-white/80 dark:bg-stone-800/80 backdrop-blur shadow-sm hover:bg-white dark:hover:bg-stone-700"
           leadingIcon={
             nextTheme === "light" ? (
-              <Sun className="w-4 h-4 fill-current" />
+              <Sun className="w-4 h-4" />
             ) : nextTheme === "dark" ? (
-              <Moon className="w-4 h-4 fill-current" />
+              <Moon className="w-4 h-4" />
             ) : (
-              <Monitor className="w-4 h-4 fill-current" />
+              <Monitor className="w-4 h-4" />
             )
           }
           onClick={cycleTheme}

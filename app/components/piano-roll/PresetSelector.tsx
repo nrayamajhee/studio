@@ -129,7 +129,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
                       : "text-amber-700 dark:text-[#d4a359]",
                   )}
                 >
-                  <IconComp className="w-3 h-3 fill-current" />
+                  <IconComp className="w-3.5 h-3.5" />
                 </div>
               }
               title={inst.name}
