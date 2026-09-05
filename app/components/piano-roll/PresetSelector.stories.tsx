@@ -30,7 +30,6 @@ type Story = StoryObj<typeof PresetSelector>;
 export const Default: Story = {
   args: {
     selectedPreset: "grand_piano",
-    onCollapse: () => {},
   },
   decorators: [
     (Story) => (

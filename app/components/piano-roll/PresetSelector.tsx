@@ -1,6 +1,5 @@
 import React from "react";
 import { synth } from "../../lib/synth";
-import { Button } from "../design-system/Button";
 import { Card } from "../design-system/Card";
 import { cn } from "../../lib/utils";
 import {
@@ -10,14 +9,12 @@ import {
   Drum,
   Wind,
   Volume2,
-  PanelLeftClose,
 } from "lucide-react";
 
 export interface PresetSelectorProps {
   className?: string;
   selectedPreset?: string;
   onPresetChange?: (presetKey: string) => void;
-  onCollapse?: () => void;
 }
 
 interface InstrumentDef {
@@ -103,7 +100,6 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
   className,
   selectedPreset = "grand_piano",
   onPresetChange,
-  onCollapse,
 }) => {
   const handleSelect = (key: string) => {
     synth.loadPreset(key);
@@ -121,23 +117,6 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
         className,
       )}
     >
-      <div className="flex items-center justify-between px-0.5 pb-1 mb-1 border-b border-stone-200 dark:border-[#1a202c] flex-shrink-0">
-        <span className="text-[8px] font-mono tracking-wider text-stone-500 dark:text-stone-400 uppercase font-bold truncate">
-          Inst
-        </span>
-        {onCollapse && (
-          <button
-            type="button"
-            onClick={onCollapse}
-            title="Collapse instruments panel"
-            aria-label="Collapse instruments panel"
-            className="p-0.5 rounded text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-[#161c28] transition-colors cursor-pointer"
-          >
-            <PanelLeftClose className="w-3 h-3" />
-          </button>
-        )}
-      </div>
-
       <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-0.5 no-scrollbar flex flex-col items-center">
         {INSTRUMENTS.map((inst) => {
           const IconComp = inst.icon;

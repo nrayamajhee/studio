@@ -31,7 +31,6 @@ import {
   ChevronRight,
   Piano,
   Drum,
-  PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
 } from "lucide-react";
@@ -73,12 +72,6 @@ export default function Mixer() {
   const [bpm, setBpm] = useState(72);
   const [selectedPreset, setSelectedPreset] = useState("grand_piano");
   const [playerView, setPlayerView] = useState<"keys" | "drums">("keys");
-  const [isInstrumentsCollapsed, setIsInstrumentsCollapsed] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.innerWidth < 1024;
-    }
-    return false;
-  });
   const [isPlayerCollapsed, setIsPlayerCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
       return window.innerWidth < 1380;
@@ -97,13 +90,6 @@ export default function Mixer() {
         setIsPlayerCollapsed(true);
       } else if (width >= 1380 && prevWidth < 1380) {
         setIsPlayerCollapsed(false);
-      }
-
-      // Collapse instruments second when width drops below 1024px
-      if (width < 1024 && prevWidth >= 1024) {
-        setIsInstrumentsCollapsed(true);
-      } else if (width >= 1024 && prevWidth < 1024) {
-        setIsInstrumentsCollapsed(false);
       }
 
       prevWidth = width;
@@ -595,33 +581,16 @@ export default function Mixer() {
       </main>
 
       <footer className="flex-1 min-h-0 w-full flex flex-row gap-2.5 p-2.5 bg-stone-100/60 dark:bg-[#06080c] overflow-x-auto overflow-y-hidden flex-shrink-0">
-        {!isInstrumentsCollapsed && (
-          <div className="w-16 lg:w-18 h-full min-h-0 flex-shrink-0 overflow-hidden">
-            <PresetSelector
-              selectedPreset={selectedPreset}
-              onPresetChange={setSelectedPreset}
-              onCollapse={() => setIsInstrumentsCollapsed(true)}
-            />
-          </div>
-        )}
+        <div className="w-16 lg:w-18 h-full min-h-0 flex-shrink-0 overflow-hidden">
+          <PresetSelector
+            selectedPreset={selectedPreset}
+            onPresetChange={setSelectedPreset}
+          />
+        </div>
 
         <div className="flex-1 min-w-0 h-full min-h-0 overflow-hidden">
           <SynthControls
             selectedPreset={selectedPreset}
-            leftHeaderSlot={
-              isInstrumentsCollapsed ? (
-                <button
-                  type="button"
-                  onClick={() => setIsInstrumentsCollapsed(false)}
-                  title="Expand instruments panel"
-                  aria-label="Expand instruments panel"
-                  className="self-center h-8 px-2.5 sm:px-3 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white text-xs font-mono font-medium rounded-lg flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
-                >
-                  <PanelLeftOpen className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
-                  <span className="text-[11px]">Instruments</span>
-                </button>
-              ) : undefined
-            }
             rightHeaderSlot={
               isPlayerCollapsed ? (
                 <button
