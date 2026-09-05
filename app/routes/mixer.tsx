@@ -70,7 +70,7 @@ export default function Mixer() {
   const [volume, setVolume] = useState(() => synth.getMasterVolume());
   const [currentStep, setCurrentStep] = useState(0);
   const [totalSteps, setTotalSteps] = useState(16);
-  const [bpm, setBpm] = useState(120);
+  const [bpm, setBpm] = useState(72);
   const [selectedPreset, setSelectedPreset] = useState("grand_piano");
   const [playerView, setPlayerView] = useState<"keys" | "drums">("keys");
   const [isInstrumentsCollapsed, setIsInstrumentsCollapsed] = useState(false);
