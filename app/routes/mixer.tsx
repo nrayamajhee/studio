@@ -75,23 +75,38 @@ export default function Mixer() {
   const [playerView, setPlayerView] = useState<"keys" | "drums">("keys");
   const [isInstrumentsCollapsed, setIsInstrumentsCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
-      return window.innerWidth < 1280;
+      return window.innerWidth < 1024;
     }
     return false;
   });
   const [isPlayerCollapsed, setIsPlayerCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
-      return window.innerWidth < 1280;
+      return window.innerWidth < 1380;
     }
     return false;
   });
 
   useEffect(() => {
+    let prevWidth = typeof window !== "undefined" ? window.innerWidth : 1400;
+
     const handleResize = () => {
-      if (window.innerWidth < 1280) {
-        setIsInstrumentsCollapsed(true);
+      const width = window.innerWidth;
+
+      // Collapse player first when width drops below 1380px
+      if (width < 1380 && prevWidth >= 1380) {
         setIsPlayerCollapsed(true);
+      } else if (width >= 1380 && prevWidth < 1380) {
+        setIsPlayerCollapsed(false);
       }
+
+      // Collapse instruments second when width drops below 1024px
+      if (width < 1024 && prevWidth >= 1024) {
+        setIsInstrumentsCollapsed(true);
+      } else if (width >= 1024 && prevWidth < 1024) {
+        setIsInstrumentsCollapsed(false);
+      }
+
+      prevWidth = width;
     };
 
     handleResize();
