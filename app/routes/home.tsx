@@ -26,17 +26,18 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-white via-blue-100 to-blue-300 dark:from-blue-900 dark:via-blue-950 dark:to-stone-950 text-font dark:text-surface flex flex-col items-center justify-center p-4 sm:p-8 font-sans transition-colors duration-200 selection:bg-primary/30">
       <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50">
         <Button
-          variant="outline"
+          variant="solid"
           tone="secondary"
           rounded
           size="sm"
+          className="bg-white/80 dark:bg-stone-800/80 backdrop-blur shadow-sm hover:bg-white dark:hover:bg-stone-700"
           leadingIcon={
             nextTheme === "light" ? (
-              <Sun className="w-4 h-4 fill-current" />
+              <Sun className="w-4 h-4" />
             ) : nextTheme === "dark" ? (
-              <Moon className="w-4 h-4 fill-current" />
+              <Moon className="w-4 h-4" />
             ) : (
-              <Monitor className="w-4 h-4 fill-current" />
+              <Monitor className="w-4 h-4" />
             )
           }
           onClick={cycleTheme}
@@ -44,7 +45,7 @@ export default function Home() {
         />
       </div>
 
-      <main className="flex flex-col items-center text-center gap-6">
+      <main className="flex flex-col items-center text-center gap-6 max-w-md">
         <div className="flex flex-col items-center gap-1">
           <Paragraph>{"Nishan's"}</Paragraph>
           <Heading>Studio</Heading>
@@ -52,7 +53,9 @@ export default function Home() {
         </div>
 
         <Button asChild tone="primary" size="sm" rounded>
-          <Link to="/mixer">Getting Started</Link>
+          <Link to="/mixer" replace>
+            Go to Studio
+          </Link>
         </Button>
       </main>
     </div>

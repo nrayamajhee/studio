@@ -142,6 +142,7 @@ export interface ButtonProps
   subtitle?: string;
   leadingIcon?: React.ReactNode;
   trailingIcon?: React.ReactNode;
+  iconOnly?: boolean;
   isLoading?: boolean;
   children?: React.ReactNode;
 }
@@ -154,6 +155,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       subtitle,
       leadingIcon,
       trailingIcon,
+      iconOnly,
       variant,
       tone,
       size,
@@ -164,23 +166,29 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled = false,
       className,
       children,
+      "aria-label": ariaLabel,
       ...props
     },
     ref,
   ) => {
     const Component = asChild ? Slot : "button";
     const isDisabled = disabled || isLoading;
-    const content = title || children;
     const isIconOnly =
-      !content &&
-      !subtitle &&
-      (Boolean(leadingIcon) || Boolean(trailingIcon) || isLoading);
+      iconOnly ??
+      (!title &&
+        !subtitle &&
+        !children &&
+        (Boolean(leadingIcon) || Boolean(trailingIcon) || isLoading));
+
+    const content = isIconOnly ? null : (children ?? title);
 
     return (
       <Component
         ref={ref}
         disabled={asChild ? undefined : isDisabled}
         aria-disabled={asChild && isDisabled ? true : undefined}
+        title={title}
+        aria-label={ariaLabel || (isIconOnly ? title : undefined)}
         className={cn(
           buttonVariants({ variant, tone, size, rounded, fullWidth, align }),
           isIconOnly &&
@@ -206,46 +214,53 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 )}
               />
             ) : (
-              leadingIcon && (
+              (leadingIcon || (isIconOnly && children)) && (
                 <span className="flex-shrink-0 inline-flex items-center justify-center">
-                  {leadingIcon}
+                  {leadingIcon || (isIconOnly && children)}
                 </span>
               )
             )}
 
-            {(content || subtitle) && (
-              <span
-                className={cn(
-                  "flex flex-col",
-                  subtitle
-                    ? "text-left items-start"
-                    : align === "right"
-                      ? "items-end text-right"
-                      : align === "left" || align === "between"
-                        ? "items-start text-left"
-                        : "items-center",
-                )}
-              >
-                {content && (
-                  <Paragraph
-                    asChild
-                    className="font-semibold leading-snug tracking-tight text-inherit dark:text-inherit"
-                  >
-                    <span>{content}</span>
-                  </Paragraph>
-                )}
-                {subtitle && (
-                  <Caption
-                    asChild
-                    className="opacity-80 font-normal leading-tight mt-0.5 text-inherit dark:text-inherit"
-                  >
-                    <span>{subtitle}</span>
-                  </Caption>
-                )}
-              </span>
+            {!isIconOnly && (content || subtitle) && (
+              subtitle || typeof content === "string" || typeof content === "number" ? (
+                <span
+                  className={cn(
+                    "flex flex-col min-w-0",
+                    subtitle
+                      ? "text-left items-start"
+                      : align === "right"
+                        ? "items-end text-right"
+                        : align === "left" || align === "between"
+                          ? "items-start text-left"
+                          : "items-center",
+                  )}
+                >
+                  {content && (
+                    <Paragraph
+                      asChild
+                      className={cn(
+                        "font-semibold leading-snug tracking-tight text-inherit dark:text-inherit truncate",
+                        size === "sm" ? "!text-xs" : size === "lg" ? "!text-base" : "!text-sm",
+                      )}
+                    >
+                      <span>{content}</span>
+                    </Paragraph>
+                  )}
+                  {subtitle && (
+                    <Caption
+                      asChild
+                      className="opacity-80 font-normal leading-tight mt-0.5 text-inherit dark:text-inherit truncate"
+                    >
+                      <span>{subtitle}</span>
+                    </Caption>
+                  )}
+                </span>
+              ) : (
+                content
+              )
             )}
 
-            {trailingIcon && (
+            {trailingIcon && !isIconOnly && (
               <span className="flex-shrink-0 inline-flex items-center justify-center">
                 {trailingIcon}
               </span>

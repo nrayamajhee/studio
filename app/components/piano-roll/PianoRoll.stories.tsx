@@ -20,11 +20,19 @@ export default meta;
 type Story = StoryObj<typeof PianoRoll>;
 
 export const Default: Story = {
-  args: {},
+  args: {
+    totalSteps: 16,
+  },
 };
 
-export const CustomContainer: Story = {
+export const StepCount8: Story = {
   args: {
-    className: "h-[600px] border-primary/40",
+    totalSteps: 8,
+  },
+};
+
+export const StepCount32: Story = {
+  args: {
+    totalSteps: 32,
   },
 };
