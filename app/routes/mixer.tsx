@@ -7,6 +7,7 @@ import { PianoRoll } from "../components/piano-roll/PianoRoll";
 import { PresetSelector } from "../components/piano-roll/PresetSelector";
 import { SynthControls } from "../components/piano-roll/SynthControls";
 import { PianoPlayer } from "../components/piano-roll/PianoPlayer";
+import { DrumPad } from "../components/piano-roll/DrumPad";
 import { synth } from "../lib/synth";
 import { cn } from "../lib/utils";
 import {
@@ -26,6 +27,8 @@ import {
   Volume2,
   VolumeX,
   Gauge,
+  Piano,
+  Drum,
 } from "lucide-react";
 
 export function meta(_args: Route.MetaArgs) {
@@ -61,10 +64,13 @@ export default function Mixer() {
   const [isMetronomeOn, setIsMetronomeOn] = useState(false);
   const [volume, setVolume] = useState(() => synth.getMasterVolume());
   const [currentStep, setCurrentStep] = useState(0);
+  const [totalSteps, setTotalSteps] = useState(16);
   const [bpm, setBpm] = useState(120);
   const [selectedPreset, setSelectedPreset] = useState("grand_piano");
+  const [playerView, setPlayerView] = useState<"keys" | "drums">("keys");
 
   const currentStepRef = useRef(currentStep);
+  const totalStepsRef = useRef(totalSteps);
   const isPlayingRef = useRef(isPlaying);
   const isLoopingRef = useRef(isLooping);
   const isMetronomeOnRef = useRef(isMetronomeOn);
@@ -72,11 +78,23 @@ export default function Mixer() {
 
   useEffect(() => {
     currentStepRef.current = currentStep;
+    totalStepsRef.current = totalSteps;
     isPlayingRef.current = isPlaying;
     isLoopingRef.current = isLooping;
     isMetronomeOnRef.current = isMetronomeOn;
     activeNotesRef.current = activeNotes;
-  }, [currentStep, isPlaying, isLooping, isMetronomeOn, activeNotes]);
+  }, [currentStep, totalSteps, isPlaying, isLooping, isMetronomeOn, activeNotes]);
+
+  useEffect(() => {
+    const isDrumPreset = [
+      "drum_set",
+      "drum_808",
+      "trap_kit",
+      "electronic_drums",
+      "acoustic_percussion",
+    ].includes(selectedPreset);
+    setPlayerView(isDrumPreset ? "drums" : "keys");
+  }, [selectedPreset]);
 
   const triggerStepNotes = useCallback(
     (stepIdx: number) => {
@@ -105,7 +123,7 @@ export default function Mixer() {
       const prevStep = currentStepRef.current;
       let nextStep = prevStep + 1;
 
-      if (nextStep >= 16) {
+      if (nextStep >= totalStepsRef.current) {
         if (isLoopingRef.current) {
           nextStep = 0;
         } else {
@@ -413,6 +431,8 @@ export default function Mixer() {
           currentStep={isPlaying || isRecording ? currentStep : null}
           isPlaying={isPlaying}
           isRecording={isRecording}
+          totalSteps={totalSteps}
+          onTotalStepsChange={setTotalSteps}
         />
       </main>
 
@@ -428,14 +448,67 @@ export default function Mixer() {
           <SynthControls selectedPreset={selectedPreset} />
         </div>
 
-        <div className="w-full md:w-[330px] lg:w-[380px] xl:w-[420px] h-full min-h-0 flex-shrink-0 overflow-hidden">
-          <PianoPlayer
-            isRecording={isRecording}
-            onRecordNote={handleRecordNote}
-            activeNotes={Array.from(activeNotes)
-              .filter((item) => item.endsWith(`-${currentStep}`))
-              .map((item) => item.replace(`-${currentStep}`, ""))}
-          />
+        <div className="w-full md:w-[330px] lg:w-[380px] xl:w-[420px] h-full min-h-0 flex-shrink-0 flex flex-col gap-1 overflow-hidden">
+          <div className="flex items-center justify-between px-1 flex-shrink-0">
+            <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+              Player View
+            </span>
+            <div className="flex items-center gap-1 bg-[#0a0c10] p-0.5 rounded-lg border border-[#1f2533]">
+              <Button
+                variant="solid"
+                tone={playerView === "keys" ? "accent" : "secondary"}
+                size="sm"
+                onClick={() => setPlayerView("keys")}
+                aria-label="Piano keyboard view"
+                className={cn(
+                  "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
+                  playerView === "keys"
+                    ? "bg-[#d4a359] text-stone-950 font-bold border border-[#f1c784]"
+                    : "bg-transparent text-stone-400 hover:text-white border border-transparent",
+                )}
+              >
+                <Piano className="w-3 h-3 mr-1 inline" />
+                Keys
+              </Button>
+              <Button
+                variant="solid"
+                tone={playerView === "drums" ? "accent" : "secondary"}
+                size="sm"
+                onClick={() => setPlayerView("drums")}
+                aria-label="Drum pad view"
+                className={cn(
+                  "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
+                  playerView === "drums"
+                    ? "bg-[#d4a359] text-stone-950 font-bold border border-[#f1c784]"
+                    : "bg-transparent text-stone-400 hover:text-white border border-transparent",
+                )}
+              >
+                <Drum className="w-3 h-3 mr-1 inline" />
+                Drum Pad
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {playerView === "keys" ? (
+              <PianoPlayer
+                isRecording={isRecording}
+                onRecordNote={handleRecordNote}
+                activeNotes={Array.from(activeNotes)
+                  .filter((item) => item.endsWith(`-${currentStep}`))
+                  .map((item) => item.replace(`-${currentStep}`, ""))}
+              />
+            ) : (
+              <DrumPad
+                selectedPreset={selectedPreset}
+                isRecording={isRecording}
+                onRecordNote={handleRecordNote}
+                activeNotes={Array.from(activeNotes)
+                  .filter((item) => item.endsWith(`-${currentStep}`))
+                  .map((item) => item.replace(`-${currentStep}`, ""))}
+              />
+            )}
+          </div>
         </div>
       </footer>
     </div>

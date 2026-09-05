@@ -12,15 +12,26 @@ const meta: Meta<typeof PresetSelector> = {
     selectedPreset: {
       control: "select",
       options: [
+        "grand_piano",
+        "electronic_pino",
+        "rhodes_piano",
+        "lofi_keys",
+        "organ",
+        "drum_set",
+        "drum_808",
+        "trap_kit",
+        "electronic_drums",
+        "acoustic_percussion",
+        "vintage_synth",
+        "acid_bass",
+        "pluck_synth",
         "electric_guitar",
         "acoustic_guitar",
         "classical_guitar",
         "ukelele",
         "base_guitar",
-        "electronic_pino",
-        "grand_piano",
-        "drum_set",
-        "drum_808",
+        "strings_ensemble",
+        "marimba",
         "flute",
         "saxophone",
       ],
@@ -45,9 +56,9 @@ export const Default: Story = {
   ],
 };
 
-export const ElectricGuitarSelected: Story = {
+export const TrapKitSelected: Story = {
   args: {
-    selectedPreset: "electric_guitar",
+    selectedPreset: "trap_kit",
   },
   decorators: [
     (Story) => (
@@ -58,9 +69,9 @@ export const ElectricGuitarSelected: Story = {
   ],
 };
 
-export const FluteSelected: Story = {
+export const VintageSynthSelected: Story = {
   args: {
-    selectedPreset: "flute",
+    selectedPreset: "vintage_synth",
   },
   decorators: [
     (Story) => (
