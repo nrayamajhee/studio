@@ -76,12 +76,14 @@ export default function Mixer() {
   const [isInstrumentsCollapsed, setIsInstrumentsCollapsed] = useState(false);
   const [isPlayerCollapsed, setIsPlayerCollapsed] = useState(false);
 
+  const [velocity, setVelocity] = useState(85);
   const currentStepRef = useRef(currentStep);
   const totalStepsRef = useRef(totalSteps);
   const isPlayingRef = useRef(isPlaying);
   const isLoopingRef = useRef(isLooping);
   const isMetronomeOnRef = useRef(isMetronomeOn);
   const activeNotesRef = useRef(activeNotes);
+  const velocityRef = useRef(velocity);
 
   useEffect(() => {
     currentStepRef.current = currentStep;
@@ -90,7 +92,8 @@ export default function Mixer() {
     isLoopingRef.current = isLooping;
     isMetronomeOnRef.current = isMetronomeOn;
     activeNotesRef.current = activeNotes;
-  }, [currentStep, totalSteps, isPlaying, isLooping, isMetronomeOn, activeNotes]);
+    velocityRef.current = velocity;
+  }, [currentStep, totalSteps, isPlaying, isLooping, isMetronomeOn, activeNotes, velocity]);
 
   useEffect(() => {
     const isDrumPreset = [
@@ -110,11 +113,13 @@ export default function Mixer() {
       }
 
       const suffix = `-${stepIdx}`;
-      const stepDurationSec = Math.max(0.1, (60 / bpm / 4) * 0.9);
+      const vel = velocityRef.current / 100;
+      // Sustain notes across beats based on velocity so sounds ring out and sustain musically
+      const stepDurationSec = (60 / bpm / 4) * (2 + 3.5 * vel);
       for (const item of activeNotesRef.current) {
         if (item.endsWith(suffix)) {
           const noteName = item.slice(0, -suffix.length);
-          synth.playNote(noteName, undefined, stepDurationSec);
+          synth.playNote(noteName, undefined, stepDurationSec, vel);
         }
       }
     },
@@ -546,6 +551,8 @@ export default function Mixer() {
           isRecording={isRecording}
           totalSteps={totalSteps}
           onTotalStepsChange={setTotalSteps}
+          velocity={velocity}
+          onVelocityChange={setVelocity}
         />
       </main>
 

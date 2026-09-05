@@ -36,6 +36,8 @@ export interface PianoRollProps {
   isRecording?: boolean;
   totalSteps?: number;
   onTotalStepsChange?: (steps: number) => void;
+  velocity?: number;
+  onVelocityChange?: (velocity: number) => void;
 }
 
 export const PianoRoll: React.FC<PianoRollProps> = ({
@@ -48,10 +50,23 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   isRecording = false,
   totalSteps: controlledTotalSteps,
   onTotalStepsChange,
+  velocity: controlledVelocity,
+  onVelocityChange,
 }) => {
   const notes = useMemo(() => generate10OctavesNotes(), []);
   const containerRef = useRef<HTMLDivElement>(null);
   const c4RowRef = useRef<HTMLDivElement | null>(null);
+
+  const [internalVelocity, setInternalVelocity] = useState(85);
+  const velocity = controlledVelocity ?? internalVelocity;
+
+  const handleVelocityChange = (val: number) => {
+    const clamped = Math.max(10, Math.min(100, Math.round(val)));
+    setInternalVelocity(clamped);
+    if (onVelocityChange) {
+      onVelocityChange(clamped);
+    }
+  };
 
   const [internalTotalSteps, setInternalTotalSteps] = useState(16);
   const totalSteps = controlledTotalSteps ?? internalTotalSteps;
@@ -155,7 +170,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
   const handleKeyClick = (noteFullName: string) => {
     setPressedKey(noteFullName);
-    synth.playNote(noteFullName, undefined, 0.4);
+    const vel = velocity / 100;
+    const sustainSec = 0.8 + 1.2 * vel;
+    synth.playNote(noteFullName, undefined, sustainSec, vel);
     setTimeout(() => {
       setPressedKey((current) => (current === noteFullName ? null : current));
     }, 180);
@@ -168,7 +185,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
       next.delete(noteKey);
     } else {
       next.add(noteKey);
-      synth.playNote(noteFullName, undefined, 0.4);
+      const vel = velocity / 100;
+      const sustainSec = 0.8 + 1.2 * vel;
+      synth.playNote(noteFullName, undefined, sustainSec, vel);
     }
     updateNotes(next);
   };
@@ -428,26 +447,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             variant="solid"
             tone="secondary"
             size="sm"
-            onClick={() => scrollToOctave(1)}
-            title="Jump to C1 (Drums)"
-            className="px-1.5 py-0.5 h-6 text-[10px] font-mono rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            C1
-          </Button>
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => scrollToOctave(2)}
-            title="Jump to C2 (Bass)"
-            className="px-1.5 py-0.5 h-6 text-[10px] font-mono rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            C2
-          </Button>
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
             onClick={() => scrollToOctave(4)}
             title="Jump to C4 (Piano/Mid)"
             className="px-1.5 py-0.5 h-6 text-[10px] font-mono rounded bg-[#12151c] text-primary dark:text-primary-light border border-[#1f2533] hover:text-white"
@@ -464,29 +463,52 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
           >
             C6
           </Button>
-
-          <div className="h-4 w-px bg-stone-700 mx-0.5" />
-
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() =>
-              setZoomLevel((prev) =>
-                prev === "compact"
-                  ? "normal"
-                  : prev === "normal"
-                    ? "wide"
-                    : "compact",
-              )
-            }
-            title={`Zoom: ${zoomLevel}`}
-            className="px-1.5 py-0.5 h-6 text-[10px] font-mono uppercase rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            <ZoomIn className="w-3 h-3 mr-0.5" />
-            {zoomLevel[0].toUpperCase()}
-          </Button>
         </div>
+
+        <div className="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+            Velocity:
+          </span>
+          <div className="flex items-center gap-1.5 bg-stone-200/80 dark:bg-[#12151c] px-2 py-0.5 h-6 rounded border border-stone-300 dark:border-[#1f2533]">
+            <input
+              type="range"
+              min={10}
+              max={100}
+              step={1}
+              value={velocity}
+              onChange={(e) => handleVelocityChange(Number(e.target.value))}
+              aria-label="Note velocity"
+              title={`Velocity: ${velocity}%`}
+              className="w-16 h-1 bg-stone-300 dark:bg-stone-700 rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+            <span className="text-[10px] font-mono font-bold text-primary dark:text-primary-light min-w-[28px] text-right select-none">
+              {velocity}%
+            </span>
+          </div>
+        </div>
+        <div className="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
+        <Button
+          variant="solid"
+          tone="secondary"
+          size="sm"
+          onClick={() =>
+            setZoomLevel((prev) =>
+              prev === "compact"
+                ? "normal"
+                : prev === "normal"
+                  ? "wide"
+                  : "compact",
+            )
+          }
+          title={`Zoom: ${zoomLevel}`}
+          className="px-1.5 py-0.5 h-6 text-[10px] font-mono uppercase rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white flex-shrink-0"
+        >
+          <ZoomIn className="w-3 h-3 mr-0.5" />
+          {zoomLevel[0].toUpperCase()}
+        </Button>
       </div>
 
       <div
@@ -741,8 +763,19 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                     )}
                                   >
                                     {isNoteActive && (
-                                      <div className="absolute inset-0.5 rounded-sm bg-gradient-to-r from-primary to-primary-light text-white font-mono text-[9px] font-bold flex items-center justify-center shadow-sm pointer-events-none">
-                                        {note.fullName}
+                                      <div
+                                        className="absolute inset-0.5 rounded-sm bg-gradient-to-r from-primary to-primary-light text-white font-mono text-[9px] font-bold flex flex-col items-center justify-center shadow-sm pointer-events-none transition-opacity"
+                                        style={{ opacity: 0.55 + (velocity / 100) * 0.45 }}
+                                      >
+                                        <span className="leading-tight">{note.fullName}</span>
+                                        <div className="w-full px-1 mt-0.5">
+                                          <div className="h-0.5 w-full bg-white/30 rounded-full overflow-hidden">
+                                            <div
+                                              className="h-full bg-white rounded-full transition-all"
+                                              style={{ width: `${velocity}%` }}
+                                            />
+                                          </div>
+                                        </div>
                                       </div>
                                     )}
                                   </Button>

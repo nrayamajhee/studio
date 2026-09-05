@@ -132,7 +132,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
               triggerClassName,
             )}
           >
-            <span className="truncate pr-1 text-left flex-1 font-mono">
+            <span className="truncate pr-1 text-left flex-1 font-sans font-medium">
               {displayLabel}
             </span>
             <ChevronDown
@@ -172,7 +172,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                     disabled={opt.disabled}
                     onClick={() => handleSelect(opt.value)}
                     className={cn(
-                      "w-full flex items-center justify-between px-2 py-1 rounded text-[11px] font-mono transition-colors text-left select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed",
+                      "w-full flex items-center justify-between px-2 py-1.5 rounded text-[11px] font-sans font-medium transition-colors text-left select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed",
                       isSelected
                         ? "bg-primary text-white font-bold shadow-sm"
                         : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-white",

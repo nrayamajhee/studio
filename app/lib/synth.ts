@@ -710,6 +710,7 @@ class HybridVoice {
   private voiceMixer: GainNode;
   private ctx: AudioContext;
   private params: SynthParams;
+  private velocity: number;
   private isReleased = false;
   private autoReleaseTimer?: ReturnType<typeof setTimeout>;
 
@@ -720,10 +721,12 @@ class HybridVoice {
     params: SynthParams,
     freq: number,
     duration?: number,
+    velocity: number = 0.8,
     onEnded?: () => void,
   ) {
     this.ctx = ctx;
     this.params = params;
+    this.velocity = Math.max(0.1, Math.min(1.0, velocity));
     const now = ctx.currentTime;
 
     this.voiceMixer = ctx.createGain();
@@ -731,7 +734,7 @@ class HybridVoice {
     this.voiceMixer.connect(masterGain);
 
     if (params.exciterMode !== "off" && params.exciterVol > 0.01) {
-      this.triggerExciter(now, freq, this.voiceMixer, noiseBuffer);
+      this.triggerExciter(now, freq, this.voiceMixer, noiseBuffer, this.velocity);
     }
 
     this.filter = ctx.createBiquadFilter();
@@ -745,11 +748,12 @@ class HybridVoice {
       params.cutoff * Math.max(0.1, trackingMultiplier),
     );
 
-    const startSweep = Math.min(16000, trackedCutoff + params.envMod);
+    const filterVelScale = 0.6 + 0.4 * this.velocity;
+    const startSweep = Math.min(18000, trackedCutoff + params.envMod * filterVelScale);
     this.filter.frequency.setValueAtTime(startSweep, now);
     this.filter.frequency.exponentialRampToValueAtTime(
       trackedCutoff,
-      now + Math.min(0.45, params.decay * 0.5),
+      now + Math.min(0.6, params.decay * 0.5),
     );
 
     this.osc1 = ctx.createOscillator();
@@ -816,13 +820,16 @@ class HybridVoice {
     this.ampGain = ctx.createGain();
     this.ampGain.gain.setValueAtTime(0.0001, now);
 
-    const peakAmp = 0.11;
+    const peakAmp = 0.12 * Math.pow(this.velocity, 1.25);
     const attackTime = Math.max(0.002, params.attack);
     this.ampGain.gain.linearRampToValueAtTime(peakAmp, now + attackTime);
 
     const scaledDecay =
-      params.decay * Math.pow(261.63 / Math.max(freq, 60), 0.25);
-    const susLevel = Math.max(0.0001, peakAmp * params.sustain);
+      params.decay *
+      Math.pow(261.63 / Math.max(freq, 60), 0.25) *
+      (0.75 + 0.5 * this.velocity);
+    const effectiveSustain = Math.max(params.sustain, 0.16 * this.velocity);
+    const susLevel = Math.max(0.0001, peakAmp * effectiveSustain);
     this.ampGain.gain.exponentialRampToValueAtTime(
       susLevel,
       now + attackTime + scaledDecay,
@@ -843,9 +850,9 @@ class HybridVoice {
       this.autoReleaseTimer = setTimeout(() => {
         this.triggerRelease(false, onEnded);
       }, duration * 1000);
-    } else if (params.sustain <= 0.02) {
+    } else {
       const naturalDuration =
-        (attackTime + scaledDecay + params.release) * 1000;
+        (attackTime + scaledDecay + Math.max(0.6, params.release)) * 1000;
       this.autoReleaseTimer = setTimeout(() => {
         this.triggerRelease(false, onEnded);
       }, naturalDuration);
@@ -857,7 +864,9 @@ class HybridVoice {
     freq: number,
     voiceMixer: GainNode,
     noiseBuffer: AudioBuffer,
+    velocity: number = 0.8,
   ) {
+    const velFactor = Math.max(0.2, Math.min(1.2, velocity));
     if (this.params.exciterMode === "thud") {
       const thudOsc = this.ctx.createOscillator();
       const thudGain = this.ctx.createGain();
@@ -866,7 +875,7 @@ class HybridVoice {
 
       thudGain.gain.setValueAtTime(0.0001, now);
       thudGain.gain.linearRampToValueAtTime(
-        this.params.exciterVol * 0.12,
+        this.params.exciterVol * 0.12 * velFactor,
         now + 0.002,
       );
       thudGain.gain.exponentialRampToValueAtTime(
@@ -945,7 +954,8 @@ class HybridVoice {
 
     const currentAmp = Math.max(0.0001, this.ampGain.gain.value);
     this.ampGain.gain.setValueAtTime(currentAmp, now);
-    const releaseTime = fast ? 0.015 : Math.max(0.02, this.params.release);
+    const minRelease = 0.35 + 0.45 * this.velocity;
+    const releaseTime = fast ? 0.015 : Math.max(minRelease, this.params.release);
     this.ampGain.gain.exponentialRampToValueAtTime(0.00001, now + releaseTime);
 
     const stopAt = now + releaseTime + 0.02;
@@ -1101,6 +1111,7 @@ class HybridSynthEngine {
     noteName: string,
     customFreq?: number,
     duration?: number,
+    velocity: number = 0.8,
   ): void {
     const ctx = this.ensureContext();
     if (!ctx || !this.masterGain || !this.noiseBuffer) return;
@@ -1136,6 +1147,7 @@ class HybridSynthEngine {
       this.params,
       shiftedFreq,
       duration,
+      velocity,
       () => {
         if (this.activeVoices.get(noteName) === voice) {
           this.activeVoices.delete(noteName);
