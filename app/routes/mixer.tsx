@@ -73,8 +73,31 @@ export default function Mixer() {
   const [bpm, setBpm] = useState(72);
   const [selectedPreset, setSelectedPreset] = useState("grand_piano");
   const [playerView, setPlayerView] = useState<"keys" | "drums">("keys");
-  const [isInstrumentsCollapsed, setIsInstrumentsCollapsed] = useState(false);
-  const [isPlayerCollapsed, setIsPlayerCollapsed] = useState(false);
+  const [isInstrumentsCollapsed, setIsInstrumentsCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 1280;
+    }
+    return false;
+  });
+  const [isPlayerCollapsed, setIsPlayerCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 1280;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1280) {
+        setIsInstrumentsCollapsed(true);
+        setIsPlayerCollapsed(true);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const [velocity, setVelocity] = useState(85);
   const currentStepRef = useRef(currentStep);

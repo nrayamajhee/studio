@@ -1,7 +1,6 @@
 import type { Route } from "./+types/home";
 import { Link } from "react-router";
 import { useTheme } from "../hooks/useTheme";
-import { Card } from "../components/design-system/Card";
 import { Button } from "../components/design-system/Button";
 import {
   Heading,
@@ -46,23 +45,18 @@ export default function Home() {
         />
       </div>
 
-      <main className="flex flex-col items-center text-center gap-6">
-        <Card
-          elevation="high"
-          className="flex flex-col items-center text-center gap-6 p-8 sm:p-12 rounded-2xl bg-white/70 dark:bg-stone-900/70 backdrop-blur-md border border-stone-200/60 dark:border-stone-800/60 shadow-xl max-w-md"
-        >
-          <div className="flex flex-col items-center gap-1">
-            <Paragraph>{"Nishan's"}</Paragraph>
-            <Heading>Studio</Heading>
-            <Subtitle>A quiet, minimal canvas for loud ideas.</Subtitle>
-          </div>
+      <main className="flex flex-col items-center text-center gap-6 max-w-md">
+        <div className="flex flex-col items-center gap-1">
+          <Paragraph>{"Nishan's"}</Paragraph>
+          <Heading>Studio</Heading>
+          <Subtitle>A quiet, minimal canvas for loud ideas.</Subtitle>
+        </div>
 
-          <Button asChild tone="primary" size="sm" rounded>
-            <Link to="/mixer" replace>
-              Getting Started
-            </Link>
-          </Button>
-        </Card>
+        <Button asChild tone="primary" size="sm" rounded>
+          <Link to="/mixer" replace>
+            Go to Studio
+          </Link>
+        </Button>
       </main>
     </div>
   );
