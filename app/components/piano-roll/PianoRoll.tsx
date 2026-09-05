@@ -14,6 +14,7 @@ import {
 } from "./types";
 import { synth } from "../../lib/synth";
 import { Button } from "../design-system/Button";
+import { Dropdown } from "../design-system/Dropdown";
 import { cn } from "../../lib/utils";
 import {
   ChevronLeft,
@@ -280,57 +281,43 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
           <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
             Key:
           </span>
-          <select
+          <Dropdown
+            size="xs"
             value={rootKey}
-            onChange={(e) => setRootKey(e.target.value)}
-            aria-label="Root Key"
-            className="h-6 px-1.5 text-[10px] font-mono font-bold rounded bg-[#12151c] text-[#d4a359] border border-[#1f2533] focus:outline-none focus:ring-1 focus:ring-[#d4a359]"
-          >
-            {ROOT_KEYS.map((k) => (
-              <option key={k} value={k}>
-                {k}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setRootKey(val)}
+            options={ROOT_KEYS.map((k) => ({ value: k, label: k }))}
+            className="w-16"
+          />
 
-          <select
+          <Dropdown
+            size="xs"
             value={scale}
-            onChange={(e) => setScale(e.target.value as ScaleType)}
-            aria-label="Musical Scale"
-            className="h-6 px-1.5 text-[10px] font-mono font-medium rounded bg-[#12151c] text-stone-200 border border-[#1f2533] focus:outline-none focus:ring-1 focus:ring-[#d4a359]"
-          >
-            {Object.entries(SCALES).map(([sKey, sVal]) => (
-              <option key={sKey} value={sKey}>
-                {sVal.name}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setScale(val as ScaleType)}
+            options={Object.entries(SCALES).map(([sKey, sVal]) => ({
+              value: sKey,
+              label: sVal.name,
+            }))}
+            className="w-36"
+          />
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0">
           <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
             Pattern:
           </span>
-          <select
-            defaultValue=""
-            onChange={(e) => {
-              if (e.target.value) {
-                loadPattern(e.target.value);
-                e.target.value = "";
-              }
+          <Dropdown
+            size="xs"
+            placeholder="Load Preset..."
+            value=""
+            onChange={(val) => {
+              if (val) loadPattern(val);
             }}
-            aria-label="Pattern Presets"
-            className="h-6 px-2 text-[10px] font-mono font-medium rounded bg-[#12151c] text-amber-300 border border-[#1f2533] focus:outline-none focus:ring-1 focus:ring-[#d4a359]"
-          >
-            <option value="" disabled>
-              Load Preset...
-            </option>
-            {PATTERN_PRESETS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            options={PATTERN_PRESETS.map((p) => ({
+              value: p.id,
+              label: p.name,
+            }))}
+            className="w-36"
+          />
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0">
