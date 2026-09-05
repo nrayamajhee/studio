@@ -15,6 +15,7 @@ const isStorybook =
   process.argv.some((arg) => arg.includes("storybook"));
 
 export default defineConfig({
+  base: process.env.BASE_PATH || "/",
   plugins: [tailwindcss(), !isStorybook && !isTest && reactRouter()].filter(
     Boolean,
   ),
