@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import type { Route } from "./+types/mixer";
 import { useTheme } from "../hooks/useTheme";
 import { Button } from "../components/design-system/Button";
+import { Slider } from "../components/design-system/Slider";
 import { PianoRoll } from "../components/piano-roll/PianoRoll";
 import { PresetSelector } from "../components/piano-roll/PresetSelector";
 import { SynthControls } from "../components/piano-roll/SynthControls";
@@ -188,19 +189,24 @@ export default function Mixer() {
     setIsRecording(false);
   };
 
+  const prevVolumeRef = useRef(volume > 0 ? volume : 0.7);
+
   const handleVolumeChange = (newVol: number) => {
-    setVolume(newVol);
-    synth.setMasterVolume(newVol);
+    const clamped = Math.max(0, Math.min(1, newVol));
+    setVolume(clamped);
+    synth.setMasterVolume(clamped);
+    if (clamped > 0) {
+      prevVolumeRef.current = clamped;
+    }
   };
 
-  const handleVolumeCycle = () => {
-    const levels = [1.0, 0.75, 0.5, 0.25, 0];
-    const currentIdx = levels.findIndex((l) => Math.abs(l - volume) < 0.1);
-    const nextIdx =
-      currentIdx === -1 || currentIdx === levels.length - 1
-        ? 0
-        : currentIdx + 1;
-    handleVolumeChange(levels[nextIdx]);
+  const handleVolumeToggleMute = () => {
+    if (volume > 0) {
+      prevVolumeRef.current = volume;
+      handleVolumeChange(0);
+    } else {
+      handleVolumeChange(prevVolumeRef.current || 0.7);
+    }
   };
 
   const handleVolumeWheel = (e: React.WheelEvent) => {
@@ -374,25 +380,46 @@ export default function Mixer() {
         </div>
 
         <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800/80 p-1 rounded-lg border border-stone-200 dark:border-stone-700">
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            iconOnly
-            onClick={handleVolumeCycle}
+          <div
+            className="flex items-center gap-1.5 px-0.5"
             onWheel={handleVolumeWheel}
-            title={`Master Volume: ${Math.round(volume * 100)}% (Click to cycle, scroll to adjust)`}
-            aria-label={`Master Volume: ${Math.round(volume * 100)}%`}
-            className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100"
           >
-            {volume === 0 ? (
-              <VolumeX className="w-3.5 h-3.5 fill-current" />
-            ) : volume <= 0.5 ? (
-              <Volume1 className="w-3.5 h-3.5 fill-current" />
-            ) : (
-              <Volume2 className="w-3.5 h-3.5 fill-current" />
-            )}
-          </Button>
+            <Button
+              variant="solid"
+              tone="secondary"
+              size="sm"
+              iconOnly
+              onClick={handleVolumeToggleMute}
+              title={`Master Volume: ${Math.round(volume * 100)}% (Click to toggle mute, scroll to adjust)`}
+              aria-label={`Master Volume: ${Math.round(volume * 100)}%`}
+              className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100 flex-shrink-0"
+            >
+              {volume === 0 ? (
+                <VolumeX className="w-3.5 h-3.5 fill-current text-stone-400" />
+              ) : volume <= 0.5 ? (
+                <Volume1 className="w-3.5 h-3.5 fill-current" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5 fill-current" />
+              )}
+            </Button>
+
+            <Slider
+              tone="accent"
+              size="sm"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volume}
+              onChange={(val) => handleVolumeChange(val)}
+              className="w-14 sm:w-20"
+            />
+
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400 w-7 text-right select-none flex-shrink-0">
+              {Math.round(volume * 100)}%
+            </span>
+          </div>
+
+          <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
 
           <Button
             variant="solid"

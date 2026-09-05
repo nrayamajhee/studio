@@ -103,10 +103,9 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
   };
 
   return (
-    <Card
-      elevation="mid"
+    <div
       className={cn(
-        "flex flex-col h-full w-full bg-[#07090e] border border-[#1f2533] rounded-xl shadow-lg text-stone-200 select-none overflow-hidden p-2.5 gap-2",
+        "flex flex-col h-full w-full select-none overflow-hidden gap-1.5",
         className,
       )}
     >
@@ -485,7 +484,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           </div>
         </Card>
       </div>
-    </Card>
+    </div>
   );
 };
 
