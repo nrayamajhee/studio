@@ -27,7 +27,8 @@ import {
   Volume1,
   Volume2,
   VolumeX,
-  Gauge,
+  ChevronLeft,
+  ChevronRight,
   Piano,
   Drum,
   PanelLeftOpen,
@@ -217,17 +218,63 @@ export default function Mixer() {
     );
   };
 
-  const cycleBpm = () => {
-    const bpmPresets = [90, 105, 120, 130, 140, 160];
-    const idx = bpmPresets.indexOf(bpm);
-    const nextIdx = idx === -1 || idx === bpmPresets.length - 1 ? 0 : idx + 1;
-    setBpm(bpmPresets[nextIdx]);
+  const [bpmInput, setBpmInput] = useState(String(bpm));
+
+  useEffect(() => {
+    setBpmInput(String(bpm));
+  }, [bpm]);
+
+  const commitBpm = (value: string) => {
+    const parsed = parseInt(value, 10);
+    if (!isNaN(parsed)) {
+      const clamped = Math.max(40, Math.min(260, parsed));
+      setBpm(clamped);
+      setBpmInput(String(clamped));
+    } else {
+      setBpmInput(String(bpm));
+    }
+  };
+
+  const handleBpmInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setBpmInput(e.target.value);
+  };
+
+  const handleBpmInputBlur = () => {
+    commitBpm(bpmInput);
+  };
+
+  const handleBpmInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      commitBpm(bpmInput);
+      e.currentTarget.blur();
+    } else if (e.key === "Escape") {
+      setBpmInput(String(bpm));
+      e.currentTarget.blur();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const step = e.shiftKey ? 5 : 1;
+      setBpm((prev) => Math.min(260, prev + step));
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const step = e.shiftKey ? 5 : 1;
+      setBpm((prev) => Math.max(40, prev - step));
+    }
+  };
+
+  const handleBpmDecrement = (e: React.MouseEvent) => {
+    const step = e.shiftKey ? 5 : 1;
+    setBpm((prev) => Math.max(40, prev - step));
+  };
+
+  const handleBpmIncrement = (e: React.MouseEvent) => {
+    const step = e.shiftKey ? 5 : 1;
+    setBpm((prev) => Math.min(260, prev + step));
   };
 
   const handleBpmWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY < 0 ? 5 : -5;
-    setBpm((prev) => Math.max(60, Math.min(240, prev + delta)));
+    const delta = e.deltaY < 0 ? (e.shiftKey ? 5 : 1) : (e.shiftKey ? -5 : -1);
+    setBpm((prev) => Math.max(40, Math.min(260, prev + delta)));
   };
 
   const handleRecordNote = (noteName: string) => {
@@ -353,19 +400,47 @@ export default function Mixer() {
               <Metronome className="w-3.5 h-3.5" />
             </Button>
 
-            <Button
-              variant="solid"
-              tone="secondary"
-              size="sm"
-              iconOnly
-              onClick={cycleBpm}
+            <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
+            <div
+              className="flex items-center bg-stone-200 dark:bg-stone-700 rounded h-7 px-0.5 text-stone-800 dark:text-stone-100"
               onWheel={handleBpmWheel}
-              title={`Tempo: ${bpm} BPM (Click to cycle: 90, 105, 120, 130, 140, 160)`}
-              aria-label={`Tempo: ${bpm} BPM`}
-              className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100"
+              title={`Tempo: ${bpm} BPM (Click < > or scroll wheel to adjust, type to edit)`}
             >
-              <Gauge className="w-3.5 h-3.5" />
-            </Button>
+              <button
+                type="button"
+                onClick={handleBpmDecrement}
+                disabled={bpm <= 40}
+                title="Decrease tempo (-1 BPM, Shift: -5)"
+                aria-label="Decrease tempo"
+                className="h-6 w-4 sm:w-5 flex items-center justify-center rounded hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-3 h-3" />
+              </button>
+
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={bpmInput}
+                onChange={handleBpmInputChange}
+                onBlur={handleBpmInputBlur}
+                onKeyDown={handleBpmInputKeyDown}
+                aria-label={`Tempo: ${bpm} BPM`}
+                className="w-7 sm:w-8 text-center font-mono text-xs font-semibold bg-transparent text-stone-800 dark:text-stone-100 focus:outline-none focus:bg-stone-100 dark:focus:bg-stone-800 rounded py-0.5 select-all cursor-text"
+              />
+
+              <button
+                type="button"
+                onClick={handleBpmIncrement}
+                disabled={bpm >= 260}
+                title="Increase tempo (+1 BPM, Shift: +5)"
+                aria-label="Increase tempo"
+                className="h-6 w-4 sm:w-5 flex items-center justify-center rounded hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
           </div>
         </div>
 
