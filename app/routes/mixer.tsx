@@ -594,9 +594,9 @@ export default function Mixer() {
         />
       </main>
 
-      <footer className="flex-1 min-h-0 w-full flex flex-col md:flex-row gap-2.5 p-2.5 bg-stone-100/60 dark:bg-[#06080c] overflow-hidden flex-shrink-0">
+      <footer className="flex-1 min-h-0 w-full flex flex-row gap-2.5 p-2.5 bg-stone-100/60 dark:bg-[#06080c] overflow-x-auto overflow-y-hidden flex-shrink-0">
         {!isInstrumentsCollapsed && (
-          <div className="w-full md:w-16 lg:w-18 h-full min-h-0 flex-shrink-0 overflow-hidden">
+          <div className="w-16 lg:w-18 h-full min-h-0 flex-shrink-0 overflow-hidden">
             <PresetSelector
               selectedPreset={selectedPreset}
               onPresetChange={setSelectedPreset}
@@ -640,7 +640,7 @@ export default function Mixer() {
         </div>
 
         {!isPlayerCollapsed && (
-          <div className="w-full md:w-[330px] lg:w-[380px] xl:w-[420px] h-full min-h-0 flex-shrink-0 flex flex-col gap-1 overflow-hidden">
+          <div className="w-[300px] sm:w-[330px] md:w-[330px] lg:w-[380px] xl:w-[420px] h-full min-h-0 flex-shrink-0 flex flex-col gap-1 overflow-hidden">
             <div className="flex items-center justify-between px-1 flex-shrink-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-mono font-bold tracking-wider text-stone-700 dark:text-stone-300">

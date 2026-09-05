@@ -34,7 +34,7 @@ export const Default: Story = {
   },
   decorators: [
     (Story) => (
-      <div className="w-36 h-[260px]">
+      <div className="w-18 h-[280px]">
         <Story />
       </div>
     ),
@@ -47,7 +47,7 @@ export const GuitarSelected: Story = {
   },
   decorators: [
     (Story) => (
-      <div className="w-36 h-[260px]">
+      <div className="w-18 h-[280px]">
         <Story />
       </div>
     ),
@@ -60,7 +60,7 @@ export const DrumsSelected: Story = {
   },
   decorators: [
     (Story) => (
-      <div className="w-36 h-[260px]">
+      <div className="w-18 h-[280px]">
         <Story />
       </div>
     ),
