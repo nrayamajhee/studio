@@ -29,6 +29,9 @@ import {
   Gauge,
   Piano,
   Drum,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
 } from "lucide-react";
 
 export function meta(_args: Route.MetaArgs) {
@@ -68,6 +71,8 @@ export default function Mixer() {
   const [bpm, setBpm] = useState(120);
   const [selectedPreset, setSelectedPreset] = useState("grand_piano");
   const [playerView, setPlayerView] = useState<"keys" | "drums">("keys");
+  const [isInstrumentsCollapsed, setIsInstrumentsCollapsed] = useState(false);
+  const [isPlayerCollapsed, setIsPlayerCollapsed] = useState(false);
 
   const currentStepRef = useRef(currentStep);
   const totalStepsRef = useRef(totalSteps);
@@ -437,79 +442,125 @@ export default function Mixer() {
       </main>
 
       <footer className="flex-1 min-h-0 w-full flex flex-col md:flex-row gap-2.5 p-2.5 bg-stone-100/60 dark:bg-[#06080c] overflow-hidden flex-shrink-0">
-        <div className="w-full md:w-28 lg:w-32 xl:w-36 h-full min-h-0 flex-shrink-0 overflow-hidden">
-          <PresetSelector
+        {!isInstrumentsCollapsed && (
+          <div className="w-full md:w-28 lg:w-32 xl:w-36 h-full min-h-0 flex-shrink-0 overflow-hidden">
+            <PresetSelector
+              selectedPreset={selectedPreset}
+              onPresetChange={setSelectedPreset}
+              onCollapse={() => setIsInstrumentsCollapsed(true)}
+            />
+          </div>
+        )}
+
+        <div className="flex-1 min-w-0 h-full min-h-0 overflow-hidden">
+          <SynthControls
             selectedPreset={selectedPreset}
-            onPresetChange={setSelectedPreset}
+            leftHeaderSlot={
+              isInstrumentsCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setIsInstrumentsCollapsed(false)}
+                  title="Expand instruments panel"
+                  aria-label="Expand instruments panel"
+                  className="self-stretch px-2.5 sm:px-3 bg-[#0a0d14] border border-[#1f2533] hover:border-[#38435d] hover:bg-[#111520] text-stone-300 hover:text-white text-xs font-mono font-medium rounded-xl flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
+                >
+                  <PanelLeftOpen className="w-3.5 h-3.5 text-[#d4a359]" />
+                  <span className="text-[11px]">Instruments</span>
+                </button>
+              ) : undefined
+            }
+            rightHeaderSlot={
+              isPlayerCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setIsPlayerCollapsed(false)}
+                  title="Expand player panel"
+                  aria-label="Expand player panel"
+                  className="self-stretch px-2.5 sm:px-3 bg-[#0a0d14] border border-[#1f2533] hover:border-[#38435d] hover:bg-[#111520] text-stone-300 hover:text-white text-xs font-mono font-medium rounded-xl flex items-center gap-1.5 flex-shrink-0 shadow-sm transition-all cursor-pointer select-none"
+                >
+                  <span className="text-[11px]">Player</span>
+                  <PanelRightOpen className="w-3.5 h-3.5 text-[#d4a359]" />
+                </button>
+              ) : undefined
+            }
           />
         </div>
 
-        <div className="flex-1 min-w-0 h-full min-h-0 overflow-hidden">
-          <SynthControls selectedPreset={selectedPreset} />
-        </div>
+        {!isPlayerCollapsed && (
+          <div className="w-full md:w-[330px] lg:w-[380px] xl:w-[420px] h-full min-h-0 flex-shrink-0 flex flex-col gap-1 overflow-hidden">
+            <div className="flex items-center justify-between px-1 flex-shrink-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+                  Player View
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsPlayerCollapsed(true)}
+                  title="Collapse player panel"
+                  aria-label="Collapse player panel"
+                  className="p-0.5 rounded text-stone-500 hover:text-[#d4a359] hover:bg-[#161c28] transition-colors cursor-pointer"
+                >
+                  <PanelRightClose className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="flex items-center gap-1 bg-[#0a0c10] p-0.5 rounded-lg border border-[#1f2533]">
+                <Button
+                  variant="solid"
+                  tone={playerView === "keys" ? "accent" : "secondary"}
+                  size="sm"
+                  onClick={() => setPlayerView("keys")}
+                  aria-label="Piano keyboard view"
+                  className={cn(
+                    "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
+                    playerView === "keys"
+                      ? "bg-[#d4a359] text-stone-950 font-bold border border-[#f1c784]"
+                      : "bg-transparent text-stone-400 hover:text-white border border-transparent",
+                  )}
+                >
+                  <Piano className="w-3 h-3 mr-1 inline" />
+                  Keys
+                </Button>
+                <Button
+                  variant="solid"
+                  tone={playerView === "drums" ? "accent" : "secondary"}
+                  size="sm"
+                  onClick={() => setPlayerView("drums")}
+                  aria-label="Drum pad view"
+                  className={cn(
+                    "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
+                    playerView === "drums"
+                      ? "bg-[#d4a359] text-stone-950 font-bold border border-[#f1c784]"
+                      : "bg-transparent text-stone-400 hover:text-white border border-transparent",
+                  )}
+                >
+                  <Drum className="w-3 h-3 mr-1 inline" />
+                  Drum Pad
+                </Button>
+              </div>
+            </div>
 
-        <div className="w-full md:w-[330px] lg:w-[380px] xl:w-[420px] h-full min-h-0 flex-shrink-0 flex flex-col gap-1 overflow-hidden">
-          <div className="flex items-center justify-between px-1 flex-shrink-0">
-            <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-              Player View
-            </span>
-            <div className="flex items-center gap-1 bg-[#0a0c10] p-0.5 rounded-lg border border-[#1f2533]">
-              <Button
-                variant="solid"
-                tone={playerView === "keys" ? "accent" : "secondary"}
-                size="sm"
-                onClick={() => setPlayerView("keys")}
-                aria-label="Piano keyboard view"
-                className={cn(
-                  "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
-                  playerView === "keys"
-                    ? "bg-[#d4a359] text-stone-950 font-bold border border-[#f1c784]"
-                    : "bg-transparent text-stone-400 hover:text-white border border-transparent",
-                )}
-              >
-                <Piano className="w-3 h-3 mr-1 inline" />
-                Keys
-              </Button>
-              <Button
-                variant="solid"
-                tone={playerView === "drums" ? "accent" : "secondary"}
-                size="sm"
-                onClick={() => setPlayerView("drums")}
-                aria-label="Drum pad view"
-                className={cn(
-                  "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
-                  playerView === "drums"
-                    ? "bg-[#d4a359] text-stone-950 font-bold border border-[#f1c784]"
-                    : "bg-transparent text-stone-400 hover:text-white border border-transparent",
-                )}
-              >
-                <Drum className="w-3 h-3 mr-1 inline" />
-                Drum Pad
-              </Button>
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {playerView === "keys" ? (
+                <PianoPlayer
+                  isRecording={isRecording}
+                  onRecordNote={handleRecordNote}
+                  activeNotes={Array.from(activeNotes)
+                    .filter((item) => item.endsWith(`-${currentStep}`))
+                    .map((item) => item.replace(`-${currentStep}`, ""))}
+                />
+              ) : (
+                <DrumPad
+                  selectedPreset={selectedPreset}
+                  isRecording={isRecording}
+                  onRecordNote={handleRecordNote}
+                  activeNotes={Array.from(activeNotes)
+                    .filter((item) => item.endsWith(`-${currentStep}`))
+                    .map((item) => item.replace(`-${currentStep}`, ""))}
+                />
+              )}
             </div>
           </div>
-
-          <div className="flex-1 min-h-0 overflow-hidden">
-            {playerView === "keys" ? (
-              <PianoPlayer
-                isRecording={isRecording}
-                onRecordNote={handleRecordNote}
-                activeNotes={Array.from(activeNotes)
-                  .filter((item) => item.endsWith(`-${currentStep}`))
-                  .map((item) => item.replace(`-${currentStep}`, ""))}
-              />
-            ) : (
-              <DrumPad
-                selectedPreset={selectedPreset}
-                isRecording={isRecording}
-                onRecordNote={handleRecordNote}
-                activeNotes={Array.from(activeNotes)
-                  .filter((item) => item.endsWith(`-${currentStep}`))
-                  .map((item) => item.replace(`-${currentStep}`, ""))}
-              />
-            )}
-          </div>
-        </div>
+        )}
       </footer>
     </div>
   );

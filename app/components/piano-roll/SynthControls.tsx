@@ -8,11 +8,15 @@ import { cn } from "../../lib/utils";
 export interface SynthControlsProps {
   className?: string;
   selectedPreset?: string;
+  leftHeaderSlot?: React.ReactNode;
+  rightHeaderSlot?: React.ReactNode;
 }
 
 export const SynthControls: React.FC<SynthControlsProps> = ({
   className,
   selectedPreset = "grand_piano",
+  leftHeaderSlot,
+  rightHeaderSlot,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [params, setParams] = useState<SynthParams>({ ...synth.params });
@@ -106,18 +110,22 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         className,
       )}
     >
-      {/* Waveform Canvas Container */}
-      <Card
-        elevation="low"
-        className="bg-[#0b0e14] border border-[#1f2533] rounded-xl p-1.5 flex flex-col flex-shrink-0 shadow-inner"
-      >
-        <canvas
-          ref={canvasRef}
-          width={640}
-          height={48}
-          className="w-full h-11 rounded-lg bg-[#05070a] border border-[#171c26]"
-        />
-      </Card>
+      {/* Waveform Canvas Container & Expansion Slots */}
+      <div className="flex items-stretch gap-2 flex-shrink-0 w-full">
+        {leftHeaderSlot}
+        <Card
+          elevation="low"
+          className="flex-1 bg-[#0b0e14] border border-[#1f2533] rounded-xl p-1.5 flex flex-col justify-center flex-shrink-0 shadow-inner min-w-0"
+        >
+          <canvas
+            ref={canvasRef}
+            width={640}
+            height={48}
+            className="w-full h-11 rounded-lg bg-[#05070a] border border-[#171c26]"
+          />
+        </Card>
+        {rightHeaderSlot}
+      </div>
 
       {/* 6 Module Cards Side-by-Side */}
       <div className="flex-1 min-h-0 flex items-stretch gap-2.5 overflow-x-auto pb-1">
