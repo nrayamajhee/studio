@@ -246,8 +246,8 @@ export default function Mixer() {
 
   return (
     <div className="h-screen w-screen max-w-full overflow-hidden bg-surface text-font dark:bg-surface-dark dark:text-surface flex flex-col font-sans transition-colors duration-200">
-      <header className="w-full flex items-center justify-between px-3 sm:px-6 py-2 border-b border-stone-200 dark:border-stone-800 bg-surface-light/95 dark:bg-stone-900/95 backdrop-blur-sm flex-shrink-0 z-50">
-        <div className="flex items-center gap-2">
+      <header className="w-full flex items-center justify-between px-2 py-2 border-b border-stone-200 dark:border-stone-800 bg-surface-light/95 dark:bg-stone-900/95 backdrop-blur-sm flex-shrink-0 z-50">
+        <div className="flex items-center gap-4 sm:gap-6">
           <Button
             asChild
             variant="solid"
@@ -369,7 +369,7 @@ export default function Mixer() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4 sm:gap-6">
           <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800/80 p-1 rounded-lg border border-stone-200 dark:border-stone-700">
             <div
               className="flex items-center gap-1.5 px-0.5"
