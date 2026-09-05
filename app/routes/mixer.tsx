@@ -311,7 +311,7 @@ export default function Mixer() {
             </Link>
           </Button>
 
-          <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800/80 p-1 rounded-lg border border-stone-200 dark:border-stone-700">
+          <div className="flex items-center gap-1.5">
             <Button
               variant="solid"
               tone="secondary"
@@ -445,7 +445,7 @@ export default function Mixer() {
         </div>
 
         <div className="flex items-center gap-4 sm:gap-6">
-          <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800/80 p-1 rounded-lg border border-stone-200 dark:border-stone-700">
+          <div className="flex items-center gap-1.5">
             <div
               className="flex items-center gap-1.5 px-0.5"
               onWheel={handleVolumeWheel}
