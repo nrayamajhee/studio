@@ -5,11 +5,21 @@
 :root {
   --slider-track: #e2e8f0;
   --slider-track-accent: #e7e5e4;
+  --slider-gutter-primary: color-mix(in srgb, var(--color-primary, #2554d7) 12%, transparent);
+  --slider-gutter-accent: color-mix(in srgb, #d4a359 15%, transparent);
+  --slider-gutter-secondary: color-mix(in srgb, #78716c 12%, transparent);
+  --slider-thumb-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 2px -1px rgba(0, 0, 0, 0.15);
+  --slider-thumb-shadow-hover: 0 2px 5px 0 rgba(0, 0, 0, 0.25), 0 1px 3px 0 rgba(0, 0, 0, 0.15);
 }
 
 :is(.dark, .dark *) {
   --slider-track: #27272a;
   --slider-track-accent: #232a3b;
+  --slider-gutter-primary: color-mix(in srgb, var(--color-primary, #2554d7) 22%, transparent);
+  --slider-gutter-accent: color-mix(in srgb, #d4a359 24%, transparent);
+  --slider-gutter-secondary: color-mix(in srgb, #78716c 20%, transparent);
+  --slider-thumb-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.45), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --slider-thumb-shadow-hover: 0 3px 6px 0 rgba(0, 0, 0, 0.5), 0 1px 3px 0 rgba(0, 0, 0, 0.35);
 }
 
 @theme {
@@ -60,3 +70,110 @@ body {
     color-scheme: dark;
   }
 }
+
+.custom-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  margin: 0;
+  padding: 0;
+}
+
+.custom-slider:focus-visible {
+  outline: none;
+}
+
+.custom-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: var(--slider-track-height, 6px);
+  border-radius: var(--slider-track-radius, 4px);
+  background: linear-gradient(
+    to right,
+    var(--slider-fill, #2554d7) 0%,
+    var(--slider-fill, #2554d7) var(--slider-progress, 0%),
+    var(--slider-gutter, var(--slider-gutter-primary)) var(--slider-progress, 0%),
+    var(--slider-gutter, var(--slider-gutter-primary)) 100%
+  );
+  border: none;
+  transition: background 0.1s ease;
+}
+
+.custom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: var(--slider-thumb-size, 14px);
+  width: var(--slider-thumb-size, 14px);
+  border-radius: 9999px;
+  background-color: #ffffff;
+  border: 2px solid var(--slider-thumb-border, var(--slider-fill, #2554d7));
+  box-shadow: var(--slider-thumb-shadow);
+  margin-top: calc((var(--slider-track-height, 6px) - var(--slider-thumb-size, 14px)) / 2);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.custom-slider:hover::-webkit-slider-thumb {
+  transform: scale(1.1);
+  box-shadow: var(--slider-thumb-shadow-hover);
+}
+
+.custom-slider:active::-webkit-slider-thumb {
+  transform: scale(0.95);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--slider-thumb-border, var(--slider-fill, #2554d7)) 25%, transparent);
+}
+
+.custom-slider::-moz-range-track {
+  width: 100%;
+  height: var(--slider-track-height, 6px);
+  border-radius: var(--slider-track-radius, 4px);
+  background: var(--slider-gutter, var(--slider-gutter-primary));
+  border: none;
+  transition: background 0.1s ease;
+}
+
+.custom-slider::-moz-range-progress {
+  height: var(--slider-track-height, 6px);
+  border-radius: var(--slider-track-radius, 4px) 0 0 var(--slider-track-radius, 4px);
+  background: var(--slider-fill, #2554d7);
+}
+
+.custom-slider::-moz-range-thumb {
+  height: var(--slider-thumb-size, 14px);
+  width: var(--slider-thumb-size, 14px);
+  border-radius: 9999px;
+  background-color: #ffffff;
+  border: 2px solid var(--slider-thumb-border, var(--slider-fill, #2554d7));
+  box-shadow: var(--slider-thumb-shadow);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.custom-slider:hover::-moz-range-thumb {
+  transform: scale(1.1);
+  box-shadow: var(--slider-thumb-shadow-hover);
+}
+
+.custom-slider:active::-moz-range-thumb {
+  transform: scale(0.95);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--slider-thumb-border, var(--slider-fill, #2554d7)) 25%, transparent);
+}
+
+.custom-slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.custom-slider:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+  transform: none;
+}
+
+.custom-slider:disabled::-moz-range-thumb {
+  cursor: not-allowed;
+  transform: none;
+}
+

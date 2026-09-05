@@ -470,7 +470,7 @@ export default function Mixer() {
               </Button>
 
               <Slider
-                tone="accent"
+                tone="primary"
                 size="sm"
                 min={0}
                 max={1}

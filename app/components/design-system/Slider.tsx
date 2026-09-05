@@ -3,21 +3,18 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
 export const sliderVariants = cva(
-  "w-full appearance-none rounded-lg cursor-pointer transition-all focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
+  "custom-slider appearance-none cursor-pointer transition-all focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
   {
     variants: {
       tone: {
-        primary:
-          "accent-primary focus-visible:ring-2 focus-visible:ring-primary",
-        accent:
-          "accent-[#d4a359] focus-visible:ring-2 focus-visible:ring-[#d4a359]",
-        secondary:
-          "accent-stone-400 focus-visible:ring-2 focus-visible:ring-stone-400",
+        primary: "focus-visible:ring-2 focus-visible:ring-primary/40",
+        accent: "focus-visible:ring-2 focus-visible:ring-[#d4a359]/40",
+        secondary: "focus-visible:ring-2 focus-visible:ring-stone-400/40",
       },
       size: {
-        sm: "h-1",
-        md: "h-1.5",
-        lg: "h-2",
+        sm: "",
+        md: "",
+        lg: "",
       },
     },
     defaultVariants: {
@@ -81,27 +78,55 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
       Math.min(100, ((currentVal - minNum) / range) * 100),
     );
 
-    const toneFillColors = {
-      primary: "#2563eb",
-      accent: "#d4a359",
-      secondary: "#71717a",
+    const toneConfigs = {
+      primary: {
+        fill: "var(--color-primary, #2554d7)",
+        gutter: "var(--slider-gutter-primary)",
+        thumbBorder: "var(--color-primary, #2554d7)",
+      },
+      accent: {
+        fill: "#d4a359",
+        gutter: "var(--slider-gutter-accent)",
+        thumbBorder: "#d4a359",
+      },
+      secondary: {
+        fill: "#78716c",
+        gutter: "var(--slider-gutter-secondary)",
+        thumbBorder: "#78716c",
+      },
     };
 
-    const fillColor = toneFillColors[tone || "primary"];
-    const trackColor =
-      tone === "accent"
-        ? "var(--slider-track-accent, #e7e5e4)"
-        : "var(--slider-track, #e2e8f0)";
+    const sizeConfigs = {
+      sm: {
+        trackHeight: "6px",
+        trackRadius: "4px",
+        thumbSize: "14px",
+      },
+      md: {
+        trackHeight: "8px",
+        trackRadius: "5px",
+        thumbSize: "16px",
+      },
+      lg: {
+        trackHeight: "10px",
+        trackRadius: "6px",
+        thumbSize: "18px",
+      },
+    };
 
-    const fillStyle: React.CSSProperties = showFill
-      ? {
-          background: `linear-gradient(to right, ${fillColor} 0%, ${fillColor} ${percentage}%, ${trackColor} ${percentage}%, ${trackColor} 100%)`,
-          ...style,
-        }
-      : {
-          backgroundColor: trackColor,
-          ...style,
-        };
+    const toneConfig = toneConfigs[tone || "primary"] || toneConfigs.primary;
+    const sizeConfig = sizeConfigs[size || "sm"] || sizeConfigs.sm;
+
+    const fillStyle: React.CSSProperties = {
+      "--slider-progress": showFill ? `${percentage}%` : "0%",
+      "--slider-fill": toneConfig.fill,
+      "--slider-gutter": toneConfig.gutter,
+      "--slider-thumb-border": toneConfig.thumbBorder,
+      "--slider-track-height": sizeConfig.trackHeight,
+      "--slider-track-radius": sizeConfig.trackRadius,
+      "--slider-thumb-size": sizeConfig.thumbSize,
+      ...style,
+    } as React.CSSProperties;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (onChange) {
@@ -110,7 +135,12 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
     };
 
     return (
-      <div className="w-full flex flex-col">
+      <div
+        className={cn(
+          "flex flex-col justify-center",
+          label || valueDisplay !== undefined ? "w-full" : "w-auto",
+        )}
+      >
         {(label || valueDisplay !== undefined) && (
           <div className="flex justify-between items-center text-[10px] mb-1">
             {label && (
