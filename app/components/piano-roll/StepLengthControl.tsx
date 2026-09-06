@@ -6,8 +6,6 @@ export interface StepLengthControlProps {
   className?: string;
   totalSteps: number;
   onTotalStepsChange: (steps: number) => void;
-  onDoubleSteps?: () => void;
-  onHalveSteps?: () => void;
 }
 
 export const STEP_PRESETS = [8, 12, 16, 24, 32, 48, 64];
@@ -49,8 +47,6 @@ export const StepLengthControl: React.FC<StepLengthControlProps> = ({
   className,
   totalSteps,
   onTotalStepsChange,
-  onDoubleSteps,
-  onHalveSteps,
 }) => {
   const handlePrev = () => {
     onTotalStepsChange(getPrevStepPreset(totalSteps));
@@ -72,77 +68,44 @@ export const StepLengthControl: React.FC<StepLengthControlProps> = ({
   return (
     <div
       className={cn(
-        "flex items-center gap-1 flex-shrink-0 select-none",
+        "flex items-center bg-stone-200 dark:bg-stone-700 rounded h-7 px-0.5 text-stone-800 dark:text-stone-100 select-none",
         className,
       )}
+      onWheel={handleWheel}
+      title={`Pattern Length: ${totalSteps} Steps (${getStepDesc(totalSteps)}). Click < > or scroll to cycle.`}
     >
-      <div
-        className="flex items-center bg-stone-200 dark:bg-stone-700 rounded h-7 px-0.5 text-stone-800 dark:text-stone-100"
-        onWheel={handleWheel}
-        title={`Pattern Length: ${totalSteps} Steps (${getStepDesc(totalSteps)}). Click < > to cycle presets, click label for next, scroll wheel to adjust.`}
+      <button
+        type="button"
+        onClick={handlePrev}
+        title="Previous step preset (Click <)"
+        aria-label="Previous step preset"
+        className="h-6 w-4 sm:w-5 flex items-center justify-center rounded hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 transition-colors cursor-pointer"
       >
-        <button
-          type="button"
-          onClick={handlePrev}
-          title="Previous step preset (Click <)"
-          aria-label="Previous step preset"
-          className="h-6 w-4 sm:w-5 flex items-center justify-center rounded hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 transition-colors cursor-pointer"
-        >
-          <ChevronLeft className="w-3 h-3" />
-        </button>
+        <ChevronLeft className="w-3 h-3" />
+      </button>
 
-        <button
-          type="button"
-          onClick={handleNext}
-          title={`Steps: ${totalSteps} (${getStepDesc(totalSteps)}). Click to cycle next.`}
-          aria-label={`Pattern Length: ${totalSteps} Steps`}
-          className="h-6 px-1.5 flex items-center justify-center gap-1 font-mono text-xs font-semibold hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100 rounded transition-colors cursor-pointer"
-        >
-          <span className="text-[10px] uppercase font-bold text-stone-500 dark:text-stone-400">
-            Steps:
-          </span>
-          <span className="font-bold">{totalSteps}</span>
-          <span className="text-[10px] text-stone-500 dark:text-stone-400 font-normal hidden sm:inline">
-            ({getStepDesc(totalSteps)})
-          </span>
-        </button>
+      <button
+        type="button"
+        onClick={handleNext}
+        title={`Steps: ${totalSteps} (${getStepDesc(totalSteps)}). Click to cycle next.`}
+        aria-label={`Pattern Length: ${totalSteps} Steps`}
+        className="h-6 px-1.5 flex items-center justify-center gap-1 font-mono text-xs font-semibold hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100 rounded transition-colors cursor-pointer"
+      >
+        <span className="font-bold">{totalSteps}</span>
+        <span className="text-[10px] text-stone-500 dark:text-stone-400 font-normal hidden sm:inline">
+          ({getStepDesc(totalSteps)})
+        </span>
+      </button>
 
-        <button
-          type="button"
-          onClick={handleNext}
-          title="Next step preset (Click >)"
-          aria-label="Next step preset"
-          className="h-6 w-4 sm:w-5 flex items-center justify-center rounded hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 transition-colors cursor-pointer"
-        >
-          <ChevronRight className="w-3 h-3" />
-        </button>
-      </div>
-
-      {onHalveSteps && (
-        <button
-          type="button"
-          onClick={onHalveSteps}
-          disabled={totalSteps <= 4}
-          title="Halve pattern length (÷2)"
-          aria-label="Halve pattern length"
-          className="h-7 px-1.5 text-[10px] font-mono font-bold rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-        >
-          ÷2
-        </button>
-      )}
-
-      {onDoubleSteps && (
-        <button
-          type="button"
-          onClick={onDoubleSteps}
-          disabled={totalSteps >= 64}
-          title="Double pattern length and duplicate notes (x2)"
-          aria-label="Double pattern length and duplicate notes"
-          className="h-7 px-1.5 text-[10px] font-mono font-bold rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-        >
-          x2
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={handleNext}
+        title="Next step preset (Click >)"
+        aria-label="Next step preset"
+        className="h-6 w-4 sm:w-5 flex items-center justify-center rounded hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 transition-colors cursor-pointer"
+      >
+        <ChevronRight className="w-3 h-3" />
+      </button>
     </div>
   );
 };

@@ -531,8 +531,6 @@ export default function Mixer() {
             <StepLengthControl
               totalSteps={totalSteps}
               onTotalStepsChange={setTotalSteps}
-              onDoubleSteps={handleDoubleSteps}
-              onHalveSteps={handleHalveSteps}
             />
           </div>
         </div>

@@ -18,7 +18,6 @@ import {
 import { synth } from "../../lib/synth";
 import { Button } from "../design-system/Button";
 import { Dropdown } from "../design-system/Dropdown";
-import { StepLengthControl } from "./StepLengthControl";
 import { cn } from "../../lib/utils";
 import {
   ChevronLeft,
@@ -1262,11 +1261,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
       </div>
 
       <div className="w-full flex items-center justify-between px-2.5 py-1.5 bg-stone-100/90 dark:bg-[#07090e] border-t border-stone-300 dark:border-stone-800 gap-2 overflow-x-auto flex-shrink-0 select-none z-30 no-scrollbar">
-        <StepLengthControl
-          totalSteps={totalSteps}
-          onTotalStepsChange={setTotalSteps}
-        />
-
         <div className="flex items-center gap-1 flex-shrink-0">
           <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
             Key:
