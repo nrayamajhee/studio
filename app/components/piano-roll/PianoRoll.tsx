@@ -18,6 +18,7 @@ import {
 import { synth } from "../../lib/synth";
 import { Button } from "../design-system/Button";
 import { Dropdown } from "../design-system/Dropdown";
+import { StepLengthControl } from "./StepLengthControl";
 import { cn } from "../../lib/utils";
 import {
   ChevronLeft,
@@ -795,28 +796,10 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
       </div>
 
       <div className="w-full flex items-center justify-between px-2.5 py-1.5 bg-stone-100/90 dark:bg-[#07090e] border-t border-stone-300 dark:border-stone-800 gap-2 overflow-x-auto flex-shrink-0 select-none z-30 no-scrollbar">
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Steps:
-          </span>
-          {[8, 12, 16, 24, 32].map((steps) => (
-            <Button
-              key={steps}
-              variant="solid"
-              tone={totalSteps === steps ? "primary" : "secondary"}
-              size="sm"
-              onClick={() => setTotalSteps(steps)}
-              className={cn(
-                "px-2 py-0.5 h-6 text-[10px] font-mono rounded border transition-colors",
-                totalSteps === steps
-                  ? "bg-primary text-white border-primary-light font-bold shadow-sm ring-1 ring-primary/40"
-                  : "bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white",
-              )}
-            >
-              {steps}
-            </Button>
-          ))}
-        </div>
+        <StepLengthControl
+          totalSteps={totalSteps}
+          onTotalStepsChange={setTotalSteps}
+        />
 
         <div className="flex items-center gap-1 flex-shrink-0">
           <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">

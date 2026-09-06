@@ -9,6 +9,7 @@ import { PresetSelector } from "../components/piano-roll/PresetSelector";
 import { SynthControls } from "../components/piano-roll/SynthControls";
 import { PianoPlayer } from "../components/piano-roll/PianoPlayer";
 import { DrumPad } from "../components/piano-roll/DrumPad";
+import { StepLengthControl } from "../components/piano-roll/StepLengthControl";
 import { synth } from "../lib/synth";
 import { cn } from "../lib/utils";
 import {
@@ -332,6 +333,36 @@ export default function Mixer() {
     setActiveNotes(new Set());
   };
 
+  const handleDoubleSteps = () => {
+    const nextSteps = Math.min(64, totalSteps * 2);
+    if (nextSteps === totalSteps) return;
+    const nextActive = new Set(activeNotes);
+    const nextVelocities = { ...noteVelocities };
+    for (const item of activeNotes) {
+      const lastDash = item.lastIndexOf("-");
+      if (lastDash === -1) continue;
+      const noteName = item.slice(0, lastDash);
+      const step = parseInt(item.slice(lastDash + 1), 10);
+      if (step < totalSteps) {
+        const duplicatedStep = step + totalSteps;
+        if (duplicatedStep < nextSteps) {
+          const newKey = `${noteName}-${duplicatedStep}`;
+          nextActive.add(newKey);
+          nextVelocities[newKey] = noteVelocities[item] ?? velocity;
+        }
+      }
+    }
+    setTotalSteps(nextSteps);
+    setActiveNotes(nextActive);
+    setNoteVelocities(nextVelocities);
+  };
+
+  const handleHalveSteps = () => {
+    const nextSteps = Math.max(4, Math.floor(totalSteps / 2));
+    if (nextSteps === totalSteps) return;
+    setTotalSteps(nextSteps);
+  };
+
   return (
     <div className="h-screen w-screen max-w-full overflow-hidden bg-surface text-font dark:bg-surface-dark dark:text-surface flex flex-col font-sans transition-colors duration-200">
       <header className="w-full flex items-center justify-between px-2 py-2 border-b border-stone-200 dark:border-stone-800 bg-surface-light/95 dark:bg-stone-900/95 backdrop-blur-sm flex-shrink-0 z-50">
@@ -482,6 +513,15 @@ export default function Mixer() {
                 <ChevronRight className="w-3 h-3" />
               </button>
             </div>
+
+            <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
+            <StepLengthControl
+              totalSteps={totalSteps}
+              onTotalStepsChange={setTotalSteps}
+              onDoubleSteps={handleDoubleSteps}
+              onHalveSteps={handleHalveSteps}
+            />
           </div>
         </div>
 
