@@ -52,7 +52,9 @@ export const VERTICAL_BLACK_KEYS = [
   { name: "C#", rowIndex: 10 },
 ] as const;
 
-export const TOTAL_OCTAVES = 10;
+export const MIN_OCTAVE = 0;
+export const MAX_OCTAVE = 10;
+export const TOTAL_OCTAVES = MAX_OCTAVE - MIN_OCTAVE + 1;
 export const ACTIVE_STEPS = 16;
 export const GROUP_SIZE = 4;
 export const ROW_HEIGHT = 32;
@@ -60,7 +62,7 @@ export const ROW_HEIGHT = 32;
 export function generate10OctavesNotes(): NoteInfo[] {
   const notes: NoteInfo[] = [];
 
-  for (let octave = TOTAL_OCTAVES; octave >= 1; octave--) {
+  for (let octave = MAX_OCTAVE; octave >= MIN_OCTAVE; octave--) {
     for (const name of NOTE_NAMES) {
       const isBlack = BLACK_NOTES.has(name);
       const isC = name === "C";
@@ -171,7 +173,7 @@ export const MIDI_NOTE_NAMES = [
 ] as const;
 
 export function midiToNote(midi: number): string | null {
-  if (midi < 12 || midi > 127) return null;
+  if (midi < 12 || midi > 143) return null;
   const semitone = midi % 12;
   const octave = Math.floor(midi / 12) - 1;
   return `${MIDI_NOTE_NAMES[semitone]}${octave}`;
@@ -182,6 +184,33 @@ export function transposeNote(noteName: string, semitones: number): string {
   if (midi === null) return noteName;
   const transposed = midiToNote(midi + semitones);
   return transposed || noteName;
+}
+
+export const INSTRUMENT_DEFAULT_NOTES: Record<string, string> = {
+  grand_piano: "C4",
+  piano: "C4",
+  electronic_pino: "C4",
+  acoustic_guitar: "C3",
+  guitar: "C3",
+  electric_guitar: "C3",
+  classical_guitar: "C3",
+  ukelele: "C4",
+  base_guitar: "C1",
+  bass: "C1",
+  drum_set: "C1",
+  drums: "C1",
+  drum_808: "C1",
+  trap_kit: "C1",
+  electronic_drums: "C1",
+  acoustic_percussion: "C1",
+  flute: "C5",
+  saxophone: "C4",
+};
+
+export function getTargetNoteForPreset(presetKey?: string): string {
+  if (!presetKey) return "C4";
+  const normalized = presetKey.toLowerCase().trim();
+  return INSTRUMENT_DEFAULT_NOTES[normalized] || "C4";
 }
 
 export type ScaleType =

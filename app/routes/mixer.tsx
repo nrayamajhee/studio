@@ -576,6 +576,7 @@ export default function Mixer() {
           onTotalStepsChange={setTotalSteps}
           velocity={velocity}
           onVelocityChange={setVelocity}
+          selectedPreset={selectedPreset}
         />
       </main>
 
@@ -632,7 +633,13 @@ export default function Mixer() {
                   variant="solid"
                   tone={playerView === "keys" ? "primary" : "secondary"}
                   size="sm"
-                  onClick={() => setPlayerView("keys")}
+                  onClick={() => {
+                    setPlayerView("keys");
+                    if (selectedPreset.includes("drum")) {
+                      setSelectedPreset("grand_piano");
+                      synth.loadPreset("grand_piano");
+                    }
+                  }}
                   aria-label="Piano keyboard view"
                   className={cn(
                     "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
@@ -648,7 +655,13 @@ export default function Mixer() {
                   variant="solid"
                   tone={playerView === "drums" ? "primary" : "secondary"}
                   size="sm"
-                  onClick={() => setPlayerView("drums")}
+                  onClick={() => {
+                    setPlayerView("drums");
+                    if (!selectedPreset.includes("drum")) {
+                      setSelectedPreset("drum_set");
+                      synth.loadPreset("drum_set");
+                    }
+                  }}
                   aria-label="Drum pad view"
                   className={cn(
                     "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",

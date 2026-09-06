@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
   generate10OctavesNotes,
   TOTAL_OCTAVES,
+  MAX_OCTAVE,
   ROW_HEIGHT,
   VERTICAL_WHITE_KEYS,
   VERTICAL_BLACK_KEYS,
@@ -11,6 +12,7 @@ import {
   transposeNote,
   PATTERN_PRESETS,
   type ScaleType,
+  getTargetNoteForPreset,
 } from "./types";
 import { synth } from "../../lib/synth";
 import { Button } from "../design-system/Button";
@@ -38,6 +40,7 @@ export interface PianoRollProps {
   onTotalStepsChange?: (steps: number) => void;
   velocity?: number;
   onVelocityChange?: (velocity: number) => void;
+  selectedPreset?: string;
 }
 
 export const PianoRoll: React.FC<PianoRollProps> = ({
@@ -52,10 +55,10 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   onTotalStepsChange,
   velocity: controlledVelocity,
   onVelocityChange,
+  selectedPreset = "grand_piano",
 }) => {
   const notes = useMemo(() => generate10OctavesNotes(), []);
   const containerRef = useRef<HTMLDivElement>(null);
-  const c4RowRef = useRef<HTMLDivElement | null>(null);
 
   const [internalVelocity, setInternalVelocity] = useState(85);
   const velocity = controlledVelocity ?? internalVelocity;
@@ -140,7 +143,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   const [pressedKey, setPressedKey] = useState<string | null>(null);
 
   const octavesList = useMemo(() => {
-    return Array.from({ length: TOTAL_OCTAVES }, (_, i) => TOTAL_OCTAVES - i);
+    return Array.from({ length: TOTAL_OCTAVES }, (_, i) => MAX_OCTAVE - i);
   }, []);
 
   const activePitches = useMemo(() => {
@@ -154,19 +157,41 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     return pitches;
   }, [activeNotes]);
 
+  const scrollToNote = useCallback((targetNote: string, smooth = true) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const el = document.getElementById(`piano-roll-row-${targetNote}`);
+    if (el) {
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = el.getBoundingClientRect();
+      const relativeTop = targetRect.top - containerRect.top + container.scrollTop;
+      const targetScrollTop =
+        relativeTop - container.clientHeight / 2 + targetRect.height / 2;
+      container.scrollTo({
+        top: Math.max(0, targetScrollTop),
+        behavior: smooth ? "smooth" : "auto",
+      });
+    }
+  }, []);
+
+  const scrollToOctave = useCallback(
+    (octave: number, smooth = true) => {
+      scrollToNote(`C${octave}`, smooth);
+    },
+    [scrollToNote],
+  );
+
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
+    const targetNote = getTargetNoteForPreset(selectedPreset);
     const timeout = setTimeout(() => {
-      const c4El = c4RowRef.current;
-      const container = containerRef.current;
-      if (c4El && container) {
-        const targetScrollTop =
-          c4El.offsetTop - container.clientHeight / 2 + c4El.clientHeight / 2;
-        container.scrollTop = Math.max(0, targetScrollTop);
-      }
-    }, 50);
+      scrollToNote(targetNote, !isFirstRender.current);
+      isFirstRender.current = false;
+    }, 60);
 
     return () => clearTimeout(timeout);
-  }, []);
+  }, [selectedPreset, scrollToNote]);
 
   const handleKeyClick = (noteFullName: string) => {
     setPressedKey(noteFullName);
@@ -268,20 +293,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
       }
     }
     updateNotes(next);
-  };
-
-  const scrollToOctave = (octave: number) => {
-    const container = containerRef.current;
-    if (!container) return;
-    const el = document.getElementById(`piano-roll-row-C${octave}`);
-    if (el) {
-      const targetScrollTop =
-        el.offsetTop - container.clientHeight / 2 + el.clientHeight / 2;
-      container.scrollTo({
-        top: Math.max(0, targetScrollTop),
-        behavior: "smooth",
-      });
-    }
   };
 
   const stepWidthClass =
@@ -704,11 +715,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                   <div
                     key={note.id}
                     id={`piano-roll-row-${note.fullName}`}
-                    ref={(el) => {
-                      if (el && note.fullName === "C4") {
-                        c4RowRef.current = el;
-                      }
-                    }}
                     className={cn(
                       "flex w-full h-8 border-b border-stone-200/80 dark:border-stone-800/80 transition-colors",
                       note.isC &&
