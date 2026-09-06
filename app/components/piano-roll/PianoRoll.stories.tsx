@@ -36,3 +36,12 @@ export const StepCount32: Story = {
     totalSteps: 32,
   },
 };
+
+export const WithDisabledAndSelectedNotes: Story = {
+  args: {
+    totalSteps: 16,
+    disabledNotes: ["C4-0", "E4-0", "G3-4"],
+    selectedNotes: ["C4-0", "E4-0", "G4-0"],
+  },
+};
+

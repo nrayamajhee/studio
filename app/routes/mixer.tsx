@@ -111,6 +111,8 @@ export default function Mixer() {
     "E4-12": 70,
     "C4-14": 85,
   }));
+  const [disabledNotes, setDisabledNotes] = useState<Set<string>>(new Set());
+  const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
   const currentStepRef = useRef(currentStep);
   const totalStepsRef = useRef(totalSteps);
   const isPlayingRef = useRef(isPlaying);
@@ -119,6 +121,7 @@ export default function Mixer() {
   const activeNotesRef = useRef(activeNotes);
   const velocityRef = useRef(velocity);
   const noteVelocitiesRef = useRef(noteVelocities);
+  const disabledNotesRef = useRef(disabledNotes);
 
   useEffect(() => {
     currentStepRef.current = currentStep;
@@ -129,7 +132,8 @@ export default function Mixer() {
     activeNotesRef.current = activeNotes;
     velocityRef.current = velocity;
     noteVelocitiesRef.current = noteVelocities;
-  }, [currentStep, totalSteps, isPlaying, isLooping, isMetronomeOn, activeNotes, velocity, noteVelocities]);
+    disabledNotesRef.current = disabledNotes;
+  }, [currentStep, totalSteps, isPlaying, isLooping, isMetronomeOn, activeNotes, velocity, noteVelocities, disabledNotes]);
 
   useEffect(() => {
     const isDrumPreset = [
@@ -151,6 +155,7 @@ export default function Mixer() {
       const suffix = `-${stepIdx}`;
       for (const item of activeNotesRef.current) {
         if (item.endsWith(suffix)) {
+          if (disabledNotesRef.current.has(item)) continue;
           const noteName = item.slice(0, -suffix.length);
           const noteVelPercent =
             noteVelocitiesRef.current[item] ?? velocityRef.current;
@@ -331,12 +336,15 @@ export default function Mixer() {
 
   const handleClearNotes = () => {
     setActiveNotes(new Set());
+    setDisabledNotes(new Set());
+    setSelectedNotes(new Set());
   };
 
   const handleDoubleSteps = () => {
     const nextSteps = Math.min(64, totalSteps * 2);
     if (nextSteps === totalSteps) return;
     const nextActive = new Set(activeNotes);
+    const nextDisabled = new Set(disabledNotes);
     const nextVelocities = { ...noteVelocities };
     for (const item of activeNotes) {
       const lastDash = item.lastIndexOf("-");
@@ -348,12 +356,16 @@ export default function Mixer() {
         if (duplicatedStep < nextSteps) {
           const newKey = `${noteName}-${duplicatedStep}`;
           nextActive.add(newKey);
+          if (disabledNotes.has(item)) {
+            nextDisabled.add(newKey);
+          }
           nextVelocities[newKey] = noteVelocities[item] ?? velocity;
         }
       }
     }
     setTotalSteps(nextSteps);
     setActiveNotes(nextActive);
+    setDisabledNotes(nextDisabled);
     setNoteVelocities(nextVelocities);
   };
 
@@ -622,6 +634,14 @@ export default function Mixer() {
           className="flex-1 w-full h-full"
           activeNotes={Array.from(activeNotes)}
           onNotesChange={(newNotes) => setActiveNotes(new Set(newNotes))}
+          disabledNotes={Array.from(disabledNotes)}
+          onDisabledNotesChange={(newDisabled) =>
+            setDisabledNotes(new Set(newDisabled))
+          }
+          selectedNotes={Array.from(selectedNotes)}
+          onSelectedNotesChange={(newSelected) =>
+            setSelectedNotes(new Set(newSelected))
+          }
           noteVelocities={noteVelocities}
           onNoteVelocitiesChange={setNoteVelocities}
           currentStep={isPlaying || isRecording ? currentStep : null}
@@ -748,7 +768,11 @@ export default function Mixer() {
                   isRecording={isRecording}
                   onRecordNote={handleRecordNote}
                   activeNotes={Array.from(activeNotes)
-                    .filter((item) => item.endsWith(`-${currentStep}`))
+                    .filter(
+                      (item) =>
+                        item.endsWith(`-${currentStep}`) &&
+                        !disabledNotes.has(item),
+                    )
                     .map((item) => item.replace(`-${currentStep}`, ""))}
                 />
               ) : (
@@ -757,7 +781,11 @@ export default function Mixer() {
                   isRecording={isRecording}
                   onRecordNote={handleRecordNote}
                   activeNotes={Array.from(activeNotes)
-                    .filter((item) => item.endsWith(`-${currentStep}`))
+                    .filter(
+                      (item) =>
+                        item.endsWith(`-${currentStep}`) &&
+                        !disabledNotes.has(item),
+                    )
                     .map((item) => item.replace(`-${currentStep}`, ""))}
                 />
               )}
