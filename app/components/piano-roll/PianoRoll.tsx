@@ -26,7 +26,6 @@ import {
   ArrowDown,
   ArrowLeftRight,
   Shuffle,
-  ZoomIn,
   Trash2,
   VolumeX,
   X,
@@ -161,7 +160,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   const groupSize = totalSteps === 12 || totalSteps === 24 ? 3 : 4;
   const [rootKey, setRootKey] = useState<string>("C");
   const [scale, setScale] = useState<ScaleType>("chromatic");
-  const [zoomLevel, setZoomLevel] = useState<"compact" | "normal" | "wide">("normal");
 
   const [internalActiveNotes, setInternalActiveNotes] = useState<Set<string>>(
     () => {
@@ -785,12 +783,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     updateNotes(next);
   };
 
-  const stepWidthClass =
-    zoomLevel === "compact"
-      ? "w-12 sm:w-14"
-      : zoomLevel === "wide"
-        ? "w-24 sm:w-28"
-        : "w-18 sm:w-20";
+  const stepWidthClass = "w-18 sm:w-20";
 
   const numGroups = Math.ceil(totalSteps / groupSize);
 
@@ -1430,50 +1423,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             Rnd
           </Button>
         </div>
-
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Default Vel:
-          </span>
-          <div className="flex items-center gap-1.5 bg-white dark:bg-[#12151c] px-2 py-0.5 h-6 rounded border border-stone-200 dark:border-[#1f2533]">
-            <input
-              type="range"
-              min={10}
-              max={100}
-              step={1}
-              value={velocity}
-              onChange={(e) => handleVelocityChange(Number(e.target.value))}
-              aria-label="Note velocity"
-              title={`Velocity: ${velocity}%`}
-              className="w-16 h-1 bg-stone-300 dark:bg-stone-700 rounded-lg appearance-none cursor-pointer accent-primary"
-            />
-            <span className="text-[10px] font-mono font-bold text-stone-700 dark:text-stone-300 min-w-[28px] text-right select-none">
-              {velocity}%
-            </span>
-          </div>
-        </div>
-
-        <div className="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
-
-        <Button
-          variant="solid"
-          tone="secondary"
-          size="sm"
-          onClick={() =>
-            setZoomLevel((prev) =>
-              prev === "compact"
-                ? "normal"
-                : prev === "normal"
-                  ? "wide"
-                  : "compact",
-            )
-          }
-          title={`Zoom: ${zoomLevel}`}
-          className="px-1.5 py-0.5 h-6 text-[10px] font-mono uppercase rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white flex-shrink-0"
-        >
-          <ZoomIn className="w-3 h-3 mr-0.5" />
-          {zoomLevel[0].toUpperCase()}
-        </Button>
       </div>
     </div>
   );

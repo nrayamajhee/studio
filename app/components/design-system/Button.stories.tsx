@@ -27,6 +27,8 @@ const meta: Meta<typeof Button> = {
       control: "select",
       options: [
         "primary",
+        "info",
+        "blue",
         "accent",
         "secondary",
         "success",
@@ -201,7 +203,8 @@ export const ToneVariants: Story = {
   name: "Tone Variants",
   render: () => (
     <div className="flex flex-wrap gap-4 items-center">
-      <Button tone="primary" title="Primary" />
+      <Button tone="primary" title="Primary (Orange)" />
+      <Button tone="info" title="Info (Blue)" />
       <Button tone="accent" title="Accent" />
       <Button tone="secondary" title="Secondary" />
       <Button tone="success" title="Success" />

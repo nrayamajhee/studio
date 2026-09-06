@@ -16,6 +16,8 @@ export const buttonVariants = cva(
       },
       tone: {
         primary: "focus-visible:ring-primary",
+        info: "focus-visible:ring-info",
+        blue: "focus-visible:ring-blue",
         accent: "focus-visible:ring-accent",
         warning: "focus-visible:ring-warning",
         error: "focus-visible:ring-error",
@@ -48,6 +50,18 @@ export const buttonVariants = cva(
         tone: "primary",
         className:
           "bg-primary text-white hover:bg-primary-light active:bg-primary-dark",
+      },
+      {
+        variant: "solid",
+        tone: "info",
+        className:
+          "bg-info text-white hover:bg-info-light active:bg-info-dark",
+      },
+      {
+        variant: "solid",
+        tone: "blue",
+        className:
+          "bg-blue text-white hover:bg-blue-light active:bg-blue-dark",
       },
       {
         variant: "solid",
@@ -84,6 +98,16 @@ export const buttonVariants = cva(
         variant: ["outline", "ghost"],
         tone: "primary",
         className: "text-primary hover:bg-primary/10 active:bg-primary/20",
+      },
+      {
+        variant: ["outline", "ghost"],
+        tone: "info",
+        className: "text-info hover:bg-info/10 active:bg-info/20",
+      },
+      {
+        variant: ["outline", "ghost"],
+        tone: "blue",
+        className: "text-blue hover:bg-blue/10 active:bg-blue/20",
       },
       {
         variant: ["outline", "ghost"],
@@ -126,7 +150,14 @@ export const buttonVariants = cva(
 export type ButtonVariantProps = VariantProps<typeof buttonVariants>;
 
 export type Tone =
-  "primary" | "accent" | "warning" | "error" | "success" | "secondary";
+  | "primary"
+  | "info"
+  | "blue"
+  | "accent"
+  | "warning"
+  | "error"
+  | "success"
+  | "secondary";
 
 export type ButtonTone = Tone;
 export type ButtonVariant = NonNullable<ButtonVariantProps["variant"]>;

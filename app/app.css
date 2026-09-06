@@ -5,7 +5,9 @@
 :root {
   --slider-track: #e2e8f0;
   --slider-track-accent: #e7e5e4;
-  --slider-gutter-primary: color-mix(in srgb, var(--color-primary, #2554d7) 12%, transparent);
+  --slider-gutter-primary: color-mix(in srgb, var(--color-primary, #f97316) 12%, transparent);
+  --slider-gutter-info: color-mix(in srgb, var(--color-info, #2554d7) 12%, transparent);
+  --slider-gutter-blue: color-mix(in srgb, var(--color-blue, #2554d7) 12%, transparent);
   --slider-gutter-accent: color-mix(in srgb, #d4a359 15%, transparent);
   --slider-gutter-secondary: color-mix(in srgb, #78716c 12%, transparent);
   --slider-thumb-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 2px -1px rgba(0, 0, 0, 0.15);
@@ -15,7 +17,9 @@
 :is(.dark, .dark *) {
   --slider-track: #27272a;
   --slider-track-accent: #232a3b;
-  --slider-gutter-primary: color-mix(in srgb, var(--color-primary, #2554d7) 22%, transparent);
+  --slider-gutter-primary: color-mix(in srgb, var(--color-primary, #f97316) 22%, transparent);
+  --slider-gutter-info: color-mix(in srgb, var(--color-info, #2554d7) 22%, transparent);
+  --slider-gutter-blue: color-mix(in srgb, var(--color-blue, #2554d7) 22%, transparent);
   --slider-gutter-accent: color-mix(in srgb, #d4a359 24%, transparent);
   --slider-gutter-secondary: color-mix(in srgb, #78716c 20%, transparent);
   --slider-thumb-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.45), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
@@ -29,17 +33,25 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
     "Noto Color Emoji";
 
-  --color-primary: #2554d7;
-  --color-primary-light: #3b71ee;
-  --color-primary-dark: #1d41b8;
+  --color-primary: #f97316;
+  --color-primary-light: #fb923c;
+  --color-primary-dark: #ea580c;
+
+  --color-info: #2554d7;
+  --color-info-light: #3b71ee;
+  --color-info-dark: #1d41b8;
+
+  --color-blue: #2554d7;
+  --color-blue-light: #3b71ee;
+  --color-blue-dark: #1d41b8;
 
   --color-accent: #7c3aed;
   --color-accent-light: #a855f7;
   --color-accent-dark: #6d28d9;
 
-  --color-warning: #ea580c;
-  --color-warning-light: #f97316;
-  --color-warning-dark: #c2410c;
+  --color-warning: #d97706;
+  --color-warning-light: #f59e0b;
+  --color-warning-dark: #b45309;
 
   --color-error: #dc2626;
   --color-error-light: #ef4444;
@@ -95,8 +107,8 @@ body {
   border-radius: var(--slider-track-radius, 4px);
   background: linear-gradient(
     to right,
-    var(--slider-fill, #2554d7) 0%,
-    var(--slider-fill, #2554d7) var(--slider-progress, 0%),
+    var(--slider-fill, #f97316) 0%,
+    var(--slider-fill, #f97316) var(--slider-progress, 0%),
     var(--slider-gutter, var(--slider-gutter-primary)) var(--slider-progress, 0%),
     var(--slider-gutter, var(--slider-gutter-primary)) 100%
   );
@@ -111,7 +123,7 @@ body {
   width: var(--slider-thumb-size, 14px);
   border-radius: 9999px;
   background-color: #ffffff;
-  border: 2px solid var(--slider-thumb-border, var(--slider-fill, #2554d7));
+  border: 2px solid var(--slider-thumb-border, var(--slider-fill, #f97316));
   box-shadow: var(--slider-thumb-shadow);
   margin-top: calc((var(--slider-track-height, 6px) - var(--slider-thumb-size, 14px)) / 2);
   cursor: pointer;
@@ -125,7 +137,7 @@ body {
 
 .custom-slider:active::-webkit-slider-thumb {
   transform: scale(0.95);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--slider-thumb-border, var(--slider-fill, #2554d7)) 25%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--slider-thumb-border, var(--slider-fill, #f97316)) 25%, transparent);
 }
 
 .custom-slider::-moz-range-track {
@@ -140,7 +152,7 @@ body {
 .custom-slider::-moz-range-progress {
   height: var(--slider-track-height, 6px);
   border-radius: var(--slider-track-radius, 4px) 0 0 var(--slider-track-radius, 4px);
-  background: var(--slider-fill, #2554d7);
+  background: var(--slider-fill, #f97316);
 }
 
 .custom-slider::-moz-range-thumb {
@@ -148,7 +160,7 @@ body {
   width: var(--slider-thumb-size, 14px);
   border-radius: 9999px;
   background-color: #ffffff;
-  border: 2px solid var(--slider-thumb-border, var(--slider-fill, #2554d7));
+  border: 2px solid var(--slider-thumb-border, var(--slider-fill, #f97316));
   box-shadow: var(--slider-thumb-shadow);
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
@@ -161,7 +173,7 @@ body {
 
 .custom-slider:active::-moz-range-thumb {
   transform: scale(0.95);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--slider-thumb-border, var(--slider-fill, #2554d7)) 25%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--slider-thumb-border, var(--slider-fill, #f97316)) 25%, transparent);
 }
 
 .custom-slider:disabled {

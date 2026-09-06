@@ -444,7 +444,7 @@ export default function Mixer() {
 
             <Button
               variant="solid"
-              tone={isLooping ? "primary" : "secondary"}
+              tone={isLooping ? "info" : "secondary"}
               size="sm"
               iconOnly
               onClick={() => setIsLooping((prev) => !prev)}
@@ -453,7 +453,7 @@ export default function Mixer() {
               className={cn(
                 "p-1.5 h-auto rounded",
                 isLooping
-                  ? "bg-primary text-white ring-1 ring-primary-light shadow-sm"
+                  ? "bg-info text-white ring-1 ring-info-light shadow-sm"
                   : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
               )}
             >
