@@ -450,7 +450,14 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     ],
   );
 
-  const handleCellClick = useCallback(
+  const handleCellClick = useCallback(() => {
+    if (wasDraggingRef.current) return;
+    if (selectedNotes.size > 0) {
+      updateSelectedNotes(new Set());
+    }
+  }, [selectedNotes.size, updateSelectedNotes]);
+
+  const handleCellDoubleClick = useCallback(
     (noteFullName: string, stepIndex: number) => {
       if (wasDraggingRef.current) return;
       const noteKey = `${noteFullName}-${stepIndex}`;
@@ -1045,15 +1052,17 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                       if (isNoteActive) {
                                         handleNoteClick(noteKey, e);
                                       } else {
-                                        handleCellClick(
-                                          note.fullName,
-                                          stepNumber,
-                                        );
+                                        handleCellClick();
                                       }
                                     }}
                                     onDoubleClick={(e) => {
                                       if (isNoteActive) {
                                         handleNoteDoubleClick(noteKey, e);
+                                      } else {
+                                        handleCellDoubleClick(
+                                          note.fullName,
+                                          stepNumber,
+                                        );
                                       }
                                     }}
                                     onKeyDown={(e) => {
@@ -1065,7 +1074,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                             e as unknown as React.MouseEvent,
                                           );
                                         } else {
-                                          handleCellClick(
+                                          handleCellDoubleClick(
                                             note.fullName,
                                             stepNumber,
                                           );
