@@ -4,7 +4,6 @@ import { useStudioStorage } from "../lib/studioStorage";
 import type { Route } from "./+types/mixer";
 import { useTheme } from "../hooks/useTheme";
 import { Button } from "../components/design-system/Button";
-import { GoogleIcon } from "../components/design-system/Icons";
 import { Slider } from "../components/design-system/Slider";
 import { PianoRoll } from "../components/piano-roll/PianoRoll";
 import { PresetSelector } from "../components/piano-roll/PresetSelector";
@@ -57,7 +56,6 @@ export default function Mixer() {
 
   const [studio, setStudio] = useStudioStorage();
 
-  const user = studio.user;
   const activeNotes = useMemo(() => new Set(studio.notes), [studio.notes]);
   const setActiveNotes = useCallback(
     (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => {
@@ -789,30 +787,6 @@ export default function Mixer() {
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
           </div>
-          <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
-
-          {/* User profile pill */}
-          <Link
-            to="/"
-            title={
-              user
-                ? `Signed in as ${user.name} (${user.email || ""}) - Click to manage account`
-                : "Guest - Click to login with Google"
-            }
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-200/80 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 border border-stone-300 dark:border-stone-700 transition-colors text-xs select-none max-w-[150px]"
-          >
-            <span className="text-xs flex items-center justify-center">
-              {user ? (
-                <GoogleIcon className="w-3.5 h-3.5 flex-shrink-0" />
-              ) : (
-                "👤"
-              )}
-            </span>
-            <span className="font-mono text-xs font-semibold text-stone-700 dark:text-stone-300 truncate">
-              {user ? user.name : "Login"}
-            </span>
-          </Link>
-
           <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
 
           <Button
