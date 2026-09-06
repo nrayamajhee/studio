@@ -34,6 +34,9 @@ export interface PianoRollProps {
   initialActiveNotes?: string[];
   activeNotes?: string[];
   onNotesChange?: (activeNotes: string[]) => void;
+  noteVelocities?: Record<string, number>;
+  onNoteVelocitiesChange?: (velocities: Record<string, number>) => void;
+  onNoteVelocityChange?: (noteKey: string, velocity: number) => void;
   currentStep?: number | null;
   isPlaying?: boolean;
   isRecording?: boolean;
@@ -49,6 +52,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   initialActiveNotes,
   activeNotes: controlledActiveNotes,
   onNotesChange,
+  noteVelocities: controlledNoteVelocities,
+  onNoteVelocitiesChange,
+  onNoteVelocityChange,
   currentStep = null,
   isPlaying = false,
   isRecording = false,
@@ -70,6 +76,53 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
   const [internalVelocity, setInternalVelocity] = useState(85);
   const velocity = controlledVelocity ?? internalVelocity;
+
+  const [internalNoteVelocities, setInternalNoteVelocities] = useState<
+    Record<string, number>
+  >(() => ({
+    "C3-0": 85,
+    "C4-0": 95,
+    "E4-0": 80,
+    "G4-0": 88,
+    "C4-2": 90,
+    "E4-2": 82,
+    "G4-2": 85,
+    "G2-4": 85,
+  }));
+  const noteVelocities = controlledNoteVelocities ?? internalNoteVelocities;
+
+  const updateNoteVelocities = useCallback(
+    (next: Record<string, number>) => {
+      setInternalNoteVelocities(next);
+      if (onNoteVelocitiesChange) {
+        onNoteVelocitiesChange(next);
+      }
+    },
+    [onNoteVelocitiesChange],
+  );
+
+  const handleNoteVelocityChange = useCallback(
+    (noteKey: string, val: number) => {
+      const clamped = Math.max(5, Math.min(100, Math.round(val)));
+      const next = { ...noteVelocities, [noteKey]: clamped };
+      updateNoteVelocities(next);
+      if (onNoteVelocityChange) {
+        onNoteVelocityChange(noteKey, clamped);
+      }
+    },
+    [noteVelocities, updateNoteVelocities, onNoteVelocityChange],
+  );
+
+  const [hoveredNote, setHoveredNote] = useState<string | null>(null);
+  const [isDraggingSlider, setIsDraggingSlider] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setIsDraggingSlider(null);
+    };
+    window.addEventListener("mouseup", handleGlobalMouseUp);
+    return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
+  }, []);
 
   const handleVelocityChange = (val: number) => {
     const clamped = Math.max(10, Math.min(100, Math.round(val)));
@@ -225,9 +278,16 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     const next = new Set(activeNotes);
     if (next.has(noteKey)) {
       next.delete(noteKey);
+      if (noteVelocities[noteKey] !== undefined) {
+        const nextVel = { ...noteVelocities };
+        delete nextVel[noteKey];
+        updateNoteVelocities(nextVel);
+      }
     } else {
       next.add(noteKey);
-      const vel = velocity / 100;
+      const noteVel = noteVelocities[noteKey] ?? velocity;
+      handleNoteVelocityChange(noteKey, noteVel);
+      const vel = noteVel / 100;
       const sustainSec = 0.8 + 1.2 * vel;
       synth.playNote(noteFullName, undefined, sustainSec, vel);
     }
@@ -236,40 +296,52 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
   const shiftNotes = (offset: number) => {
     const next = new Set<string>();
+    const nextVelocities: Record<string, number> = {};
     for (const item of activeNotes) {
       const lastDash = item.lastIndexOf("-");
       if (lastDash === -1) continue;
       const noteName = item.slice(0, lastDash);
       const step = parseInt(item.slice(lastDash + 1), 10);
       const newStep = (step + offset + totalSteps) % totalSteps;
-      next.add(`${noteName}-${newStep}`);
+      const newKey = `${noteName}-${newStep}`;
+      next.add(newKey);
+      nextVelocities[newKey] = noteVelocities[item] ?? velocity;
     }
+    updateNoteVelocities(nextVelocities);
     updateNotes(next);
   };
 
   const transposeNotes = (semitones: number) => {
     const next = new Set<string>();
+    const nextVelocities: Record<string, number> = {};
     for (const item of activeNotes) {
       const lastDash = item.lastIndexOf("-");
       if (lastDash === -1) continue;
       const noteName = item.slice(0, lastDash);
       const step = item.slice(lastDash + 1);
       const transposed = transposeNote(noteName, semitones);
-      next.add(`${transposed}-${step}`);
+      const newKey = `${transposed}-${step}`;
+      next.add(newKey);
+      nextVelocities[newKey] = noteVelocities[item] ?? velocity;
     }
+    updateNoteVelocities(nextVelocities);
     updateNotes(next);
   };
 
   const reverseNotes = () => {
     const next = new Set<string>();
+    const nextVelocities: Record<string, number> = {};
     for (const item of activeNotes) {
       const lastDash = item.lastIndexOf("-");
       if (lastDash === -1) continue;
       const noteName = item.slice(0, lastDash);
       const step = parseInt(item.slice(lastDash + 1), 10);
       const newStep = totalSteps - 1 - step;
-      next.add(`${noteName}-${newStep}`);
+      const newKey = `${noteName}-${newStep}`;
+      next.add(newKey);
+      nextVelocities[newKey] = noteVelocities[item] ?? velocity;
     }
+    updateNoteVelocities(nextVelocities);
     updateNotes(next);
   };
 
@@ -279,13 +351,17 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     );
     if (inKeyNotes.length === 0) return;
     const next = new Set<string>();
+    const nextVelocities: Record<string, number> = {};
     for (let step = 0; step < totalSteps; step += 2) {
       if (Math.random() > 0.2) {
         const randomNote =
           inKeyNotes[Math.floor(Math.random() * inKeyNotes.length)];
-        next.add(`${randomNote.fullName}-${step}`);
+        const newKey = `${randomNote.fullName}-${step}`;
+        next.add(newKey);
+        nextVelocities[newKey] = Math.floor(70 + Math.random() * 30);
       }
     }
+    updateNoteVelocities(nextVelocities);
     updateNotes(next);
   };
 
@@ -314,10 +390,10 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
   const stepWidthClass =
     zoomLevel === "compact"
-      ? "w-8 sm:w-9"
+      ? "w-12 sm:w-14"
       : zoomLevel === "wide"
-        ? "w-14 sm:w-16"
-        : "w-10 sm:w-12";
+        ? "w-24 sm:w-28"
+        : "w-18 sm:w-20";
 
   const numGroups = Math.ceil(totalSteps / groupSize);
 
@@ -554,19 +630,31 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                   currentStep === stepNumber &&
                                   (isPlaying || isRecording);
 
+                                const noteVel =
+                                  noteVelocities[noteKey] ?? velocity;
+                                const isHovered =
+                                  hoveredNote === noteKey ||
+                                  isDraggingSlider === noteKey;
+
                                 return (
-                                  <Button
+                                  <div
                                     key={stepNumber}
-                                    variant="solid"
-                                    tone="secondary"
-                                    size="sm"
+                                    role="button"
+                                    tabIndex={0}
                                     onClick={() =>
                                       toggleNote(note.fullName, stepNumber)
                                     }
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        toggleNote(note.fullName, stepNumber);
+                                      }
+                                    }}
                                     aria-label={`${note.fullName} at step ${stepNumber + 1}`}
                                     className={cn(
-                                      "h-full rounded-none border-0 border-r border-stone-200/70 dark:border-stone-800/70 transition-colors relative cursor-pointer flex-shrink-0 p-0 hover:bg-transparent",
+                                      "h-full rounded-none border-0 border-r border-stone-200/70 dark:border-stone-800/70 transition-colors relative cursor-pointer flex-shrink-0 p-0 select-none",
                                       stepWidthClass,
+                                      isHovered ? "z-30" : "z-0",
                                       isCurrentStep &&
                                         "bg-primary/15 dark:bg-primary/25",
                                       note.isBlack
@@ -576,21 +664,119 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                   >
                                     {isNoteActive && (
                                       <div
-                                        className="absolute inset-0.5 rounded-sm bg-gradient-to-r from-primary to-primary-light text-white font-mono text-[9px] font-bold flex flex-col items-center justify-center shadow-sm pointer-events-none transition-opacity"
-                                        style={{ opacity: 0.55 + (velocity / 100) * 0.45 }}
+                                        className="relative w-full h-full"
+                                        onMouseEnter={() =>
+                                          setHoveredNote(noteKey)
+                                        }
+                                        onMouseLeave={() => {
+                                          if (isDraggingSlider !== noteKey) {
+                                            setHoveredNote(null);
+                                          }
+                                        }}
+                                        onWheel={(e) => {
+                                          e.stopPropagation();
+                                          e.preventDefault();
+                                          const delta = e.deltaY < 0 ? 5 : -5;
+                                          handleNoteVelocityChange(
+                                            noteKey,
+                                            Math.max(
+                                              5,
+                                              Math.min(100, noteVel + delta),
+                                            ),
+                                          );
+                                        }}
                                       >
-                                        <span className="leading-tight">{note.fullName}</span>
-                                        <div className="w-full px-1 mt-0.5">
-                                          <div className="h-0.5 w-full bg-white/30 rounded-full overflow-hidden">
-                                            <div
-                                              className="h-full bg-white rounded-full transition-all"
-                                              style={{ width: `${velocity}%` }}
-                                            />
+                                        <div
+                                          className="absolute inset-0.5 rounded-sm bg-gradient-to-r from-primary to-primary-light text-white font-mono text-[9px] font-bold flex flex-col justify-between px-1.5 py-0.5 shadow-sm transition-opacity"
+                                          style={{
+                                            opacity:
+                                              0.5 + (noteVel / 100) * 0.5,
+                                          }}
+                                        >
+                                          <div className="flex items-center justify-between w-full leading-none">
+                                            <span className="leading-tight font-bold">
+                                              {note.fullName}
+                                            </span>
+                                            <span className="text-[8px] font-mono opacity-80 select-none">
+                                              {noteVel}%
+                                            </span>
+                                          </div>
+                                          <div className="w-full">
+                                            <div className="h-1 w-full bg-black/25 dark:bg-white/20 rounded-full overflow-hidden">
+                                              <div
+                                                className="h-full bg-white rounded-full transition-all"
+                                                style={{
+                                                  width: `${noteVel}%`,
+                                                }}
+                                              />
+                                            </div>
                                           </div>
                                         </div>
+
+                                        {isHovered && (
+                                          <div
+                                            onClick={(e) => e.stopPropagation()}
+                                            onMouseDown={(e) =>
+                                              e.stopPropagation()
+                                            }
+                                            className={cn(
+                                              "absolute left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 px-2.5 py-1.5 bg-stone-900/95 dark:bg-[#0c0f17] text-white rounded-lg shadow-2xl border border-stone-700/80 dark:border-stone-700 backdrop-blur-md pointer-events-auto select-none min-w-[136px]",
+                                              note.octave >= 10
+                                                ? "top-full mt-1.5"
+                                                : "bottom-full mb-1.5",
+                                            )}
+                                          >
+                                            <span className="text-[9px] font-mono text-stone-400 uppercase font-semibold flex-shrink-0">
+                                              Vel
+                                            </span>
+                                            <input
+                                              type="range"
+                                              min={5}
+                                              max={100}
+                                              step={1}
+                                              value={noteVel}
+                                              onChange={(e) => {
+                                                const val = Number(
+                                                  e.target.value,
+                                                );
+                                                handleNoteVelocityChange(
+                                                  noteKey,
+                                                  val,
+                                                );
+                                              }}
+                                              onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                                setIsDraggingSlider(noteKey);
+                                              }}
+                                              onMouseUp={() => {
+                                                setIsDraggingSlider(null);
+                                                const v = noteVel / 100;
+                                                synth.playNote(
+                                                  note.fullName,
+                                                  undefined,
+                                                  0.3,
+                                                  v,
+                                                );
+                                              }}
+                                              aria-label={`${note.fullName} velocity`}
+                                              className="w-20 h-1.5 bg-stone-700 rounded-lg appearance-none cursor-pointer accent-primary"
+                                            />
+                                            <span className="text-[10px] font-mono font-bold text-primary-light min-w-[28px] text-right">
+                                              {noteVel}%
+                                            </span>
+                                            <div
+                                              className={cn(
+                                                "absolute left-1/2 -translate-x-1/2 border-4 border-transparent",
+                                                note.octave >= 10
+                                                  ? "bottom-full border-b-stone-900/95 dark:border-b-[#0c0f17]"
+                                                  : "top-full border-t-stone-900/95 dark:border-t-[#0c0f17]",
+                                              )}
+                                            />
+                                          </div>
+                                        )}
                                       </div>
                                     )}
-                                  </Button>
+                                  </div>
                                 );
                               },
                             )}
@@ -779,7 +965,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Velocity:
+            Default Vel:
           </span>
           <div className="flex items-center gap-1.5 bg-white dark:bg-[#12151c] px-2 py-0.5 h-6 rounded border border-stone-200 dark:border-[#1f2533]">
             <input

@@ -100,6 +100,16 @@ export default function Mixer() {
   }, []);
 
   const [velocity, setVelocity] = useState(85);
+  const [noteVelocities, setNoteVelocities] = useState<Record<string, number>>(() => ({
+    "C4-0": 95,
+    "E4-2": 80,
+    "G4-4": 88,
+    "B4-6": 75,
+    "C5-8": 100,
+    "G4-10": 82,
+    "E4-12": 70,
+    "C4-14": 85,
+  }));
   const currentStepRef = useRef(currentStep);
   const totalStepsRef = useRef(totalSteps);
   const isPlayingRef = useRef(isPlaying);
@@ -107,6 +117,7 @@ export default function Mixer() {
   const isMetronomeOnRef = useRef(isMetronomeOn);
   const activeNotesRef = useRef(activeNotes);
   const velocityRef = useRef(velocity);
+  const noteVelocitiesRef = useRef(noteVelocities);
 
   useEffect(() => {
     currentStepRef.current = currentStep;
@@ -116,7 +127,8 @@ export default function Mixer() {
     isMetronomeOnRef.current = isMetronomeOn;
     activeNotesRef.current = activeNotes;
     velocityRef.current = velocity;
-  }, [currentStep, totalSteps, isPlaying, isLooping, isMetronomeOn, activeNotes, velocity]);
+    noteVelocitiesRef.current = noteVelocities;
+  }, [currentStep, totalSteps, isPlaying, isLooping, isMetronomeOn, activeNotes, velocity, noteVelocities]);
 
   useEffect(() => {
     const isDrumPreset = [
@@ -136,12 +148,13 @@ export default function Mixer() {
       }
 
       const suffix = `-${stepIdx}`;
-      const vel = velocityRef.current / 100;
-      // Sustain notes across beats based on velocity so sounds ring out and sustain musically
-      const stepDurationSec = (60 / bpm / 4) * (2 + 3.5 * vel);
       for (const item of activeNotesRef.current) {
         if (item.endsWith(suffix)) {
           const noteName = item.slice(0, -suffix.length);
+          const noteVelPercent =
+            noteVelocitiesRef.current[item] ?? velocityRef.current;
+          const vel = noteVelPercent / 100;
+          const stepDurationSec = (60 / bpm / 4) * (2 + 3.5 * vel);
           synth.playNote(noteName, undefined, stepDurationSec, vel);
         }
       }
@@ -569,6 +582,8 @@ export default function Mixer() {
           className="flex-1 w-full h-full"
           activeNotes={Array.from(activeNotes)}
           onNotesChange={(newNotes) => setActiveNotes(new Set(newNotes))}
+          noteVelocities={noteVelocities}
+          onNoteVelocitiesChange={setNoteVelocities}
           currentStep={isPlaying || isRecording ? currentStep : null}
           isPlaying={isPlaying}
           isRecording={isRecording}
