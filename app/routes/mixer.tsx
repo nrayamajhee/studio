@@ -10,6 +10,8 @@ import { SynthControls } from "../components/piano-roll/SynthControls";
 import { PianoPlayer } from "../components/piano-roll/PianoPlayer";
 import { DrumPad } from "../components/piano-roll/DrumPad";
 import { StepLengthControl } from "../components/piano-roll/StepLengthControl";
+import { OctaveJumpControl } from "../components/piano-roll/OctaveJumpControl";
+import { getPresetJumpConfig } from "../components/piano-roll/types";
 import { synth } from "../lib/synth";
 import { cn } from "../lib/utils";
 import {
@@ -71,6 +73,16 @@ export default function Mixer() {
   const [totalSteps, setTotalSteps] = useState(16);
   const [bpm, setBpm] = useState(72);
   const [selectedPreset, setSelectedPreset] = useState("grand_piano");
+  const [jumpOctave, setJumpOctave] = useState<number>(() => {
+    const cfg = getPresetJumpConfig("grand_piano");
+    return cfg.defaultOctave;
+  });
+
+  useEffect(() => {
+    const cfg = getPresetJumpConfig(selectedPreset);
+    setJumpOctave(cfg.defaultOctave);
+  }, [selectedPreset]);
+
   const [playerView, setPlayerView] = useState<"keys" | "drums">("keys");
   const [isPlayerCollapsed, setIsPlayerCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
@@ -532,6 +544,14 @@ export default function Mixer() {
               totalSteps={totalSteps}
               onTotalStepsChange={setTotalSteps}
             />
+
+            <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
+            <OctaveJumpControl
+              octave={jumpOctave}
+              onOctaveChange={setJumpOctave}
+              presetKey={selectedPreset}
+            />
           </div>
         </div>
 
@@ -647,6 +667,8 @@ export default function Mixer() {
           isRecording={isRecording}
           totalSteps={totalSteps}
           onTotalStepsChange={setTotalSteps}
+          jumpOctave={jumpOctave}
+          onJumpOctaveChange={setJumpOctave}
           velocity={velocity}
           onVelocityChange={setVelocity}
           selectedPreset={selectedPreset}

@@ -49,6 +49,8 @@ export interface PianoRollProps {
   isRecording?: boolean;
   totalSteps?: number;
   onTotalStepsChange?: (steps: number) => void;
+  jumpOctave?: number;
+  onJumpOctaveChange?: (octave: number) => void;
   velocity?: number;
   onVelocityChange?: (velocity: number) => void;
   selectedPreset?: string;
@@ -71,6 +73,8 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   isRecording = false,
   totalSteps: controlledTotalSteps,
   onTotalStepsChange,
+  jumpOctave: controlledJumpOctave,
+  onJumpOctaveChange,
   velocity: controlledVelocity,
   onVelocityChange,
   selectedPreset = "grand_piano",
@@ -81,9 +85,10 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     () => getPresetJumpConfig(selectedPreset),
     [selectedPreset],
   );
-  const [activeJumpOctave, setActiveJumpOctave] = useState<number>(
+  const [internalJumpOctave, setInternalJumpOctave] = useState<number>(
     jumpConfig.defaultOctave,
   );
+  const activeJumpOctave = controlledJumpOctave ?? internalJumpOctave;
 
   const [internalVelocity, setInternalVelocity] = useState(85);
   const velocity = controlledVelocity ?? internalVelocity;
@@ -626,17 +631,26 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
   const handleJump = useCallback(
     (octave: number) => {
-      setActiveJumpOctave(octave);
+      setInternalJumpOctave(octave);
+      if (onJumpOctaveChange) {
+        onJumpOctaveChange(octave);
+      }
       scrollToOctave(octave);
     },
-    [scrollToOctave],
+    [scrollToOctave, onJumpOctaveChange],
   );
+
+  useEffect(() => {
+    if (controlledJumpOctave !== undefined) {
+      scrollToOctave(controlledJumpOctave);
+    }
+  }, [controlledJumpOctave, scrollToOctave]);
 
   const isFirstRender = useRef(true);
 
   useEffect(() => {
     const targetNote = getTargetNoteForPreset(selectedPreset);
-    setActiveJumpOctave(jumpConfig.defaultOctave);
+    setInternalJumpOctave(jumpConfig.defaultOctave);
     const timeout = setTimeout(() => {
       scrollToNote(targetNote, !isFirstRender.current);
       isFirstRender.current = false;
@@ -1416,36 +1430,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             Rnd
           </Button>
         </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Jump:
-          </span>
-          {jumpConfig.octaves.map((oct) => {
-            const isSelected = activeJumpOctave === oct;
-            const isDefault = oct === jumpConfig.defaultOctave;
-            return (
-              <Button
-                key={oct}
-                variant="solid"
-                tone={isSelected ? "primary" : "secondary"}
-                size="sm"
-                onClick={() => handleJump(oct)}
-                title={`Jump to C${oct}${isDefault ? " (Default)" : ""}`}
-                className={cn(
-                  "px-2 py-0.5 h-6 text-[10px] font-mono rounded border transition-colors",
-                  isSelected
-                    ? "bg-primary text-white border-primary-light font-bold shadow-sm ring-1 ring-primary/40"
-                    : "bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white",
-                )}
-              >
-                C{oct}
-              </Button>
-            );
-          })}
-        </div>
-
-        <div className="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
