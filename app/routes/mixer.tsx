@@ -115,16 +115,18 @@ export default function Mixer() {
   }, []);
 
   const [velocity, setVelocity] = useState(85);
-  const [noteVelocities, setNoteVelocities] = useState<Record<string, number>>(() => ({
-    "C4-0": 95,
-    "E4-2": 80,
-    "G4-4": 88,
-    "B4-6": 75,
-    "C5-8": 100,
-    "G4-10": 82,
-    "E4-12": 70,
-    "C4-14": 85,
-  }));
+  const [noteVelocities, setNoteVelocities] = useState<Record<string, number>>(
+    () => ({
+      "C4-0": 95,
+      "E4-2": 80,
+      "G4-4": 88,
+      "B4-6": 75,
+      "C5-8": 100,
+      "G4-10": 82,
+      "E4-12": 70,
+      "C4-14": 85,
+    }),
+  );
   const [disabledNotes, setDisabledNotes] = useState<Set<string>>(new Set());
   const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
   const [externalPressedKeys, setExternalPressedKeys] = useState<string[]>([]);
@@ -356,7 +358,7 @@ export default function Mixer() {
 
   const handleBpmWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY < 0 ? (e.shiftKey ? 5 : 1) : (e.shiftKey ? -5 : -1);
+    const delta = e.deltaY < 0 ? (e.shiftKey ? 5 : 1) : e.shiftKey ? -5 : -1;
     setBpm((prev) => Math.max(40, Math.min(260, prev + delta)));
   };
 
@@ -729,7 +731,9 @@ export default function Mixer() {
             aria-label={`Current theme: ${theme}. Switch to ${nextTheme} theme.`}
             className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300"
           >
-            {theme === "light" && <Sun className="w-3.5 h-3.5 text-amber-500" />}
+            {theme === "light" && (
+              <Sun className="w-3.5 h-3.5 text-amber-500" />
+            )}
             {theme === "dark" && <Moon className="w-3.5 h-3.5 text-blue-400" />}
             {theme === "system" && (
               <Monitor className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
@@ -788,8 +792,16 @@ export default function Mixer() {
                 <button
                   type="button"
                   onClick={() => setIsPlayerCollapsed(false)}
-                  title={playerView === "drums" ? "Expand Drum Pad" : "Expand Piano Keys"}
-                  aria-label={playerView === "drums" ? "Expand Drum Pad" : "Expand Piano Keys"}
+                  title={
+                    playerView === "drums"
+                      ? "Expand Drum Pad"
+                      : "Expand Piano Keys"
+                  }
+                  aria-label={
+                    playerView === "drums"
+                      ? "Expand Drum Pad"
+                      : "Expand Piano Keys"
+                  }
                   className="self-center h-8 w-8 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm transition-all cursor-pointer select-none group"
                 >
                   {playerView === "drums" ? (

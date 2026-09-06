@@ -12,7 +12,8 @@ const meta: Meta<typeof PianoKeyboard> = {
     mode: {
       control: "radio",
       options: ["keyboard", "player"],
-      description: "Display mode: standalone keyboard or interactive DAW player",
+      description:
+        "Display mode: standalone keyboard or interactive DAW player",
     },
     octaves: {
       control: { type: "number", min: 1, max: 7, step: 1 },

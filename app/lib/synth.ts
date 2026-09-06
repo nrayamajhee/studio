@@ -1344,6 +1344,18 @@ class HybridSynthEngine {
     this.applyFxParams();
   }
 
+  public registerPreset(presetKey: string, params: SynthParams): void {
+    SYNTH_PRESETS[presetKey] = { ...params };
+  }
+
+  public unregisterPreset(presetKey: string): void {
+    delete SYNTH_PRESETS[presetKey];
+  }
+
+  public getParams(): SynthParams {
+    return { ...this.params };
+  }
+
   public updateParam<K extends keyof SynthParams>(
     key: K,
     value: SynthParams[K],
