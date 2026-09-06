@@ -28,7 +28,10 @@ import {
   Shuffle,
   Trash2,
   VolumeX,
+  Volume2,
   X,
+  Copy,
+  CheckSquare,
 } from "lucide-react";
 
 export interface PianoRollProps {
@@ -452,14 +455,50 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     ],
   );
 
-  const handleCellClick = useCallback(() => {
-    if (wasDraggingRef.current) return;
-    if (selectedNotes.size > 0) {
-      updateSelectedNotes(new Set());
-    }
-  }, [selectedNotes.size, updateSelectedNotes]);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    noteKey?: string;
+  } | null>(null);
 
-  const handleCellDoubleClick = useCallback(
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent, targetNoteKey?: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (targetNoteKey) {
+        if (!selectedNotes.has(targetNoteKey)) {
+          updateSelectedNotes(new Set([targetNoteKey]));
+        }
+      }
+
+      const menuWidth = 190;
+      const menuHeight = 240;
+      const x = Math.min(e.clientX, window.innerWidth - menuWidth - 8);
+      const y = Math.min(e.clientY, window.innerHeight - menuHeight - 8);
+
+      setContextMenu({ x, y, noteKey: targetNoteKey });
+    },
+    [selectedNotes, updateSelectedNotes],
+  );
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleOutside = () => setContextMenu(null);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setContextMenu(null);
+    };
+    window.addEventListener("click", handleOutside);
+    window.addEventListener("contextmenu", handleOutside);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("click", handleOutside);
+      window.removeEventListener("contextmenu", handleOutside);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [contextMenu]);
+
+  const handleCellClick = useCallback(
     (noteFullName: string, stepIndex: number) => {
       if (wasDraggingRef.current) return;
       const noteKey = `${noteFullName}-${stepIndex}`;
@@ -494,6 +533,48 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
       handleNoteVelocityChange,
     ],
   );
+
+  const duplicateSelectedNotes = useCallback(() => {
+    if (selectedNotes.size === 0) return;
+    const nextActive = new Set(activeNotes);
+    const newSelected = new Set<string>();
+    const nextVelocities = { ...noteVelocities };
+
+    selectedNotes.forEach((key) => {
+      const [noteName, stepStr] = key.split("-");
+      const step = parseInt(stepStr, 10);
+      const targetStep = (step + 1) % totalSteps;
+      const newKey = `${noteName}-${targetStep}`;
+      nextActive.add(newKey);
+      newSelected.add(newKey);
+      if (noteVelocities[key] !== undefined) {
+        nextVelocities[newKey] = noteVelocities[key];
+      }
+    });
+
+    updateNotes(nextActive);
+    updateSelectedNotes(newSelected);
+    updateNoteVelocities(nextVelocities);
+    setContextMenu(null);
+  }, [
+    selectedNotes,
+    activeNotes,
+    noteVelocities,
+    totalSteps,
+    updateNotes,
+    updateSelectedNotes,
+    updateNoteVelocities,
+  ]);
+
+  const selectAllNotes = useCallback(() => {
+    updateSelectedNotes(new Set(activeNotes));
+    setContextMenu(null);
+  }, [activeNotes, updateSelectedNotes]);
+
+  const clearSelection = useCallback(() => {
+    updateSelectedNotes(new Set());
+    setContextMenu(null);
+  }, [updateSelectedNotes]);
 
   const deleteSelectedNotes = useCallback(() => {
     if (selectedNotes.size === 0) return;
@@ -539,6 +620,52 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
     updateDisabledNotes(nextDisabled);
   }, [selectedNotes, disabledNotes, updateDisabledNotes]);
+
+  const transposeSelectedOrAll = useCallback(
+    (semitones: number) => {
+      const targetSet = selectedNotes.size > 0 ? selectedNotes : activeNotes;
+      if (targetSet.size === 0) return;
+      const next = new Set<string>(activeNotes);
+      const nextDisabled = new Set<string>(disabledNotes);
+      const nextSelected = new Set<string>();
+      const nextVelocities: Record<string, number> = { ...noteVelocities };
+
+      for (const item of targetSet) {
+        next.delete(item);
+        const wasDisabled = nextDisabled.delete(item);
+        const wasSelected = selectedNotes.has(item);
+        const vel = nextVelocities[item];
+        delete nextVelocities[item];
+
+        const lastDash = item.lastIndexOf("-");
+        if (lastDash === -1) continue;
+        const noteName = item.slice(0, lastDash);
+        const step = item.slice(lastDash + 1);
+        const transposed = transposeNote(noteName, semitones);
+        const newKey = `${transposed}-${step}`;
+        next.add(newKey);
+        if (wasDisabled) nextDisabled.add(newKey);
+        if (wasSelected) nextSelected.add(newKey);
+        if (vel !== undefined) nextVelocities[newKey] = vel;
+      }
+      updateNoteVelocities(nextVelocities);
+      updateDisabledNotes(nextDisabled);
+      if (selectedNotes.size > 0) {
+        updateSelectedNotes(nextSelected);
+      }
+      updateNotes(next);
+    },
+    [
+      activeNotes,
+      disabledNotes,
+      selectedNotes,
+      noteVelocities,
+      updateNotes,
+      updateDisabledNotes,
+      updateSelectedNotes,
+      updateNoteVelocities,
+    ],
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -895,19 +1022,19 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                             style={{ height }}
                             className={cn(
                               "w-full rounded-none border-0 border-b border-stone-300 dark:border-stone-300 px-3 text-xs font-mono font-medium transition-colors cursor-pointer select-none justify-end active:translate-y-0",
-                              "!bg-gradient-to-r !from-stone-50 !via-white !to-stone-100 dark:!from-stone-50 dark:!via-white dark:!to-stone-100 hover:!from-amber-50 hover:!to-white active:!bg-stone-200 !text-stone-900 dark:!text-stone-900 shadow-sm",
+                              "!bg-gradient-to-r !from-stone-50 !via-white !to-stone-100 dark:!from-stone-50 dark:!via-white dark:!to-stone-100 hover:!from-stone-100 hover:!to-white active:!bg-stone-200 !text-stone-900 dark:!text-stone-900 shadow-sm",
                               isC &&
-                                "border-b-2 border-b-primary/60 dark:border-b-primary/60 font-bold",
+                                "border-b-2 border-b-stone-500 dark:border-b-stone-400 font-bold",
                               (hasActiveNote || isPressed) &&
-                                "!bg-blue-100 dark:!bg-blue-950/80 ring-2 ring-primary ring-inset !from-blue-100 !to-blue-200 dark:!from-blue-950/80 dark:!to-blue-900/80 !text-stone-900 dark:!text-white font-bold",
+                                "!bg-stone-200 dark:!bg-stone-300 ring-2 ring-stone-600 dark:ring-stone-400 ring-inset !text-stone-950 font-bold shadow-inner",
                             )}
                           >
                             <span className="flex items-center gap-1.5">
                               {inKey && scale !== "chromatic" && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-stone-400 dark:bg-stone-500" />
                               )}
                               {hasActiveNote && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-stone-800 dark:bg-stone-200" />
                               )}
                               <span
                                 className={cn(
@@ -919,7 +1046,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                 {fullName}
                               </span>
                               {isC && (
-                                <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-primary text-white">
+                                <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-stone-800 dark:bg-stone-700 text-white">
                                   C{octave}
                                 </span>
                               )}
@@ -952,7 +1079,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                             "absolute left-0 z-20 w-20 sm:w-24 px-2.5 text-xs font-mono rounded-none rounded-r border-0 border-y border-r border-stone-700 cursor-pointer select-none transition-all justify-between active:translate-y-0",
                             "!bg-gradient-to-r !from-stone-800 !via-stone-900 !to-black !text-stone-200 shadow-md shadow-black/80 hover:brightness-125 active:brightness-90",
                             (hasActiveNote || isPressed) &&
-                              "!from-primary-dark !to-primary !text-white !shadow-primary/50 ring-1 ring-primary-light",
+                              "!from-stone-700 !to-stone-800 !bg-stone-700 !text-white ring-2 ring-stone-500 ring-inset shadow-inner",
                           )}
                         >
                           <span className="text-[10px] font-medium opacity-90">
@@ -960,13 +1087,13 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                           </span>
                           <span className="flex items-center gap-1">
                             {inKey && scale !== "chromatic" && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary-light" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-stone-500" />
                             )}
                             <span
                               className={cn(
                                 "w-1.5 h-1.5 rounded-full transition-colors",
                                 hasActiveNote
-                                  ? "bg-primary-light"
+                                  ? "bg-stone-200"
                                   : "bg-stone-700/80",
                               )}
                             />
@@ -982,11 +1109,12 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             <div
               ref={gridContainerRef}
               onMouseDown={handleGridMouseDown}
+              onContextMenu={(e) => handleContextMenu(e)}
               className="relative flex flex-col flex-1 min-w-0 select-none"
             >
               {marquee && marquee.isDragging && (
                 <div
-                  className="absolute pointer-events-none z-40 border-2 border-dashed border-primary bg-primary/20 rounded shadow-md backdrop-blur-[0.5px]"
+                  className="absolute pointer-events-none z-40 border-2 border-solid border-primary bg-primary/20 rounded shadow-md backdrop-blur-[0.5px]"
                   style={{
                     left: Math.min(marquee.startX, marquee.currentX),
                     top: Math.min(marquee.startY, marquee.currentY),
@@ -1058,18 +1186,19 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                       if (isNoteActive) {
                                         handleNoteClick(noteKey, e);
                                       } else {
-                                        handleCellClick();
+                                        handleCellClick(note.fullName, stepNumber);
                                       }
                                     }}
                                     onDoubleClick={(e) => {
                                       if (isNoteActive) {
                                         handleNoteDoubleClick(noteKey, e);
-                                      } else {
-                                        handleCellDoubleClick(
-                                          note.fullName,
-                                          stepNumber,
-                                        );
                                       }
+                                    }}
+                                    onContextMenu={(e) => {
+                                      handleContextMenu(
+                                        e,
+                                        isNoteActive ? noteKey : undefined,
+                                      );
                                     }}
                                     onKeyDown={(e) => {
                                       if (e.key === "Enter" || e.key === " ") {
@@ -1080,7 +1209,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                             e as unknown as React.MouseEvent,
                                           );
                                         } else {
-                                          handleCellDoubleClick(
+                                          handleCellClick(
                                             note.fullName,
                                             stepNumber,
                                           );
@@ -1100,7 +1229,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                         "bg-primary/15 dark:bg-primary/25",
                                       note.isBlack
                                         ? "bg-stone-100/70 dark:bg-stone-900/50 hover:bg-stone-200/80 dark:hover:bg-stone-800/70"
-                                        : "bg-surface-light dark:bg-stone-950/40 hover:bg-blue-50/50 dark:hover:bg-stone-900/40",
+                                        : "bg-surface-light dark:bg-stone-950/40 hover:bg-stone-100 dark:hover:bg-stone-900/50",
                                     )}
                                   >
                                     {isNoteActive && (
@@ -1311,47 +1440,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
           />
         </div>
 
-        {selectedNotes.size > 0 && (
-          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/40 rounded-md flex-shrink-0 animate-in fade-in duration-150">
-            <span className="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400 select-none">
-              {selectedNotes.size} selected
-            </span>
-            <div className="h-3.5 w-px bg-amber-500/30" />
-            <Button
-              variant="solid"
-              tone="secondary"
-              size="sm"
-              onClick={toggleDisabledSelectedNotes}
-              title="Mute / Unmute selected notes (D)"
-              className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
-            >
-              <VolumeX className="w-3 h-3 mr-0.5 text-stone-500" />
-              Mute
-            </Button>
-            <Button
-              variant="solid"
-              tone="secondary"
-              size="sm"
-              onClick={deleteSelectedNotes}
-              title="Delete selected notes (Delete / Backspace)"
-              className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-red-600 dark:text-red-400 border border-stone-200 dark:border-[#1f2533] hover:bg-red-50 dark:hover:bg-red-950/30"
-            >
-              <Trash2 className="w-3 h-3 mr-0.5" />
-              Del
-            </Button>
-            <Button
-              variant="solid"
-              tone="secondary"
-              size="sm"
-              onClick={() => updateSelectedNotes(new Set())}
-              title="Clear selection (Escape)"
-              className="px-1 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 border border-stone-200 dark:border-[#1f2533]"
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-        )}
-
         <div className="flex items-center gap-1 flex-shrink-0">
           <Button
             variant="solid"
@@ -1380,7 +1468,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             variant="solid"
             tone="secondary"
             size="sm"
-            onClick={() => transposeNotes(1)}
+            onClick={() => transposeSelectedOrAll(1)}
             title="Transpose +1 semitone"
             className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
           >
@@ -1391,7 +1479,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             variant="solid"
             tone="secondary"
             size="sm"
-            onClick={() => transposeNotes(-1)}
+            onClick={() => transposeSelectedOrAll(-1)}
             title="Transpose -1 semitone"
             className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
           >
@@ -1424,6 +1512,131 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
           </Button>
         </div>
       </div>
+
+      {contextMenu && (
+        <div
+          className="fixed z-50 min-w-[180px] py-1 bg-white/95 dark:bg-[#151922]/95 backdrop-blur-md rounded-lg shadow-xl border border-stone-200/90 dark:border-stone-800/90 text-xs text-stone-700 dark:text-stone-300 font-sans select-none animate-in fade-in zoom-in-95 duration-100"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {selectedNotes.size > 0 && (
+            <div className="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 border-b border-stone-100 dark:border-stone-800/60 mb-1">
+              {selectedNotes.size} note{selectedNotes.size > 1 ? "s" : ""} selected
+            </div>
+          )}
+          <button
+            type="button"
+            disabled={selectedNotes.size === 0}
+            onClick={() => {
+              toggleDisabledSelectedNotes();
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              {selectedNotes.size > 0 &&
+              Array.from(selectedNotes).every((k) => disabledNotes.has(k)) ? (
+                <Volume2 className="w-3.5 h-3.5 text-stone-500" />
+              ) : (
+                <VolumeX className="w-3.5 h-3.5 text-stone-500" />
+              )}
+              {selectedNotes.size > 0 &&
+              Array.from(selectedNotes).every((k) => disabledNotes.has(k))
+                ? "Unmute"
+                : "Mute"}
+            </span>
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              D
+            </span>
+          </button>
+          <button
+            type="button"
+            disabled={selectedNotes.size === 0}
+            onClick={duplicateSelectedNotes}
+            className="flex items-center justify-between w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <Copy className="w-3.5 h-3.5 text-stone-500" />
+              Duplicate
+            </span>
+          </button>
+          <button
+            type="button"
+            disabled={selectedNotes.size === 0 && activeNotes.size === 0}
+            onClick={() => {
+              transposeSelectedOrAll(1);
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <ArrowUp className="w-3.5 h-3.5 text-stone-500" />
+              Transpose +1
+            </span>
+          </button>
+          <button
+            type="button"
+            disabled={selectedNotes.size === 0 && activeNotes.size === 0}
+            onClick={() => {
+              transposeSelectedOrAll(-1);
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <ArrowDown className="w-3.5 h-3.5 text-stone-500" />
+              Transpose -1
+            </span>
+          </button>
+          <button
+            type="button"
+            disabled={selectedNotes.size === 0}
+            onClick={() => {
+              deleteSelectedNotes();
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </span>
+            <span className="text-[10px] font-mono text-red-400 dark:text-red-500">
+              Del
+            </span>
+          </button>
+          <div className="my-1 border-t border-stone-200/70 dark:border-stone-800/70" />
+          <button
+            type="button"
+            disabled={activeNotes.size === 0}
+            onClick={selectAllNotes}
+            className="flex items-center justify-between w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <CheckSquare className="w-3.5 h-3.5 text-stone-500" />
+              Select All
+            </span>
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              ⌘A
+            </span>
+          </button>
+          {selectedNotes.size > 0 && (
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="flex items-center justify-between w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800/70 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <X className="w-3.5 h-3.5 text-stone-500" />
+                Deselect
+              </span>
+              <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+                Esc
+              </span>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

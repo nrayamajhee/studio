@@ -208,7 +208,7 @@ export const PRESET_JUMP_CONFIGS: Record<string, PresetJumpConfig> = {
   trap_kit: { defaultOctave: 1, octaves: [1, 2] },
   electronic_drums: { defaultOctave: 1, octaves: [1, 2] },
   acoustic_percussion: { defaultOctave: 1, octaves: [1, 2] },
-  flute: { defaultOctave: 5, octaves: [4, 5, 6] },
+  flute: { defaultOctave: 4, octaves: [3, 4, 5] },
   saxophone: { defaultOctave: 4, octaves: [3, 4, 5] },
 };
 

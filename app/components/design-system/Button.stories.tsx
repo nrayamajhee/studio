@@ -203,7 +203,7 @@ export const ToneVariants: Story = {
   name: "Tone Variants",
   render: () => (
     <div className="flex flex-wrap gap-4 items-center">
-      <Button tone="primary" title="Primary (Orange)" />
+      <Button tone="primary" title="Primary (Blue)" />
       <Button tone="info" title="Info (Blue)" />
       <Button tone="accent" title="Accent" />
       <Button tone="secondary" title="Secondary" />

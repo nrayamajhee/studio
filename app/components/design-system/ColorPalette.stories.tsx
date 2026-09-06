@@ -14,7 +14,7 @@ export default meta;
 
 const buttonColors = [
   {
-    name: "Primary (Orange)",
+    name: "Primary (Blue)",
     className: "bg-primary text-white border-transparent",
     labelClass: "text-white",
   },

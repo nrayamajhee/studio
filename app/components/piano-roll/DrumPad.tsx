@@ -442,14 +442,14 @@ export const DrumPad: React.FC<DrumPadProps> = ({
               }}
               aria-label={`${pad.label} pad (${pad.note})`}
               className={cn(
-                "relative flex flex-col justify-between items-stretch p-1 sm:p-1.5 rounded-lg border transition-all cursor-pointer select-none text-left h-full w-full",
+                "relative flex flex-col justify-between items-stretch p-1 sm:p-1.5 rounded-lg border transition-all cursor-pointer select-none text-left h-full w-full min-w-0",
                 getPadColorClasses(pad, isActive),
               )}
             >
-              <div className="flex items-center justify-between w-full pointer-events-none">
+              <div className="flex items-center justify-between w-full min-w-0 pointer-events-none">
                 <kbd
                   className={cn(
-                    "text-[8px] font-mono px-1 py-0.2 rounded uppercase leading-tight font-bold",
+                    "text-[8px] font-mono px-1 py-0.2 rounded uppercase leading-tight font-bold flex-shrink-0",
                     isActive
                       ? "bg-black/20 text-stone-950"
                       : "bg-stone-200/90 dark:bg-stone-900/80 text-stone-700 dark:text-stone-400 border border-stone-300 dark:border-stone-800",
@@ -459,7 +459,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
                 </kbd>
                 <span
                   className={cn(
-                    "text-[8px] font-mono leading-tight",
+                    "text-[8px] font-mono leading-tight truncate ml-1",
                     isActive ? "text-stone-900 font-bold" : "text-stone-600 dark:text-stone-300 opacity-70",
                   )}
                 >
@@ -467,7 +467,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
                 </span>
               </div>
 
-              <div className="w-full truncate pointer-events-none mt-auto">
+              <div className="w-full min-w-0 truncate pointer-events-none mt-auto">
                 <span
                   className={cn(
                     "block text-[10px] sm:text-[11px] font-medium truncate leading-tight tracking-tight",
