@@ -11,6 +11,7 @@ export interface DrumPadProps {
   isRecording?: boolean;
   onRecordNote?: (noteName: string) => void;
   activeNotes?: string[];
+  externalPressedPads?: string[];
 }
 
 interface PadConfig {
@@ -256,6 +257,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
   isRecording = false,
   onRecordNote,
   activeNotes = [],
+  externalPressedPads = [],
 }) => {
   const [bank, setBank] = useState(0);
   const [pressedPads, setPressedPads] = useState<Set<string>>(new Set());
@@ -264,6 +266,10 @@ export const DrumPad: React.FC<DrumPadProps> = ({
   const pads = useMemo(() => getKitPads(selectedPreset, bank), [selectedPreset, bank]);
 
   const activeNotesSet = useMemo(() => new Set(activeNotes), [activeNotes]);
+  const externalPressedPadsSet = useMemo(
+    () => new Set(externalPressedPads),
+    [externalPressedPads],
+  );
 
   const keyMap = useMemo(() => {
     const map = new Map<string, PadConfig>();
@@ -275,14 +281,14 @@ export const DrumPad: React.FC<DrumPadProps> = ({
 
   const playPad = useCallback(
     (pad: PadConfig) => {
-      synth.playNote(pad.note, undefined, 0.35);
+      synth.playDrum(pad.note, 0.85, selectedPreset);
       setPressedPads((prev) => new Set(prev).add(pad.note));
 
       if (isRecording && onRecordNote) {
         onRecordNote(pad.note);
       }
     },
-    [isRecording, onRecordNote],
+    [isRecording, onRecordNote, selectedPreset],
   );
 
   const releasePad = useCallback((pad: PadConfig) => {
@@ -421,7 +427,9 @@ export const DrumPad: React.FC<DrumPadProps> = ({
       <div className="flex-1 min-h-0 grid grid-cols-4 grid-rows-4 gap-1.5 p-1 bg-stone-100 dark:bg-[#06080c] rounded-lg border border-stone-200 dark:border-[#1f2533] shadow-inner">
         {pads.map((pad) => {
           const isActive =
-            pressedPads.has(pad.note) || activeNotesSet.has(pad.note);
+            pressedPads.has(pad.note) ||
+            activeNotesSet.has(pad.note) ||
+            externalPressedPadsSet.has(pad.note);
 
           return (
             <Button

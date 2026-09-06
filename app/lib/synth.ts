@@ -713,6 +713,9 @@ class HybridVoice {
   private velocity: number;
   private isReleased = false;
   private autoReleaseTimer?: ReturnType<typeof setTimeout>;
+  private baseFreq: number;
+  private osc2Freq?: number;
+  private baseCutoff: number;
 
   constructor(
     ctx: AudioContext,
@@ -727,6 +730,7 @@ class HybridVoice {
     this.ctx = ctx;
     this.params = params;
     this.velocity = Math.max(0.1, Math.min(1.0, velocity));
+    this.baseFreq = freq;
     const now = ctx.currentTime;
 
     this.voiceMixer = ctx.createGain();
@@ -747,6 +751,7 @@ class HybridVoice {
       40,
       params.cutoff * Math.max(0.1, trackingMultiplier),
     );
+    this.baseCutoff = trackedCutoff;
 
     const filterVelScale = 0.6 + 0.4 * this.velocity;
     const startSweep = Math.min(18000, trackedCutoff + params.envMod * filterVelScale);
@@ -790,6 +795,7 @@ class HybridVoice {
       this.osc2 = ctx.createOscillator();
       this.osc2.type = params.osc2Wave as OscillatorType;
       const targetFreq = freq * Math.pow(2, params.osc2Oct / 12);
+      this.osc2Freq = targetFreq;
       this.osc2.frequency.setValueAtTime(targetFreq, now);
       this.osc2.detune.setValueAtTime(params.detune, now);
       this.osc1.detune.setValueAtTime(-params.detune, now);
@@ -977,6 +983,27 @@ class HybridVoice {
       (releaseTime + 0.05) * 1000,
     );
   }
+
+  public setPitchBend(ratio: number) {
+    if (this.isReleased) return;
+    const now = this.ctx.currentTime;
+    this.osc1.frequency.cancelScheduledValues(now);
+    this.osc1.frequency.setValueAtTime(this.baseFreq * ratio, now);
+    if (this.osc2 && this.osc2Freq) {
+      this.osc2.frequency.cancelScheduledValues(now);
+      this.osc2.frequency.setValueAtTime(this.osc2Freq * ratio, now);
+    }
+  }
+
+  public setFilterOffset(offset: number) {
+    if (this.isReleased) return;
+    const now = this.ctx.currentTime;
+    this.filter.frequency.cancelScheduledValues(now);
+    this.filter.frequency.setValueAtTime(
+      Math.max(40, Math.min(18000, this.baseCutoff + offset)),
+      now,
+    );
+  }
 }
 
 class HybridSynthEngine {
@@ -1162,6 +1189,79 @@ class HybridSynthEngine {
     if (!voice) return;
     voice.triggerRelease();
     this.activeVoices.delete(noteName);
+  }
+
+  public playDrum(
+    noteName: string,
+    velocity: number = 0.8,
+    kitName: string = "drum_set",
+  ): void {
+    const ctx = this.ensureContext();
+    if (!ctx || !this.masterGain || !this.noiseBuffer) return;
+
+    const drumParams = SYNTH_PRESETS[kitName] || SYNTH_PRESETS["drum_set"];
+    const baseFreq = noteToFrequency(noteName);
+    if (!baseFreq) return;
+
+    const shiftedFreq =
+      baseFreq * Math.pow(2, drumParams.octave);
+
+    const drumKey = `drum-${noteName}`;
+    if (this.activeVoices.has(drumKey)) {
+      const old = this.activeVoices.get(drumKey);
+      if (old) old.triggerRelease(true);
+      this.activeVoices.delete(drumKey);
+    }
+
+    const voice = new HybridVoice(
+      ctx,
+      this.masterGain,
+      this.noiseBuffer,
+      drumParams,
+      shiftedFreq,
+      0.45,
+      velocity,
+      () => {
+        if (this.activeVoices.get(drumKey) === voice) {
+          this.activeVoices.delete(drumKey);
+        }
+      },
+    );
+    this.activeVoices.set(drumKey, voice);
+  }
+
+  public setPitchBend(semitones: number): void {
+    const ratio = Math.pow(2, semitones / 12);
+    this.activeVoices.forEach((voice) => {
+      voice.setPitchBend(ratio);
+    });
+  }
+
+  public setModWheel(normalized: number): void {
+    const offset = normalized * 4500;
+    this.activeVoices.forEach((voice) => {
+      voice.setFilterOffset(offset);
+    });
+  }
+
+  public handleMidiCC(controller: number, value: number): void {
+    const normalized = value / 127;
+    if (controller === 1) {
+      this.setModWheel(normalized);
+    } else if (controller === 7) {
+      this.setMasterVolume(normalized);
+    } else if (controller === 74) {
+      const minCutoff = 80;
+      const maxCutoff = 12000;
+      const newCutoff = Math.round(minCutoff + normalized * (maxCutoff - minCutoff));
+      this.updateParam("cutoff", newCutoff);
+    } else if (controller === 71) {
+      const newDrive = Number((normalized * 0.5).toFixed(2));
+      this.updateParam("drive", newDrive);
+    } else if (controller === 91) {
+      const newReverb = Number((normalized * 0.8).toFixed(2));
+      this.updateParam("reverb", newReverb);
+    }
   }
 
   public stopAllNotes(): void {

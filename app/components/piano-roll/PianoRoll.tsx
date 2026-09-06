@@ -56,6 +56,7 @@ export interface PianoRollProps {
   velocity?: number;
   onVelocityChange?: (velocity: number) => void;
   selectedPreset?: string;
+  externalPressedKeys?: string[];
 }
 
 export const PianoRoll: React.FC<PianoRollProps> = ({
@@ -80,9 +81,14 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   velocity: controlledVelocity,
   onVelocityChange,
   selectedPreset = "grand_piano",
+  externalPressedKeys = [],
 }) => {
   const notes = useMemo(() => generate10OctavesNotes(), []);
   const containerRef = useRef<HTMLDivElement>(null);
+  const externalPressedKeysSet = useMemo(
+    () => new Set(externalPressedKeys),
+    [externalPressedKeys],
+  );
   const jumpConfig = useMemo(
     () => getPresetJumpConfig(selectedPreset),
     [selectedPreset],
@@ -1002,7 +1008,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                     <div className="absolute inset-0 flex flex-col z-10">
                       {VERTICAL_WHITE_KEYS.map((keyDef) => {
                         const fullName = `${keyDef.name}${octave}`;
-                        const isPressed = pressedKey === fullName;
+                        const isPressed =
+                          pressedKey === fullName ||
+                          externalPressedKeysSet.has(fullName);
                         const hasActiveNote = activePitches.has(fullName);
                         const isC = keyDef.name === "C";
                         const inKey = isNoteInKey(keyDef.name, rootKey, scale);
@@ -1058,7 +1066,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
                     {VERTICAL_BLACK_KEYS.map((keyDef) => {
                       const fullName = `${keyDef.name}${octave}`;
-                      const isPressed = pressedKey === fullName;
+                      const isPressed =
+                        pressedKey === fullName ||
+                        externalPressedKeysSet.has(fullName);
                       const hasActiveNote = activePitches.has(fullName);
                       const inKey = isNoteInKey(keyDef.name, rootKey, scale);
                       const top = keyDef.rowIndex * ROW_HEIGHT;

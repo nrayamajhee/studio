@@ -16,6 +16,7 @@ export interface PianoPlayerProps {
   isRecording?: boolean;
   onRecordNote?: (noteName: string) => void;
   activeNotes?: string[];
+  externalPressedKeys?: string[];
 }
 
 interface KeyConfig {
@@ -61,6 +62,7 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
   isRecording = false,
   onRecordNote,
   activeNotes = [],
+  externalPressedKeys = [],
 }) => {
   const [baseOctave, setBaseOctave] = useState(4);
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
@@ -68,6 +70,10 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
   const [isDraggingMap, setIsDraggingMap] = useState(false);
 
   const activeNotesSet = useMemo(() => new Set(activeNotes), [activeNotes]);
+  const externalPressedKeysSet = useMemo(
+    () => new Set(externalPressedKeys),
+    [externalPressedKeys],
+  );
 
   const currentKeys = useMemo(() => {
     return BASE_KEY_CONFIGS.map((k) => {
@@ -261,7 +267,9 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
                   {WHITE_NOTES_PER_OCT.map((noteName) => {
                     const noteKey = `${noteName}${oct}`;
                     const isActive =
-                      pressedKeys.has(noteKey) || activeNotesSet.has(noteKey);
+                      pressedKeys.has(noteKey) ||
+                      activeNotesSet.has(noteKey) ||
+                      externalPressedKeysSet.has(noteKey);
                     return (
                       <div
                         key={noteName}
@@ -279,7 +287,9 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
                     ([bNoteName, offsetFactor]) => {
                       const noteKey = `${bNoteName}${oct}`;
                       const isActive =
-                        pressedKeys.has(noteKey) || activeNotesSet.has(noteKey);
+                        pressedKeys.has(noteKey) ||
+                        activeNotesSet.has(noteKey) ||
+                        externalPressedKeysSet.has(noteKey);
                       return (
                         <div
                           key={bNoteName}
@@ -332,7 +342,8 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
           {currentKeys.map((item) => {
             const isPressed =
               pressedKeys.has(item.fullName) ||
-              activeNotesSet.has(item.fullName);
+              activeNotesSet.has(item.fullName) ||
+              externalPressedKeysSet.has(item.fullName);
 
             if (item.isBlack) {
               return (

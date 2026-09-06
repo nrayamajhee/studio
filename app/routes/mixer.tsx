@@ -7,12 +7,14 @@ import { Slider } from "../components/design-system/Slider";
 import { PianoRoll } from "../components/piano-roll/PianoRoll";
 import { PresetSelector } from "../components/piano-roll/PresetSelector";
 import { SynthControls } from "../components/piano-roll/SynthControls";
-import { PianoPlayer } from "../components/piano-roll/PianoPlayer";
+import { PianoKeyboard } from "../components/piano-roll/PianoKeyboard";
 import { DrumPad } from "../components/piano-roll/DrumPad";
 import { StepLengthControl } from "../components/piano-roll/StepLengthControl";
 import { OctaveJumpControl } from "../components/piano-roll/OctaveJumpControl";
+import { MidiControl } from "../components/piano-roll/MidiControl";
 import { getPresetJumpConfig } from "../components/piano-roll/types";
 import { synth } from "../lib/synth";
+import { midiManager } from "../lib/midi";
 import { cn } from "../lib/utils";
 import {
   Home,
@@ -125,6 +127,9 @@ export default function Mixer() {
   }));
   const [disabledNotes, setDisabledNotes] = useState<Set<string>>(new Set());
   const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
+  const [externalPressedKeys, setExternalPressedKeys] = useState<string[]>([]);
+  const [externalPressedPads, setExternalPressedPads] = useState<string[]>([]);
+
   const currentStepRef = useRef(currentStep);
   const totalStepsRef = useRef(totalSteps);
   const isPlayingRef = useRef(isPlaying);
@@ -134,6 +139,9 @@ export default function Mixer() {
   const velocityRef = useRef(velocity);
   const noteVelocitiesRef = useRef(noteVelocities);
   const disabledNotesRef = useRef(disabledNotes);
+  const playerViewRef = useRef(playerView);
+  const isRecordingRef = useRef(isRecording);
+  const selectedPresetRef = useRef(selectedPreset);
 
   useEffect(() => {
     currentStepRef.current = currentStep;
@@ -145,7 +153,23 @@ export default function Mixer() {
     velocityRef.current = velocity;
     noteVelocitiesRef.current = noteVelocities;
     disabledNotesRef.current = disabledNotes;
-  }, [currentStep, totalSteps, isPlaying, isLooping, isMetronomeOn, activeNotes, velocity, noteVelocities, disabledNotes]);
+    playerViewRef.current = playerView;
+    isRecordingRef.current = isRecording;
+    selectedPresetRef.current = selectedPreset;
+  }, [
+    currentStep,
+    totalSteps,
+    isPlaying,
+    isLooping,
+    isMetronomeOn,
+    activeNotes,
+    velocity,
+    noteVelocities,
+    disabledNotes,
+    playerView,
+    isRecording,
+    selectedPreset,
+  ]);
 
   useEffect(() => {
     const isDrumPreset = [
@@ -336,15 +360,79 @@ export default function Mixer() {
     setBpm((prev) => Math.max(40, Math.min(260, prev + delta)));
   };
 
-  const handleRecordNote = (noteName: string) => {
-    const step = currentStepRef.current;
-    const noteKey = `${noteName}-${step}`;
-    setActiveNotes((prev) => {
-      const next = new Set(prev);
-      next.add(noteKey);
-      return next;
+  const handleRecordNote = useCallback(
+    (noteName: string, velocityVal?: number) => {
+      const step = currentStepRef.current;
+      const noteKey = `${noteName}-${step}`;
+      setActiveNotes((prev) => {
+        const next = new Set(prev);
+        next.add(noteKey);
+        return next;
+      });
+      if (velocityVal !== undefined) {
+        setNoteVelocities((prev) => ({
+          ...prev,
+          [noteKey]: Math.max(1, Math.min(100, Math.round(velocityVal))),
+        }));
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const unsubNoteOn = midiManager.onNoteOn((e) => {
+      const isDrum = e.isDrum || playerViewRef.current === "drums";
+      if (isDrum) {
+        setExternalPressedPads((prev) =>
+          prev.includes(e.noteName) ? prev : [...prev, e.noteName],
+        );
+        const kit = selectedPresetRef.current.includes("drum")
+          ? selectedPresetRef.current
+          : "drum_set";
+        synth.playDrum(e.noteName, e.velocity, kit);
+        if (isRecordingRef.current) {
+          handleRecordNote(e.noteName, e.velocity * 100);
+        }
+      } else {
+        setExternalPressedKeys((prev) =>
+          prev.includes(e.noteName) ? prev : [...prev, e.noteName],
+        );
+        synth.playNote(e.noteName, undefined, undefined, e.velocity);
+        if (isRecordingRef.current) {
+          handleRecordNote(e.noteName, e.velocity * 100);
+        }
+      }
     });
-  };
+
+    const unsubNoteOff = midiManager.onNoteOff((e) => {
+      const isDrum = e.isDrum || playerViewRef.current === "drums";
+      if (isDrum) {
+        setExternalPressedPads((prev) => prev.filter((k) => k !== e.noteName));
+      } else {
+        setExternalPressedKeys((prev) => prev.filter((k) => k !== e.noteName));
+        synth.stopNote(e.noteName);
+      }
+    });
+
+    const unsubCC = midiManager.onControlChange((e) => {
+      synth.handleMidiCC(e.controller, e.value);
+      if (e.controller === 7) {
+        const clamped = Math.max(0, Math.min(1, e.normalizedValue));
+        setVolume(clamped);
+      }
+    });
+
+    const unsubPitchBend = midiManager.onPitchBend((e) => {
+      synth.setPitchBend(e.semitones);
+    });
+
+    return () => {
+      unsubNoteOn();
+      unsubNoteOff();
+      unsubCC();
+      unsubPitchBend();
+    };
+  }, [handleRecordNote]);
 
   const handleClearNotes = () => {
     setActiveNotes(new Set());
@@ -552,6 +640,10 @@ export default function Mixer() {
               onOctaveChange={setJumpOctave}
               presetKey={selectedPreset}
             />
+
+            <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
+            <MidiControl />
           </div>
         </div>
 
@@ -625,23 +717,22 @@ export default function Mixer() {
             </Button>
           </div>
 
+          <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
           <Button
             variant="solid"
             tone="secondary"
             size="sm"
-            rounded
             iconOnly
-            className="p-1.5 h-8 w-8 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-100 shadow-sm"
-            title={`Theme: ${theme}. Click to switch to ${nextTheme}.`}
-            aria-label={`Theme: ${theme}. Click to switch to ${nextTheme}.`}
             onClick={cycleTheme}
+            title={`Switch to ${nextTheme} theme`}
+            aria-label={`Current theme: ${theme}. Switch to ${nextTheme} theme.`}
+            className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300"
           >
-            {nextTheme === "light" ? (
-              <Sun className="w-4 h-4" />
-            ) : nextTheme === "dark" ? (
-              <Moon className="w-4 h-4" />
-            ) : (
-              <Monitor className="w-4 h-4" />
+            {theme === "light" && <Sun className="w-3.5 h-3.5 text-amber-500" />}
+            {theme === "dark" && <Moon className="w-3.5 h-3.5 text-blue-400" />}
+            {theme === "system" && (
+              <Monitor className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
             )}
           </Button>
         </div>
@@ -650,6 +741,7 @@ export default function Mixer() {
       <main className="flex-[1.1] min-h-0 w-full overflow-hidden flex flex-col p-0 m-0 border-b-2 border-stone-300 dark:border-stone-800">
         <PianoRoll
           className="flex-1 w-full h-full"
+          externalPressedKeys={externalPressedKeys}
           activeNotes={Array.from(activeNotes)}
           onNotesChange={(newNotes) => setActiveNotes(new Set(newNotes))}
           disabledNotes={Array.from(disabledNotes)}
@@ -784,9 +876,11 @@ export default function Mixer() {
 
             <div className="flex-1 min-h-0 overflow-hidden">
               {playerView === "keys" ? (
-                <PianoPlayer
+                <PianoKeyboard
+                  mode="player"
                   isRecording={isRecording}
                   onRecordNote={handleRecordNote}
+                  externalPressedKeys={externalPressedKeys}
                   activeNotes={Array.from(activeNotes)
                     .filter(
                       (item) =>
@@ -800,6 +894,7 @@ export default function Mixer() {
                   selectedPreset={selectedPreset}
                   isRecording={isRecording}
                   onRecordNote={handleRecordNote}
+                  externalPressedPads={externalPressedPads}
                   activeNotes={Array.from(activeNotes)
                     .filter(
                       (item) =>

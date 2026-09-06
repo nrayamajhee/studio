@@ -6,3 +6,4 @@ export * from "./PresetSelector";
 export * from "./SynthControls";
 export * from "./PianoPlayer";
 export * from "./DrumPad";
+export * from "./MidiControl";
