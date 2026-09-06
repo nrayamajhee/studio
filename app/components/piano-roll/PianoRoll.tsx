@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { useLocalStorage } from "usehooks-ts";
 import {
   generate10OctavesNotes,
   TOTAL_OCTAVES,
@@ -12,6 +11,8 @@ import {
   isNoteInKey,
   transposeNote,
   PATTERN_PRESETS,
+  PIANO_PATTERN_PRESETS,
+  DRUM_PATTERN_PRESETS,
   type ScaleType,
   getTargetNoteForPreset,
   getPresetJumpConfig,
@@ -57,6 +58,10 @@ export interface PianoRollProps {
   onVelocityChange?: (velocity: number) => void;
   selectedPreset?: string;
   externalPressedKeys?: string[];
+  rootKey?: string;
+  onRootKeyChange?: (rootKey: string) => void;
+  scale?: ScaleType;
+  onScaleChange?: (scale: ScaleType) => void;
 }
 
 export const PianoRoll: React.FC<PianoRollProps> = ({
@@ -82,6 +87,10 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   onVelocityChange: _onVelocityChange,
   selectedPreset = "grand_piano",
   externalPressedKeys = [],
+  rootKey: controlledRootKey,
+  onRootKeyChange,
+  scale: controlledScale,
+  onScaleChange,
 }) => {
   const notes = useMemo(() => generate10OctavesNotes(), []);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -151,14 +160,27 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   const totalSteps = controlledTotalSteps ?? internalTotalSteps;
 
   const groupSize = totalSteps === 12 || totalSteps === 24 ? 3 : 4;
-  const [rootKey, setRootKey] = useLocalStorage<string>(
-    "studio_piano_roll_root_key",
-    "C",
-  );
-  const [scale, setScale] = useLocalStorage<ScaleType>(
-    "studio_piano_roll_scale",
-    "chromatic",
-  );
+  const [internalRootKey, setInternalRootKey] = useState("C");
+  const rootKey = controlledRootKey ?? internalRootKey;
+  const setRootKey = (val: string) => {
+    if (controlledRootKey === undefined) {
+      setInternalRootKey(val);
+    }
+    if (onRootKeyChange) {
+      onRootKeyChange(val);
+    }
+  };
+
+  const [internalScale, setInternalScale] = useState<ScaleType>("major");
+  const scale = controlledScale ?? internalScale;
+  const setScale = (val: ScaleType) => {
+    if (controlledScale === undefined) {
+      setInternalScale(val);
+    }
+    if (onScaleChange) {
+      onScaleChange(val);
+    }
+  };
 
   const [internalActiveNotes, setInternalActiveNotes] = useState<Set<string>>(
     () => {
@@ -880,6 +902,11 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     updateDisabledNotes(new Set());
     updateSelectedNotes(new Set());
     updateNotes(next);
+    if (pattern.category === "drum") {
+      scrollToNote("C1", true);
+    } else {
+      scrollToNote("C4", true);
+    }
   };
 
   const stepWidthClass = "w-18 sm:w-20";
@@ -1391,37 +1418,44 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Presets:
-          </span>
-          <Dropdown
-            size="xs"
-            placeholder="Load Preset..."
-            value=""
-            onChange={(val) => {
-              if (val) loadPattern(val);
-            }}
-            options={PATTERN_PRESETS.map((p) => ({
-              value: p.id,
-              label: p.name,
-            }))}
-            className="w-44 sm:w-52"
-          />
-        </div>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+              Piano:
+            </span>
+            <Dropdown
+              size="xs"
+              placeholder="Piano Presets..."
+              value=""
+              onChange={(val) => {
+                if (val) loadPattern(val);
+              }}
+              options={PIANO_PATTERN_PRESETS.map((p) => ({
+                value: p.id,
+                label: p.name,
+              }))}
+              className="w-40 sm:w-48"
+            />
+          </div>
 
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={reverseNotes}
-            title="Reverse pattern horizontally"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
-          >
-            <ArrowLeftRight className="w-3 h-3" />
-            Flip
-          </Button>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+              Drums:
+            </span>
+            <Dropdown
+              size="xs"
+              placeholder="Drum Presets..."
+              value=""
+              onChange={(val) => {
+                if (val) loadPattern(val);
+              }}
+              options={DRUM_PATTERN_PRESETS.map((p) => ({
+                value: p.id,
+                label: p.name,
+              }))}
+              className="w-40 sm:w-48"
+            />
+          </div>
         </div>
       </div>
 

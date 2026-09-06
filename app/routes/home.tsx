@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import type { Route } from "./+types/home";
 import { Link } from "react-router";
 import { useTheme } from "../hooks/useTheme";
-import { useLocalStorage } from "usehooks-ts";
+import { useStudioStorage } from "../lib/studioStorage";
 import { Button } from "../components/design-system/Button";
 import { Card } from "../components/design-system/Card";
 import {
@@ -14,24 +14,25 @@ import {
   type MockUser,
   PRESET_MOCK_USERS,
 } from "../lib/mockUser";
+import { cn } from "../lib/utils";
 import {
+  Sliders,
+  Sparkles,
+  LogOut,
+  UserCheck,
   Sun,
   Moon,
   Monitor,
   ArrowRight,
-  UserCheck,
-  Sparkles,
-  LogOut,
-  Sliders,
 } from "lucide-react";
-import { cn } from "../lib/utils";
 
 export function meta(_args: Route.MetaArgs) {
   return [
-    { title: "Studio" },
+    { title: "Studio - Modal Synthesizer & Piano Roll Sequencer" },
     {
       name: "description",
-      content: "A quiet, minimal canvas for loud ideas.",
+      content:
+        "Professional browser-based synthesizer and 10-octave piano roll sequencer.",
     },
   ];
 }
@@ -41,10 +42,12 @@ const AVATAR_OPTIONS = ["🎹", "🎧", "⚡", "🥁", "🎙️", "🎛️", "�
 export default function Home() {
   const { theme, nextTheme, cycleTheme } = useTheme();
 
-  const [user, setUser] = useLocalStorage<MockUser | null>(
-    "studio_mock_user",
-    PRESET_MOCK_USERS[0],
-  );
+  const [studio, setStudio] = useStudioStorage();
+  const user = studio.user ?? null;
+
+  const setUser = (nextUser: MockUser | null) => {
+    setStudio((prev) => ({ ...prev, user: nextUser }));
+  };
 
   const [customName, setCustomName] = useState("");
   const [customRole, setCustomRole] = useState("Producer");

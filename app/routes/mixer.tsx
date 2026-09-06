@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router";
-import { useLocalStorage } from "usehooks-ts";
+import { useStudioStorage } from "../lib/studioStorage";
 import type { Route } from "./+types/mixer";
 import { useTheme } from "../hooks/useTheme";
 import { Button } from "../components/design-system/Button";
@@ -16,7 +16,6 @@ import { MidiControl } from "../components/piano-roll/MidiControl";
 import { getPresetJumpConfig } from "../components/piano-roll/types";
 import { synth } from "../lib/synth";
 import { midiManager } from "../lib/midi";
-import { type MockUser } from "../lib/mockUser";
 import { cn } from "../lib/utils";
 import {
   Home,
@@ -52,104 +51,143 @@ export function meta(_args: Route.MetaArgs) {
   ];
 }
 
-const DEFAULT_ACTIVE_NOTES = [
-  "C4-0",
-  "E4-2",
-  "G4-4",
-  "B4-6",
-  "C5-8",
-  "G4-10",
-  "E4-12",
-  "C4-14",
-];
-
-const DEFAULT_NOTE_VELOCITIES: Record<string, number> = {
-  "C4-0": 95,
-  "E4-2": 80,
-  "G4-4": 88,
-  "B4-6": 75,
-  "C5-8": 100,
-  "G4-10": 82,
-  "E4-12": 70,
-  "C4-14": 85,
-};
-
 export default function Mixer() {
   const { theme, nextTheme, cycleTheme } = useTheme();
 
-  const [user] = useLocalStorage<MockUser | null>("studio_mock_user", null);
+  const [studio, setStudio] = useStudioStorage();
 
-  const [storedNotes, setStoredNotes] = useLocalStorage<string[]>(
-    "studio_piano_roll_notes",
-    DEFAULT_ACTIVE_NOTES,
-  );
-  const activeNotes = useMemo(() => new Set(storedNotes), [storedNotes]);
+  const user = studio.user;
+  const activeNotes = useMemo(() => new Set(studio.notes), [studio.notes]);
   const setActiveNotes = useCallback(
     (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => {
-      setStoredNotes((prev) => {
-        const currentSet = new Set(prev);
+      setStudio((prev) => {
+        const currentSet = new Set(prev.notes);
         const nextSet =
           typeof updater === "function" ? updater(currentSet) : updater;
-        return Array.from(nextSet);
+        return { ...prev, notes: Array.from(nextSet) };
       });
     },
-    [setStoredNotes],
+    [setStudio],
   );
 
-  const [storedDisabledNotes, setStoredDisabledNotes] = useLocalStorage<
-    string[]
-  >("studio_piano_roll_disabled_notes", []);
   const disabledNotes = useMemo(
-    () => new Set(storedDisabledNotes),
-    [storedDisabledNotes],
+    () => new Set(studio.disabledNotes),
+    [studio.disabledNotes],
   );
   const setDisabledNotes = useCallback(
     (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => {
-      setStoredDisabledNotes((prev) => {
-        const currentSet = new Set(prev);
+      setStudio((prev) => {
+        const currentSet = new Set(prev.disabledNotes);
         const nextSet =
           typeof updater === "function" ? updater(currentSet) : updater;
-        return Array.from(nextSet);
+        return { ...prev, disabledNotes: Array.from(nextSet) };
       });
     },
-    [setStoredDisabledNotes],
+    [setStudio],
   );
 
-  const [noteVelocities, setNoteVelocities] = useLocalStorage<
-    Record<string, number>
-  >("studio_piano_roll_velocities", DEFAULT_NOTE_VELOCITIES);
+  const noteVelocities = studio.noteVelocities;
+  const setNoteVelocities = useCallback(
+    (
+      updater:
+        | Record<string, number>
+        | ((prev: Record<string, number>) => Record<string, number>),
+    ) => {
+      setStudio((prev) => ({
+        ...prev,
+        noteVelocities:
+          typeof updater === "function" ? updater(prev.noteVelocities) : updater,
+      }));
+    },
+    [setStudio],
+  );
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLooping, setIsLooping] = useLocalStorage("studio_is_looping", true);
+  const isLooping = studio.isLooping;
+  const setIsLooping = useCallback(
+    (updater: boolean | ((prev: boolean) => boolean)) => {
+      setStudio((prev) => ({
+        ...prev,
+        isLooping: typeof updater === "function" ? updater(prev.isLooping) : updater,
+      }));
+    },
+    [setStudio],
+  );
+
   const [isRecording, setIsRecording] = useState(false);
   const [isMetronomeOn, setIsMetronomeOn] = useState(false);
-  const [volume, setVolume] = useLocalStorage("studio_master_volume", 0.7);
+  const volume = studio.volume;
+  const setVolume = useCallback(
+    (val: number | ((prev: number) => number)) => {
+      setStudio((prev) => ({
+        ...prev,
+        volume: typeof val === "function" ? val(prev.volume) : val,
+      }));
+    },
+    [setStudio],
+  );
+
   const [currentStep, setCurrentStep] = useState(0);
-  const [totalSteps, setTotalSteps] = useLocalStorage(
-    "studio_total_steps",
-    16,
+  const totalSteps = studio.totalSteps;
+  const setTotalSteps = useCallback(
+    (steps: number | ((prev: number) => number)) => {
+      setStudio((prev) => ({
+        ...prev,
+        totalSteps: typeof steps === "function" ? steps(prev.totalSteps) : steps,
+      }));
+    },
+    [setStudio],
   );
-  const [bpm, setBpm] = useLocalStorage("studio_tempo_bpm", 72);
-  const [selectedPreset, setSelectedPreset] = useLocalStorage(
-    "studio_selected_preset",
-    "grand_piano",
+
+  const bpm = studio.bpm;
+  const setBpm = useCallback(
+    (val: number | ((prev: number) => number)) => {
+      setStudio((prev) => ({
+        ...prev,
+        bpm: typeof val === "function" ? val(prev.bpm) : val,
+      }));
+    },
+    [setStudio],
   );
-  const [jumpOctave, setJumpOctave] = useLocalStorage("studio_jump_octave", 4);
-  const [playerView, setPlayerView] = useLocalStorage<"keys" | "drums">(
-    "studio_player_view",
-    "keys",
+
+  const selectedPreset = studio.selectedPreset;
+  const jumpOctave = studio.jumpOctave;
+  const setJumpOctave = useCallback(
+    (val: number | ((prev: number) => number)) => {
+      setStudio((prev) => ({
+        ...prev,
+        jumpOctave: typeof val === "function" ? val(prev.jumpOctave) : val,
+      }));
+    },
+    [setStudio],
   );
-  const [velocity, setVelocity] = useLocalStorage(
-    "studio_default_velocity",
-    85,
+
+  const playerView = studio.playerView;
+  const setPlayerView = useCallback(
+    (val: ("keys" | "drums") | ((prev: "keys" | "drums") => "keys" | "drums")) => {
+      setStudio((prev) => ({
+        ...prev,
+        playerView: typeof val === "function" ? val(prev.playerView) : val,
+      }));
+    },
+    [setStudio],
+  );
+
+  const velocity = studio.velocity;
+  const setVelocity = useCallback(
+    (val: number | ((prev: number) => number)) => {
+      setStudio((prev) => ({
+        ...prev,
+        velocity: typeof val === "function" ? val(prev.velocity) : val,
+      }));
+    },
+    [setStudio],
   );
 
   const handlePresetChange = useCallback(
     (preset: string) => {
-      setSelectedPreset(preset);
       synth.loadPreset(preset);
       const cfg = getPresetJumpConfig(preset);
-      setJumpOctave(cfg.defaultOctave);
       const isDrumPreset = [
         "drum_set",
         "drum_808",
@@ -157,9 +195,15 @@ export default function Mixer() {
         "electronic_drums",
         "acoustic_percussion",
       ].includes(preset);
-      setPlayerView(isDrumPreset ? "drums" : "keys");
+      setStudio((prev) => ({
+        ...prev,
+        selectedPreset: preset,
+        jumpOctave: cfg.defaultOctave,
+        playerView: isDrumPreset ? "drums" : "keys",
+        synthParams: { ...synth.params },
+      }));
     },
-    [setSelectedPreset, setJumpOctave, setPlayerView],
+    [setStudio],
   );
 
   useEffect(() => {
@@ -811,6 +855,14 @@ export default function Mixer() {
           velocity={velocity}
           onVelocityChange={setVelocity}
           selectedPreset={selectedPreset}
+          rootKey={studio.rootKey}
+          onRootKeyChange={(rk) =>
+            setStudio((prev) => ({ ...prev, rootKey: rk }))
+          }
+          scale={studio.scale}
+          onScaleChange={(sc) =>
+            setStudio((prev) => ({ ...prev, scale: sc }))
+          }
         />
       </main>
 
