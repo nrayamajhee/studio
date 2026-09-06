@@ -603,7 +603,12 @@ export default function Mixer() {
           />
         </div>
 
-        <div className="flex-1 min-w-0 h-full min-h-0 overflow-hidden">
+        <div
+          className={cn(
+            "flex-1 min-w-0 h-full min-h-0 overflow-hidden",
+            !isPlayerCollapsed && "hidden md:block",
+          )}
+        >
           <SynthControls
             selectedPreset={selectedPreset}
             rightHeaderSlot={
@@ -627,7 +632,12 @@ export default function Mixer() {
         </div>
 
         {!isPlayerCollapsed && (
-          <div className="w-[300px] sm:w-[330px] md:w-[330px] lg:w-[380px] xl:w-[420px] h-full min-h-0 flex-shrink-0 flex flex-col gap-1 overflow-hidden">
+          <div
+            className={cn(
+              "h-full min-h-0 flex flex-col gap-1 overflow-hidden",
+              "flex-1 min-w-0 md:flex-initial md:w-[330px] lg:w-[380px] xl:w-[420px]",
+            )}
+          >
             <div className="flex items-center justify-between px-1 flex-shrink-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-mono font-bold tracking-wider text-stone-700 dark:text-stone-300">
@@ -636,11 +646,12 @@ export default function Mixer() {
                 <button
                   type="button"
                   onClick={() => setIsPlayerCollapsed(true)}
-                  title="Collapse player panel"
-                  aria-label="Collapse player panel"
-                  className="p-0.5 rounded text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-[#161c28] transition-colors cursor-pointer"
+                  title="Collapse player and show synth panel"
+                  aria-label="Collapse player and show synth panel"
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-[#161c28] transition-colors cursor-pointer"
                 >
                   <PanelRightClose className="w-3.5 h-3.5" />
+                  <span className="md:hidden text-[10px] font-mono">Synth</span>
                 </button>
               </div>
               <div className="flex items-center gap-1 bg-stone-200/80 dark:bg-[#0a0c10] p-0.5 rounded-lg border border-stone-300 dark:border-[#1f2533]">
