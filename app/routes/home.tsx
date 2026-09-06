@@ -116,28 +116,17 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3">
-            <Button
-              variant="outline"
-              tone="secondary"
-              size="md"
-              rounded
-              onClick={handleGoogleLogin}
-              leadingIcon={<GoogleIcon className="w-4 h-4 flex-shrink-0" />}
-              className="bg-white dark:bg-[#121622] hover:bg-stone-50 dark:hover:bg-[#182030] text-stone-800 dark:text-stone-100 border-stone-300 dark:border-[#2a3449] font-medium shadow-sm transition-all px-5 py-2.5"
-            >
-              Login with Google
-            </Button>
-            <Button asChild variant="ghost" tone="secondary" size="sm">
-              <Link
-                to="/mixer"
-                replace
-                className="text-xs text-stone-500 hover:text-stone-800 dark:hover:text-stone-200"
-              >
-                Continue as Guest
-              </Link>
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            tone="secondary"
+            size="md"
+            rounded
+            onClick={handleGoogleLogin}
+            leadingIcon={<GoogleIcon className="w-4 h-4 flex-shrink-0" />}
+            className="bg-white dark:bg-[#121622] hover:bg-stone-50 dark:hover:bg-[#182030] text-stone-800 dark:text-stone-100 border-stone-300 dark:border-[#2a3449] font-medium shadow-sm transition-all px-5 py-2.5"
+          >
+            Login with Google
+          </Button>
         )}
       </main>
     </div>
