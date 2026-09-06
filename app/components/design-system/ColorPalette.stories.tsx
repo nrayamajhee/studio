@@ -14,8 +14,13 @@ export default meta;
 
 const buttonColors = [
   {
-    name: "Primary",
+    name: "Primary (Blue)",
     className: "bg-primary text-white border-transparent",
+    labelClass: "text-white",
+  },
+  {
+    name: "Info (Blue)",
+    className: "bg-info text-white border-transparent",
     labelClass: "text-white",
   },
   {

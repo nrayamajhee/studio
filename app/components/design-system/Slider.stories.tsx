@@ -31,7 +31,7 @@ const meta: Meta<typeof Slider> = {
     },
     tone: {
       control: "radio",
-      options: ["accent", "primary", "secondary"],
+      options: ["primary", "info", "blue", "accent", "secondary"],
       description: "Color tone for the track fill and focus ring",
     },
     size: {
@@ -63,6 +63,26 @@ export const Default: Story = {
   decorators: [
     (Story) => (
       <div className="w-64">
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const InfoTone: Story = {
+  args: {
+    label: "Resonance",
+    valueDisplay: "45%",
+    min: 0,
+    max: 100,
+    step: 1,
+    defaultValue: 45,
+    tone: "info",
+    size: "sm",
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-64 p-4 bg-[#0a0c10] rounded-xl border border-stone-800">
         <Story />
       </div>
     ),

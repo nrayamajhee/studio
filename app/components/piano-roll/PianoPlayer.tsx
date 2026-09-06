@@ -16,6 +16,7 @@ export interface PianoPlayerProps {
   isRecording?: boolean;
   onRecordNote?: (noteName: string) => void;
   activeNotes?: string[];
+  externalPressedKeys?: string[];
 }
 
 interface KeyConfig {
@@ -61,6 +62,7 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
   isRecording = false,
   onRecordNote,
   activeNotes = [],
+  externalPressedKeys = [],
 }) => {
   const [baseOctave, setBaseOctave] = useState(4);
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
@@ -68,6 +70,10 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
   const [isDraggingMap, setIsDraggingMap] = useState(false);
 
   const activeNotesSet = useMemo(() => new Set(activeNotes), [activeNotes]);
+  const externalPressedKeysSet = useMemo(
+    () => new Set(externalPressedKeys),
+    [externalPressedKeys],
+  );
 
   const currentKeys = useMemo(() => {
     return BASE_KEY_CONFIGS.map((k) => {
@@ -261,7 +267,9 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
                   {WHITE_NOTES_PER_OCT.map((noteName) => {
                     const noteKey = `${noteName}${oct}`;
                     const isActive =
-                      pressedKeys.has(noteKey) || activeNotesSet.has(noteKey);
+                      pressedKeys.has(noteKey) ||
+                      activeNotesSet.has(noteKey) ||
+                      externalPressedKeysSet.has(noteKey);
                     return (
                       <div
                         key={noteName}
@@ -279,7 +287,9 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
                     ([bNoteName, offsetFactor]) => {
                       const noteKey = `${bNoteName}${oct}`;
                       const isActive =
-                        pressedKeys.has(noteKey) || activeNotesSet.has(noteKey);
+                        pressedKeys.has(noteKey) ||
+                        activeNotesSet.has(noteKey) ||
+                        externalPressedKeysSet.has(noteKey);
                       return (
                         <div
                           key={bNoteName}
@@ -332,7 +342,8 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
           {currentKeys.map((item) => {
             const isPressed =
               pressedKeys.has(item.fullName) ||
-              activeNotesSet.has(item.fullName);
+              activeNotesSet.has(item.fullName) ||
+              externalPressedKeysSet.has(item.fullName);
 
             if (item.isBlack) {
               return (
@@ -357,7 +368,7 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
                     "relative z-20 w-6 sm:w-7 h-24 sm:h-28 -mx-3 sm:-mx-3.5 flex flex-col justify-end items-center pb-2 rounded-none rounded-b border-0 border-x border-b border-stone-800 transition-all cursor-pointer select-none p-0",
                     "bg-gradient-to-b from-stone-800 via-stone-900 to-black text-stone-200 shadow-md shadow-black/80 hover:brightness-125",
                     isPressed &&
-                      "!from-primary-dark !to-primary text-white !shadow-primary/50 ring-1 ring-primary-light translate-y-0.5",
+                      "!from-stone-700 !to-stone-800 !bg-stone-700 text-white ring-2 ring-stone-500 ring-inset translate-y-0.5 shadow-inner",
                   )}
                 >
                   <kbd className="text-[8px] font-mono px-1 rounded bg-stone-900 text-stone-300 uppercase mb-1">
@@ -390,9 +401,9 @@ export const PianoPlayer: React.FC<PianoPlayerProps> = ({
                 aria-label={`Key ${item.fullName}`}
                 className={cn(
                   "relative z-10 w-9 sm:w-10 h-36 sm:h-40 flex flex-col justify-end items-center pb-2.5 rounded-none rounded-b-md border-0 border-x border-b border-stone-400 transition-all cursor-pointer select-none p-0",
-                  "bg-gradient-to-b from-stone-50 via-white to-stone-200 hover:from-blue-50 hover:to-white text-stone-900 shadow-sm",
+                  "bg-gradient-to-b from-stone-50 via-white to-stone-200 hover:from-stone-100 hover:to-white text-stone-900 shadow-sm",
                   isPressed &&
-                    "!bg-blue-100 ring-2 ring-primary ring-inset !from-blue-100 !to-blue-200 !text-stone-900 font-bold translate-y-0.5",
+                    "!bg-stone-200 dark:!bg-stone-300 ring-2 ring-stone-600 dark:ring-stone-400 ring-inset !text-stone-950 font-bold translate-y-0.5 shadow-inner",
                 )}
               >
                 <kbd className="text-[9px] font-mono px-1 rounded bg-stone-200 text-stone-700 uppercase mb-1 font-semibold">

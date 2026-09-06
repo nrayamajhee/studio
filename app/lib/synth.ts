@@ -288,57 +288,57 @@ export const SYNTH_PRESETS: Record<string, SynthParams> = {
   flute: {
     name: "Flute",
     exciterMode: "noise",
-    exciterVol: 0.4,
-    exciterFreq: 1400,
-    exciterDecay: 0.04,
+    exciterVol: 0.12,
+    exciterFreq: 1100,
+    exciterDecay: 0.05,
     osc1Wave: "sine",
     osc2Wave: "triangle",
-    detune: 1.0,
-    osc2Oct: 12,
-    filterType: "bandpass",
-    cutoff: 1800,
-    envMod: 1200,
-    keytrack: 0.5,
+    detune: 0.8,
+    osc2Oct: 0,
+    filterType: "lowpass",
+    cutoff: 1400,
+    envMod: 600,
+    keytrack: 0.2,
     lfoDest: "pitch",
-    lfoRate: 5.2,
-    lfoDepth: 3.5,
-    ksFeed: 0.1,
-    attack: 0.08,
-    decay: 2.0,
-    sustain: 0.5,
-    release: 0.2,
-    lowEq: -1.0,
+    lfoRate: 5.0,
+    lfoDepth: 0.15,
+    ksFeed: 0.0,
+    attack: 0.045,
+    decay: 2.2,
+    sustain: 0.75,
+    release: 0.18,
+    lowEq: 1.0,
     drive: 0.0,
-    reverb: 0.35,
-    masterVol: 0.7,
-    octave: 1,
+    reverb: 0.32,
+    masterVol: 0.75,
+    octave: 0,
   },
   saxophone: {
     name: "Saxophone",
     exciterMode: "click",
-    exciterVol: 0.5,
-    exciterFreq: 1600,
+    exciterVol: 0.35,
+    exciterFreq: 1400,
     exciterDecay: 0.02,
     osc1Wave: "sawtooth",
-    osc2Wave: "square",
-    detune: 3.0,
+    osc2Wave: "triangle",
+    detune: 2.0,
     osc2Oct: 0,
-    filterType: "bandpass",
-    cutoff: 2200,
-    envMod: 2400,
-    keytrack: 0.3,
+    filterType: "lowpass",
+    cutoff: 1800,
+    envMod: 1800,
+    keytrack: 0.25,
     lfoDest: "pitch",
     lfoRate: 4.8,
-    lfoDepth: 4.5,
+    lfoDepth: 0.35,
     ksFeed: 0.0,
-    attack: 0.035,
-    decay: 2.5,
-    sustain: 0.45,
-    release: 0.18,
-    lowEq: 2.5,
-    drive: 0.12,
-    reverb: 0.25,
-    masterVol: 0.7,
+    attack: 0.025,
+    decay: 2.2,
+    sustain: 0.55,
+    release: 0.16,
+    lowEq: 1.8,
+    drive: 0.08,
+    reverb: 0.22,
+    masterVol: 0.72,
     octave: 0,
   },
   trap_kit: {
@@ -713,6 +713,9 @@ class HybridVoice {
   private velocity: number;
   private isReleased = false;
   private autoReleaseTimer?: ReturnType<typeof setTimeout>;
+  private baseFreq: number;
+  private osc2Freq?: number;
+  private baseCutoff: number;
 
   constructor(
     ctx: AudioContext,
@@ -727,6 +730,7 @@ class HybridVoice {
     this.ctx = ctx;
     this.params = params;
     this.velocity = Math.max(0.1, Math.min(1.0, velocity));
+    this.baseFreq = freq;
     const now = ctx.currentTime;
 
     this.voiceMixer = ctx.createGain();
@@ -747,6 +751,7 @@ class HybridVoice {
       40,
       params.cutoff * Math.max(0.1, trackingMultiplier),
     );
+    this.baseCutoff = trackedCutoff;
 
     const filterVelScale = 0.6 + 0.4 * this.velocity;
     const startSweep = Math.min(18000, trackedCutoff + params.envMod * filterVelScale);
@@ -790,6 +795,7 @@ class HybridVoice {
       this.osc2 = ctx.createOscillator();
       this.osc2.type = params.osc2Wave as OscillatorType;
       const targetFreq = freq * Math.pow(2, params.osc2Oct / 12);
+      this.osc2Freq = targetFreq;
       this.osc2.frequency.setValueAtTime(targetFreq, now);
       this.osc2.detune.setValueAtTime(params.detune, now);
       this.osc1.detune.setValueAtTime(-params.detune, now);
@@ -975,6 +981,27 @@ class HybridVoice {
         }
       },
       (releaseTime + 0.05) * 1000,
+    );
+  }
+
+  public setPitchBend(ratio: number) {
+    if (this.isReleased) return;
+    const now = this.ctx.currentTime;
+    this.osc1.frequency.cancelScheduledValues(now);
+    this.osc1.frequency.setValueAtTime(this.baseFreq * ratio, now);
+    if (this.osc2 && this.osc2Freq) {
+      this.osc2.frequency.cancelScheduledValues(now);
+      this.osc2.frequency.setValueAtTime(this.osc2Freq * ratio, now);
+    }
+  }
+
+  public setFilterOffset(offset: number) {
+    if (this.isReleased) return;
+    const now = this.ctx.currentTime;
+    this.filter.frequency.cancelScheduledValues(now);
+    this.filter.frequency.setValueAtTime(
+      Math.max(40, Math.min(18000, this.baseCutoff + offset)),
+      now,
     );
   }
 }
@@ -1164,6 +1191,79 @@ class HybridSynthEngine {
     this.activeVoices.delete(noteName);
   }
 
+  public playDrum(
+    noteName: string,
+    velocity: number = 0.8,
+    kitName: string = "drum_set",
+  ): void {
+    const ctx = this.ensureContext();
+    if (!ctx || !this.masterGain || !this.noiseBuffer) return;
+
+    const drumParams = SYNTH_PRESETS[kitName] || SYNTH_PRESETS["drum_set"];
+    const baseFreq = noteToFrequency(noteName);
+    if (!baseFreq) return;
+
+    const shiftedFreq =
+      baseFreq * Math.pow(2, drumParams.octave);
+
+    const drumKey = `drum-${noteName}`;
+    if (this.activeVoices.has(drumKey)) {
+      const old = this.activeVoices.get(drumKey);
+      if (old) old.triggerRelease(true);
+      this.activeVoices.delete(drumKey);
+    }
+
+    const voice = new HybridVoice(
+      ctx,
+      this.masterGain,
+      this.noiseBuffer,
+      drumParams,
+      shiftedFreq,
+      0.45,
+      velocity,
+      () => {
+        if (this.activeVoices.get(drumKey) === voice) {
+          this.activeVoices.delete(drumKey);
+        }
+      },
+    );
+    this.activeVoices.set(drumKey, voice);
+  }
+
+  public setPitchBend(semitones: number): void {
+    const ratio = Math.pow(2, semitones / 12);
+    this.activeVoices.forEach((voice) => {
+      voice.setPitchBend(ratio);
+    });
+  }
+
+  public setModWheel(normalized: number): void {
+    const offset = normalized * 4500;
+    this.activeVoices.forEach((voice) => {
+      voice.setFilterOffset(offset);
+    });
+  }
+
+  public handleMidiCC(controller: number, value: number): void {
+    const normalized = value / 127;
+    if (controller === 1) {
+      this.setModWheel(normalized);
+    } else if (controller === 7) {
+      this.setMasterVolume(normalized);
+    } else if (controller === 74) {
+      const minCutoff = 80;
+      const maxCutoff = 12000;
+      const newCutoff = Math.round(minCutoff + normalized * (maxCutoff - minCutoff));
+      this.updateParam("cutoff", newCutoff);
+    } else if (controller === 71) {
+      const newDrive = Number((normalized * 0.5).toFixed(2));
+      this.updateParam("drive", newDrive);
+    } else if (controller === 91) {
+      const newReverb = Number((normalized * 0.8).toFixed(2));
+      this.updateParam("reverb", newReverb);
+    }
+  }
+
   public stopAllNotes(): void {
     this.activeVoices.forEach((voice) => voice.triggerRelease(true));
     this.activeVoices.clear();
@@ -1242,6 +1342,18 @@ class HybridSynthEngine {
     this.params = { ...preset };
     this.octaveShift = preset.octave || 0;
     this.applyFxParams();
+  }
+
+  public registerPreset(presetKey: string, params: SynthParams): void {
+    SYNTH_PRESETS[presetKey] = { ...params };
+  }
+
+  public unregisterPreset(presetKey: string): void {
+    delete SYNTH_PRESETS[presetKey];
+  }
+
+  public getParams(): SynthParams {
+    return { ...this.params };
   }
 
   public updateParam<K extends keyof SynthParams>(

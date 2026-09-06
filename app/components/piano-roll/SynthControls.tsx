@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useStudioStorage } from "../../lib/studioStorage";
 import { synth, type SynthParams } from "../../lib/synth";
 import { Card } from "../design-system/Card";
 import { Slider } from "../design-system/Slider";
@@ -19,12 +20,17 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
   rightHeaderSlot,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [params, setParams] = useState<SynthParams>({ ...synth.params });
+  const [studio, setStudio] = useStudioStorage();
+  const [params, setParams] = useState<SynthParams>(
+    () => studio.synthParams ?? { ...synth.params },
+  );
   const [prevPreset, setPrevPreset] = useState(selectedPreset);
 
   if (selectedPreset !== prevPreset) {
     setPrevPreset(selectedPreset);
-    setParams({ ...synth.params });
+    const newParams = { ...synth.params };
+    setParams(newParams);
+    setStudio((prev) => ({ ...prev, synthParams: newParams }));
   }
 
   // Realtime oscilloscope animation
@@ -102,7 +108,9 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
     value: SynthParams[K],
   ) => {
     synth.updateParam(key, value);
-    setParams((prev) => ({ ...prev, [key]: value }));
+    const updated = { ...synth.params, [key]: value };
+    setParams(updated);
+    setStudio((prev) => ({ ...prev, synthParams: updated }));
   };
 
   return (

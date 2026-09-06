@@ -52,7 +52,9 @@ export const VERTICAL_BLACK_KEYS = [
   { name: "C#", rowIndex: 10 },
 ] as const;
 
-export const TOTAL_OCTAVES = 10;
+export const MIN_OCTAVE = 0;
+export const MAX_OCTAVE = 10;
+export const TOTAL_OCTAVES = MAX_OCTAVE - MIN_OCTAVE + 1;
 export const ACTIVE_STEPS = 16;
 export const GROUP_SIZE = 4;
 export const ROW_HEIGHT = 32;
@@ -60,7 +62,7 @@ export const ROW_HEIGHT = 32;
 export function generate10OctavesNotes(): NoteInfo[] {
   const notes: NoteInfo[] = [];
 
-  for (let octave = TOTAL_OCTAVES; octave >= 1; octave--) {
+  for (let octave = MAX_OCTAVE; octave >= MIN_OCTAVE; octave--) {
     for (const name of NOTE_NAMES) {
       const isBlack = BLACK_NOTES.has(name);
       const isC = name === "C";
@@ -171,7 +173,7 @@ export const MIDI_NOTE_NAMES = [
 ] as const;
 
 export function midiToNote(midi: number): string | null {
-  if (midi < 12 || midi > 127) return null;
+  if (midi < 12 || midi > 143) return null;
   const semitone = midi % 12;
   const octave = Math.floor(midi / 12) - 1;
   return `${MIDI_NOTE_NAMES[semitone]}${octave}`;
@@ -182,6 +184,43 @@ export function transposeNote(noteName: string, semitones: number): string {
   if (midi === null) return noteName;
   const transposed = midiToNote(midi + semitones);
   return transposed || noteName;
+}
+
+export interface PresetJumpConfig {
+  defaultOctave: number;
+  octaves: number[];
+}
+
+export const PRESET_JUMP_CONFIGS: Record<string, PresetJumpConfig> = {
+  grand_piano: { defaultOctave: 4, octaves: [3, 4, 5] },
+  piano: { defaultOctave: 4, octaves: [3, 4, 5] },
+  electronic_pino: { defaultOctave: 4, octaves: [3, 4, 5] },
+  acoustic_guitar: { defaultOctave: 3, octaves: [2, 3, 4] },
+  guitar: { defaultOctave: 3, octaves: [2, 3, 4] },
+  electric_guitar: { defaultOctave: 3, octaves: [2, 3, 4] },
+  classical_guitar: { defaultOctave: 3, octaves: [2, 3, 4] },
+  ukelele: { defaultOctave: 4, octaves: [3, 4] },
+  base_guitar: { defaultOctave: 1, octaves: [1, 2, 3] },
+  bass: { defaultOctave: 1, octaves: [1, 2, 3] },
+  drum_set: { defaultOctave: 1, octaves: [1, 2] },
+  drums: { defaultOctave: 1, octaves: [1, 2] },
+  drum_808: { defaultOctave: 1, octaves: [1, 2] },
+  trap_kit: { defaultOctave: 1, octaves: [1, 2] },
+  electronic_drums: { defaultOctave: 1, octaves: [1, 2] },
+  acoustic_percussion: { defaultOctave: 1, octaves: [1, 2] },
+  flute: { defaultOctave: 4, octaves: [3, 4, 5] },
+  saxophone: { defaultOctave: 4, octaves: [3, 4, 5] },
+};
+
+export function getPresetJumpConfig(presetKey?: string): PresetJumpConfig {
+  if (!presetKey) return { defaultOctave: 4, octaves: [3, 4, 5] };
+  const normalized = presetKey.toLowerCase().trim();
+  return PRESET_JUMP_CONFIGS[normalized] || { defaultOctave: 4, octaves: [3, 4, 5] };
+}
+
+export function getTargetNoteForPreset(presetKey?: string): string {
+  const config = getPresetJumpConfig(presetKey);
+  return `C${config.defaultOctave}`;
 }
 
 export type ScaleType =
@@ -661,8 +700,40 @@ export const PATTERN_PRESETS: PatternPreset[] = [
     ],
   },
   {
+    id: "jazz_251",
+    name: "Jazz ii – V – I (Dm7 – G7 – Cmaj7)",
+    category: "chord",
+    notes: [
+      "D3-0",
+      "F3-0",
+      "A3-0",
+      "C4-0",
+      "F3-2",
+      "A3-2",
+      "C4-2",
+      "G2-4",
+      "B3-4",
+      "D4-4",
+      "F4-4",
+      "B3-6",
+      "D4-6",
+      "F4-6",
+      "C3-8",
+      "E3-8",
+      "G3-8",
+      "B3-8",
+      "E3-10",
+      "G3-10",
+      "B3-10",
+      "C3-12",
+      "E3-12",
+      "G3-12",
+      "B3-12",
+    ],
+  },
+  {
     id: "four_on_floor",
-    name: "Four on the Floor (Drums)",
+    name: "Four on the Floor (House / EDM)",
     category: "drum",
     notes: [
       "C1-0",
@@ -675,11 +746,15 @@ export const PATTERN_PRESETS: PatternPreset[] = [
       "G1-14",
       "D1-4",
       "D1-12",
+      "G#1-2",
+      "G#1-6",
+      "G#1-10",
+      "G#1-14",
     ],
   },
   {
     id: "trap_808_roll",
-    name: "Trap 808 & Hats (Drums)",
+    name: "Trap 808 & Rolling Hats",
     category: "drum",
     notes: [
       "C1-0",
@@ -694,8 +769,74 @@ export const PATTERN_PRESETS: PatternPreset[] = [
       "G1-8",
       "G1-10",
       "G1-12",
+      "G1-13",
       "G1-14",
       "G1-15",
+    ],
+  },
+  {
+    id: "boom_bap",
+    name: "Boom Bap 90s Groove",
+    category: "drum",
+    notes: [
+      "C1-0",
+      "C1-3",
+      "C1-10",
+      "C1-11",
+      "D1-4",
+      "D1-12",
+      "G1-0",
+      "G1-2",
+      "G1-4",
+      "G1-6",
+      "G1-8",
+      "G1-10",
+      "G1-12",
+      "G1-14",
+    ],
+  },
+  {
+    id: "rock_beat",
+    name: "Rock Driving Beat",
+    category: "drum",
+    notes: [
+      "C1-0",
+      "C1-8",
+      "C1-10",
+      "D1-4",
+      "D1-12",
+      "G1-0",
+      "G1-2",
+      "G1-4",
+      "G1-6",
+      "G1-8",
+      "G1-10",
+      "G1-12",
+      "G1-14",
+      "C#2-0",
+    ],
+  },
+  {
+    id: "reggaeton_dembow",
+    name: "Reggaeton / Dembow",
+    category: "drum",
+    notes: [
+      "C1-0",
+      "C1-4",
+      "C1-8",
+      "C1-12",
+      "D1-3",
+      "D1-6",
+      "D1-11",
+      "D1-14",
+      "G1-0",
+      "G1-2",
+      "G1-4",
+      "G1-6",
+      "G1-8",
+      "G1-10",
+      "G1-12",
+      "G1-14",
     ],
   },
   {
@@ -729,4 +870,12 @@ export const PATTERN_PRESETS: PatternPreset[] = [
     ],
   },
 ];
+
+export const PIANO_PATTERN_PRESETS = PATTERN_PRESETS.filter(
+  (p) => p.category !== "drum",
+);
+
+export const DRUM_PATTERN_PRESETS = PATTERN_PRESETS.filter(
+  (p) => p.category === "drum",
+);
 

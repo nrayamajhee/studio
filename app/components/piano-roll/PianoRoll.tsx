@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
   generate10OctavesNotes,
   TOTAL_OCTAVES,
+  MAX_OCTAVE,
   ROW_HEIGHT,
   VERTICAL_WHITE_KEYS,
   VERTICAL_BLACK_KEYS,
@@ -10,7 +11,11 @@ import {
   isNoteInKey,
   transposeNote,
   PATTERN_PRESETS,
+  PIANO_PATTERN_PRESETS,
+  DRUM_PATTERN_PRESETS,
   type ScaleType,
+  getTargetNoteForPreset,
+  getPresetJumpConfig,
 } from "./types";
 import { synth } from "../../lib/synth";
 import { Button } from "../design-system/Button";
@@ -22,8 +27,12 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowLeftRight,
-  Shuffle,
-  ZoomIn,
+  Trash2,
+  VolumeX,
+  Volume2,
+  X,
+  Copy,
+  CheckSquare,
 } from "lucide-react";
 
 export interface PianoRollProps {
@@ -31,13 +40,28 @@ export interface PianoRollProps {
   initialActiveNotes?: string[];
   activeNotes?: string[];
   onNotesChange?: (activeNotes: string[]) => void;
+  disabledNotes?: string[];
+  onDisabledNotesChange?: (disabledNotes: string[]) => void;
+  selectedNotes?: string[];
+  onSelectedNotesChange?: (selectedNotes: string[]) => void;
+  noteVelocities?: Record<string, number>;
+  onNoteVelocitiesChange?: (velocities: Record<string, number>) => void;
+  onNoteVelocityChange?: (noteKey: string, velocity: number) => void;
   currentStep?: number | null;
   isPlaying?: boolean;
   isRecording?: boolean;
   totalSteps?: number;
   onTotalStepsChange?: (steps: number) => void;
+  jumpOctave?: number;
+  onJumpOctaveChange?: (octave: number) => void;
   velocity?: number;
   onVelocityChange?: (velocity: number) => void;
+  selectedPreset?: string;
+  externalPressedKeys?: string[];
+  rootKey?: string;
+  onRootKeyChange?: (rootKey: string) => void;
+  scale?: ScaleType;
+  onScaleChange?: (scale: ScaleType) => void;
 }
 
 export const PianoRoll: React.FC<PianoRollProps> = ({
@@ -45,43 +69,118 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   initialActiveNotes,
   activeNotes: controlledActiveNotes,
   onNotesChange,
+  disabledNotes: controlledDisabledNotes,
+  onDisabledNotesChange,
+  selectedNotes: controlledSelectedNotes,
+  onSelectedNotesChange,
+  noteVelocities: controlledNoteVelocities,
+  onNoteVelocitiesChange,
+  onNoteVelocityChange,
   currentStep = null,
   isPlaying = false,
   isRecording = false,
   totalSteps: controlledTotalSteps,
-  onTotalStepsChange,
+  onTotalStepsChange: _onTotalStepsChange,
+  jumpOctave: controlledJumpOctave,
+  onJumpOctaveChange: _onJumpOctaveChange,
   velocity: controlledVelocity,
-  onVelocityChange,
+  onVelocityChange: _onVelocityChange,
+  selectedPreset = "grand_piano",
+  externalPressedKeys = [],
+  rootKey: controlledRootKey,
+  onRootKeyChange,
+  scale: controlledScale,
+  onScaleChange,
 }) => {
   const notes = useMemo(() => generate10OctavesNotes(), []);
   const containerRef = useRef<HTMLDivElement>(null);
-  const c4RowRef = useRef<HTMLDivElement | null>(null);
+  const externalPressedKeysSet = useMemo(
+    () => new Set(externalPressedKeys),
+    [externalPressedKeys],
+  );
+  const jumpConfig = useMemo(
+    () => getPresetJumpConfig(selectedPreset),
+    [selectedPreset],
+  );
+  const [, setInternalJumpOctave] = useState<number>(
+    jumpConfig.defaultOctave,
+  );
 
-  const [internalVelocity, setInternalVelocity] = useState(85);
+  const [internalVelocity] = useState(85);
   const velocity = controlledVelocity ?? internalVelocity;
 
-  const handleVelocityChange = (val: number) => {
-    const clamped = Math.max(10, Math.min(100, Math.round(val)));
-    setInternalVelocity(clamped);
-    if (onVelocityChange) {
-      onVelocityChange(clamped);
-    }
-  };
+  const [internalNoteVelocities, setInternalNoteVelocities] = useState<
+    Record<string, number>
+  >(() => ({
+    "C3-0": 85,
+    "C4-0": 95,
+    "E4-0": 80,
+    "G4-0": 88,
+    "C4-2": 90,
+    "E4-2": 82,
+    "G4-2": 85,
+    "G2-4": 85,
+  }));
+  const noteVelocities = controlledNoteVelocities ?? internalNoteVelocities;
 
-  const [internalTotalSteps, setInternalTotalSteps] = useState(16);
+  const updateNoteVelocities = useCallback(
+    (next: Record<string, number>) => {
+      setInternalNoteVelocities(next);
+      if (onNoteVelocitiesChange) {
+        onNoteVelocitiesChange(next);
+      }
+    },
+    [onNoteVelocitiesChange],
+  );
+
+  const handleNoteVelocityChange = useCallback(
+    (noteKey: string, val: number) => {
+      const clamped = Math.max(5, Math.min(100, Math.round(val)));
+      const next = { ...noteVelocities, [noteKey]: clamped };
+      updateNoteVelocities(next);
+      if (onNoteVelocityChange) {
+        onNoteVelocityChange(noteKey, clamped);
+      }
+    },
+    [noteVelocities, updateNoteVelocities, onNoteVelocityChange],
+  );
+
+  const [hoveredNote, setHoveredNote] = useState<string | null>(null);
+  const [isDraggingSlider, setIsDraggingSlider] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setIsDraggingSlider(null);
+    };
+    window.addEventListener("mouseup", handleGlobalMouseUp);
+    return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
+  }, []);
+
+  const [internalTotalSteps] = useState(16);
   const totalSteps = controlledTotalSteps ?? internalTotalSteps;
 
-  const setTotalSteps = (steps: number) => {
-    setInternalTotalSteps(steps);
-    if (onTotalStepsChange) {
-      onTotalStepsChange(steps);
+  const groupSize = totalSteps === 12 || totalSteps === 24 ? 3 : 4;
+  const [internalRootKey, setInternalRootKey] = useState("C");
+  const rootKey = controlledRootKey ?? internalRootKey;
+  const setRootKey = (val: string) => {
+    if (controlledRootKey === undefined) {
+      setInternalRootKey(val);
+    }
+    if (onRootKeyChange) {
+      onRootKeyChange(val);
     }
   };
 
-  const groupSize = totalSteps === 12 || totalSteps === 24 ? 3 : 4;
-  const [rootKey, setRootKey] = useState<string>("C");
-  const [scale, setScale] = useState<ScaleType>("chromatic");
-  const [zoomLevel, setZoomLevel] = useState<"compact" | "normal" | "wide">("normal");
+  const [internalScale, setInternalScale] = useState<ScaleType>("major");
+  const scale = controlledScale ?? internalScale;
+  const setScale = (val: ScaleType) => {
+    if (controlledScale === undefined) {
+      setInternalScale(val);
+    }
+    if (onScaleChange) {
+      onScaleChange(val);
+    }
+  };
 
   const [internalActiveNotes, setInternalActiveNotes] = useState<Set<string>>(
     () => {
@@ -128,19 +227,544 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     return internalActiveNotes;
   }, [controlledActiveNotes, internalActiveNotes]);
 
-  const updateNotes = (next: Set<string>) => {
-    if (controlledActiveNotes === undefined) {
-      setInternalActiveNotes(next);
+  const updateNotes = useCallback(
+    (next: Set<string>) => {
+      if (controlledActiveNotes === undefined) {
+        setInternalActiveNotes(next);
+      }
+      if (onNotesChange) {
+        onNotesChange(Array.from(next));
+      }
+    },
+    [controlledActiveNotes, onNotesChange],
+  );
+
+  const [internalDisabledNotes, setInternalDisabledNotes] = useState<
+    Set<string>
+  >(new Set());
+  const disabledNotes = useMemo(() => {
+    if (controlledDisabledNotes !== undefined) {
+      return new Set(controlledDisabledNotes);
     }
-    if (onNotesChange) {
-      onNotesChange(Array.from(next));
+    return internalDisabledNotes;
+  }, [controlledDisabledNotes, internalDisabledNotes]);
+
+  const updateDisabledNotes = useCallback(
+    (next: Set<string>) => {
+      if (controlledDisabledNotes === undefined) {
+        setInternalDisabledNotes(next);
+      }
+      if (onDisabledNotesChange) {
+        onDisabledNotesChange(Array.from(next));
+      }
+    },
+    [controlledDisabledNotes, onDisabledNotesChange],
+  );
+
+  const [internalSelectedNotes, setInternalSelectedNotes] = useState<
+    Set<string>
+  >(new Set());
+  const selectedNotes = useMemo(() => {
+    if (controlledSelectedNotes !== undefined) {
+      return new Set(controlledSelectedNotes);
     }
-  };
+    return internalSelectedNotes;
+  }, [controlledSelectedNotes, internalSelectedNotes]);
+
+  const updateSelectedNotes = useCallback(
+    (next: Set<string>) => {
+      if (controlledSelectedNotes === undefined) {
+        setInternalSelectedNotes(next);
+      }
+      if (onSelectedNotesChange) {
+        onSelectedNotesChange(Array.from(next));
+      }
+    },
+    [controlledSelectedNotes, onSelectedNotesChange],
+  );
+
+  interface MarqueeBox {
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+    isDragging: boolean;
+    initialSelected: Set<string>;
+  }
+
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    noteKey?: string;
+  } | null>(null);
+
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  const [marquee, setMarquee] = useState<MarqueeBox | null>(null);
+  const marqueeRef = useRef<MarqueeBox | null>(null);
+  useEffect(() => {
+    marqueeRef.current = marquee;
+  }, [marquee]);
+  const dragStartClientRef = useRef<{ clientX: number; clientY: number } | null>(
+    null,
+  );
+  const wasDraggingRef = useRef(false);
+
+  useEffect(() => {
+    const container = gridContainerRef.current;
+    if (!container) return;
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const target = e.target as HTMLElement;
+      if (target.closest("input, button")) return;
+
+      const rect = container.getBoundingClientRect();
+      const startX = e.clientX - rect.left;
+      const startY = e.clientY - rect.top;
+
+      dragStartClientRef.current = { clientX: e.clientX, clientY: e.clientY };
+      const initialSelected = e.shiftKey
+        ? new Set(selectedNotes)
+        : new Set<string>();
+
+      setMarquee({
+        startX,
+        startY,
+        currentX: startX,
+        currentY: startY,
+        isDragging: false,
+        initialSelected,
+      });
+    };
+
+    const onCtxMenu = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("input, button")) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const menuWidth = 190;
+      const menuHeight = 240;
+      const x = Math.min(e.clientX, window.innerWidth - menuWidth - 8);
+      const y = Math.min(e.clientY, window.innerHeight - menuHeight - 8);
+
+      setContextMenu({ x, y });
+    };
+
+    container.addEventListener("mousedown", onMouseDown);
+    container.addEventListener("contextmenu", onCtxMenu);
+    return () => {
+      container.removeEventListener("mousedown", onMouseDown);
+      container.removeEventListener("contextmenu", onCtxMenu);
+    };
+  }, [selectedNotes]);
+
+  useEffect(() => {
+    const handleWindowMouseMove = (e: MouseEvent) => {
+      if (
+        !dragStartClientRef.current ||
+        !gridContainerRef.current ||
+        !marqueeRef.current
+      )
+        return;
+
+      const startClient = dragStartClientRef.current;
+      const dist = Math.hypot(
+        e.clientX - startClient.clientX,
+        e.clientY - startClient.clientY,
+      );
+
+      if (dist > 4) {
+        const container = gridContainerRef.current;
+        const rect = container.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+
+        const m = marqueeRef.current;
+        const mLeft = Math.min(m.startX, currentX);
+        const mRight = Math.max(m.startX, currentX);
+        const mTop = Math.min(m.startY, currentY);
+        const mBottom = Math.max(m.startY, currentY);
+
+        const nextSelected = new Set(m.initialSelected);
+        const activeElements = container.querySelectorAll<HTMLElement>(
+          '[data-active-note="true"]',
+        );
+        activeElements.forEach((el) => {
+          const noteKey = el.getAttribute("data-note-key");
+          if (!noteKey) return;
+          const elRect = el.getBoundingClientRect();
+          const elLeft = elRect.left - rect.left;
+          const elTop = elRect.top - rect.top;
+          const elRight = elRect.right - rect.left;
+          const elBottom = elRect.bottom - rect.top;
+
+          const overlaps = !(
+            elRight < mLeft ||
+            elLeft > mRight ||
+            elBottom < mTop ||
+            elTop > mBottom
+          );
+
+          if (overlaps) {
+            nextSelected.add(noteKey);
+          }
+        });
+
+        setMarquee({
+          ...m,
+          currentX,
+          currentY,
+          isDragging: true,
+        });
+
+        updateSelectedNotes(nextSelected);
+      }
+    };
+
+    const handleWindowMouseUp = () => {
+      if (marqueeRef.current) {
+        if (marqueeRef.current.isDragging) {
+          wasDraggingRef.current = true;
+          setTimeout(() => {
+            wasDraggingRef.current = false;
+          }, 50);
+        }
+        dragStartClientRef.current = null;
+        setMarquee(null);
+      }
+    };
+
+    window.addEventListener("mousemove", handleWindowMouseMove);
+    window.addEventListener("mouseup", handleWindowMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleWindowMouseMove);
+      window.removeEventListener("mouseup", handleWindowMouseUp);
+    };
+  }, [updateSelectedNotes]);
+
+  const handleNoteClick = useCallback(
+    (noteKey: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (wasDraggingRef.current) return;
+
+      const nextDisabled = new Set(disabledNotes);
+      if (nextDisabled.has(noteKey)) {
+        nextDisabled.delete(noteKey);
+      } else {
+        nextDisabled.add(noteKey);
+      }
+      updateDisabledNotes(nextDisabled);
+
+      if (e.shiftKey) {
+        const nextSelected = new Set(selectedNotes);
+        if (nextSelected.has(noteKey)) {
+          nextSelected.delete(noteKey);
+        } else {
+          nextSelected.add(noteKey);
+        }
+        updateSelectedNotes(nextSelected);
+      } else {
+        updateSelectedNotes(new Set([noteKey]));
+      }
+    },
+    [disabledNotes, selectedNotes, updateDisabledNotes, updateSelectedNotes],
+  );
+
+  const handleNoteDoubleClick = useCallback(
+    (noteKey: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      const nextActive = new Set(activeNotes);
+      nextActive.delete(noteKey);
+      updateNotes(nextActive);
+
+      if (disabledNotes.has(noteKey)) {
+        const nextDisabled = new Set(disabledNotes);
+        nextDisabled.delete(noteKey);
+        updateDisabledNotes(nextDisabled);
+      }
+
+      if (selectedNotes.has(noteKey)) {
+        const nextSelected = new Set(selectedNotes);
+        nextSelected.delete(noteKey);
+        updateSelectedNotes(nextSelected);
+      }
+
+      if (noteVelocities[noteKey] !== undefined) {
+        const nextVel = { ...noteVelocities };
+        delete nextVel[noteKey];
+        updateNoteVelocities(nextVel);
+      }
+    },
+    [
+      activeNotes,
+      disabledNotes,
+      selectedNotes,
+      noteVelocities,
+      updateNotes,
+      updateDisabledNotes,
+      updateSelectedNotes,
+      updateNoteVelocities,
+    ],
+  );
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent, targetNoteKey?: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (targetNoteKey) {
+        if (!selectedNotes.has(targetNoteKey)) {
+          updateSelectedNotes(new Set([targetNoteKey]));
+        }
+      }
+
+      const menuWidth = 190;
+      const menuHeight = 240;
+      const x = Math.min(e.clientX, window.innerWidth - menuWidth - 8);
+      const y = Math.min(e.clientY, window.innerHeight - menuHeight - 8);
+
+      setContextMenu({ x, y, noteKey: targetNoteKey });
+    },
+    [selectedNotes, updateSelectedNotes, setContextMenu],
+  );
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleOutside = () => setContextMenu(null);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setContextMenu(null);
+    };
+    window.addEventListener("click", handleOutside);
+    window.addEventListener("contextmenu", handleOutside);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("click", handleOutside);
+      window.removeEventListener("contextmenu", handleOutside);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [contextMenu]);
+
+  const handleCellClick = useCallback(
+    (noteFullName: string, stepIndex: number) => {
+      if (wasDraggingRef.current) return;
+      const noteKey = `${noteFullName}-${stepIndex}`;
+      if (activeNotes.has(noteKey)) return;
+
+      const nextActive = new Set(activeNotes);
+      nextActive.add(noteKey);
+      updateNotes(nextActive);
+
+      if (disabledNotes.has(noteKey)) {
+        const nextDisabled = new Set(disabledNotes);
+        nextDisabled.delete(noteKey);
+        updateDisabledNotes(nextDisabled);
+      }
+
+      updateSelectedNotes(new Set([noteKey]));
+
+      const noteVel = noteVelocities[noteKey] ?? velocity;
+      handleNoteVelocityChange(noteKey, noteVel);
+      const vel = noteVel / 100;
+      const sustainSec = 0.8 + 1.2 * vel;
+      synth.playNote(noteFullName, undefined, sustainSec, vel);
+    },
+    [
+      activeNotes,
+      disabledNotes,
+      noteVelocities,
+      velocity,
+      updateNotes,
+      updateDisabledNotes,
+      updateSelectedNotes,
+      handleNoteVelocityChange,
+    ],
+  );
+
+  const duplicateSelectedNotes = useCallback(() => {
+    if (selectedNotes.size === 0) return;
+    const nextActive = new Set(activeNotes);
+    const newSelected = new Set<string>();
+    const nextVelocities = { ...noteVelocities };
+
+    selectedNotes.forEach((key) => {
+      const [noteName, stepStr] = key.split("-");
+      const step = parseInt(stepStr, 10);
+      const targetStep = (step + 1) % totalSteps;
+      const newKey = `${noteName}-${targetStep}`;
+      nextActive.add(newKey);
+      newSelected.add(newKey);
+      if (noteVelocities[key] !== undefined) {
+        nextVelocities[newKey] = noteVelocities[key];
+      }
+    });
+
+    updateNotes(nextActive);
+    updateSelectedNotes(newSelected);
+    updateNoteVelocities(nextVelocities);
+    setContextMenu(null);
+  }, [
+    selectedNotes,
+    activeNotes,
+    noteVelocities,
+    totalSteps,
+    updateNotes,
+    updateSelectedNotes,
+    updateNoteVelocities,
+    setContextMenu,
+  ]);
+
+  const selectAllNotes = useCallback(() => {
+    updateSelectedNotes(new Set(activeNotes));
+    setContextMenu(null);
+  }, [activeNotes, updateSelectedNotes, setContextMenu]);
+
+  const clearSelection = useCallback(() => {
+    updateSelectedNotes(new Set());
+    setContextMenu(null);
+  }, [updateSelectedNotes, setContextMenu]);
+
+  const deleteSelectedNotes = useCallback(() => {
+    if (selectedNotes.size === 0) return;
+    const nextActive = new Set(activeNotes);
+    const nextDisabled = new Set(disabledNotes);
+    const nextVelocities = { ...noteVelocities };
+
+    selectedNotes.forEach((key) => {
+      nextActive.delete(key);
+      nextDisabled.delete(key);
+      delete nextVelocities[key];
+    });
+
+    updateNotes(nextActive);
+    updateDisabledNotes(nextDisabled);
+    updateNoteVelocities(nextVelocities);
+    updateSelectedNotes(new Set());
+  }, [
+    selectedNotes,
+    activeNotes,
+    disabledNotes,
+    noteVelocities,
+    updateNotes,
+    updateDisabledNotes,
+    updateNoteVelocities,
+    updateSelectedNotes,
+  ]);
+
+  const toggleDisabledSelectedNotes = useCallback(() => {
+    if (selectedNotes.size === 0) return;
+    const nextDisabled = new Set(disabledNotes);
+    const allDisabled = Array.from(selectedNotes).every((key) =>
+      nextDisabled.has(key),
+    );
+
+    selectedNotes.forEach((key) => {
+      if (allDisabled) {
+        nextDisabled.delete(key);
+      } else {
+        nextDisabled.add(key);
+      }
+    });
+
+    updateDisabledNotes(nextDisabled);
+  }, [selectedNotes, disabledNotes, updateDisabledNotes]);
+
+  const transposeSelectedOrAll = useCallback(
+    (semitones: number) => {
+      const targetSet = selectedNotes.size > 0 ? selectedNotes : activeNotes;
+      if (targetSet.size === 0) return;
+      const next = new Set<string>(activeNotes);
+      const nextDisabled = new Set<string>(disabledNotes);
+      const nextSelected = new Set<string>();
+      const nextVelocities: Record<string, number> = { ...noteVelocities };
+
+      for (const item of targetSet) {
+        next.delete(item);
+        const wasDisabled = nextDisabled.delete(item);
+        const wasSelected = selectedNotes.has(item);
+        const vel = nextVelocities[item];
+        delete nextVelocities[item];
+
+        const lastDash = item.lastIndexOf("-");
+        if (lastDash === -1) continue;
+        const noteName = item.slice(0, lastDash);
+        const step = item.slice(lastDash + 1);
+        const transposed = transposeNote(noteName, semitones);
+        const newKey = `${transposed}-${step}`;
+        next.add(newKey);
+        if (wasDisabled) nextDisabled.add(newKey);
+        if (wasSelected) nextSelected.add(newKey);
+        if (vel !== undefined) nextVelocities[newKey] = vel;
+      }
+      updateNoteVelocities(nextVelocities);
+      updateDisabledNotes(nextDisabled);
+      if (selectedNotes.size > 0) {
+        updateSelectedNotes(nextSelected);
+      }
+      updateNotes(next);
+    },
+    [
+      activeNotes,
+      disabledNotes,
+      selectedNotes,
+      noteVelocities,
+      updateNotes,
+      updateDisabledNotes,
+      updateSelectedNotes,
+      updateNoteVelocities,
+    ],
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
+      ) {
+        return;
+      }
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (selectedNotes.size > 0) {
+          e.preventDefault();
+          deleteSelectedNotes();
+        }
+      } else if (
+        e.key === "d" ||
+        e.key === "D" ||
+        e.key === "m" ||
+        e.key === "M"
+      ) {
+        if (selectedNotes.size > 0) {
+          e.preventDefault();
+          toggleDisabledSelectedNotes();
+        }
+      } else if (e.key === "Escape") {
+        if (selectedNotes.size > 0) {
+          e.preventDefault();
+          updateSelectedNotes(new Set());
+        }
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A")) {
+        e.preventDefault();
+        updateSelectedNotes(new Set(activeNotes));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    selectedNotes,
+    activeNotes,
+    deleteSelectedNotes,
+    toggleDisabledSelectedNotes,
+    updateSelectedNotes,
+  ]);
 
   const [pressedKey, setPressedKey] = useState<string | null>(null);
 
   const octavesList = useMemo(() => {
-    return Array.from({ length: TOTAL_OCTAVES }, (_, i) => TOTAL_OCTAVES - i);
+    return Array.from({ length: TOTAL_OCTAVES }, (_, i) => MAX_OCTAVE - i);
   }, []);
 
   const activePitches = useMemo(() => {
@@ -154,19 +778,49 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     return pitches;
   }, [activeNotes]);
 
+  const scrollToNote = useCallback((targetNote: string, smooth = true) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const el = document.getElementById(`piano-roll-row-${targetNote}`);
+    if (el) {
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = el.getBoundingClientRect();
+      const relativeTop = targetRect.top - containerRect.top + container.scrollTop;
+      const targetScrollTop =
+        relativeTop - container.clientHeight / 2 + targetRect.height / 2;
+      container.scrollTo({
+        top: Math.max(0, targetScrollTop),
+        behavior: smooth ? "smooth" : "auto",
+      });
+    }
+  }, []);
+
+  const scrollToOctave = useCallback(
+    (octave: number, smooth = true) => {
+      scrollToNote(`C${octave}`, smooth);
+    },
+    [scrollToNote],
+  );
+
+
   useEffect(() => {
+    if (controlledJumpOctave !== undefined) {
+      scrollToOctave(controlledJumpOctave);
+    }
+  }, [controlledJumpOctave, scrollToOctave]);
+
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    const targetNote = getTargetNoteForPreset(selectedPreset);
     const timeout = setTimeout(() => {
-      const c4El = c4RowRef.current;
-      const container = containerRef.current;
-      if (c4El && container) {
-        const targetScrollTop =
-          c4El.offsetTop - container.clientHeight / 2 + c4El.clientHeight / 2;
-        container.scrollTop = Math.max(0, targetScrollTop);
-      }
-    }, 50);
+      setInternalJumpOctave(jumpConfig.defaultOctave);
+      scrollToNote(targetNote, !isFirstRender.current);
+      isFirstRender.current = false;
+    }, 60);
 
     return () => clearTimeout(timeout);
-  }, []);
+  }, [selectedPreset, jumpConfig.defaultOctave, scrollToNote]);
 
   const handleKeyClick = (noteFullName: string) => {
     setPressedKey(noteFullName);
@@ -178,72 +832,50 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     }, 180);
   };
 
-  const toggleNote = (noteFullName: string, stepIndex: number) => {
-    const noteKey = `${noteFullName}-${stepIndex}`;
-    const next = new Set(activeNotes);
-    if (next.has(noteKey)) {
-      next.delete(noteKey);
-    } else {
-      next.add(noteKey);
-      const vel = velocity / 100;
-      const sustainSec = 0.8 + 1.2 * vel;
-      synth.playNote(noteFullName, undefined, sustainSec, vel);
-    }
-    updateNotes(next);
-  };
-
   const shiftNotes = (offset: number) => {
     const next = new Set<string>();
+    const nextDisabled = new Set<string>();
+    const nextSelected = new Set<string>();
+    const nextVelocities: Record<string, number> = {};
     for (const item of activeNotes) {
       const lastDash = item.lastIndexOf("-");
       if (lastDash === -1) continue;
       const noteName = item.slice(0, lastDash);
       const step = parseInt(item.slice(lastDash + 1), 10);
       const newStep = (step + offset + totalSteps) % totalSteps;
-      next.add(`${noteName}-${newStep}`);
+      const newKey = `${noteName}-${newStep}`;
+      next.add(newKey);
+      if (disabledNotes.has(item)) nextDisabled.add(newKey);
+      if (selectedNotes.has(item)) nextSelected.add(newKey);
+      nextVelocities[newKey] = noteVelocities[item] ?? velocity;
     }
+    updateNoteVelocities(nextVelocities);
+    updateDisabledNotes(nextDisabled);
+    updateSelectedNotes(nextSelected);
     updateNotes(next);
   };
 
-  const transposeNotes = (semitones: number) => {
-    const next = new Set<string>();
-    for (const item of activeNotes) {
-      const lastDash = item.lastIndexOf("-");
-      if (lastDash === -1) continue;
-      const noteName = item.slice(0, lastDash);
-      const step = item.slice(lastDash + 1);
-      const transposed = transposeNote(noteName, semitones);
-      next.add(`${transposed}-${step}`);
-    }
-    updateNotes(next);
-  };
 
   const reverseNotes = () => {
     const next = new Set<string>();
+    const nextDisabled = new Set<string>();
+    const nextSelected = new Set<string>();
+    const nextVelocities: Record<string, number> = {};
     for (const item of activeNotes) {
       const lastDash = item.lastIndexOf("-");
       if (lastDash === -1) continue;
       const noteName = item.slice(0, lastDash);
       const step = parseInt(item.slice(lastDash + 1), 10);
       const newStep = totalSteps - 1 - step;
-      next.add(`${noteName}-${newStep}`);
+      const newKey = `${noteName}-${newStep}`;
+      next.add(newKey);
+      if (disabledNotes.has(item)) nextDisabled.add(newKey);
+      if (selectedNotes.has(item)) nextSelected.add(newKey);
+      nextVelocities[newKey] = noteVelocities[item] ?? velocity;
     }
-    updateNotes(next);
-  };
-
-  const randomizeNotes = () => {
-    const inKeyNotes = notes.filter(
-      (n) => isNoteInKey(n.name, rootKey, scale) && n.octave >= 3 && n.octave <= 5,
-    );
-    if (inKeyNotes.length === 0) return;
-    const next = new Set<string>();
-    for (let step = 0; step < totalSteps; step += 2) {
-      if (Math.random() > 0.2) {
-        const randomNote =
-          inKeyNotes[Math.floor(Math.random() * inKeyNotes.length)];
-        next.add(`${randomNote.fullName}-${step}`);
-      }
-    }
+    updateNoteVelocities(nextVelocities);
+    updateDisabledNotes(nextDisabled);
+    updateSelectedNotes(nextSelected);
     updateNotes(next);
   };
 
@@ -267,29 +899,17 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
         next.add(`${noteName}-${step}`);
       }
     }
+    updateDisabledNotes(new Set());
+    updateSelectedNotes(new Set());
     updateNotes(next);
-  };
-
-  const scrollToOctave = (octave: number) => {
-    const container = containerRef.current;
-    if (!container) return;
-    const el = document.getElementById(`piano-roll-row-C${octave}`);
-    if (el) {
-      const targetScrollTop =
-        el.offsetTop - container.clientHeight / 2 + el.clientHeight / 2;
-      container.scrollTo({
-        top: Math.max(0, targetScrollTop),
-        behavior: "smooth",
-      });
+    if (pattern.category === "drum") {
+      scrollToNote("C1", true);
+    } else {
+      scrollToNote("C4", true);
     }
   };
 
-  const stepWidthClass =
-    zoomLevel === "compact"
-      ? "w-8 sm:w-9"
-      : zoomLevel === "wide"
-        ? "w-14 sm:w-16"
-        : "w-10 sm:w-12";
+  const stepWidthClass = "w-18 sm:w-20";
 
   const numGroups = Math.ceil(totalSteps / groupSize);
 
@@ -300,217 +920,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
         className,
       )}
     >
-      <div className="w-full flex items-center justify-between px-2.5 py-1.5 bg-stone-100 dark:bg-[#07090e] border-b border-stone-200 dark:border-stone-800 gap-2 overflow-x-auto flex-shrink-0 select-none z-30 no-scrollbar">
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Steps:
-          </span>
-          {[8, 12, 16, 24, 32].map((steps) => (
-            <Button
-              key={steps}
-              variant="solid"
-              tone={totalSteps === steps ? "primary" : "secondary"}
-              size="sm"
-              onClick={() => setTotalSteps(steps)}
-              className={cn(
-                "px-2 py-0.5 h-6 text-[10px] font-mono rounded border transition-colors",
-                totalSteps === steps
-                  ? "bg-primary text-white border-primary-light font-bold shadow-sm ring-1 ring-primary/40"
-                  : "bg-[#12151c] text-stone-300 border-[#1f2533] hover:text-white",
-              )}
-            >
-              {steps}
-            </Button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Key:
-          </span>
-          <Dropdown
-            size="xs"
-            value={rootKey}
-            onChange={(val) => setRootKey(val)}
-            options={ROOT_KEYS.map((k) => ({ value: k, label: k }))}
-            className="w-16"
-          />
-
-          <Dropdown
-            size="xs"
-            value={scale}
-            onChange={(val) => setScale(val as ScaleType)}
-            options={Object.entries(SCALES).map(([sKey, sVal]) => ({
-              value: sKey,
-              label: sVal.name,
-            }))}
-            className="w-36"
-          />
-        </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Presets:
-          </span>
-          <Dropdown
-            size="xs"
-            placeholder="Load Preset..."
-            value=""
-            onChange={(val) => {
-              if (val) loadPattern(val);
-            }}
-            options={PATTERN_PRESETS.map((p) => ({
-              value: p.id,
-              label: p.name,
-            }))}
-            className="w-48 sm:w-52"
-          />
-        </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => shiftNotes(-1)}
-            title="Shift pattern left by 1 step"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            <ChevronLeft className="w-3 h-3" />
-            Shift
-          </Button>
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => shiftNotes(1)}
-            title="Shift pattern right by 1 step"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            Shift
-            <ChevronRight className="w-3 h-3" />
-          </Button>
-
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => transposeNotes(1)}
-            title="Transpose +1 semitone"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            <ArrowUp className="w-3 h-3" />
-            +1
-          </Button>
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => transposeNotes(-1)}
-            title="Transpose -1 semitone"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            <ArrowDown className="w-3 h-3" />
-            -1
-          </Button>
-
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={reverseNotes}
-            title="Reverse pattern horizontally"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            <ArrowLeftRight className="w-3 h-3" />
-            Flip
-          </Button>
-
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={randomizeNotes}
-            title="Randomize in-key notes"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            <Shuffle className="w-3 h-3" />
-            Rnd
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Jump:
-          </span>
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => scrollToOctave(4)}
-            title="Jump to C4 (Piano/Mid)"
-            className="px-1.5 py-0.5 h-6 text-[10px] font-mono rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            C4
-          </Button>
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => scrollToOctave(6)}
-            title="Jump to C6 (Lead)"
-            className="px-1.5 py-0.5 h-6 text-[10px] font-mono rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            C6
-          </Button>
-        </div>
-
-        <div className="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
-
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Velocity:
-          </span>
-          <div className="flex items-center gap-1.5 bg-stone-200/80 dark:bg-[#12151c] px-2 py-0.5 h-6 rounded border border-stone-300 dark:border-[#1f2533]">
-            <input
-              type="range"
-              min={10}
-              max={100}
-              step={1}
-              value={velocity}
-              onChange={(e) => handleVelocityChange(Number(e.target.value))}
-              aria-label="Note velocity"
-              title={`Velocity: ${velocity}%`}
-              className="w-16 h-1 bg-stone-300 dark:bg-stone-700 rounded-lg appearance-none cursor-pointer accent-primary"
-            />
-            <span className="text-[10px] font-mono font-bold text-stone-700 dark:text-stone-300 min-w-[28px] text-right select-none">
-              {velocity}%
-            </span>
-          </div>
-        </div>
-        <div className="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
-
-        <Button
-          variant="solid"
-          tone="secondary"
-          size="sm"
-          onClick={() =>
-            setZoomLevel((prev) =>
-              prev === "compact"
-                ? "normal"
-                : prev === "normal"
-                  ? "wide"
-                  : "compact",
-            )
-          }
-          title={`Zoom: ${zoomLevel}`}
-          className="px-1.5 py-0.5 h-6 text-[10px] font-mono uppercase rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white flex-shrink-0"
-        >
-          <ZoomIn className="w-3 h-3 mr-0.5" />
-          {zoomLevel[0].toUpperCase()}
-        </Button>
-      </div>
-
       <div
         ref={containerRef}
         className="flex-1 w-full overflow-auto relative bg-surface-light dark:bg-stone-950 select-none"
@@ -592,7 +1001,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                     <div className="absolute inset-0 flex flex-col z-10">
                       {VERTICAL_WHITE_KEYS.map((keyDef) => {
                         const fullName = `${keyDef.name}${octave}`;
-                        const isPressed = pressedKey === fullName;
+                        const isPressed =
+                          pressedKey === fullName ||
+                          externalPressedKeysSet.has(fullName);
                         const hasActiveNote = activePitches.has(fullName);
                         const isC = keyDef.name === "C";
                         const inKey = isNoteInKey(keyDef.name, rootKey, scale);
@@ -612,19 +1023,19 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                             style={{ height }}
                             className={cn(
                               "w-full rounded-none border-0 border-b border-stone-300 dark:border-stone-300 px-3 text-xs font-mono font-medium transition-colors cursor-pointer select-none justify-end active:translate-y-0",
-                              "!bg-gradient-to-r !from-stone-50 !via-white !to-stone-100 dark:!from-stone-50 dark:!via-white dark:!to-stone-100 hover:!from-amber-50 hover:!to-white active:!bg-stone-200 !text-stone-900 dark:!text-stone-900 shadow-sm",
+                              "!bg-gradient-to-r !from-stone-50 !via-white !to-stone-100 dark:!from-stone-50 dark:!via-white dark:!to-stone-100 hover:!from-stone-100 hover:!to-white active:!bg-stone-200 !text-stone-900 dark:!text-stone-900 shadow-sm",
                               isC &&
-                                "border-b-2 border-b-primary/60 dark:border-b-primary/60 font-bold",
+                                "border-b-2 border-b-stone-500 dark:border-b-stone-400 font-bold",
                               (hasActiveNote || isPressed) &&
-                                "!bg-blue-100 dark:!bg-blue-950/80 ring-2 ring-primary ring-inset !from-blue-100 !to-blue-200 dark:!from-blue-950/80 dark:!to-blue-900/80 !text-stone-900 dark:!text-white font-bold",
+                                "!bg-stone-200 dark:!bg-stone-300 ring-2 ring-stone-600 dark:ring-stone-400 ring-inset !text-stone-950 font-bold shadow-inner",
                             )}
                           >
                             <span className="flex items-center gap-1.5">
                               {inKey && scale !== "chromatic" && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-stone-400 dark:bg-stone-500" />
                               )}
                               {hasActiveNote && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-stone-800 dark:bg-stone-200" />
                               )}
                               <span
                                 className={cn(
@@ -636,7 +1047,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                 {fullName}
                               </span>
                               {isC && (
-                                <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-primary text-white">
+                                <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-stone-800 dark:bg-stone-700 text-white">
                                   C{octave}
                                 </span>
                               )}
@@ -648,7 +1059,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
                     {VERTICAL_BLACK_KEYS.map((keyDef) => {
                       const fullName = `${keyDef.name}${octave}`;
-                      const isPressed = pressedKey === fullName;
+                      const isPressed =
+                        pressedKey === fullName ||
+                        externalPressedKeysSet.has(fullName);
                       const hasActiveNote = activePitches.has(fullName);
                       const inKey = isNoteInKey(keyDef.name, rootKey, scale);
                       const top = keyDef.rowIndex * ROW_HEIGHT;
@@ -669,7 +1082,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                             "absolute left-0 z-20 w-20 sm:w-24 px-2.5 text-xs font-mono rounded-none rounded-r border-0 border-y border-r border-stone-700 cursor-pointer select-none transition-all justify-between active:translate-y-0",
                             "!bg-gradient-to-r !from-stone-800 !via-stone-900 !to-black !text-stone-200 shadow-md shadow-black/80 hover:brightness-125 active:brightness-90",
                             (hasActiveNote || isPressed) &&
-                              "!from-primary-dark !to-primary !text-white !shadow-primary/50 ring-1 ring-primary-light",
+                              "!from-stone-700 !to-stone-800 !bg-stone-700 !text-white ring-2 ring-stone-500 ring-inset shadow-inner",
                           )}
                         >
                           <span className="text-[10px] font-medium opacity-90">
@@ -677,13 +1090,13 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                           </span>
                           <span className="flex items-center gap-1">
                             {inKey && scale !== "chromatic" && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary-light" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-stone-500" />
                             )}
                             <span
                               className={cn(
                                 "w-1.5 h-1.5 rounded-full transition-colors",
                                 hasActiveNote
-                                  ? "bg-primary-light"
+                                  ? "bg-stone-200"
                                   : "bg-stone-700/80",
                               )}
                             />
@@ -696,7 +1109,21 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
               })}
             </div>
 
-            <div className="flex flex-col flex-1 min-w-0">
+            <div
+              ref={gridContainerRef}
+              className="relative flex flex-col flex-1 min-w-0 select-none"
+            >
+              {marquee && marquee.isDragging && (
+                <div
+                  className="absolute pointer-events-none z-40 border-2 border-solid border-primary bg-primary/20 rounded shadow-md backdrop-blur-[0.5px]"
+                  style={{
+                    left: Math.min(marquee.startX, marquee.currentX),
+                    top: Math.min(marquee.startY, marquee.currentY),
+                    width: Math.abs(marquee.currentX - marquee.startX),
+                    height: Math.abs(marquee.currentY - marquee.startY),
+                  }}
+                />
+              )}
               {notes.map((note) => {
                 const inKey = isNoteInKey(note.name, rootKey, scale);
 
@@ -704,11 +1131,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                   <div
                     key={note.id}
                     id={`piano-roll-row-${note.fullName}`}
-                    ref={(el) => {
-                      if (el && note.fullName === "C4") {
-                        c4RowRef.current = el;
-                      }
-                    }}
                     className={cn(
                       "flex w-full h-8 border-b border-stone-200/80 dark:border-stone-800/80 transition-colors",
                       note.isC &&
@@ -738,47 +1160,222 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                   groupIdx * groupSize + stepIdx;
                                 const noteKey = `${note.fullName}-${stepNumber}`;
                                 const isNoteActive = activeNotes.has(noteKey);
+                                const isNoteDisabled =
+                                  disabledNotes.has(noteKey);
+                                const isNoteSelected =
+                                  selectedNotes.has(noteKey);
                                 const isCurrentStep =
                                   currentStep === stepNumber &&
                                   (isPlaying || isRecording);
 
+                                const noteVel =
+                                  noteVelocities[noteKey] ?? velocity;
+                                const isHovered =
+                                  hoveredNote === noteKey ||
+                                  isDraggingSlider === noteKey;
+
                                 return (
-                                  <Button
+                                  <div
                                     key={stepNumber}
-                                    variant="solid"
-                                    tone="secondary"
-                                    size="sm"
-                                    onClick={() =>
-                                      toggleNote(note.fullName, stepNumber)
+                                    role="button"
+                                    tabIndex={0}
+                                    data-note-key={noteKey}
+                                    data-active-note={
+                                      isNoteActive ? "true" : "false"
                                     }
-                                    aria-label={`${note.fullName} at step ${stepNumber + 1}`}
+                                    onClick={(e) => {
+                                      if (isNoteActive) {
+                                        handleNoteClick(noteKey, e);
+                                      } else {
+                                        handleCellClick(note.fullName, stepNumber);
+                                      }
+                                    }}
+                                    onDoubleClick={(e) => {
+                                      if (isNoteActive) {
+                                        handleNoteDoubleClick(noteKey, e);
+                                      }
+                                    }}
+                                    onContextMenu={(e) => {
+                                      handleContextMenu(
+                                        e,
+                                        isNoteActive ? noteKey : undefined,
+                                      );
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        if (isNoteActive) {
+                                          handleNoteClick(
+                                            noteKey,
+                                            e as unknown as React.MouseEvent,
+                                          );
+                                        } else {
+                                          handleCellClick(
+                                            note.fullName,
+                                            stepNumber,
+                                          );
+                                        }
+                                      }
+                                    }}
+                                    aria-label={`${note.fullName} at step ${stepNumber + 1}${isNoteDisabled ? " (disabled)" : ""}${isNoteSelected ? " (selected)" : ""}`}
                                     className={cn(
-                                      "h-full rounded-none border-0 border-r border-stone-200/70 dark:border-stone-800/70 transition-colors relative cursor-pointer flex-shrink-0 p-0 hover:bg-transparent",
+                                      "h-full rounded-none border-0 border-r border-stone-200/70 dark:border-stone-800/70 transition-colors relative cursor-pointer flex-shrink-0 p-0 select-none",
                                       stepWidthClass,
+                                      isHovered
+                                        ? "z-30"
+                                        : isNoteSelected
+                                          ? "z-20"
+                                          : "z-0",
                                       isCurrentStep &&
                                         "bg-primary/15 dark:bg-primary/25",
                                       note.isBlack
                                         ? "bg-stone-100/70 dark:bg-stone-900/50 hover:bg-stone-200/80 dark:hover:bg-stone-800/70"
-                                        : "bg-surface-light dark:bg-stone-950/40 hover:bg-blue-50/50 dark:hover:bg-stone-900/40",
+                                        : "bg-surface-light dark:bg-stone-950/40 hover:bg-stone-100 dark:hover:bg-stone-900/50",
                                     )}
                                   >
                                     {isNoteActive && (
                                       <div
-                                        className="absolute inset-0.5 rounded-sm bg-gradient-to-r from-primary to-primary-light text-white font-mono text-[9px] font-bold flex flex-col items-center justify-center shadow-sm pointer-events-none transition-opacity"
-                                        style={{ opacity: 0.55 + (velocity / 100) * 0.45 }}
+                                        className="relative w-full h-full"
+                                        onMouseEnter={() =>
+                                          setHoveredNote(noteKey)
+                                        }
+                                        onMouseLeave={() => {
+                                          if (isDraggingSlider !== noteKey) {
+                                            setHoveredNote(null);
+                                          }
+                                        }}
+                                        onWheel={(e) => {
+                                          e.stopPropagation();
+                                          e.preventDefault();
+                                          const delta = e.deltaY < 0 ? 5 : -5;
+                                          handleNoteVelocityChange(
+                                            noteKey,
+                                            Math.max(
+                                              5,
+                                              Math.min(100, noteVel + delta),
+                                            ),
+                                          );
+                                        }}
                                       >
-                                        <span className="leading-tight">{note.fullName}</span>
-                                        <div className="w-full px-1 mt-0.5">
-                                          <div className="h-0.5 w-full bg-white/30 rounded-full overflow-hidden">
+                                        <div
+                                          className={cn(
+                                            "absolute inset-0.5 rounded-sm font-mono text-[9px] font-bold flex flex-col justify-between px-1.5 py-0.5 shadow-sm transition-all select-none",
+                                            isNoteDisabled
+                                              ? "bg-stone-300/80 dark:bg-stone-800/90 text-stone-500 dark:text-stone-400 border border-dashed border-stone-400/80 dark:border-stone-600 opacity-60"
+                                              : "bg-gradient-to-r from-primary to-primary-light text-white",
+                                            isNoteSelected &&
+                                              "ring-2 ring-amber-400 ring-offset-1 ring-offset-stone-100 dark:ring-offset-stone-900 border-amber-300 shadow-md shadow-amber-400/50 z-10 brightness-110",
+                                          )}
+                                          style={{
+                                            opacity: isNoteDisabled
+                                              ? 0.55
+                                              : 0.5 + (noteVel / 100) * 0.5,
+                                          }}
+                                        >
+                                          <div className="flex items-center justify-between w-full leading-none">
+                                            <span
+                                              className={cn(
+                                                "leading-tight font-bold",
+                                                isNoteDisabled &&
+                                                  "line-through opacity-75",
+                                              )}
+                                            >
+                                              {note.fullName}
+                                            </span>
+                                            {isNoteDisabled ? (
+                                              <span className="text-[7px] font-mono font-bold px-0.5 py-0 rounded bg-stone-500/20 dark:bg-stone-600/40 text-stone-600 dark:text-stone-300">
+                                                OFF
+                                              </span>
+                                            ) : (
+                                              <span className="text-[8px] font-mono opacity-80 select-none">
+                                                {noteVel}%
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="w-full">
                                             <div
-                                              className="h-full bg-white rounded-full transition-all"
-                                              style={{ width: `${velocity}%` }}
-                                            />
+                                              className={cn(
+                                                "h-1 w-full rounded-full overflow-hidden",
+                                                isNoteDisabled
+                                                  ? "bg-stone-400/30 dark:bg-stone-700/40"
+                                                  : "bg-black/25 dark:bg-white/20",
+                                              )}
+                                            >
+                                              <div
+                                                className={cn(
+                                                  "h-full rounded-full transition-all",
+                                                  isNoteDisabled
+                                                    ? "bg-stone-400 dark:bg-stone-500"
+                                                    : "bg-white",
+                                                )}
+                                                style={{
+                                                  width: `${noteVel}%`,
+                                                }}
+                                              />
+                                            </div>
                                           </div>
                                         </div>
+
+                                        {isHovered && (
+                                          <div
+                                            className={cn(
+                                              "absolute left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 px-2.5 py-1.5 bg-stone-900/95 dark:bg-[#0c0f17] text-white rounded-lg shadow-2xl border border-stone-700/80 dark:border-stone-700 backdrop-blur-md pointer-events-auto select-none min-w-[136px]",
+                                              note.octave >= 10
+                                                ? "top-full mt-1.5"
+                                                : "bottom-full mb-1.5",
+                                            )}
+                                          >
+                                            <span className="text-[9px] font-mono text-stone-400 uppercase font-semibold flex-shrink-0">
+                                              Vel
+                                            </span>
+                                            <input
+                                              type="range"
+                                              min={5}
+                                              max={100}
+                                              step={1}
+                                              value={noteVel}
+                                              onChange={(e) => {
+                                                const val = Number(
+                                                  e.target.value,
+                                                );
+                                                handleNoteVelocityChange(
+                                                  noteKey,
+                                                  val,
+                                                );
+                                              }}
+                                              onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                                setIsDraggingSlider(noteKey);
+                                              }}
+                                              onMouseUp={() => {
+                                                setIsDraggingSlider(null);
+                                                const v = noteVel / 100;
+                                                synth.playNote(
+                                                  note.fullName,
+                                                  undefined,
+                                                  0.3,
+                                                  v,
+                                                );
+                                              }}
+                                              aria-label={`${note.fullName} velocity`}
+                                              className="w-20 h-1.5 bg-stone-700 rounded-lg appearance-none cursor-pointer accent-primary"
+                                            />
+                                            <span className="text-[10px] font-mono font-bold text-primary-light min-w-[28px] text-right">
+                                              {noteVel}%
+                                            </span>
+                                            <div
+                                              className={cn(
+                                                "absolute left-1/2 -translate-x-1/2 border-4 border-transparent",
+                                                note.octave >= 10
+                                                  ? "bottom-full border-b-stone-900/95 dark:border-b-[#0c0f17]"
+                                                  : "top-full border-t-stone-900/95 dark:border-t-[#0c0f17]",
+                                              )}
+                                            />
+                                          </div>
+                                        )}
                                       </div>
                                     )}
-                                  </Button>
+                                  </div>
                                 );
                               },
                             )}
@@ -795,6 +1392,293 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
           </div>
         </div>
       </div>
+
+      <div className="w-full flex items-center justify-between px-2.5 py-1.5 bg-stone-100/90 dark:bg-[#07090e] border-t border-stone-300 dark:border-stone-800 gap-2 overflow-x-auto flex-shrink-0 select-none z-30 no-scrollbar">
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+            Key:
+          </span>
+          <Dropdown
+            size="xs"
+            value={rootKey}
+            onChange={(val) => setRootKey(val)}
+            options={ROOT_KEYS.map((k) => ({ value: k, label: k }))}
+            className="w-16"
+          />
+
+          <Dropdown
+            size="xs"
+            value={scale}
+            onChange={(val) => setScale(val as ScaleType)}
+            options={Object.entries(SCALES).map(([sKey, sVal]) => ({
+              value: sKey,
+              label: sVal.name,
+            }))}
+            className="w-36"
+          />
+        </div>
+
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+              Piano:
+            </span>
+            <Dropdown
+              size="xs"
+              placeholder="Piano Presets..."
+              value=""
+              onChange={(val) => {
+                if (val) loadPattern(val);
+              }}
+              options={PIANO_PATTERN_PRESETS.map((p) => ({
+                value: p.id,
+                label: p.name,
+              }))}
+              className="w-40 sm:w-48"
+            />
+          </div>
+
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+              Drums:
+            </span>
+            <Dropdown
+              size="xs"
+              placeholder="Drum Presets..."
+              value=""
+              onChange={(val) => {
+                if (val) loadPattern(val);
+              }}
+              options={DRUM_PATTERN_PRESETS.map((p) => ({
+                value: p.id,
+                label: p.name,
+              }))}
+              className="w-40 sm:w-48"
+            />
+          </div>
+        </div>
+      </div>
+
+      {contextMenu && (
+        <div
+          role="menu"
+          aria-label="Note context menu"
+          tabIndex={-1}
+          className="fixed z-50 min-w-[190px] p-1 bg-white/95 dark:bg-[#151922]/95 backdrop-blur-md rounded-xl shadow-xl border border-stone-200/90 dark:border-stone-800/90 text-xs text-stone-700 dark:text-stone-300 font-sans select-none animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-0.5 focus:outline-none"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setContextMenu(null);
+            e.stopPropagation();
+          }}
+        >
+          {selectedNotes.size > 0 && (
+            <div className="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 border-b border-stone-100 dark:border-stone-800/60 mb-1">
+              {selectedNotes.size} note{selectedNotes.size > 1 ? "s" : ""} selected
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
+            disabled={selectedNotes.size === 0}
+            onClick={() => {
+              toggleDisabledSelectedNotes();
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
+          >
+            <span className="flex items-center gap-2">
+              {selectedNotes.size > 0 &&
+              Array.from(selectedNotes).every((k) => disabledNotes.has(k)) ? (
+                <Volume2 className="w-3.5 h-3.5 text-stone-500" />
+              ) : (
+                <VolumeX className="w-3.5 h-3.5 text-stone-500" />
+              )}
+              {selectedNotes.size > 0 &&
+              Array.from(selectedNotes).every((k) => disabledNotes.has(k))
+                ? "Unmute"
+                : "Mute"}
+            </span>
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              D
+            </span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
+            disabled={selectedNotes.size === 0}
+            onClick={duplicateSelectedNotes}
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
+          >
+            <span className="flex items-center gap-2">
+              <Copy className="w-3.5 h-3.5 text-stone-500" />
+              Duplicate
+            </span>
+          </Button>
+
+          <div className="my-0.5 border-t border-stone-200/70 dark:border-stone-800/70" />
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
+            disabled={selectedNotes.size === 0 && activeNotes.size === 0}
+            onClick={() => {
+              transposeSelectedOrAll(1);
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
+          >
+            <span className="flex items-center gap-2">
+              <ArrowUp className="w-3.5 h-3.5 text-stone-500" />
+              Transpose +1 (Up)
+            </span>
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              ↑
+            </span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
+            disabled={selectedNotes.size === 0 && activeNotes.size === 0}
+            onClick={() => {
+              transposeSelectedOrAll(-1);
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
+          >
+            <span className="flex items-center gap-2">
+              <ArrowDown className="w-3.5 h-3.5 text-stone-500" />
+              Transpose -1 (Down)
+            </span>
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              ↓
+            </span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
+            disabled={activeNotes.size === 0}
+            onClick={() => {
+              shiftNotes(-1);
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
+          >
+            <span className="flex items-center gap-2">
+              <ChevronLeft className="w-3.5 h-3.5 text-stone-500" />
+              Shift Left (-1 step)
+            </span>
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              ←
+            </span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
+            disabled={activeNotes.size === 0}
+            onClick={() => {
+              shiftNotes(1);
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
+          >
+            <span className="flex items-center gap-2">
+              <ChevronRight className="w-3.5 h-3.5 text-stone-500" />
+              Shift Right (+1 step)
+            </span>
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              →
+            </span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
+            disabled={activeNotes.size === 0}
+            onClick={() => {
+              reverseNotes();
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
+          >
+            <span className="flex items-center gap-2">
+              <ArrowLeftRight className="w-3.5 h-3.5 text-stone-500" />
+              Flip Pattern
+            </span>
+          </Button>
+
+          <div className="my-0.5 border-t border-stone-200/70 dark:border-stone-800/70" />
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
+            disabled={selectedNotes.size === 0}
+            onClick={() => {
+              deleteSelectedNotes();
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal rounded-md"
+          >
+            <span className="flex items-center gap-2">
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </span>
+            <span className="text-[10px] font-mono text-red-400 dark:text-red-500">
+              Del
+            </span>
+          </Button>
+
+          <div className="my-0.5 border-t border-stone-200/70 dark:border-stone-800/70" />
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
+            disabled={activeNotes.size === 0}
+            onClick={selectAllNotes}
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
+          >
+            <span className="flex items-center gap-2">
+              <CheckSquare className="w-3.5 h-3.5 text-stone-500" />
+              Select All
+            </span>
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              ⌘A
+            </span>
+          </Button>
+
+          {selectedNotes.size > 0 && (
+            <Button
+              variant="ghost"
+              tone="secondary"
+              size="sm"
+              onClick={clearSelection}
+              className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 transition-colors border-0 font-normal"
+            >
+              <span className="flex items-center gap-2">
+                <X className="w-3.5 h-3.5 text-stone-500" />
+                Deselect
+              </span>
+              <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+                Esc
+              </span>
+            </Button>
+          )}
+        </div>
+      )}
+
     </div>
   );
 };

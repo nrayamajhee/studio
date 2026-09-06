@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router";
+import { useStudioStorage } from "../lib/studioStorage";
 import type { Route } from "./+types/mixer";
 import { useTheme } from "../hooks/useTheme";
 import { Button } from "../components/design-system/Button";
@@ -7,9 +8,14 @@ import { Slider } from "../components/design-system/Slider";
 import { PianoRoll } from "../components/piano-roll/PianoRoll";
 import { PresetSelector } from "../components/piano-roll/PresetSelector";
 import { SynthControls } from "../components/piano-roll/SynthControls";
-import { PianoPlayer } from "../components/piano-roll/PianoPlayer";
+import { PianoKeyboard } from "../components/piano-roll/PianoKeyboard";
 import { DrumPad } from "../components/piano-roll/DrumPad";
+import { StepLengthControl } from "../components/piano-roll/StepLengthControl";
+import { OctaveJumpControl } from "../components/piano-roll/OctaveJumpControl";
+import { MidiControl } from "../components/piano-roll/MidiControl";
+import { getPresetJumpConfig } from "../components/piano-roll/types";
 import { synth } from "../lib/synth";
+import { midiManager } from "../lib/midi";
 import { cn } from "../lib/utils";
 import {
   Home,
@@ -48,29 +54,162 @@ export function meta(_args: Route.MetaArgs) {
 export default function Mixer() {
   const { theme, nextTheme, cycleTheme } = useTheme();
 
-  const [activeNotes, setActiveNotes] = useState<Set<string>>(() => {
-    return new Set([
-      "C4-0",
-      "E4-2",
-      "G4-4",
-      "B4-6",
-      "C5-8",
-      "G4-10",
-      "E4-12",
-      "C4-14",
-    ]);
-  });
+  const [studio, setStudio] = useStudioStorage();
+
+  const activeNotes = useMemo(() => new Set(studio.notes), [studio.notes]);
+  const setActiveNotes = useCallback(
+    (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => {
+      setStudio((prev) => {
+        const currentSet = new Set(prev.notes);
+        const nextSet =
+          typeof updater === "function" ? updater(currentSet) : updater;
+        return { ...prev, notes: Array.from(nextSet) };
+      });
+    },
+    [setStudio],
+  );
+
+  const disabledNotes = useMemo(
+    () => new Set(studio.disabledNotes),
+    [studio.disabledNotes],
+  );
+  const setDisabledNotes = useCallback(
+    (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => {
+      setStudio((prev) => {
+        const currentSet = new Set(prev.disabledNotes);
+        const nextSet =
+          typeof updater === "function" ? updater(currentSet) : updater;
+        return { ...prev, disabledNotes: Array.from(nextSet) };
+      });
+    },
+    [setStudio],
+  );
+
+  const noteVelocities = studio.noteVelocities;
+  const setNoteVelocities = useCallback(
+    (
+      updater:
+        | Record<string, number>
+        | ((prev: Record<string, number>) => Record<string, number>),
+    ) => {
+      setStudio((prev) => ({
+        ...prev,
+        noteVelocities:
+          typeof updater === "function" ? updater(prev.noteVelocities) : updater,
+      }));
+    },
+    [setStudio],
+  );
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLooping, setIsLooping] = useState(true);
+  const isLooping = studio.isLooping;
+  const setIsLooping = useCallback(
+    (updater: boolean | ((prev: boolean) => boolean)) => {
+      setStudio((prev) => ({
+        ...prev,
+        isLooping: typeof updater === "function" ? updater(prev.isLooping) : updater,
+      }));
+    },
+    [setStudio],
+  );
+
   const [isRecording, setIsRecording] = useState(false);
   const [isMetronomeOn, setIsMetronomeOn] = useState(false);
-  const [volume, setVolume] = useState(() => synth.getMasterVolume());
+  const volume = studio.volume;
+  const setVolume = useCallback(
+    (val: number | ((prev: number) => number)) => {
+      setStudio((prev) => ({
+        ...prev,
+        volume: typeof val === "function" ? val(prev.volume) : val,
+      }));
+    },
+    [setStudio],
+  );
+
   const [currentStep, setCurrentStep] = useState(0);
-  const [totalSteps, setTotalSteps] = useState(16);
-  const [bpm, setBpm] = useState(72);
-  const [selectedPreset, setSelectedPreset] = useState("grand_piano");
-  const [playerView, setPlayerView] = useState<"keys" | "drums">("keys");
+  const totalSteps = studio.totalSteps;
+  const setTotalSteps = useCallback(
+    (steps: number | ((prev: number) => number)) => {
+      setStudio((prev) => ({
+        ...prev,
+        totalSteps: typeof steps === "function" ? steps(prev.totalSteps) : steps,
+      }));
+    },
+    [setStudio],
+  );
+
+  const bpm = studio.bpm;
+  const setBpm = useCallback(
+    (val: number | ((prev: number) => number)) => {
+      setStudio((prev) => ({
+        ...prev,
+        bpm: typeof val === "function" ? val(prev.bpm) : val,
+      }));
+    },
+    [setStudio],
+  );
+
+  const selectedPreset = studio.selectedPreset;
+  const jumpOctave = studio.jumpOctave;
+  const setJumpOctave = useCallback(
+    (val: number | ((prev: number) => number)) => {
+      setStudio((prev) => ({
+        ...prev,
+        jumpOctave: typeof val === "function" ? val(prev.jumpOctave) : val,
+      }));
+    },
+    [setStudio],
+  );
+
+  const playerView = studio.playerView;
+  const setPlayerView = useCallback(
+    (val: ("keys" | "drums") | ((prev: "keys" | "drums") => "keys" | "drums")) => {
+      setStudio((prev) => ({
+        ...prev,
+        playerView: typeof val === "function" ? val(prev.playerView) : val,
+      }));
+    },
+    [setStudio],
+  );
+
+  const velocity = studio.velocity;
+  const setVelocity = useCallback(
+    (val: number | ((prev: number) => number)) => {
+      setStudio((prev) => ({
+        ...prev,
+        velocity: typeof val === "function" ? val(prev.velocity) : val,
+      }));
+    },
+    [setStudio],
+  );
+
+  const handlePresetChange = useCallback(
+    (preset: string) => {
+      synth.loadPreset(preset);
+      const cfg = getPresetJumpConfig(preset);
+      const isDrumPreset = [
+        "drum_set",
+        "drum_808",
+        "trap_kit",
+        "electronic_drums",
+        "acoustic_percussion",
+      ].includes(preset);
+      setStudio((prev) => ({
+        ...prev,
+        selectedPreset: preset,
+        jumpOctave: cfg.defaultOctave,
+        playerView: isDrumPreset ? "drums" : "keys",
+        synthParams: { ...synth.params },
+      }));
+    },
+    [setStudio],
+  );
+
+  useEffect(() => {
+    synth.setMasterVolume(volume);
+    synth.loadPreset(selectedPreset);
+  }, [volume, selectedPreset]);
+
   const [isPlayerCollapsed, setIsPlayerCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
       return window.innerWidth < 1380;
@@ -84,7 +223,6 @@ export default function Mixer() {
     const handleResize = () => {
       const width = window.innerWidth;
 
-      // Collapse player first when width drops below 1380px
       if (width < 1380 && prevWidth >= 1380) {
         setIsPlayerCollapsed(true);
       } else if (width >= 1380 && prevWidth < 1380) {
@@ -99,7 +237,10 @@ export default function Mixer() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const [velocity, setVelocity] = useState(85);
+  const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
+  const [externalPressedKeys, setExternalPressedKeys] = useState<string[]>([]);
+  const [externalPressedPads, setExternalPressedPads] = useState<string[]>([]);
+
   const currentStepRef = useRef(currentStep);
   const totalStepsRef = useRef(totalSteps);
   const isPlayingRef = useRef(isPlaying);
@@ -107,6 +248,11 @@ export default function Mixer() {
   const isMetronomeOnRef = useRef(isMetronomeOn);
   const activeNotesRef = useRef(activeNotes);
   const velocityRef = useRef(velocity);
+  const noteVelocitiesRef = useRef(noteVelocities);
+  const disabledNotesRef = useRef(disabledNotes);
+  const playerViewRef = useRef(playerView);
+  const isRecordingRef = useRef(isRecording);
+  const selectedPresetRef = useRef(selectedPreset);
 
   useEffect(() => {
     currentStepRef.current = currentStep;
@@ -116,18 +262,26 @@ export default function Mixer() {
     isMetronomeOnRef.current = isMetronomeOn;
     activeNotesRef.current = activeNotes;
     velocityRef.current = velocity;
-  }, [currentStep, totalSteps, isPlaying, isLooping, isMetronomeOn, activeNotes, velocity]);
+    noteVelocitiesRef.current = noteVelocities;
+    disabledNotesRef.current = disabledNotes;
+    playerViewRef.current = playerView;
+    isRecordingRef.current = isRecording;
+    selectedPresetRef.current = selectedPreset;
+  }, [
+    currentStep,
+    totalSteps,
+    isPlaying,
+    isLooping,
+    isMetronomeOn,
+    activeNotes,
+    velocity,
+    noteVelocities,
+    disabledNotes,
+    playerView,
+    isRecording,
+    selectedPreset,
+  ]);
 
-  useEffect(() => {
-    const isDrumPreset = [
-      "drum_set",
-      "drum_808",
-      "trap_kit",
-      "electronic_drums",
-      "acoustic_percussion",
-    ].includes(selectedPreset);
-    setPlayerView(isDrumPreset ? "drums" : "keys");
-  }, [selectedPreset]);
 
   const triggerStepNotes = useCallback(
     (stepIdx: number) => {
@@ -136,12 +290,14 @@ export default function Mixer() {
       }
 
       const suffix = `-${stepIdx}`;
-      const vel = velocityRef.current / 100;
-      // Sustain notes across beats based on velocity so sounds ring out and sustain musically
-      const stepDurationSec = (60 / bpm / 4) * (2 + 3.5 * vel);
       for (const item of activeNotesRef.current) {
         if (item.endsWith(suffix)) {
+          if (disabledNotesRef.current.has(item)) continue;
           const noteName = item.slice(0, -suffix.length);
+          const noteVelPercent =
+            noteVelocitiesRef.current[item] ?? velocityRef.current;
+          const vel = noteVelPercent / 100;
+          const stepDurationSec = (60 / bpm / 4) * (2 + 3.5 * vel);
           synth.playNote(noteName, undefined, stepDurationSec, vel);
         }
       }
@@ -246,44 +402,43 @@ export default function Mixer() {
     );
   };
 
-  const [bpmInput, setBpmInput] = useState(String(bpm));
-
-  useEffect(() => {
-    setBpmInput(String(bpm));
-  }, [bpm]);
+  const [isEditingBpm, setIsEditingBpm] = useState(false);
+  const [rawBpmInput, setRawBpmInput] = useState("");
+  const displayBpm = isEditingBpm ? rawBpmInput : String(bpm);
 
   const commitBpm = (value: string) => {
     const parsed = parseInt(value, 10);
     if (!isNaN(parsed)) {
       const clamped = Math.max(40, Math.min(260, parsed));
       setBpm(clamped);
-      setBpmInput(String(clamped));
-    } else {
-      setBpmInput(String(bpm));
     }
+    setIsEditingBpm(false);
   };
 
   const handleBpmInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBpmInput(e.target.value);
+    setIsEditingBpm(true);
+    setRawBpmInput(e.target.value);
   };
 
   const handleBpmInputBlur = () => {
-    commitBpm(bpmInput);
+    commitBpm(rawBpmInput);
   };
 
   const handleBpmInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      commitBpm(bpmInput);
+      commitBpm(rawBpmInput);
       e.currentTarget.blur();
     } else if (e.key === "Escape") {
-      setBpmInput(String(bpm));
+      setIsEditingBpm(false);
       e.currentTarget.blur();
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
+      setIsEditingBpm(false);
       const step = e.shiftKey ? 5 : 1;
       setBpm((prev) => Math.min(260, prev + step));
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
+      setIsEditingBpm(false);
       const step = e.shiftKey ? 5 : 1;
       setBpm((prev) => Math.max(40, prev - step));
     }
@@ -301,22 +456,88 @@ export default function Mixer() {
 
   const handleBpmWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY < 0 ? (e.shiftKey ? 5 : 1) : (e.shiftKey ? -5 : -1);
+    const delta = e.deltaY < 0 ? (e.shiftKey ? 5 : 1) : e.shiftKey ? -5 : -1;
     setBpm((prev) => Math.max(40, Math.min(260, prev + delta)));
   };
 
-  const handleRecordNote = (noteName: string) => {
-    const step = currentStepRef.current;
-    const noteKey = `${noteName}-${step}`;
-    setActiveNotes((prev) => {
-      const next = new Set(prev);
-      next.add(noteKey);
-      return next;
+  const handleRecordNote = useCallback(
+    (noteName: string, velocityVal?: number) => {
+      const step = currentStepRef.current;
+      const noteKey = `${noteName}-${step}`;
+      setActiveNotes((prev) => {
+        const next = new Set(prev);
+        next.add(noteKey);
+        return next;
+      });
+      if (velocityVal !== undefined) {
+        setNoteVelocities((prev) => ({
+          ...prev,
+          [noteKey]: Math.max(1, Math.min(100, Math.round(velocityVal))),
+        }));
+      }
+    },
+    [setActiveNotes, setNoteVelocities],
+  );
+
+  useEffect(() => {
+    const unsubNoteOn = midiManager.onNoteOn((e) => {
+      const isDrum = e.isDrum || playerViewRef.current === "drums";
+      if (isDrum) {
+        setExternalPressedPads((prev) =>
+          prev.includes(e.noteName) ? prev : [...prev, e.noteName],
+        );
+        const kit = selectedPresetRef.current.includes("drum")
+          ? selectedPresetRef.current
+          : "drum_set";
+        synth.playDrum(e.noteName, e.velocity, kit);
+        if (isRecordingRef.current) {
+          handleRecordNote(e.noteName, e.velocity * 100);
+        }
+      } else {
+        setExternalPressedKeys((prev) =>
+          prev.includes(e.noteName) ? prev : [...prev, e.noteName],
+        );
+        synth.playNote(e.noteName, undefined, undefined, e.velocity);
+        if (isRecordingRef.current) {
+          handleRecordNote(e.noteName, e.velocity * 100);
+        }
+      }
     });
-  };
+
+    const unsubNoteOff = midiManager.onNoteOff((e) => {
+      const isDrum = e.isDrum || playerViewRef.current === "drums";
+      if (isDrum) {
+        setExternalPressedPads((prev) => prev.filter((k) => k !== e.noteName));
+      } else {
+        setExternalPressedKeys((prev) => prev.filter((k) => k !== e.noteName));
+        synth.stopNote(e.noteName);
+      }
+    });
+
+    const unsubCC = midiManager.onControlChange((e) => {
+      synth.handleMidiCC(e.controller, e.value);
+      if (e.controller === 7) {
+        const clamped = Math.max(0, Math.min(1, e.normalizedValue));
+        setVolume(clamped);
+      }
+    });
+
+    const unsubPitchBend = midiManager.onPitchBend((e) => {
+      synth.setPitchBend(e.semitones);
+    });
+
+    return () => {
+      unsubNoteOn();
+      unsubNoteOff();
+      unsubCC();
+      unsubPitchBend();
+    };
+  }, [handleRecordNote, setVolume]);
 
   const handleClearNotes = () => {
     setActiveNotes(new Set());
+    setDisabledNotes(new Set());
+    setSelectedNotes(new Set());
   };
 
   return (
@@ -376,7 +597,7 @@ export default function Mixer() {
 
             <Button
               variant="solid"
-              tone={isLooping ? "primary" : "secondary"}
+              tone={isLooping ? "info" : "secondary"}
               size="sm"
               iconOnly
               onClick={() => setIsLooping((prev) => !prev)}
@@ -385,7 +606,7 @@ export default function Mixer() {
               className={cn(
                 "p-1.5 h-auto rounded",
                 isLooping
-                  ? "bg-primary text-white ring-1 ring-primary-light shadow-sm"
+                  ? "bg-info text-white ring-1 ring-info-light shadow-sm"
                   : "bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100",
               )}
             >
@@ -435,22 +656,25 @@ export default function Mixer() {
               onWheel={handleBpmWheel}
               title={`Tempo: ${bpm} BPM (Click < > or scroll wheel to adjust, type to edit)`}
             >
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                tone="secondary"
+                size="sm"
+                iconOnly
                 onClick={handleBpmDecrement}
                 disabled={bpm <= 40}
                 title="Decrease tempo (-1 BPM, Shift: -5)"
                 aria-label="Decrease tempo"
-                className="h-6 w-4 sm:w-5 flex items-center justify-center rounded hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-not-allowed"
+                className="h-6 w-4 sm:w-5 flex items-center justify-center rounded p-0 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 disabled:opacity-30 border-0"
               >
                 <ChevronLeft className="w-3 h-3" />
-              </button>
+              </Button>
 
               <input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                value={bpmInput}
+                value={displayBpm}
                 onChange={handleBpmInputChange}
                 onBlur={handleBpmInputBlur}
                 onKeyDown={handleBpmInputKeyDown}
@@ -458,17 +682,39 @@ export default function Mixer() {
                 className="w-7 sm:w-8 text-center font-mono text-xs font-semibold bg-transparent text-stone-800 dark:text-stone-100 focus:outline-none focus:bg-stone-100 dark:focus:bg-stone-800 rounded py-0.5 select-all cursor-text"
               />
 
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                tone="secondary"
+                size="sm"
+                iconOnly
                 onClick={handleBpmIncrement}
                 disabled={bpm >= 260}
                 title="Increase tempo (+1 BPM, Shift: +5)"
                 aria-label="Increase tempo"
-                className="h-6 w-4 sm:w-5 flex items-center justify-center rounded hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-not-allowed"
+                className="h-6 w-4 sm:w-5 flex items-center justify-center rounded p-0 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 disabled:opacity-30 border-0"
               >
                 <ChevronRight className="w-3 h-3" />
-              </button>
+              </Button>
             </div>
+
+            <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
+            <StepLengthControl
+              totalSteps={totalSteps}
+              onTotalStepsChange={setTotalSteps}
+            />
+
+            <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
+            <OctaveJumpControl
+              octave={jumpOctave}
+              onOctaveChange={setJumpOctave}
+              presetKey={selectedPreset}
+            />
+
+            <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
+            <MidiControl />
           </div>
         </div>
 
@@ -541,24 +787,24 @@ export default function Mixer() {
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
           </div>
+          <div className="h-4 w-[1px] bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
 
           <Button
             variant="solid"
             tone="secondary"
             size="sm"
-            rounded
             iconOnly
-            className="p-1.5 h-8 w-8 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-100 shadow-sm"
-            title={`Theme: ${theme}. Click to switch to ${nextTheme}.`}
-            aria-label={`Theme: ${theme}. Click to switch to ${nextTheme}.`}
             onClick={cycleTheme}
+            title={`Switch to ${nextTheme} theme`}
+            aria-label={`Current theme: ${theme}. Switch to ${nextTheme} theme.`}
+            className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300"
           >
-            {nextTheme === "light" ? (
-              <Sun className="w-4 h-4" />
-            ) : nextTheme === "dark" ? (
-              <Moon className="w-4 h-4" />
-            ) : (
-              <Monitor className="w-4 h-4" />
+            {theme === "light" && (
+              <Sun className="w-3.5 h-3.5 text-amber-500" />
+            )}
+            {theme === "dark" && <Moon className="w-3.5 h-3.5 text-blue-400" />}
+            {theme === "system" && (
+              <Monitor className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
             )}
           </Button>
         </div>
@@ -567,15 +813,37 @@ export default function Mixer() {
       <main className="flex-[1.1] min-h-0 w-full overflow-hidden flex flex-col p-0 m-0 border-b-2 border-stone-300 dark:border-stone-800">
         <PianoRoll
           className="flex-1 w-full h-full"
+          externalPressedKeys={externalPressedKeys}
           activeNotes={Array.from(activeNotes)}
           onNotesChange={(newNotes) => setActiveNotes(new Set(newNotes))}
+          disabledNotes={Array.from(disabledNotes)}
+          onDisabledNotesChange={(newDisabled) =>
+            setDisabledNotes(new Set(newDisabled))
+          }
+          selectedNotes={Array.from(selectedNotes)}
+          onSelectedNotesChange={(newSelected) =>
+            setSelectedNotes(new Set(newSelected))
+          }
+          noteVelocities={noteVelocities}
+          onNoteVelocitiesChange={setNoteVelocities}
           currentStep={isPlaying || isRecording ? currentStep : null}
           isPlaying={isPlaying}
           isRecording={isRecording}
           totalSteps={totalSteps}
           onTotalStepsChange={setTotalSteps}
+          jumpOctave={jumpOctave}
+          onJumpOctaveChange={setJumpOctave}
           velocity={velocity}
           onVelocityChange={setVelocity}
+          selectedPreset={selectedPreset}
+          rootKey={studio.rootKey}
+          onRootKeyChange={(rk) =>
+            setStudio((prev) => ({ ...prev, rootKey: rk }))
+          }
+          scale={studio.scale}
+          onScaleChange={(sc) =>
+            setStudio((prev) => ({ ...prev, scale: sc }))
+          }
         />
       </main>
 
@@ -583,56 +851,85 @@ export default function Mixer() {
         <div className="w-16 lg:w-18 h-full min-h-0 flex-shrink-0 overflow-hidden">
           <PresetSelector
             selectedPreset={selectedPreset}
-            onPresetChange={setSelectedPreset}
+            onPresetChange={handlePresetChange}
           />
         </div>
 
-        <div className="flex-1 min-w-0 h-full min-h-0 overflow-hidden">
+        <div
+          className={cn(
+            "flex-1 min-w-0 h-full min-h-0 overflow-hidden",
+            !isPlayerCollapsed && "hidden md:block",
+          )}
+        >
           <SynthControls
             selectedPreset={selectedPreset}
             rightHeaderSlot={
               isPlayerCollapsed ? (
-                <button
-                  type="button"
+                <Button
+                  variant="solid"
+                  tone="secondary"
+                  size="sm"
+                  iconOnly
                   onClick={() => setIsPlayerCollapsed(false)}
-                  title={playerView === "drums" ? "Expand Drum Pad" : "Expand Piano Keys"}
-                  aria-label={playerView === "drums" ? "Expand Drum Pad" : "Expand Piano Keys"}
-                  className="self-center h-8 w-8 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm transition-all cursor-pointer select-none group"
+                  title={
+                    playerView === "drums"
+                      ? "Expand Drum Pad"
+                      : "Expand Piano Keys"
+                  }
+                  aria-label={
+                    playerView === "drums"
+                      ? "Expand Drum Pad"
+                      : "Expand Piano Keys"
+                  }
+                  className="self-center h-8 w-8 bg-white dark:bg-[#0a0d14] border border-stone-200 dark:border-[#1f2533] hover:border-stone-400 dark:hover:border-[#38435d] hover:bg-stone-50 dark:hover:bg-[#111520] text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm transition-all cursor-pointer select-none group p-0"
                 >
                   {playerView === "drums" ? (
                     <Drum className="w-4 h-4 text-stone-600 dark:text-stone-400 group-hover:text-stone-900 dark:group-hover:text-white transition-colors" />
                   ) : (
                     <Piano className="w-4 h-4 text-stone-600 dark:text-stone-400 group-hover:text-stone-900 dark:group-hover:text-white transition-colors" />
                   )}
-                </button>
+                </Button>
               ) : undefined
             }
           />
         </div>
 
         {!isPlayerCollapsed && (
-          <div className="w-[300px] sm:w-[330px] md:w-[330px] lg:w-[380px] xl:w-[420px] h-full min-h-0 flex-shrink-0 flex flex-col gap-1 overflow-hidden">
+          <div
+            className={cn(
+              "h-full min-h-0 flex flex-col gap-1 overflow-hidden",
+              "flex-1 min-w-0 md:flex-initial md:w-[330px] lg:w-[380px] xl:w-[420px]",
+            )}
+          >
             <div className="flex items-center justify-between px-1 flex-shrink-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-mono font-bold tracking-wider text-stone-700 dark:text-stone-300">
                   PLAYER
                 </span>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  tone="secondary"
+                  size="sm"
                   onClick={() => setIsPlayerCollapsed(true)}
-                  title="Collapse player panel"
-                  aria-label="Collapse player panel"
-                  className="p-0.5 rounded text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-[#161c28] transition-colors cursor-pointer"
+                  title="Collapse player and show synth panel"
+                  aria-label="Collapse player and show synth panel"
+                  className="flex items-center gap-1 px-1.5 py-0.5 h-auto rounded text-stone-400 hover:text-stone-800 dark:text-stone-500 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-[#161c28] transition-colors border-0"
                 >
                   <PanelRightClose className="w-3.5 h-3.5" />
-                </button>
+                  <span className="md:hidden text-[10px] font-mono">Synth</span>
+                </Button>
               </div>
               <div className="flex items-center gap-1 bg-stone-200/80 dark:bg-[#0a0c10] p-0.5 rounded-lg border border-stone-300 dark:border-[#1f2533]">
                 <Button
                   variant="solid"
                   tone={playerView === "keys" ? "primary" : "secondary"}
                   size="sm"
-                  onClick={() => setPlayerView("keys")}
+                  onClick={() => {
+                    setPlayerView("keys");
+                    if (selectedPreset.includes("drum")) {
+                      handlePresetChange("grand_piano");
+                    }
+                  }}
                   aria-label="Piano keyboard view"
                   className={cn(
                     "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
@@ -648,7 +945,12 @@ export default function Mixer() {
                   variant="solid"
                   tone={playerView === "drums" ? "primary" : "secondary"}
                   size="sm"
-                  onClick={() => setPlayerView("drums")}
+                  onClick={() => {
+                    setPlayerView("drums");
+                    if (!selectedPreset.includes("drum")) {
+                      handlePresetChange("drum_set");
+                    }
+                  }}
                   aria-label="Drum pad view"
                   className={cn(
                     "px-2 py-0.5 h-6 text-[10px] rounded transition-colors",
@@ -665,11 +967,17 @@ export default function Mixer() {
 
             <div className="flex-1 min-h-0 overflow-hidden">
               {playerView === "keys" ? (
-                <PianoPlayer
+                <PianoKeyboard
+                  mode="player"
                   isRecording={isRecording}
                   onRecordNote={handleRecordNote}
+                  externalPressedKeys={externalPressedKeys}
                   activeNotes={Array.from(activeNotes)
-                    .filter((item) => item.endsWith(`-${currentStep}`))
+                    .filter(
+                      (item) =>
+                        item.endsWith(`-${currentStep}`) &&
+                        !disabledNotes.has(item),
+                    )
                     .map((item) => item.replace(`-${currentStep}`, ""))}
                 />
               ) : (
@@ -677,8 +985,13 @@ export default function Mixer() {
                   selectedPreset={selectedPreset}
                   isRecording={isRecording}
                   onRecordNote={handleRecordNote}
+                  externalPressedPads={externalPressedPads}
                   activeNotes={Array.from(activeNotes)
-                    .filter((item) => item.endsWith(`-${currentStep}`))
+                    .filter(
+                      (item) =>
+                        item.endsWith(`-${currentStep}`) &&
+                        !disabledNotes.has(item),
+                    )
                     .map((item) => item.replace(`-${currentStep}`, ""))}
                 />
               )}

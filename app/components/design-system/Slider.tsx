@@ -7,7 +7,9 @@ export const sliderVariants = cva(
   {
     variants: {
       tone: {
-        primary: "focus-visible:ring-2 focus-visible:ring-primary/40",
+        primary: "focus-visible:ring-2 focus-visible:ring-stone-400/50",
+        info: "focus-visible:ring-2 focus-visible:ring-info/40",
+        blue: "focus-visible:ring-2 focus-visible:ring-blue/40",
         accent: "focus-visible:ring-2 focus-visible:ring-[#d4a359]/40",
         secondary: "focus-visible:ring-2 focus-visible:ring-stone-400/40",
       },
@@ -80,9 +82,19 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
 
     const toneConfigs = {
       primary: {
-        fill: "var(--color-primary, #2554d7)",
+        fill: "var(--slider-fill, #57534e)",
         gutter: "var(--slider-gutter-primary)",
-        thumbBorder: "var(--color-primary, #2554d7)",
+        thumbBorder: "var(--slider-fill, #57534e)",
+      },
+      info: {
+        fill: "var(--color-info, #2554d7)",
+        gutter: "var(--slider-gutter-info)",
+        thumbBorder: "var(--color-info, #2554d7)",
+      },
+      blue: {
+        fill: "var(--color-blue, #2554d7)",
+        gutter: "var(--slider-gutter-blue)",
+        thumbBorder: "var(--color-blue, #2554d7)",
       },
       accent: {
         fill: "#d4a359",
