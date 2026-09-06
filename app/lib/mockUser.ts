@@ -1,43 +1,37 @@
 export interface MockUser {
   id: string;
   name: string;
-  role: string;
+  email: string;
+  provider: "google" | "apple";
   avatar: string;
-  email?: string;
+  role?: string;
+  handle?: string;
   loggedAt: number;
 }
 
+export const MOCK_GOOGLE_USER: MockUser = {
+  id: "google_user",
+  name: "Google User",
+  email: "producer@gmail.com",
+  provider: "google",
+  avatar: "G",
+  role: "Google Producer",
+  handle: "@google_user",
+  loggedAt: 0,
+};
+
+export const MOCK_APPLE_USER: MockUser = {
+  id: "apple_user",
+  name: "Apple User",
+  email: "producer@icloud.com",
+  provider: "apple",
+  avatar: "",
+  role: "Apple Producer",
+  handle: "@apple_user",
+  loggedAt: 0,
+};
+
 export const PRESET_MOCK_USERS: MockUser[] = [
-  {
-    id: "nishan",
-    name: "Nishan",
-    role: "Lead Producer",
-    avatar: "🎹",
-    email: "nishan@studio.local",
-    loggedAt: Date.now(),
-  },
-  {
-    id: "maya",
-    name: "Maya Beats",
-    role: "Beatmaker & Drummer",
-    avatar: "🥁",
-    email: "maya@studio.local",
-    loggedAt: Date.now(),
-  },
-  {
-    id: "alex",
-    name: "Alex Waves",
-    role: "Sound Designer",
-    avatar: "⚡",
-    email: "alex@studio.local",
-    loggedAt: Date.now(),
-  },
-  {
-    id: "sam",
-    name: "Sam Melody",
-    role: "Composer",
-    avatar: "🎼",
-    email: "sam@studio.local",
-    loggedAt: Date.now(),
-  },
+  MOCK_GOOGLE_USER,
+  MOCK_APPLE_USER,
 ];

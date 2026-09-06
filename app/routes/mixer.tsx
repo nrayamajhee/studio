@@ -4,6 +4,7 @@ import { useStudioStorage } from "../lib/studioStorage";
 import type { Route } from "./+types/mixer";
 import { useTheme } from "../hooks/useTheme";
 import { Button } from "../components/design-system/Button";
+import { GoogleIcon, AppleIcon } from "../components/design-system/Icons";
 import { Slider } from "../components/design-system/Slider";
 import { PianoRoll } from "../components/piano-roll/PianoRoll";
 import { PresetSelector } from "../components/piano-roll/PresetSelector";
@@ -795,14 +796,22 @@ export default function Mixer() {
             to="/"
             title={
               user
-                ? `Signed in as ${user.name} (${user.handle}) - Click to configure profile`
-                : "Guest Producer - Click to choose profile"
+                ? `Signed in with ${user.provider === "google" ? "Google" : user.provider === "apple" ? "Apple" : "Mock"} as ${user.name} (${user.email || ""}) - Click to configure account`
+                : "Guest - Click to sign in"
             }
-            className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-stone-200/80 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 border border-stone-300 dark:border-stone-700 transition-colors text-xs select-none max-w-[140px]"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-200/80 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 border border-stone-300 dark:border-stone-700 transition-colors text-xs select-none max-w-[150px]"
           >
-            <span className="text-sm">{user ? user.avatar : "👤"}</span>
+            <span className="text-xs flex items-center justify-center">
+              {user?.provider === "google" ? (
+                <GoogleIcon className="w-3.5 h-3.5 flex-shrink-0" />
+              ) : user?.provider === "apple" ? (
+                <AppleIcon className="w-3.5 h-3.5 flex-shrink-0 fill-current" />
+              ) : (
+                user?.avatar || "👤"
+              )}
+            </span>
             <span className="font-mono text-xs font-semibold text-stone-700 dark:text-stone-300 truncate">
-              {user ? user.name : "Guest"}
+              {user ? user.name : "Sign In"}
             </span>
           </Link>
 
