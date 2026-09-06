@@ -2,7 +2,7 @@ export interface MockUser {
   id: string;
   name: string;
   email: string;
-  provider: "google" | "apple";
+  provider: "google";
   avatar: string;
   role?: string;
   handle?: string;
@@ -15,23 +15,11 @@ export const MOCK_GOOGLE_USER: MockUser = {
   email: "producer@gmail.com",
   provider: "google",
   avatar: "G",
-  role: "Google Producer",
+  role: "Producer",
   handle: "@google_user",
-  loggedAt: 0,
-};
-
-export const MOCK_APPLE_USER: MockUser = {
-  id: "apple_user",
-  name: "Apple User",
-  email: "producer@icloud.com",
-  provider: "apple",
-  avatar: "",
-  role: "Apple Producer",
-  handle: "@apple_user",
   loggedAt: 0,
 };
 
 export const PRESET_MOCK_USERS: MockUser[] = [
   MOCK_GOOGLE_USER,
-  MOCK_APPLE_USER,
 ];
