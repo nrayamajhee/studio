@@ -1,6 +1,6 @@
 import React from "react";
 import type { Route } from "./+types/home";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
 import { useStudioStorage } from "../lib/studioStorage";
 import { Button } from "../components/design-system/Button";
@@ -12,11 +12,9 @@ import {
 } from "../components/design-system/Typography";
 import { MOCK_GOOGLE_USER } from "../lib/mockUser";
 import {
-  Sliders,
   Sun,
   Moon,
   Monitor,
-  ArrowRight,
 } from "lucide-react";
 
 export function meta(_args: Route.MetaArgs) {
@@ -34,8 +32,7 @@ export default function Home() {
   const { theme, nextTheme, cycleTheme } = useTheme();
   const navigate = useNavigate();
 
-  const [studio, setStudio] = useStudioStorage();
-  const user = studio.user ?? null;
+  const [, setStudio] = useStudioStorage();
 
   const handleGoogleLogin = () => {
     setStudio((prev) => ({
@@ -43,10 +40,6 @@ export default function Home() {
       user: { ...MOCK_GOOGLE_USER, loggedAt: Date.now() },
     }));
     navigate("/mixer");
-  };
-
-  const handleSignOut = () => {
-    setStudio((prev) => ({ ...prev, user: null }));
   };
 
   return (
@@ -85,49 +78,17 @@ export default function Home() {
           </Subtitle>
         </div>
 
-        {user ? (
-          <div className="flex flex-col items-center gap-3">
-            <Button asChild tone="primary" size="md" rounded>
-              <Link
-                to="/mixer"
-                replace
-                className="flex items-center justify-center gap-2 font-semibold"
-              >
-                <Sliders className="w-4 h-4" />
-                Go to Studio
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Link>
-            </Button>
-            <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
-              <span className="flex items-center gap-1.5 font-medium">
-                <GoogleIcon className="w-3.5 h-3.5" />
-                {user.name}
-              </span>
-              <span>•</span>
-              <Button
-                variant="ghost"
-                tone="secondary"
-                size="sm"
-                onClick={handleSignOut}
-                className="p-0 h-auto text-xs underline hover:text-stone-900 dark:hover:text-white"
-              >
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <Button
-            variant="outline"
-            tone="secondary"
-            size="md"
-            rounded
-            onClick={handleGoogleLogin}
-            leadingIcon={<GoogleIcon className="w-4 h-4 flex-shrink-0" />}
-            className="bg-white dark:bg-[#121622] hover:bg-stone-50 dark:hover:bg-[#182030] text-stone-800 dark:text-stone-100 border-stone-300 dark:border-[#2a3449] font-medium shadow-sm transition-all px-5 py-2.5"
-          >
-            Login with Google
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          tone="secondary"
+          size="md"
+          rounded
+          onClick={handleGoogleLogin}
+          leadingIcon={<GoogleIcon className="w-4 h-4 flex-shrink-0" />}
+          className="bg-white dark:bg-[#121622] hover:bg-stone-50 dark:hover:bg-[#182030] text-stone-800 dark:text-stone-100 border-stone-300 dark:border-[#2a3449] font-medium shadow-sm transition-all px-5 py-2.5"
+        >
+          Login with Google
+        </Button>
       </main>
     </div>
   );
