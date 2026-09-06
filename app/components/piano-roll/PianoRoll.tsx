@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { useLocalStorage } from "usehooks-ts";
 import {
   generate10OctavesNotes,
   TOTAL_OCTAVES,
@@ -25,7 +26,6 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowLeftRight,
-  Shuffle,
   Trash2,
   VolumeX,
   Volume2,
@@ -75,11 +75,11 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   isPlaying = false,
   isRecording = false,
   totalSteps: controlledTotalSteps,
-  onTotalStepsChange,
+  onTotalStepsChange: _onTotalStepsChange,
   jumpOctave: controlledJumpOctave,
-  onJumpOctaveChange,
+  onJumpOctaveChange: _onJumpOctaveChange,
   velocity: controlledVelocity,
-  onVelocityChange,
+  onVelocityChange: _onVelocityChange,
   selectedPreset = "grand_piano",
   externalPressedKeys = [],
 }) => {
@@ -93,12 +93,11 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     () => getPresetJumpConfig(selectedPreset),
     [selectedPreset],
   );
-  const [internalJumpOctave, setInternalJumpOctave] = useState<number>(
+  const [, setInternalJumpOctave] = useState<number>(
     jumpConfig.defaultOctave,
   );
-  const activeJumpOctave = controlledJumpOctave ?? internalJumpOctave;
 
-  const [internalVelocity, setInternalVelocity] = useState(85);
+  const [internalVelocity] = useState(85);
   const velocity = controlledVelocity ?? internalVelocity;
 
   const [internalNoteVelocities, setInternalNoteVelocities] = useState<
@@ -148,27 +147,18 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
   }, []);
 
-  const handleVelocityChange = (val: number) => {
-    const clamped = Math.max(10, Math.min(100, Math.round(val)));
-    setInternalVelocity(clamped);
-    if (onVelocityChange) {
-      onVelocityChange(clamped);
-    }
-  };
-
-  const [internalTotalSteps, setInternalTotalSteps] = useState(16);
+  const [internalTotalSteps] = useState(16);
   const totalSteps = controlledTotalSteps ?? internalTotalSteps;
 
-  const setTotalSteps = (steps: number) => {
-    setInternalTotalSteps(steps);
-    if (onTotalStepsChange) {
-      onTotalStepsChange(steps);
-    }
-  };
-
   const groupSize = totalSteps === 12 || totalSteps === 24 ? 3 : 4;
-  const [rootKey, setRootKey] = useState<string>("C");
-  const [scale, setScale] = useState<ScaleType>("chromatic");
+  const [rootKey, setRootKey] = useLocalStorage<string>(
+    "studio_piano_roll_root_key",
+    "C",
+  );
+  const [scale, setScale] = useLocalStorage<ScaleType>(
+    "studio_piano_roll_scale",
+    "chromatic",
+  );
 
   const [internalActiveNotes, setInternalActiveNotes] = useState<Set<string>>(
     () => {
@@ -215,14 +205,17 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     return internalActiveNotes;
   }, [controlledActiveNotes, internalActiveNotes]);
 
-  const updateNotes = (next: Set<string>) => {
-    if (controlledActiveNotes === undefined) {
-      setInternalActiveNotes(next);
-    }
-    if (onNotesChange) {
-      onNotesChange(Array.from(next));
-    }
-  };
+  const updateNotes = useCallback(
+    (next: Set<string>) => {
+      if (controlledActiveNotes === undefined) {
+        setInternalActiveNotes(next);
+      }
+      if (onNotesChange) {
+        onNotesChange(Array.from(next));
+      }
+    },
+    [controlledActiveNotes, onNotesChange],
+  );
 
   const [internalDisabledNotes, setInternalDisabledNotes] = useState<
     Set<string>
@@ -277,40 +270,72 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     initialSelected: Set<string>;
   }
 
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    noteKey?: string;
+  } | null>(null);
+
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const [marquee, setMarquee] = useState<MarqueeBox | null>(null);
   const marqueeRef = useRef<MarqueeBox | null>(null);
-  marqueeRef.current = marquee;
+  useEffect(() => {
+    marqueeRef.current = marquee;
+  }, [marquee]);
   const dragStartClientRef = useRef<{ clientX: number; clientY: number } | null>(
     null,
   );
   const wasDraggingRef = useRef(false);
 
-  const handleGridMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return;
-    const target = e.target as HTMLElement;
-    if (target.closest("input, button")) return;
-
+  useEffect(() => {
     const container = gridContainerRef.current;
     if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const startX = e.clientX - rect.left;
-    const startY = e.clientY - rect.top;
 
-    dragStartClientRef.current = { clientX: e.clientX, clientY: e.clientY };
-    const initialSelected = e.shiftKey
-      ? new Set(selectedNotes)
-      : new Set<string>();
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const target = e.target as HTMLElement;
+      if (target.closest("input, button")) return;
 
-    setMarquee({
-      startX,
-      startY,
-      currentX: startX,
-      currentY: startY,
-      isDragging: false,
-      initialSelected,
-    });
-  };
+      const rect = container.getBoundingClientRect();
+      const startX = e.clientX - rect.left;
+      const startY = e.clientY - rect.top;
+
+      dragStartClientRef.current = { clientX: e.clientX, clientY: e.clientY };
+      const initialSelected = e.shiftKey
+        ? new Set(selectedNotes)
+        : new Set<string>();
+
+      setMarquee({
+        startX,
+        startY,
+        currentX: startX,
+        currentY: startY,
+        isDragging: false,
+        initialSelected,
+      });
+    };
+
+    const onCtxMenu = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("input, button")) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const menuWidth = 190;
+      const menuHeight = 240;
+      const x = Math.min(e.clientX, window.innerWidth - menuWidth - 8);
+      const y = Math.min(e.clientY, window.innerHeight - menuHeight - 8);
+
+      setContextMenu({ x, y });
+    };
+
+    container.addEventListener("mousedown", onMouseDown);
+    container.addEventListener("contextmenu", onCtxMenu);
+    return () => {
+      container.removeEventListener("mousedown", onMouseDown);
+      container.removeEventListener("contextmenu", onCtxMenu);
+    };
+  }, [selectedNotes]);
 
   useEffect(() => {
     const handleWindowMouseMove = (e: MouseEvent) => {
@@ -461,12 +486,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     ],
   );
 
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-    noteKey?: string;
-  } | null>(null);
-
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, targetNoteKey?: string) => {
       e.preventDefault();
@@ -485,7 +504,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
       setContextMenu({ x, y, noteKey: targetNoteKey });
     },
-    [selectedNotes, updateSelectedNotes],
+    [selectedNotes, updateSelectedNotes, setContextMenu],
   );
 
   useEffect(() => {
@@ -570,17 +589,18 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     updateNotes,
     updateSelectedNotes,
     updateNoteVelocities,
+    setContextMenu,
   ]);
 
   const selectAllNotes = useCallback(() => {
     updateSelectedNotes(new Set(activeNotes));
     setContextMenu(null);
-  }, [activeNotes, updateSelectedNotes]);
+  }, [activeNotes, updateSelectedNotes, setContextMenu]);
 
   const clearSelection = useCallback(() => {
     updateSelectedNotes(new Set());
     setContextMenu(null);
-  }, [updateSelectedNotes]);
+  }, [updateSelectedNotes, setContextMenu]);
 
   const deleteSelectedNotes = useCallback(() => {
     if (selectedNotes.size === 0) return;
@@ -760,16 +780,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     [scrollToNote],
   );
 
-  const handleJump = useCallback(
-    (octave: number) => {
-      setInternalJumpOctave(octave);
-      if (onJumpOctaveChange) {
-        onJumpOctaveChange(octave);
-      }
-      scrollToOctave(octave);
-    },
-    [scrollToOctave, onJumpOctaveChange],
-  );
 
   useEffect(() => {
     if (controlledJumpOctave !== undefined) {
@@ -781,8 +791,8 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
   useEffect(() => {
     const targetNote = getTargetNoteForPreset(selectedPreset);
-    setInternalJumpOctave(jumpConfig.defaultOctave);
     const timeout = setTimeout(() => {
+      setInternalJumpOctave(jumpConfig.defaultOctave);
       scrollToNote(targetNote, !isFirstRender.current);
       isFirstRender.current = false;
     }, 60);
@@ -823,28 +833,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     updateNotes(next);
   };
 
-  const transposeNotes = (semitones: number) => {
-    const next = new Set<string>();
-    const nextDisabled = new Set<string>();
-    const nextSelected = new Set<string>();
-    const nextVelocities: Record<string, number> = {};
-    for (const item of activeNotes) {
-      const lastDash = item.lastIndexOf("-");
-      if (lastDash === -1) continue;
-      const noteName = item.slice(0, lastDash);
-      const step = item.slice(lastDash + 1);
-      const transposed = transposeNote(noteName, semitones);
-      const newKey = `${transposed}-${step}`;
-      next.add(newKey);
-      if (disabledNotes.has(item)) nextDisabled.add(newKey);
-      if (selectedNotes.has(item)) nextSelected.add(newKey);
-      nextVelocities[newKey] = noteVelocities[item] ?? velocity;
-    }
-    updateNoteVelocities(nextVelocities);
-    updateDisabledNotes(nextDisabled);
-    updateSelectedNotes(nextSelected);
-    updateNotes(next);
-  };
 
   const reverseNotes = () => {
     const next = new Set<string>();
@@ -866,28 +854,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     updateNoteVelocities(nextVelocities);
     updateDisabledNotes(nextDisabled);
     updateSelectedNotes(nextSelected);
-    updateNotes(next);
-  };
-
-  const randomizeNotes = () => {
-    const inKeyNotes = notes.filter(
-      (n) => isNoteInKey(n.name, rootKey, scale) && n.octave >= 3 && n.octave <= 5,
-    );
-    if (inKeyNotes.length === 0) return;
-    const next = new Set<string>();
-    const nextVelocities: Record<string, number> = {};
-    for (let step = 0; step < totalSteps; step += 2) {
-      if (Math.random() > 0.2) {
-        const randomNote =
-          inKeyNotes[Math.floor(Math.random() * inKeyNotes.length)];
-        const newKey = `${randomNote.fullName}-${step}`;
-        next.add(newKey);
-        nextVelocities[newKey] = Math.floor(70 + Math.random() * 30);
-      }
-    }
-    updateNoteVelocities(nextVelocities);
-    updateDisabledNotes(new Set());
-    updateSelectedNotes(new Set());
     updateNotes(next);
   };
 
@@ -1118,8 +1084,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
             <div
               ref={gridContainerRef}
-              onMouseDown={handleGridMouseDown}
-              onContextMenu={(e) => handleContextMenu(e)}
               className="relative flex flex-col flex-1 min-w-0 select-none"
             >
               {marquee && marquee.isDragging && (
@@ -1327,10 +1291,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
                                         {isHovered && (
                                           <div
-                                            onClick={(e) => e.stopPropagation()}
-                                            onMouseDown={(e) =>
-                                              e.stopPropagation()
-                                            }
                                             className={cn(
                                               "absolute left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 px-2.5 py-1.5 bg-stone-900/95 dark:bg-[#0c0f17] text-white rounded-lg shadow-2xl border border-stone-700/80 dark:border-stone-700 backdrop-blur-md pointer-events-auto select-none min-w-[136px]",
                                               note.octave >= 10
@@ -1455,52 +1415,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             variant="solid"
             tone="secondary"
             size="sm"
-            onClick={() => shiftNotes(-1)}
-            title="Shift pattern left by 1 step"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
-          >
-            <ChevronLeft className="w-3 h-3" />
-            Shift
-          </Button>
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => shiftNotes(1)}
-            title="Shift pattern right by 1 step"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
-          >
-            Shift
-            <ChevronRight className="w-3 h-3" />
-          </Button>
-
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => transposeSelectedOrAll(1)}
-            title="Transpose +1 semitone"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
-          >
-            <ArrowUp className="w-3 h-3" />
-            +1
-          </Button>
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => transposeSelectedOrAll(-1)}
-            title="Transpose -1 semitone"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
-          >
-            <ArrowDown className="w-3 h-3" />
-            -1
-          </Button>
-
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
             onClick={reverseNotes}
             title="Reverse pattern horizontally"
             className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
@@ -1508,40 +1422,37 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             <ArrowLeftRight className="w-3 h-3" />
             Flip
           </Button>
-
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={randomizeNotes}
-            title="Randomize in-key notes"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
-          >
-            <Shuffle className="w-3 h-3" />
-            Rnd
-          </Button>
         </div>
       </div>
 
       {contextMenu && (
         <div
-          className="fixed z-50 min-w-[180px] py-1 bg-white/95 dark:bg-[#151922]/95 backdrop-blur-md rounded-lg shadow-xl border border-stone-200/90 dark:border-stone-800/90 text-xs text-stone-700 dark:text-stone-300 font-sans select-none animate-in fade-in zoom-in-95 duration-100"
+          role="menu"
+          aria-label="Note context menu"
+          tabIndex={-1}
+          className="fixed z-50 min-w-[190px] p-1 bg-white/95 dark:bg-[#151922]/95 backdrop-blur-md rounded-xl shadow-xl border border-stone-200/90 dark:border-stone-800/90 text-xs text-stone-700 dark:text-stone-300 font-sans select-none animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-0.5 focus:outline-none"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setContextMenu(null);
+            e.stopPropagation();
+          }}
         >
           {selectedNotes.size > 0 && (
             <div className="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 border-b border-stone-100 dark:border-stone-800/60 mb-1">
               {selectedNotes.size} note{selectedNotes.size > 1 ? "s" : ""} selected
             </div>
           )}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
             disabled={selectedNotes.size === 0}
             onClick={() => {
               toggleDisabledSelectedNotes();
               setContextMenu(null);
             }}
-            className="flex items-center justify-between w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
           >
             <span className="flex items-center gap-2">
               {selectedNotes.size > 0 &&
@@ -1558,54 +1469,133 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
               D
             </span>
-          </button>
-          <button
-            type="button"
+          </Button>
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
             disabled={selectedNotes.size === 0}
             onClick={duplicateSelectedNotes}
-            className="flex items-center justify-between w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
           >
             <span className="flex items-center gap-2">
               <Copy className="w-3.5 h-3.5 text-stone-500" />
               Duplicate
             </span>
-          </button>
-          <button
-            type="button"
+          </Button>
+
+          <div className="my-0.5 border-t border-stone-200/70 dark:border-stone-800/70" />
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
             disabled={selectedNotes.size === 0 && activeNotes.size === 0}
             onClick={() => {
               transposeSelectedOrAll(1);
               setContextMenu(null);
             }}
-            className="flex items-center justify-between w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
           >
             <span className="flex items-center gap-2">
               <ArrowUp className="w-3.5 h-3.5 text-stone-500" />
-              Transpose +1
+              Transpose +1 (Up)
             </span>
-          </button>
-          <button
-            type="button"
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              ↑
+            </span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
             disabled={selectedNotes.size === 0 && activeNotes.size === 0}
             onClick={() => {
               transposeSelectedOrAll(-1);
               setContextMenu(null);
             }}
-            className="flex items-center justify-between w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
           >
             <span className="flex items-center gap-2">
               <ArrowDown className="w-3.5 h-3.5 text-stone-500" />
-              Transpose -1
+              Transpose -1 (Down)
             </span>
-          </button>
-          <button
-            type="button"
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              ↓
+            </span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
+            disabled={activeNotes.size === 0}
+            onClick={() => {
+              shiftNotes(-1);
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
+          >
+            <span className="flex items-center gap-2">
+              <ChevronLeft className="w-3.5 h-3.5 text-stone-500" />
+              Shift Left (-1 step)
+            </span>
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              ←
+            </span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
+            disabled={activeNotes.size === 0}
+            onClick={() => {
+              shiftNotes(1);
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
+          >
+            <span className="flex items-center gap-2">
+              <ChevronRight className="w-3.5 h-3.5 text-stone-500" />
+              Shift Right (+1 step)
+            </span>
+            <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              →
+            </span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
+            disabled={activeNotes.size === 0}
+            onClick={() => {
+              reverseNotes();
+              setContextMenu(null);
+            }}
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
+          >
+            <span className="flex items-center gap-2">
+              <ArrowLeftRight className="w-3.5 h-3.5 text-stone-500" />
+              Flip Pattern
+            </span>
+          </Button>
+
+          <div className="my-0.5 border-t border-stone-200/70 dark:border-stone-800/70" />
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
             disabled={selectedNotes.size === 0}
             onClick={() => {
               deleteSelectedNotes();
               setContextMenu(null);
             }}
-            className="flex items-center justify-between w-full px-3 py-1.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal rounded-md"
           >
             <span className="flex items-center gap-2">
               <Trash2 className="w-3.5 h-3.5" />
@@ -1614,13 +1604,17 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             <span className="text-[10px] font-mono text-red-400 dark:text-red-500">
               Del
             </span>
-          </button>
-          <div className="my-1 border-t border-stone-200/70 dark:border-stone-800/70" />
-          <button
-            type="button"
+          </Button>
+
+          <div className="my-0.5 border-t border-stone-200/70 dark:border-stone-800/70" />
+
+          <Button
+            variant="ghost"
+            tone="secondary"
+            size="sm"
             disabled={activeNotes.size === 0}
             onClick={selectAllNotes}
-            className="flex items-center justify-between w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 disabled:opacity-40 disabled:pointer-events-none transition-colors border-0 font-normal"
           >
             <span className="flex items-center gap-2">
               <CheckSquare className="w-3.5 h-3.5 text-stone-500" />
@@ -1629,12 +1623,15 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
               ⌘A
             </span>
-          </button>
+          </Button>
+
           {selectedNotes.size > 0 && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              tone="secondary"
+              size="sm"
               onClick={clearSelection}
-              className="flex items-center justify-between w-full px-3 py-1.5 text-left hover:bg-stone-100 dark:hover:bg-stone-800/70 transition-colors"
+              className="flex items-center justify-between w-full px-3 py-1.5 h-auto text-left rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/70 transition-colors border-0 font-normal"
             >
               <span className="flex items-center gap-2">
                 <X className="w-3.5 h-3.5 text-stone-500" />
@@ -1643,10 +1640,11 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
               <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
                 Esc
               </span>
-            </button>
+            </Button>
           )}
         </div>
       )}
+
     </div>
   );
 };
