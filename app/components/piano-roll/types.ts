@@ -186,31 +186,41 @@ export function transposeNote(noteName: string, semitones: number): string {
   return transposed || noteName;
 }
 
-export const INSTRUMENT_DEFAULT_NOTES: Record<string, string> = {
-  grand_piano: "C4",
-  piano: "C4",
-  electronic_pino: "C4",
-  acoustic_guitar: "C3",
-  guitar: "C3",
-  electric_guitar: "C3",
-  classical_guitar: "C3",
-  ukelele: "C4",
-  base_guitar: "C1",
-  bass: "C1",
-  drum_set: "C1",
-  drums: "C1",
-  drum_808: "C1",
-  trap_kit: "C1",
-  electronic_drums: "C1",
-  acoustic_percussion: "C1",
-  flute: "C5",
-  saxophone: "C4",
+export interface PresetJumpConfig {
+  defaultOctave: number;
+  octaves: number[];
+}
+
+export const PRESET_JUMP_CONFIGS: Record<string, PresetJumpConfig> = {
+  grand_piano: { defaultOctave: 4, octaves: [3, 4, 5] },
+  piano: { defaultOctave: 4, octaves: [3, 4, 5] },
+  electronic_pino: { defaultOctave: 4, octaves: [3, 4, 5] },
+  acoustic_guitar: { defaultOctave: 3, octaves: [2, 3, 4] },
+  guitar: { defaultOctave: 3, octaves: [2, 3, 4] },
+  electric_guitar: { defaultOctave: 3, octaves: [2, 3, 4] },
+  classical_guitar: { defaultOctave: 3, octaves: [2, 3, 4] },
+  ukelele: { defaultOctave: 4, octaves: [3, 4] },
+  base_guitar: { defaultOctave: 1, octaves: [1, 2, 3] },
+  bass: { defaultOctave: 1, octaves: [1, 2, 3] },
+  drum_set: { defaultOctave: 1, octaves: [1, 2] },
+  drums: { defaultOctave: 1, octaves: [1, 2] },
+  drum_808: { defaultOctave: 1, octaves: [1, 2] },
+  trap_kit: { defaultOctave: 1, octaves: [1, 2] },
+  electronic_drums: { defaultOctave: 1, octaves: [1, 2] },
+  acoustic_percussion: { defaultOctave: 1, octaves: [1, 2] },
+  flute: { defaultOctave: 5, octaves: [4, 5, 6] },
+  saxophone: { defaultOctave: 4, octaves: [3, 4, 5] },
 };
 
-export function getTargetNoteForPreset(presetKey?: string): string {
-  if (!presetKey) return "C4";
+export function getPresetJumpConfig(presetKey?: string): PresetJumpConfig {
+  if (!presetKey) return { defaultOctave: 4, octaves: [3, 4, 5] };
   const normalized = presetKey.toLowerCase().trim();
-  return INSTRUMENT_DEFAULT_NOTES[normalized] || "C4";
+  return PRESET_JUMP_CONFIGS[normalized] || { defaultOctave: 4, octaves: [3, 4, 5] };
+}
+
+export function getTargetNoteForPreset(presetKey?: string): string {
+  const config = getPresetJumpConfig(presetKey);
+  return `C${config.defaultOctave}`;
 }
 
 export type ScaleType =

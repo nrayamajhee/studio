@@ -13,6 +13,7 @@ import {
   PATTERN_PRESETS,
   type ScaleType,
   getTargetNoteForPreset,
+  getPresetJumpConfig,
 } from "./types";
 import { synth } from "../../lib/synth";
 import { Button } from "../design-system/Button";
@@ -59,6 +60,13 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 }) => {
   const notes = useMemo(() => generate10OctavesNotes(), []);
   const containerRef = useRef<HTMLDivElement>(null);
+  const jumpConfig = useMemo(
+    () => getPresetJumpConfig(selectedPreset),
+    [selectedPreset],
+  );
+  const [activeJumpOctave, setActiveJumpOctave] = useState<number>(
+    jumpConfig.defaultOctave,
+  );
 
   const [internalVelocity, setInternalVelocity] = useState(85);
   const velocity = controlledVelocity ?? internalVelocity;
@@ -181,17 +189,26 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     [scrollToNote],
   );
 
+  const handleJump = useCallback(
+    (octave: number) => {
+      setActiveJumpOctave(octave);
+      scrollToOctave(octave);
+    },
+    [scrollToOctave],
+  );
+
   const isFirstRender = useRef(true);
 
   useEffect(() => {
     const targetNote = getTargetNoteForPreset(selectedPreset);
+    setActiveJumpOctave(jumpConfig.defaultOctave);
     const timeout = setTimeout(() => {
       scrollToNote(targetNote, !isFirstRender.current);
       isFirstRender.current = false;
     }, 60);
 
     return () => clearTimeout(timeout);
-  }, [selectedPreset, scrollToNote]);
+  }, [selectedPreset, jumpConfig.defaultOctave, scrollToNote]);
 
   const handleKeyClick = (noteFullName: string) => {
     setPressedKey(noteFullName);
@@ -311,217 +328,6 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
         className,
       )}
     >
-      <div className="w-full flex items-center justify-between px-2.5 py-1.5 bg-stone-100 dark:bg-[#07090e] border-b border-stone-200 dark:border-stone-800 gap-2 overflow-x-auto flex-shrink-0 select-none z-30 no-scrollbar">
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Steps:
-          </span>
-          {[8, 12, 16, 24, 32].map((steps) => (
-            <Button
-              key={steps}
-              variant="solid"
-              tone={totalSteps === steps ? "primary" : "secondary"}
-              size="sm"
-              onClick={() => setTotalSteps(steps)}
-              className={cn(
-                "px-2 py-0.5 h-6 text-[10px] font-mono rounded border transition-colors",
-                totalSteps === steps
-                  ? "bg-primary text-white border-primary-light font-bold shadow-sm ring-1 ring-primary/40"
-                  : "bg-[#12151c] text-stone-300 border-[#1f2533] hover:text-white",
-              )}
-            >
-              {steps}
-            </Button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Key:
-          </span>
-          <Dropdown
-            size="xs"
-            value={rootKey}
-            onChange={(val) => setRootKey(val)}
-            options={ROOT_KEYS.map((k) => ({ value: k, label: k }))}
-            className="w-16"
-          />
-
-          <Dropdown
-            size="xs"
-            value={scale}
-            onChange={(val) => setScale(val as ScaleType)}
-            options={Object.entries(SCALES).map(([sKey, sVal]) => ({
-              value: sKey,
-              label: sVal.name,
-            }))}
-            className="w-36"
-          />
-        </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Presets:
-          </span>
-          <Dropdown
-            size="xs"
-            placeholder="Load Preset..."
-            value=""
-            onChange={(val) => {
-              if (val) loadPattern(val);
-            }}
-            options={PATTERN_PRESETS.map((p) => ({
-              value: p.id,
-              label: p.name,
-            }))}
-            className="w-48 sm:w-52"
-          />
-        </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => shiftNotes(-1)}
-            title="Shift pattern left by 1 step"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            <ChevronLeft className="w-3 h-3" />
-            Shift
-          </Button>
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => shiftNotes(1)}
-            title="Shift pattern right by 1 step"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            Shift
-            <ChevronRight className="w-3 h-3" />
-          </Button>
-
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => transposeNotes(1)}
-            title="Transpose +1 semitone"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            <ArrowUp className="w-3 h-3" />
-            +1
-          </Button>
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => transposeNotes(-1)}
-            title="Transpose -1 semitone"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            <ArrowDown className="w-3 h-3" />
-            -1
-          </Button>
-
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={reverseNotes}
-            title="Reverse pattern horizontally"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            <ArrowLeftRight className="w-3 h-3" />
-            Flip
-          </Button>
-
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={randomizeNotes}
-            title="Randomize in-key notes"
-            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            <Shuffle className="w-3 h-3" />
-            Rnd
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Jump:
-          </span>
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => scrollToOctave(4)}
-            title="Jump to C4 (Piano/Mid)"
-            className="px-1.5 py-0.5 h-6 text-[10px] font-mono rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            C4
-          </Button>
-          <Button
-            variant="solid"
-            tone="secondary"
-            size="sm"
-            onClick={() => scrollToOctave(6)}
-            title="Jump to C6 (Lead)"
-            className="px-1.5 py-0.5 h-6 text-[10px] font-mono rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white"
-          >
-            C6
-          </Button>
-        </div>
-
-        <div className="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
-
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
-            Velocity:
-          </span>
-          <div className="flex items-center gap-1.5 bg-stone-200/80 dark:bg-[#12151c] px-2 py-0.5 h-6 rounded border border-stone-300 dark:border-[#1f2533]">
-            <input
-              type="range"
-              min={10}
-              max={100}
-              step={1}
-              value={velocity}
-              onChange={(e) => handleVelocityChange(Number(e.target.value))}
-              aria-label="Note velocity"
-              title={`Velocity: ${velocity}%`}
-              className="w-16 h-1 bg-stone-300 dark:bg-stone-700 rounded-lg appearance-none cursor-pointer accent-primary"
-            />
-            <span className="text-[10px] font-mono font-bold text-stone-700 dark:text-stone-300 min-w-[28px] text-right select-none">
-              {velocity}%
-            </span>
-          </div>
-        </div>
-        <div className="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
-
-        <Button
-          variant="solid"
-          tone="secondary"
-          size="sm"
-          onClick={() =>
-            setZoomLevel((prev) =>
-              prev === "compact"
-                ? "normal"
-                : prev === "normal"
-                  ? "wide"
-                  : "compact",
-            )
-          }
-          title={`Zoom: ${zoomLevel}`}
-          className="px-1.5 py-0.5 h-6 text-[10px] font-mono uppercase rounded bg-[#12151c] text-stone-300 border border-[#1f2533] hover:text-white flex-shrink-0"
-        >
-          <ZoomIn className="w-3 h-3 mr-0.5" />
-          {zoomLevel[0].toUpperCase()}
-        </Button>
-      </div>
-
       <div
         ref={containerRef}
         className="flex-1 w-full overflow-auto relative bg-surface-light dark:bg-stone-950 select-none"
@@ -800,6 +606,220 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="w-full flex items-center justify-between px-2.5 py-1.5 bg-stone-100/90 dark:bg-[#07090e] border-t border-stone-300 dark:border-stone-800 gap-2 overflow-x-auto flex-shrink-0 select-none z-30 no-scrollbar">
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+            Steps:
+          </span>
+          {[8, 12, 16, 24, 32].map((steps) => (
+            <Button
+              key={steps}
+              variant="solid"
+              tone={totalSteps === steps ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => setTotalSteps(steps)}
+              className={cn(
+                "px-2 py-0.5 h-6 text-[10px] font-mono rounded border transition-colors",
+                totalSteps === steps
+                  ? "bg-primary text-white border-primary-light font-bold shadow-sm ring-1 ring-primary/40"
+                  : "bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white",
+              )}
+            >
+              {steps}
+            </Button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+            Key:
+          </span>
+          <Dropdown
+            size="xs"
+            value={rootKey}
+            onChange={(val) => setRootKey(val)}
+            options={ROOT_KEYS.map((k) => ({ value: k, label: k }))}
+            className="w-16"
+          />
+
+          <Dropdown
+            size="xs"
+            value={scale}
+            onChange={(val) => setScale(val as ScaleType)}
+            options={Object.entries(SCALES).map(([sKey, sVal]) => ({
+              value: sKey,
+              label: sVal.name,
+            }))}
+            className="w-36"
+          />
+        </div>
+
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+            Presets:
+          </span>
+          <Dropdown
+            size="xs"
+            placeholder="Load Preset..."
+            value=""
+            onChange={(val) => {
+              if (val) loadPattern(val);
+            }}
+            options={PATTERN_PRESETS.map((p) => ({
+              value: p.id,
+              label: p.name,
+            }))}
+            className="w-44 sm:w-52"
+          />
+        </div>
+
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Button
+            variant="solid"
+            tone="secondary"
+            size="sm"
+            onClick={() => shiftNotes(-1)}
+            title="Shift pattern left by 1 step"
+            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
+          >
+            <ChevronLeft className="w-3 h-3" />
+            Shift
+          </Button>
+          <Button
+            variant="solid"
+            tone="secondary"
+            size="sm"
+            onClick={() => shiftNotes(1)}
+            title="Shift pattern right by 1 step"
+            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
+          >
+            Shift
+            <ChevronRight className="w-3 h-3" />
+          </Button>
+
+          <Button
+            variant="solid"
+            tone="secondary"
+            size="sm"
+            onClick={() => transposeNotes(1)}
+            title="Transpose +1 semitone"
+            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
+          >
+            <ArrowUp className="w-3 h-3" />
+            +1
+          </Button>
+          <Button
+            variant="solid"
+            tone="secondary"
+            size="sm"
+            onClick={() => transposeNotes(-1)}
+            title="Transpose -1 semitone"
+            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
+          >
+            <ArrowDown className="w-3 h-3" />
+            -1
+          </Button>
+
+          <Button
+            variant="solid"
+            tone="secondary"
+            size="sm"
+            onClick={reverseNotes}
+            title="Reverse pattern horizontally"
+            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
+          >
+            <ArrowLeftRight className="w-3 h-3" />
+            Flip
+          </Button>
+
+          <Button
+            variant="solid"
+            tone="secondary"
+            size="sm"
+            onClick={randomizeNotes}
+            title="Randomize in-key notes"
+            className="px-1.5 py-0.5 h-6 text-[10px] rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white"
+          >
+            <Shuffle className="w-3 h-3" />
+            Rnd
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+            Jump:
+          </span>
+          {jumpConfig.octaves.map((oct) => {
+            const isSelected = activeJumpOctave === oct;
+            const isDefault = oct === jumpConfig.defaultOctave;
+            return (
+              <Button
+                key={oct}
+                variant="solid"
+                tone={isSelected ? "primary" : "secondary"}
+                size="sm"
+                onClick={() => handleJump(oct)}
+                title={`Jump to C${oct}${isDefault ? " (Default)" : ""}`}
+                className={cn(
+                  "px-2 py-0.5 h-6 text-[10px] font-mono rounded border transition-colors",
+                  isSelected
+                    ? "bg-primary text-white border-primary-light font-bold shadow-sm ring-1 ring-primary/40"
+                    : "bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white",
+                )}
+              >
+                C{oct}
+              </Button>
+            );
+          })}
+        </div>
+
+        <div className="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+            Velocity:
+          </span>
+          <div className="flex items-center gap-1.5 bg-white dark:bg-[#12151c] px-2 py-0.5 h-6 rounded border border-stone-200 dark:border-[#1f2533]">
+            <input
+              type="range"
+              min={10}
+              max={100}
+              step={1}
+              value={velocity}
+              onChange={(e) => handleVelocityChange(Number(e.target.value))}
+              aria-label="Note velocity"
+              title={`Velocity: ${velocity}%`}
+              className="w-16 h-1 bg-stone-300 dark:bg-stone-700 rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+            <span className="text-[10px] font-mono font-bold text-stone-700 dark:text-stone-300 min-w-[28px] text-right select-none">
+              {velocity}%
+            </span>
+          </div>
+        </div>
+
+        <div className="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5 flex-shrink-0" />
+
+        <Button
+          variant="solid"
+          tone="secondary"
+          size="sm"
+          onClick={() =>
+            setZoomLevel((prev) =>
+              prev === "compact"
+                ? "normal"
+                : prev === "normal"
+                  ? "wide"
+                  : "compact",
+            )
+          }
+          title={`Zoom: ${zoomLevel}`}
+          className="px-1.5 py-0.5 h-6 text-[10px] font-mono uppercase rounded bg-white dark:bg-[#12151c] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533] hover:text-stone-900 dark:hover:text-white flex-shrink-0"
+        >
+          <ZoomIn className="w-3 h-3 mr-0.5" />
+          {zoomLevel[0].toUpperCase()}
+        </Button>
       </div>
     </div>
   );
