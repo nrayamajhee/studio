@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PresetSelector } from "./PresetSelector";
 
 const meta: Meta<typeof PresetSelector> = {
-  title: "Components/PresetSelector",
+  title: "Instrument/PresetSelector",
   component: PresetSelector,
   parameters: {
     layout: "centered",

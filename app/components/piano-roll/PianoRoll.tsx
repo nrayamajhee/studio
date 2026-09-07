@@ -52,6 +52,7 @@ export interface PianoRollProps {
   isRecording?: boolean;
   totalSteps?: number;
   onTotalStepsChange?: (steps: number) => void;
+  timeSignature?: "4/4" | "3/4" | "triplet";
   jumpOctave?: number;
   onJumpOctaveChange?: (octave: number) => void;
   velocity?: number;
@@ -81,6 +82,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   isRecording = false,
   totalSteps: controlledTotalSteps,
   onTotalStepsChange: _onTotalStepsChange,
+  timeSignature = "4/4",
   jumpOctave: controlledJumpOctave,
   onJumpOctaveChange: _onJumpOctaveChange,
   velocity: controlledVelocity,
@@ -93,6 +95,11 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   onScaleChange,
 }) => {
   const notes = useMemo(() => generate10OctavesNotes(), []);
+  const noteNameToIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    notes.forEach((n, idx) => map.set(n.fullName, idx));
+    return map;
+  }, [notes]);
   const containerRef = useRef<HTMLDivElement>(null);
   const externalPressedKeysSet = useMemo(
     () => new Set(externalPressedKeys),
@@ -145,7 +152,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     [noteVelocities, updateNoteVelocities, onNoteVelocityChange],
   );
 
-  const [hoveredNote, setHoveredNote] = useState<string | null>(null);
+  const [velocityPopoverNote, setVelocityPopoverNote] = useState<string | null>(
+    null,
+  );
   const [isDraggingSlider, setIsDraggingSlider] = useState<string | null>(null);
 
   useEffect(() => {
@@ -156,10 +165,47 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
   }, []);
 
+  useEffect(() => {
+    if (!velocityPopoverNote) return;
+
+    const handlePointerDownOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      if (target.closest('[data-velocity-popover="true"]')) {
+        return;
+      }
+
+      const noteCell = target.closest("[data-note-key]");
+      if (
+        noteCell &&
+        noteCell.getAttribute("data-note-key") === velocityPopoverNote
+      ) {
+        return;
+      }
+
+      setVelocityPopoverNote(null);
+    };
+
+    document.addEventListener("mousedown", handlePointerDownOutside);
+    document.addEventListener("touchstart", handlePointerDownOutside);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDownOutside);
+      document.removeEventListener("touchstart", handlePointerDownOutside);
+    };
+  }, [velocityPopoverNote]);
+
   const [internalTotalSteps] = useState(16);
   const totalSteps = controlledTotalSteps ?? internalTotalSteps;
 
-  const groupSize = totalSteps === 12 || totalSteps === 24 ? 3 : 4;
+  const groupSize =
+    timeSignature === "triplet"
+      ? 3
+      : timeSignature === "3/4"
+        ? 4
+        : totalSteps === 12 || totalSteps === 24
+          ? 3
+          : 4;
   const [internalRootKey, setInternalRootKey] = useState("C");
   const rootKey = controlledRootKey ?? internalRootKey;
   const setRootKey = (val: string) => {
@@ -283,6 +329,34 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     [controlledSelectedNotes, onSelectedNotesChange],
   );
 
+  interface DraggedNoteInfo {
+    key: string;
+    noteName: string;
+    step: number;
+    row: number;
+    velocity: number;
+    isDisabled: boolean;
+  }
+
+  interface NoteDragState {
+    isDragging: boolean;
+    startX: number;
+    startY: number;
+    startScrollLeft: number;
+    startScrollTop: number;
+    currentX: number;
+    currentY: number;
+    stepWidth: number;
+    cellHeight: number;
+    primaryNoteKey: string;
+    primaryRow: number;
+    primaryStep: number;
+    draggedNotes: DraggedNoteInfo[];
+    deltaStep: number;
+    deltaRow: number;
+    isCopy: boolean;
+  }
+
   interface MarqueeBox {
     startX: number;
     startY: number;
@@ -291,6 +365,97 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     isDragging: boolean;
     initialSelected: Set<string>;
   }
+
+  const [noteDrag, setNoteDrag] = useState<NoteDragState | null>(null);
+  const noteDragRef = useRef<NoteDragState | null>(null);
+  useEffect(() => {
+    noteDragRef.current = noteDrag;
+  }, [noteDrag]);
+
+  const activeNotesRef = useRef(activeNotes);
+  useEffect(() => {
+    activeNotesRef.current = activeNotes;
+  }, [activeNotes]);
+
+  const disabledNotesRef = useRef(disabledNotes);
+  useEffect(() => {
+    disabledNotesRef.current = disabledNotes;
+  }, [disabledNotes]);
+
+  const selectedNotesRef = useRef(selectedNotes);
+  useEffect(() => {
+    selectedNotesRef.current = selectedNotes;
+  }, [selectedNotes]);
+
+  const noteVelocitiesRef = useRef(noteVelocities);
+  useEffect(() => {
+    noteVelocitiesRef.current = noteVelocities;
+  }, [noteVelocities]);
+
+  const velocityRef = useRef(velocity);
+  useEffect(() => {
+    velocityRef.current = velocity;
+  }, [velocity]);
+
+  const totalStepsRef = useRef(totalSteps);
+  useEffect(() => {
+    totalStepsRef.current = totalSteps;
+  }, [totalSteps]);
+
+  const { draggedOriginalKeysSet, dragPreviewNotesMap } = useMemo(() => {
+    if (!noteDrag || !noteDrag.isDragging) {
+      return {
+        draggedOriginalKeysSet: new Set<string>(),
+        dragPreviewNotesMap: new Map<
+          string,
+          {
+            originalKey: string;
+            noteName: string;
+            step: number;
+            velocity: number;
+            isDisabled: boolean;
+          }
+        >(),
+      };
+    }
+
+    const draggedOriginalKeysSet = new Set<string>(
+      noteDrag.draggedNotes.map((n) => n.key),
+    );
+    const dragPreviewNotesMap = new Map<
+      string,
+      {
+        originalKey: string;
+        noteName: string;
+        step: number;
+        velocity: number;
+        isDisabled: boolean;
+      }
+    >();
+
+    noteDrag.draggedNotes.forEach((item) => {
+      const newRow = item.row + noteDrag.deltaRow;
+      const newStep = item.step + noteDrag.deltaStep;
+      if (
+        newRow >= 0 &&
+        newRow < notes.length &&
+        newStep >= 0 &&
+        newStep < totalSteps
+      ) {
+        const targetNoteName = notes[newRow].fullName;
+        const targetKey = `${targetNoteName}-${newStep}`;
+        dragPreviewNotesMap.set(targetKey, {
+          originalKey: item.key,
+          noteName: targetNoteName,
+          step: newStep,
+          velocity: item.velocity,
+          isDisabled: item.isDisabled,
+        });
+      }
+    });
+
+    return { draggedOriginalKeysSet, dragPreviewNotesMap };
+  }, [noteDrag, notes, totalSteps]);
 
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -316,7 +481,78 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     const onMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return;
       const target = e.target as HTMLElement;
-      if (target.closest("input, button")) return;
+      if (target.closest("input, button, [data-velocity-popover]")) return;
+
+      const activeCellEl = target.closest<HTMLElement>(
+        '[data-active-note="true"]',
+      );
+      if (activeCellEl) {
+        const noteKey = activeCellEl.getAttribute("data-note-key");
+        if (!noteKey) return;
+
+        const lastDash = noteKey.lastIndexOf("-");
+        if (lastDash === -1) return;
+        const noteName = noteKey.slice(0, lastDash);
+        const step = parseInt(noteKey.slice(lastDash + 1), 10);
+        const row = noteNameToIndex.get(noteName);
+        if (row === undefined) return;
+
+        let targetKeys: string[];
+        if (selectedNotes.has(noteKey)) {
+          targetKeys = Array.from(selectedNotes);
+        } else if (e.shiftKey) {
+          targetKeys = Array.from(new Set([...selectedNotes, noteKey]));
+        } else {
+          targetKeys = [noteKey];
+        }
+
+        const draggedNotes: DraggedNoteInfo[] = [];
+        for (const key of targetKeys) {
+          const dash = key.lastIndexOf("-");
+          if (dash === -1) continue;
+          const nName = key.slice(0, dash);
+          const nStep = parseInt(key.slice(dash + 1), 10);
+          const nRow = noteNameToIndex.get(nName);
+          if (nRow === undefined) continue;
+          draggedNotes.push({
+            key,
+            noteName: nName,
+            step: nStep,
+            row: nRow,
+            velocity: noteVelocities[key] ?? velocity,
+            isDisabled: disabledNotes.has(key),
+          });
+        }
+
+        const cellRect = activeCellEl.getBoundingClientRect();
+        const stepWidth = cellRect.width || 80;
+        const cellHeight = cellRect.height || ROW_HEIGHT;
+        const scrollContainer = containerRef.current;
+
+        const initialDragState: NoteDragState = {
+          isDragging: false,
+          startX: e.clientX,
+          startY: e.clientY,
+          startScrollLeft: scrollContainer ? scrollContainer.scrollLeft : 0,
+          startScrollTop: scrollContainer ? scrollContainer.scrollTop : 0,
+          currentX: e.clientX,
+          currentY: e.clientY,
+          stepWidth,
+          cellHeight,
+          primaryNoteKey: noteKey,
+          primaryRow: row,
+          primaryStep: step,
+          draggedNotes,
+          deltaStep: 0,
+          deltaRow: 0,
+          isCopy: e.altKey,
+        };
+
+        dragStartClientRef.current = { clientX: e.clientX, clientY: e.clientY };
+        noteDragRef.current = initialDragState;
+        setNoteDrag(initialDragState);
+        return;
+      }
 
       const rect = container.getBoundingClientRect();
       const startX = e.clientX - rect.left;
@@ -357,10 +593,103 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
       container.removeEventListener("mousedown", onMouseDown);
       container.removeEventListener("contextmenu", onCtxMenu);
     };
-  }, [selectedNotes]);
+  }, [selectedNotes, noteNameToIndex, noteVelocities, velocity, disabledNotes]);
 
   useEffect(() => {
     const handleWindowMouseMove = (e: MouseEvent) => {
+      if (noteDragRef.current) {
+        const drag = noteDragRef.current;
+        const scrollContainer = containerRef.current;
+        const currentScrollLeft = scrollContainer
+          ? scrollContainer.scrollLeft
+          : 0;
+        const currentScrollTop = scrollContainer
+          ? scrollContainer.scrollTop
+          : 0;
+
+        const deltaX =
+          e.clientX - drag.startX + (currentScrollLeft - drag.startScrollLeft);
+        const deltaY =
+          e.clientY - drag.startY + (currentScrollTop - drag.startScrollTop);
+        const dist = Math.hypot(
+          e.clientX - drag.startX,
+          e.clientY - drag.startY,
+        );
+
+        if (!drag.isDragging && dist > 4) {
+          setVelocityPopoverNote(null);
+          if (
+            !selectedNotesRef.current.has(drag.primaryNoteKey) &&
+            !e.shiftKey
+          ) {
+            updateSelectedNotes(new Set([drag.primaryNoteKey]));
+          }
+          document.body.style.cursor = "grabbing";
+        }
+
+        if (drag.isDragging || dist > 4) {
+          if (scrollContainer) {
+            const cRect = scrollContainer.getBoundingClientRect();
+            if (e.clientY < cRect.top + 36) {
+              scrollContainer.scrollTop -= 8;
+            } else if (e.clientY > cRect.bottom - 36) {
+              scrollContainer.scrollTop += 8;
+            }
+            if (e.clientX < cRect.left + 36) {
+              scrollContainer.scrollLeft -= 10;
+            } else if (e.clientX > cRect.right - 36) {
+              scrollContainer.scrollLeft += 10;
+            }
+          }
+
+          const rawDeltaStep = Math.round(deltaX / drag.stepWidth);
+          const rawDeltaRow = Math.round(deltaY / drag.cellHeight);
+
+          const minStep = Math.min(...drag.draggedNotes.map((n) => n.step));
+          const maxStep = Math.max(...drag.draggedNotes.map((n) => n.step));
+          const minDeltaStep = -minStep;
+          const maxDeltaStep = totalStepsRef.current - 1 - maxStep;
+          const clampedDeltaStep = Math.max(
+            minDeltaStep,
+            Math.min(maxDeltaStep, rawDeltaStep),
+          );
+
+          const minRow = Math.min(...drag.draggedNotes.map((n) => n.row));
+          const maxRow = Math.max(...drag.draggedNotes.map((n) => n.row));
+          const minDeltaRow = -minRow;
+          const maxDeltaRow = notes.length - 1 - maxRow;
+          const clampedDeltaRow = Math.max(
+            minDeltaRow,
+            Math.min(maxDeltaRow, rawDeltaRow),
+          );
+
+          if (clampedDeltaRow !== drag.deltaRow) {
+            const primaryTargetRow = drag.primaryRow + clampedDeltaRow;
+            if (primaryTargetRow >= 0 && primaryTargetRow < notes.length) {
+              const targetNoteName = notes[primaryTargetRow].fullName;
+              const vel =
+                (noteVelocitiesRef.current[drag.primaryNoteKey] ??
+                  velocityRef.current) / 100;
+              synth.playNote(targetNoteName, undefined, 0.2, vel);
+            }
+          }
+
+          const nextState: NoteDragState = {
+            ...drag,
+            isDragging: true,
+            currentX: e.clientX,
+            currentY: e.clientY,
+            deltaStep: clampedDeltaStep,
+            deltaRow: clampedDeltaRow,
+            isCopy: e.altKey,
+          };
+
+          noteDragRef.current = nextState;
+          setNoteDrag(nextState);
+        }
+        return;
+      }
+
       if (
         !dragStartClientRef.current ||
         !gridContainerRef.current ||
@@ -423,6 +752,74 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     };
 
     const handleWindowMouseUp = () => {
+      document.body.style.cursor = "";
+
+      if (noteDragRef.current) {
+        const drag = noteDragRef.current;
+        if (drag.isDragging) {
+          wasDraggingRef.current = true;
+          setTimeout(() => {
+            wasDraggingRef.current = false;
+          }, 60);
+
+          const hasMoved = drag.deltaStep !== 0 || drag.deltaRow !== 0;
+          if (hasMoved || drag.isCopy) {
+            const nextActive = new Set(activeNotesRef.current);
+            const nextDisabled = new Set(disabledNotesRef.current);
+            const nextVelocities = { ...noteVelocitiesRef.current };
+            const nextSelected = new Set<string>();
+
+            if (!drag.isCopy) {
+              drag.draggedNotes.forEach((item) => {
+                nextActive.delete(item.key);
+                nextDisabled.delete(item.key);
+                delete nextVelocities[item.key];
+              });
+            }
+
+            drag.draggedNotes.forEach((item) => {
+              const newRow = item.row + drag.deltaRow;
+              const newStep = item.step + drag.deltaStep;
+              if (
+                newRow >= 0 &&
+                newRow < notes.length &&
+                newStep >= 0 &&
+                newStep < totalStepsRef.current
+              ) {
+                const newNoteName = notes[newRow].fullName;
+                const newKey = `${newNoteName}-${newStep}`;
+
+                nextActive.add(newKey);
+                if (item.isDisabled) {
+                  nextDisabled.add(newKey);
+                }
+                nextVelocities[newKey] = item.velocity;
+                nextSelected.add(newKey);
+              }
+            });
+
+            updateNotes(nextActive);
+            updateDisabledNotes(nextDisabled);
+            updateNoteVelocities(nextVelocities);
+            updateSelectedNotes(nextSelected);
+
+            const primaryTargetRow = drag.primaryRow + drag.deltaRow;
+            if (primaryTargetRow >= 0 && primaryTargetRow < notes.length) {
+              const targetNoteName = notes[primaryTargetRow].fullName;
+              const vel =
+                (noteVelocitiesRef.current[drag.primaryNoteKey] ??
+                  velocityRef.current) / 100;
+              synth.playNote(targetNoteName, undefined, 0.35, vel);
+            }
+          }
+        }
+
+        dragStartClientRef.current = null;
+        noteDragRef.current = null;
+        setNoteDrag(null);
+        return;
+      }
+
       if (marqueeRef.current) {
         if (marqueeRef.current.isDragging) {
           wasDraggingRef.current = true;
@@ -441,20 +838,20 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
       window.removeEventListener("mousemove", handleWindowMouseMove);
       window.removeEventListener("mouseup", handleWindowMouseUp);
     };
-  }, [updateSelectedNotes]);
+  }, [
+    updateSelectedNotes,
+    notes,
+    updateNotes,
+    updateDisabledNotes,
+    updateNoteVelocities,
+  ]);
 
   const handleNoteClick = useCallback(
     (noteKey: string, e: React.MouseEvent) => {
       e.stopPropagation();
       if (wasDraggingRef.current) return;
 
-      const nextDisabled = new Set(disabledNotes);
-      if (nextDisabled.has(noteKey)) {
-        nextDisabled.delete(noteKey);
-      } else {
-        nextDisabled.add(noteKey);
-      }
-      updateDisabledNotes(nextDisabled);
+      setVelocityPopoverNote(noteKey);
 
       if (e.shiftKey) {
         const nextSelected = new Set(selectedNotes);
@@ -468,12 +865,15 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
         updateSelectedNotes(new Set([noteKey]));
       }
     },
-    [disabledNotes, selectedNotes, updateDisabledNotes, updateSelectedNotes],
+    [selectedNotes, updateSelectedNotes],
   );
 
   const handleNoteDoubleClick = useCallback(
     (noteKey: string, e: React.MouseEvent) => {
       e.stopPropagation();
+      if (velocityPopoverNote === noteKey) {
+        setVelocityPopoverNote(null);
+      }
       const nextActive = new Set(activeNotes);
       nextActive.delete(noteKey);
       updateNotes(nextActive);
@@ -497,6 +897,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
       }
     },
     [
+      velocityPopoverNote,
       activeNotes,
       disabledNotes,
       selectedNotes,
@@ -640,6 +1041,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     updateDisabledNotes(nextDisabled);
     updateNoteVelocities(nextVelocities);
     updateSelectedNotes(new Set());
+    setVelocityPopoverNote(null);
   }, [
     selectedNotes,
     activeNotes,
@@ -725,6 +1127,32 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
         return;
       }
 
+      if (e.key === "Escape") {
+        if (velocityPopoverNote) {
+          e.preventDefault();
+          setVelocityPopoverNote(null);
+          return;
+        }
+        if (noteDragRef.current?.isDragging) {
+          e.preventDefault();
+          document.body.style.cursor = "";
+          dragStartClientRef.current = null;
+          noteDragRef.current = null;
+          setNoteDrag(null);
+          return;
+        }
+        if (selectedNotes.size > 0) {
+          e.preventDefault();
+          updateSelectedNotes(new Set());
+          return;
+        }
+      }
+
+      if (e.key === "Alt" && noteDragRef.current?.isDragging) {
+        noteDragRef.current = { ...noteDragRef.current, isCopy: true };
+        setNoteDrag((prev) => (prev ? { ...prev, isCopy: true } : null));
+      }
+
       if (e.key === "Delete" || e.key === "Backspace") {
         if (selectedNotes.size > 0) {
           e.preventDefault();
@@ -740,20 +1168,27 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
           e.preventDefault();
           toggleDisabledSelectedNotes();
         }
-      } else if (e.key === "Escape") {
-        if (selectedNotes.size > 0) {
-          e.preventDefault();
-          updateSelectedNotes(new Set());
-        }
       } else if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A")) {
         e.preventDefault();
         updateSelectedNotes(new Set(activeNotes));
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Alt" && noteDragRef.current?.isDragging) {
+        noteDragRef.current = { ...noteDragRef.current, isCopy: false };
+        setNoteDrag((prev) => (prev ? { ...prev, isCopy: false } : null));
+      }
+    };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
   }, [
+    velocityPopoverNote,
     selectedNotes,
     activeNotes,
     deleteSelectedNotes,
@@ -971,7 +1406,11 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                               isCurrentStep ? "opacity-90" : "opacity-60",
                             )}
                           >
-                            {groupIdx + 1}.{stepIdx + 1}
+                            {stepIdx === 0
+                              ? `${(groupIdx % (timeSignature === "3/4" ? 3 : 4)) + 1}/4`
+                              : stepIdx === 2 && groupSize === 4
+                                ? "&"
+                                : "·"}
                           </span>
                         </div>
                       );
@@ -1170,9 +1609,16 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
                                 const noteVel =
                                   noteVelocities[noteKey] ?? velocity;
-                                const isHovered =
-                                  hoveredNote === noteKey ||
-                                  isDraggingSlider === noteKey;
+                                const isPopoverOpen =
+                                  (velocityPopoverNote === noteKey ||
+                                    isDraggingSlider === noteKey) &&
+                                  !noteDrag?.isDragging;
+                                const isBeingDragged =
+                                  noteDrag?.isDragging &&
+                                  draggedOriginalKeysSet.has(noteKey);
+                                const previewInfo = noteDrag?.isDragging
+                                  ? dragPreviewNotesMap.get(noteKey)
+                                  : undefined;
 
                                 return (
                                   <div
@@ -1180,6 +1626,8 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                     role="button"
                                     tabIndex={0}
                                     data-note-key={noteKey}
+                                    data-step-number={stepNumber}
+                                    data-note-name={note.fullName}
                                     data-active-note={
                                       isNoteActive ? "true" : "false"
                                     }
@@ -1187,7 +1635,10 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                       if (isNoteActive) {
                                         handleNoteClick(noteKey, e);
                                       } else {
-                                        handleCellClick(note.fullName, stepNumber);
+                                        handleCellClick(
+                                          note.fullName,
+                                          stepNumber,
+                                        );
                                       }
                                     }}
                                     onDoubleClick={(e) => {
@@ -1219,13 +1670,17 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                     }}
                                     aria-label={`${note.fullName} at step ${stepNumber + 1}${isNoteDisabled ? " (disabled)" : ""}${isNoteSelected ? " (selected)" : ""}`}
                                     className={cn(
-                                      "h-full rounded-none border-0 border-r border-stone-200/70 dark:border-stone-800/70 transition-colors relative cursor-pointer flex-shrink-0 p-0 select-none",
+                                      "h-full rounded-none border-0 border-r border-stone-200/70 dark:border-stone-800/70 transition-colors relative flex-shrink-0 p-0 select-none",
                                       stepWidthClass,
-                                      isHovered
-                                        ? "z-30"
+                                      isPopoverOpen
+                                        ? "z-40 cursor-pointer"
                                         : isNoteSelected
-                                          ? "z-20"
-                                          : "z-0",
+                                          ? "z-20 cursor-pointer"
+                                          : previewInfo
+                                            ? "z-30 bg-primary/20 cursor-grabbing"
+                                            : isNoteActive
+                                              ? "z-10 cursor-grab active:cursor-grabbing"
+                                              : "z-0 cursor-pointer",
                                       isCurrentStep &&
                                         "bg-primary/15 dark:bg-primary/25",
                                       note.isBlack
@@ -1233,17 +1688,53 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                         : "bg-surface-light dark:bg-stone-950/40 hover:bg-stone-100 dark:hover:bg-stone-900/50",
                                     )}
                                   >
+                                    {previewInfo && (
+                                      <div
+                                        className={cn(
+                                          "absolute inset-0.5 rounded-sm font-mono text-[9px] font-bold flex flex-col justify-between px-1.5 py-0.5 pointer-events-none z-30 transition-all select-none shadow-md",
+                                          previewInfo.isDisabled
+                                            ? "bg-stone-500/80 text-stone-200 ring-2 ring-stone-400"
+                                            : "bg-gradient-to-r from-primary to-primary-light text-white ring-2 ring-primary-light ring-offset-1 ring-offset-stone-900 shadow-primary/50 animate-pulse",
+                                        )}
+                                      >
+                                        <div className="flex items-center justify-between w-full leading-none">
+                                          <span className="leading-tight font-bold">
+                                            {previewInfo.noteName}
+                                          </span>
+                                          {noteDrag?.isCopy ? (
+                                            <span className="text-[7px] font-mono font-bold px-1 py-0 rounded bg-amber-400 text-stone-950 shadow-sm">
+                                              +COPY
+                                            </span>
+                                          ) : previewInfo.isDisabled ? (
+                                            <span className="text-[7px] font-mono font-bold px-0.5 py-0 rounded bg-stone-700/60 text-stone-300">
+                                              OFF
+                                            </span>
+                                          ) : (
+                                            <span className="text-[8px] font-mono opacity-90 select-none">
+                                              {previewInfo.velocity}%
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="w-full">
+                                          <div className="h-1 w-full rounded-full overflow-hidden bg-white/25">
+                                            <div
+                                              className="h-full rounded-full bg-white"
+                                              style={{
+                                                width: `${previewInfo.velocity}%`,
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
                                     {isNoteActive && (
                                       <div
-                                        className="relative w-full h-full"
-                                        onMouseEnter={() =>
-                                          setHoveredNote(noteKey)
-                                        }
-                                        onMouseLeave={() => {
-                                          if (isDraggingSlider !== noteKey) {
-                                            setHoveredNote(null);
-                                          }
-                                        }}
+                                        className={cn(
+                                          "relative w-full h-full cursor-grab active:cursor-grabbing",
+                                          isBeingDragged &&
+                                            !noteDrag?.isCopy &&
+                                            "opacity-35 grayscale-[40%]",
+                                        )}
                                         onWheel={(e) => {
                                           e.stopPropagation();
                                           e.preventDefault();
@@ -1287,7 +1778,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                                 OFF
                                               </span>
                                             ) : (
-                                              <span className="text-[8px] font-mono opacity-80 select-none">
+                                              <span className="text-[8px] font-mono opacity-90 select-none">
                                                 {noteVel}%
                                               </span>
                                             )}
@@ -1316,10 +1807,16 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                           </div>
                                         </div>
 
-                                        {isHovered && (
+                                        {isPopoverOpen && (
                                           <div
+                                            data-velocity-popover="true"
                                             className={cn(
-                                              "absolute left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 px-2.5 py-1.5 bg-stone-900/95 dark:bg-[#0c0f17] text-white rounded-lg shadow-2xl border border-stone-700/80 dark:border-stone-700 backdrop-blur-md pointer-events-auto select-none min-w-[136px]",
+                                              "absolute z-50 flex items-center gap-1.5 px-2.5 py-1.5 bg-stone-900/95 dark:bg-[#0c0f17] text-white rounded-lg shadow-2xl border border-stone-700/80 dark:border-stone-700 backdrop-blur-md pointer-events-auto select-none min-w-[168px]",
+                                              stepNumber === 0
+                                                ? "left-0"
+                                                : stepNumber >= totalSteps - 1
+                                                  ? "right-0"
+                                                  : "left-1/2 -translate-x-1/2",
                                               note.octave >= 10
                                                 ? "top-full mt-1.5"
                                                 : "bottom-full mb-1.5",
@@ -1363,9 +1860,27 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                             <span className="text-[10px] font-mono font-bold text-primary-light min-w-[28px] text-right">
                                               {noteVel}%
                                             </span>
+                                            <Button
+                                              variant="ghost"
+                                              tone="secondary"
+                                              size="sm"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setVelocityPopoverNote(null);
+                                              }}
+                                              className="!h-4 !w-4 !p-0 min-w-0 rounded text-stone-400 hover:text-white hover:bg-stone-800 border-0"
+                                              aria-label="Close velocity slider"
+                                            >
+                                              <X className="w-3 h-3" />
+                                            </Button>
                                             <div
                                               className={cn(
-                                                "absolute left-1/2 -translate-x-1/2 border-4 border-transparent",
+                                                "absolute border-4 border-transparent",
+                                                stepNumber === 0
+                                                  ? "left-4"
+                                                  : stepNumber >= totalSteps - 1
+                                                    ? "right-4"
+                                                    : "left-1/2 -translate-x-1/2",
                                                 note.octave >= 10
                                                   ? "bottom-full border-b-stone-900/95 dark:border-b-[#0c0f17]"
                                                   : "top-full border-t-stone-900/95 dark:border-t-[#0c0f17]",
@@ -1675,6 +2190,51 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                 Esc
               </span>
             </Button>
+          )}
+        </div>
+      )}
+
+      {noteDrag && noteDrag.isDragging && (
+        <div
+          className="fixed pointer-events-none z-50 flex items-center gap-1.5 px-2.5 py-1 bg-stone-900/95 dark:bg-[#0c0f17]/95 text-white rounded-md shadow-2xl border border-stone-700/80 text-[11px] font-mono backdrop-blur-md -translate-x-1/2 -translate-y-9 transition-transform"
+          style={{ left: noteDrag.currentX, top: noteDrag.currentY }}
+        >
+          {noteDrag.isCopy && (
+            <span className="px-1 py-0.2 rounded text-[9px] font-bold bg-amber-400 text-stone-950">
+              COPY
+            </span>
+          )}
+          <span className="font-bold text-primary-light">
+            {notes[noteDrag.primaryRow + noteDrag.deltaRow]?.fullName}
+          </span>
+          <span className="text-stone-400">
+            Step {noteDrag.primaryStep + noteDrag.deltaStep + 1}
+          </span>
+          {(noteDrag.deltaRow !== 0 || noteDrag.deltaStep !== 0) && (
+            <span className="text-[10px] text-stone-400 pl-1 border-l border-stone-700">
+              {noteDrag.deltaRow !== 0 && (
+                <span>
+                  {-noteDrag.deltaRow > 0
+                    ? `+${-noteDrag.deltaRow}`
+                    : `${-noteDrag.deltaRow}`}{" "}
+                  st
+                </span>
+              )}
+              {noteDrag.deltaRow !== 0 && noteDrag.deltaStep !== 0 && " • "}
+              {noteDrag.deltaStep !== 0 && (
+                <span>
+                  {noteDrag.deltaStep > 0
+                    ? `+${noteDrag.deltaStep}`
+                    : `${noteDrag.deltaStep}`}{" "}
+                  step{Math.abs(noteDrag.deltaStep) > 1 ? "s" : ""}
+                </span>
+              )}
+            </span>
+          )}
+          {noteDrag.draggedNotes.length > 1 && (
+            <span className="text-[9px] px-1 rounded bg-stone-800 text-stone-300">
+              +{noteDrag.draggedNotes.length - 1} more
+            </span>
           )}
         </div>
       )}

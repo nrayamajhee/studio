@@ -2,11 +2,18 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { SynthControls } from "./SynthControls";
 
 const meta: Meta<typeof SynthControls> = {
-  title: "Components/SynthControls",
+  title: "Instrument/SynthControls",
   component: SynthControls,
   parameters: {
     layout: "padded",
   },
+  decorators: [
+    (Story) => (
+      <div className="h-[275px] w-full max-w-[1200px]">
+        <Story />
+      </div>
+    ),
+  ],
   tags: ["autodocs"],
   argTypes: {
     selectedPreset: {

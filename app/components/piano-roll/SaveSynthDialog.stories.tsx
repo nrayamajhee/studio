@@ -4,7 +4,7 @@ import { Button } from "../design-system/Button";
 import { Plus } from "lucide-react";
 
 const meta: Meta<typeof SaveSynthDialog> = {
-  title: "Components/SaveSynthDialog",
+  title: "Instrument/SaveSynthDialog",
   component: SaveSynthDialog,
   parameters: {
     layout: "centered",

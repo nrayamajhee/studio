@@ -159,10 +159,10 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
               size="sm"
               title="Save current synth as preset"
               aria-label="Save current synth as preset"
-              className="w-full h-auto flex items-center justify-center gap-1 py-1 px-1 rounded-lg border border-dashed border-stone-300 dark:border-stone-700 hover:border-primary dark:hover:border-primary bg-stone-50 hover:bg-stone-100 dark:bg-[#0d1017] dark:hover:bg-[#161c28] text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-all cursor-pointer group shadow-2xs"
+              className="w-full h-auto flex items-center justify-center gap-1 py-0.5 px-1 rounded-md border border-dashed border-stone-300 dark:border-stone-700 hover:border-primary dark:hover:border-primary bg-stone-50 hover:bg-stone-100 dark:bg-[#0d1017] dark:hover:bg-[#161c28] text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-all cursor-pointer group shadow-2xs"
             >
-              <Plus className="w-3 h-3 text-stone-500 group-hover:text-primary transition-colors" />
-              <span className="text-[9px] font-mono font-semibold uppercase tracking-wider">
+              <Plus className="w-2.5 h-2.5 text-stone-500 group-hover:text-primary transition-colors" />
+              <span className="text-[8.5px] font-mono font-semibold uppercase tracking-wider">
                 Save
               </span>
             </Button>
@@ -186,7 +186,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
                 aria-pressed={isSelected}
                 title={`Custom: ${cp.name}`}
                 className={cn(
-                  "w-full aspect-square max-h-12 sm:max-h-13 h-auto flex flex-col items-center justify-center p-1 rounded-lg transition-all border select-none cursor-pointer group",
+                  "w-full aspect-square max-h-10 sm:max-h-11 h-auto flex flex-col items-center justify-center p-0.5 rounded-lg transition-all border select-none cursor-pointer group",
                   isSelected
                     ? colorTheme.selected
                     : cn(
@@ -202,11 +202,11 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
                     isSelected ? "text-white" : colorTheme.text,
                   )}
                 >
-                  {renderPresetIcon(cp.icon, "w-4 h-4")}
+                  {renderPresetIcon(cp.icon, "w-3.5 h-3.5")}
                 </div>
                 <span
                   className={cn(
-                    "text-[8.5px] font-mono leading-none tracking-tight truncate max-w-full mt-1 text-center font-medium",
+                    "text-[8px] font-mono leading-none tracking-tight truncate max-w-full mt-0.5 text-center font-medium",
                     isSelected ? "text-white font-bold" : "",
                   )}
                 >
@@ -252,7 +252,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
               aria-pressed={isSelected}
               title={inst.name}
               className={cn(
-                "w-full aspect-square max-h-12 sm:max-h-13 h-auto flex flex-col items-center justify-center p-1 rounded-lg transition-all border select-none cursor-pointer group",
+                "w-full aspect-square max-h-10 sm:max-h-11 h-auto flex flex-col items-center justify-center p-0.5 rounded-lg transition-all border select-none cursor-pointer group",
                 isSelected
                   ? inst.color.selected
                   : cn(
@@ -268,11 +268,11 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
                   isSelected ? "text-white" : inst.color.text,
                 )}
               >
-                <IconComp className="w-4 h-4" />
+                <IconComp className="w-3.5 h-3.5" />
               </div>
               <span
                 className={cn(
-                  "text-[8.5px] font-mono leading-none tracking-tight truncate max-w-full mt-1 text-center font-medium",
+                  "text-[8px] font-mono leading-none tracking-tight truncate max-w-full mt-0.5 text-center font-medium",
                   isSelected ? "text-white font-bold" : "",
                 )}
               >

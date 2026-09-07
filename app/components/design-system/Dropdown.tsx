@@ -1,36 +1,21 @@
 import React, { useState, useId } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { cva, type VariantProps } from "class-variance-authority";
 import { ChevronDown, Check } from "lucide-react";
 import { cn } from "../../lib/utils";
+import {
+  Button,
+  buttonVariants,
+  type ButtonVariant,
+  type ButtonTone,
+  type ButtonSize,
+} from "./Button";
 
-export const dropdownVariants = cva(
-  "w-full flex items-center justify-between transition-colors duration-150 font-medium cursor-pointer border rounded-lg focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none",
-  {
-    variants: {
-      tone: {
-        accent:
-          "bg-stone-50 text-stone-900 border-stone-200 dark:bg-[#0a0d14] dark:text-[#e6e8ec] dark:border-[#232a3b] hover:border-primary/50 dark:hover:border-primary/50 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary data-[state=open]:border-primary",
-        primary:
-          "bg-surface text-font border-stone-300 dark:bg-stone-900 dark:text-stone-100 dark:border-stone-700 hover:border-stone-400 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary data-[state=open]:border-primary",
-        secondary:
-          "bg-stone-100 text-stone-800 border-stone-200 dark:bg-stone-800 dark:text-stone-200 dark:border-stone-700 hover:border-stone-300 focus-visible:border-stone-400 focus-visible:ring-1 focus-visible:ring-stone-400 data-[state=open]:border-stone-400",
-      },
-      size: {
-        xs: "h-6 py-0.5 pl-2 pr-2 text-[10px]",
-        sm: "h-8 py-1 pl-2.5 pr-2.5 text-[11px]",
-        md: "h-9 py-2 pl-3.5 pr-3 text-xs",
-        lg: "h-10 py-2.5 pl-4 pr-3.5 text-sm",
-      },
-    },
-    defaultVariants: {
-      tone: "primary",
-      size: "sm",
-    },
-  },
-);
-
-export type DropdownVariantProps = VariantProps<typeof dropdownVariants>;
+export const dropdownVariants = buttonVariants;
+export type DropdownVariantProps = {
+  variant?: ButtonVariant;
+  tone?: ButtonTone;
+  size?: ButtonSize;
+};
 
 export interface DropdownOption {
   value: string | number;
@@ -64,6 +49,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   value,
   defaultValue,
   onChange,
+  variant = "solid",
   tone = "primary",
   size = "sm",
   id: customId,
@@ -109,12 +95,20 @@ export const Dropdown: React.FC<DropdownProps> = ({
     setOpen(false);
   };
 
+  const buttonTone: ButtonTone =
+    variant === "solid" && (tone === "primary" || tone === "accent")
+      ? "secondary"
+      : tone || "secondary";
+
   return (
     <div className={cn("w-full flex flex-col", className)}>
       {label && (
         <label
           htmlFor={id}
-          className="text-[10px] font-medium text-stone-700 dark:text-stone-300 mb-1 truncate block"
+          className={cn(
+            "font-medium text-stone-700 dark:text-stone-300 truncate block",
+            size === "xs" ? "text-[9px] mb-0.5 leading-tight" : "text-[10px] mb-1",
+          )}
         >
           {label}
         </label>
@@ -122,27 +116,37 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
       <Popover.Root open={open} onOpenChange={disabled ? undefined : setOpen}>
         <Popover.Trigger asChild disabled={disabled}>
-          <button
-            type="button"
+          <Button
             id={id}
+            variant={variant}
+            tone={buttonTone}
+            size={size}
+            fullWidth
+            align="between"
+            disabled={disabled}
             aria-label={label || displayLabel}
             aria-expanded={open}
+            trailingIcon={
+              <ChevronDown
+                className={cn(
+                  "flex-shrink-0 transition-transform duration-150 opacity-60",
+                  open && "rotate-180",
+                  size === "xs" ? "w-3 h-3" : size === "lg" ? "w-4 h-4" : "w-3.5 h-3.5",
+                )}
+              />
+            }
             className={cn(
-              dropdownVariants({ tone, size }),
+              "w-full select-none",
+              size === "xs" && "h-6.5 text-[11px] px-2 py-0",
+              tone === "primary" &&
+                "focus-visible:ring-primary data-[state=open]:ring-2 data-[state=open]:ring-primary",
+              tone === "accent" &&
+                "focus-visible:ring-accent data-[state=open]:ring-2 data-[state=open]:ring-accent",
               triggerClassName,
             )}
           >
-            <span className="truncate pr-1 text-left flex-1 font-sans font-medium">
-              {displayLabel}
-            </span>
-            <ChevronDown
-              className={cn(
-                "flex-shrink-0 transition-transform duration-150 opacity-60",
-                open && "rotate-180",
-                size === "xs" ? "w-2.5 h-2.5" : "w-3.5 h-3.5",
-              )}
-            />
-          </button>
+            {displayLabel}
+          </Button>
         </Popover.Trigger>
 
         <Popover.Portal>
@@ -152,12 +156,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
             sideOffset={sideOffset}
             className={cn(
               "z-50 min-w-[var(--radix-popover-trigger-width)] max-h-56 overflow-y-auto rounded-lg p-1 text-xs shadow-xl backdrop-blur-md outline-none",
-              tone === "accent" &&
-                "bg-white/95 dark:bg-[#0a0d14]/95 border border-stone-200 dark:border-[#232a3b] text-stone-900 dark:text-stone-200",
-              tone === "primary" &&
-                "bg-white/95 dark:bg-stone-900/95 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100",
-              tone === "secondary" &&
-                "bg-stone-50/95 dark:bg-stone-800/95 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100",
+              tone === "accent"
+                ? "bg-white/95 dark:bg-[#0a0d14]/95 border border-stone-200 dark:border-[#232a3b] text-stone-900 dark:text-stone-200"
+                : "bg-white/95 dark:bg-stone-900/95 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100",
               contentClassName,
             )}
           >
@@ -166,15 +167,17 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 const isSelected = String(opt.value) === String(currentValue);
 
                 return (
-                  <button
+                  <Button
                     key={opt.value}
-                    type="button"
+                    variant="ghost"
+                    tone="secondary"
+                    size="xs"
                     disabled={opt.disabled}
                     onClick={() => handleSelect(opt.value)}
                     className={cn(
-                      "w-full flex items-center justify-between px-2 py-1.5 rounded text-[11px] font-sans font-medium transition-colors text-left select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed",
+                      "w-full flex items-center justify-between px-2 py-1.5 rounded text-[11px] font-sans font-medium transition-colors text-left select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0 shadow-none",
                       isSelected
-                        ? "bg-primary text-white font-bold shadow-sm"
+                        ? "bg-primary text-white font-bold shadow-sm hover:bg-primary"
                         : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-white",
                     )}
                   >
@@ -187,7 +190,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         )}
                       />
                     )}
-                  </button>
+                  </Button>
                 );
               })}
             </div>

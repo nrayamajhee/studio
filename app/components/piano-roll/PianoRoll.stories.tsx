@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PianoRoll } from "./PianoRoll";
 
 const meta: Meta<typeof PianoRoll> = {
-  title: "Components/PianoRoll",
+  title: "Instrument/PianoRoll",
   component: PianoRoll,
   parameters: {
     layout: "fullscreen",

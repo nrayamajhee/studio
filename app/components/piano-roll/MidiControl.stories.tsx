@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { MidiControl } from "./MidiControl";
 
 const meta: Meta<typeof MidiControl> = {
-  title: "Components/MidiControl",
+  title: "Instrument/MidiControl",
   component: MidiControl,
   parameters: {
     layout: "centered",

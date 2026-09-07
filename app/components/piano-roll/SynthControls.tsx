@@ -116,41 +116,42 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col h-full w-full select-none overflow-hidden gap-1.5",
+        "flex flex-col h-full w-full select-none overflow-hidden gap-1",
         className,
       )}
     >
       {/* Waveform Canvas Container & Expansion Slots */}
-      <div className="flex items-center gap-2 flex-shrink-0 w-full">
+      <div className="flex items-center gap-1.5 flex-shrink-0 w-full">
         {leftHeaderSlot}
         <Card
           elevation="low"
-          className="flex-1 bg-stone-100 dark:bg-[#0b0e14] border border-stone-200 dark:border-[#1f2533] rounded-xl p-1.5 flex flex-col justify-center flex-shrink-0 shadow-inner min-w-0"
+          className="flex-1 bg-stone-100 dark:bg-[#0b0e14] border border-stone-200 dark:border-[#1f2533] rounded-lg p-0.5 sm:p-1 flex flex-col justify-center flex-shrink-0 shadow-inner min-w-0"
         >
           <canvas
             ref={canvasRef}
             width={640}
-            height={48}
-            className="w-full h-11 rounded-lg bg-[#0f172a] dark:bg-[#05070a] border border-stone-300 dark:border-[#171c26]"
+            height={32}
+            className="w-full h-5 sm:h-6 rounded bg-[#0f172a] dark:bg-[#05070a] border border-stone-300 dark:border-[#171c26]"
           />
         </Card>
         {rightHeaderSlot}
       </div>
 
       {/* 6 Module Cards Side-by-Side */}
-      <div className="flex-1 min-h-0 flex items-stretch gap-2.5 overflow-x-auto pb-1">
+      <div className="flex-1 min-h-0 flex items-stretch gap-2 overflow-x-auto pb-1">
         {/* 1. Exciter / Click */}
         <Card
           elevation="low"
-          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
+          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2 flex flex-col justify-between min-w-[150px] max-w-[195px] flex-1 shadow-sm overflow-visible"
         >
-          <span className="text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-1 block">
+          <span className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
             1. Exciter / Click
           </span>
 
-          <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+          <div className="space-y-1 flex-1 flex flex-col justify-between min-h-0">
             <Dropdown
               tone="primary"
+              size="xs"
               label="Exciter Mode"
               value={params.exciterMode}
               onChange={(val) => handleParamChange("exciterMode", val as never)}
@@ -165,6 +166,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Exciter Amount"
               valueDisplay={`${Math.round(params.exciterVol * 100)}%`}
               min={0}
@@ -176,6 +178,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Impulse Tone"
               valueDisplay={`${Math.round(params.exciterFreq)} Hz`}
               min={30}
@@ -187,6 +190,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Impulse Decay"
               valueDisplay={`${params.exciterDecay.toFixed(3)} s`}
               min={0.005}
@@ -201,15 +205,16 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         {/* 2. Tone Core */}
         <Card
           elevation="low"
-          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
+          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2 flex flex-col justify-between min-w-[150px] max-w-[195px] flex-1 shadow-sm overflow-visible"
         >
-          <span className="text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-1 block">
+          <span className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
             2. Tone Core
           </span>
 
-          <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+          <div className="space-y-1 flex-1 flex flex-col justify-between min-h-0">
             <Dropdown
               tone="primary"
+              size="xs"
               label="Osc 1 Waveform"
               value={params.osc1Wave}
               onChange={(val) =>
@@ -225,6 +230,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Dropdown
               tone="primary"
+              size="xs"
               label="Osc 2 Waveform"
               value={params.osc2Wave}
               onChange={(val) =>
@@ -241,6 +247,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Osc 2 Detune"
               valueDisplay={`${params.detune.toFixed(1)} cents`}
               min={0}
@@ -252,6 +259,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Dropdown
               tone="primary"
+              size="xs"
               label="Osc 2 Octave"
               value={params.osc2Oct}
               onChange={(val) =>
@@ -269,15 +277,16 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         {/* 3. Filter Matrix */}
         <Card
           elevation="low"
-          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
+          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2 flex flex-col justify-between min-w-[150px] max-w-[195px] flex-1 shadow-sm overflow-visible"
         >
-          <span className="text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-1 block">
+          <span className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
             3. Filter Matrix
           </span>
 
-          <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+          <div className="space-y-1 flex-1 flex flex-col justify-between min-h-0">
             <Dropdown
               tone="primary"
+              size="xs"
               label="Filter Mode"
               value={params.filterType}
               onChange={(val) =>
@@ -293,6 +302,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Base Cutoff"
               valueDisplay={`${Math.round(params.cutoff)} Hz`}
               min={80}
@@ -304,6 +314,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Env Sweep Peak"
               valueDisplay={`${Math.round(params.envMod)} Hz`}
               min={0}
@@ -315,6 +326,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Keytracking"
               valueDisplay={`${Math.round(params.keytrack * 100)}%`}
               min={-1}
@@ -329,27 +341,30 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         {/* 4. LFO & Mod */}
         <Card
           elevation="low"
-          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
+          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2 flex flex-col justify-between min-w-[150px] max-w-[195px] flex-1 shadow-sm overflow-visible"
         >
-          <span className="text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-1 block">
+          <span className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
             4. LFO & Mod
           </span>
 
-          <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+          <div className="space-y-1 flex-1 flex flex-col justify-between min-h-0">
             <Dropdown
               tone="primary"
+              size="xs"
               label="LFO Destination"
               value={params.lfoDest}
               onChange={(val) => handleParamChange("lfoDest", val as never)}
               options={[
                 { value: "pitch", label: "Pitch (Vibrato / Chor)" },
-                { value: "filter", label: "Filter Cutoff (Wah)" },
-                { value: "tremolo", label: "Amplitude (Tremolo)" },
+                { value: "filter", label: "Filter (Auto-Wah)" },
+                { value: "amp", label: "Volume (Tremolo)" },
+                { value: "pan", label: "Stereo Auto-Pan" },
               ]}
             />
 
             <Slider
               tone="primary"
+              size="xs"
               label="LFO Rate"
               valueDisplay={`${params.lfoRate.toFixed(1)} Hz`}
               min={0.1}
@@ -361,22 +376,24 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="LFO Depth"
               valueDisplay={`${params.lfoDepth.toFixed(1)}`}
               min={0}
-              max={30}
-              step={0.5}
+              max={1}
+              step={0.05}
               value={params.lfoDepth}
               onChange={(val) => handleParamChange("lfoDepth", val)}
             />
 
             <Slider
               tone="primary"
+              size="xs"
               label="Waveguide Feedback"
               valueDisplay={`${Math.round(params.ksFeed * 100)}%`}
               min={0}
-              max={0.9}
-              step={0.02}
+              max={0.99}
+              step={0.01}
               value={params.ksFeed}
               onChange={(val) => handleParamChange("ksFeed", val)}
             />
@@ -386,15 +403,16 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         {/* 5. Amplitude ADSR */}
         <Card
           elevation="low"
-          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
+          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2 flex flex-col justify-between min-w-[150px] max-w-[195px] flex-1 shadow-sm overflow-visible"
         >
-          <span className="text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-1 block">
+          <span className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
             5. Amplitude ADSR
           </span>
 
-          <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+          <div className="space-y-1 flex-1 flex flex-col justify-between min-h-0">
             <Slider
               tone="primary"
+              size="xs"
               label="Attack"
               valueDisplay={`${params.attack.toFixed(3)} s`}
               min={0.001}
@@ -406,6 +424,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Decay"
               valueDisplay={`${params.decay.toFixed(1)} s`}
               min={0.05}
@@ -417,6 +436,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Sustain"
               valueDisplay={`${params.sustain.toFixed(2)}`}
               min={0}
@@ -428,6 +448,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Release"
               valueDisplay={`${params.release.toFixed(2)} s`}
               min={0.02}
@@ -442,15 +463,16 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         {/* 6. Body & Space */}
         <Card
           elevation="low"
-          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2.5 flex flex-col justify-between min-w-[170px] max-w-[210px] flex-1 shadow-sm"
+          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2 flex flex-col justify-between min-w-[150px] max-w-[195px] flex-1 shadow-sm overflow-visible"
         >
-          <span className="text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-1 block">
+          <span className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
             6. Body & Space
           </span>
 
-          <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+          <div className="space-y-1 flex-1 flex flex-col justify-between min-h-0">
             <Slider
               tone="primary"
+              size="xs"
               label="Soundboard EQ"
               valueDisplay={`${params.lowEq >= 0 ? `+${params.lowEq.toFixed(1)}` : params.lowEq.toFixed(1)} dB`}
               min={-12}
@@ -462,6 +484,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Tube Drive"
               valueDisplay={`${Math.round(params.drive * 100)}%`}
               min={0}
@@ -473,6 +496,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Reverb Ambience"
               valueDisplay={`${Math.round(params.reverb * 100)}%`}
               min={0}
@@ -484,6 +508,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
 
             <Slider
               tone="primary"
+              size="xs"
               label="Master Output"
               valueDisplay={`${Math.round(params.masterVol * 100)}%`}
               min={0}

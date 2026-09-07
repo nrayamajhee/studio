@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Card } from "./Card";
 import { Label } from "./Typography";
+import { cn } from "../../lib/utils";
 
 const meta: Meta = {
   title: "Design System/Color Palette",
@@ -55,12 +55,12 @@ const surfaceColors = [
   {
     name: "Surface Light",
     className:
-      "bg-surface-light text-stone-800 border-stone-200 dark:border-stone-800",
+      "bg-surface-light text-stone-800 border-stone-200 dark:border-stone-700",
     labelClass: "text-stone-800",
   },
   {
     name: "Surface Dark",
-    className: "bg-surface-dark text-white border-transparent",
+    className: "bg-surface-dark text-white border-stone-700",
     labelClass: "text-white",
   },
 ];
@@ -68,22 +68,22 @@ const surfaceColors = [
 const fontColors = [
   {
     name: "Font",
-    className: "bg-font text-white border-transparent",
+    className: "bg-font text-white border-stone-700",
     labelClass: "text-white",
   },
   {
     name: "Font Light",
-    className: "bg-font-light text-white border-transparent",
+    className: "bg-font-light text-white border-stone-600",
     labelClass: "text-white",
   },
   {
     name: "Font Dark",
-    className: "bg-font-dark text-white border-transparent",
+    className: "bg-font-dark text-white border-stone-700",
     labelClass: "text-white",
   },
 ];
 
-export const ColorPalette: StoryObj = {
+export const Default: StoryObj = {
   name: "Color Palette",
   render: () => (
     <div className="flex flex-col gap-8 items-start">
@@ -91,12 +91,15 @@ export const ColorPalette: StoryObj = {
         <Label>Button Colors</Label>
         <div className="flex flex-wrap gap-3 items-start">
           {buttonColors.map((color) => (
-            <Card
+            <div
               key={color.name}
-              className={`w-32 h-24 flex items-center justify-center text-center ${color.className}`}
+              className={cn(
+                "w-32 h-24 rounded-lg flex items-center justify-center text-center shadow-sm border transition-all",
+                color.className,
+              )}
             >
               <Label className={color.labelClass}>{color.name}</Label>
-            </Card>
+            </div>
           ))}
         </div>
       </div>
@@ -105,12 +108,15 @@ export const ColorPalette: StoryObj = {
         <Label>Surface Colors</Label>
         <div className="flex flex-wrap gap-3 items-start">
           {surfaceColors.map((color) => (
-            <Card
+            <div
               key={color.name}
-              className={`w-32 h-24 flex items-center justify-center text-center ${color.className}`}
+              className={cn(
+                "w-32 h-24 rounded-lg flex items-center justify-center text-center shadow-sm border transition-all",
+                color.className,
+              )}
             >
               <Label className={color.labelClass}>{color.name}</Label>
-            </Card>
+            </div>
           ))}
         </div>
       </div>
@@ -119,12 +125,15 @@ export const ColorPalette: StoryObj = {
         <Label>Font Colors</Label>
         <div className="flex flex-wrap gap-3 items-start">
           {fontColors.map((color) => (
-            <Card
+            <div
               key={color.name}
-              className={`w-32 h-24 flex items-center justify-center text-center ${color.className}`}
+              className={cn(
+                "w-32 h-24 rounded-lg flex items-center justify-center text-center shadow-sm border transition-all",
+                color.className,
+              )}
             >
               <Label className={color.labelClass}>{color.name}</Label>
-            </Card>
+            </div>
           ))}
         </div>
       </div>

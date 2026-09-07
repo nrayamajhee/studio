@@ -14,6 +14,11 @@ export interface PianoKeyProps {
   orientation?: "horizontal" | "vertical";
   disabled?: boolean;
   onClick?: () => void;
+  onMouseDown?: (e: React.MouseEvent) => void;
+  onMouseUp?: (e: React.MouseEvent) => void;
+  onMouseLeave?: (e: React.MouseEvent) => void;
+  onTouchStart?: (e: React.TouchEvent) => void;
+  onTouchEnd?: (e: React.TouchEvent) => void;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -30,6 +35,11 @@ export const PianoKey: React.FC<PianoKeyProps> = ({
   orientation = "horizontal",
   disabled = false,
   onClick,
+  onMouseDown,
+  onMouseUp,
+  onMouseLeave,
+  onTouchStart,
+  onTouchEnd,
   className,
   style,
 }) => {
@@ -44,6 +54,11 @@ export const PianoKey: React.FC<PianoKeyProps> = ({
           size="sm"
           disabled={disabled}
           onClick={onClick}
+          onMouseDown={onMouseDown}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseLeave}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
           aria-label={`Key ${note}`}
           style={style}
           className={cn(
@@ -80,6 +95,11 @@ export const PianoKey: React.FC<PianoKeyProps> = ({
         size="sm"
         disabled={disabled}
         onClick={onClick}
+        onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
         aria-label={`Key ${note}`}
         style={style}
         className={cn(
@@ -122,6 +142,11 @@ export const PianoKey: React.FC<PianoKeyProps> = ({
         size="sm"
         disabled={disabled}
         onClick={onClick}
+        onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
         aria-label={`Key ${note}`}
         style={style}
         className={cn(
@@ -153,6 +178,11 @@ export const PianoKey: React.FC<PianoKeyProps> = ({
       size="sm"
       disabled={disabled}
       onClick={onClick}
+      onMouseDown={onMouseDown}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseLeave}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
       aria-label={`Key ${note}`}
       style={style}
       className={cn(

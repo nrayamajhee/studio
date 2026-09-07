@@ -39,7 +39,7 @@ const meta: Meta<typeof Button> = {
     },
     size: {
       control: "radio",
-      options: ["sm", "md", "lg"],
+      options: ["xs", "sm", "md", "lg"],
       description: "Padding and sizing preset",
     },
     rounded: {

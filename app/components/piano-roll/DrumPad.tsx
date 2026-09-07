@@ -3,7 +3,7 @@ import { synth } from "../../lib/synth";
 import { Button } from "../design-system/Button";
 import { Card } from "../design-system/Card";
 import { cn } from "../../lib/utils";
-import { Radio, Layers } from "lucide-react";
+import { Radio } from "lucide-react";
 
 export interface DrumPadProps {
   className?: string;
@@ -22,13 +22,6 @@ interface PadConfig {
   colorTone: string;
 }
 
-const DRUM_KIT_PRESETS = new Set([
-  "drum_set",
-  "drum_808",
-  "trap_kit",
-  "electronic_drums",
-  "acoustic_percussion",
-]);
 
 const KEY_MAPPINGS = [
   ["1", "2", "3", "4"],
@@ -262,7 +255,6 @@ export const DrumPad: React.FC<DrumPadProps> = ({
   const [bank, setBank] = useState(0);
   const [pressedPads, setPressedPads] = useState<Set<string>>(new Set());
 
-  const isDrumKit = DRUM_KIT_PRESETS.has(selectedPreset);
   const pads = useMemo(() => getKitPads(selectedPreset, bank), [selectedPreset, bank]);
 
   const activeNotesSet = useMemo(() => new Set(activeNotes), [activeNotes]);
@@ -369,24 +361,19 @@ export const DrumPad: React.FC<DrumPadProps> = ({
       )}
     >
       <div className="flex items-center justify-between pb-1 border-b border-stone-200 dark:border-[#1f2533] flex-shrink-0">
-        <div className="flex items-center gap-1.5">
-          <span className="flex items-center gap-1 text-[11px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase">
-            <Layers className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
-            {isDrumKit ? "MPC Drum Kit" : "Pad Matrix"}
-          </span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-100 dark:bg-[#161a24] text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-[#232a3b]">
-            Bank {bank === 0 ? "A" : "B"}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5">
+        <div>
           {isRecording && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 animate-pulse bg-red-950/40 px-1.5 py-0.5 rounded border border-red-800/50">
               <Radio className="w-3 h-3" />
               REC
             </span>
           )}
+        </div>
 
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-bold tracking-wider text-stone-500 dark:text-stone-400 uppercase">
+            BANK
+          </span>
           <div className="flex items-center gap-1">
             <Button
               variant="solid"

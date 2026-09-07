@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PianoKey } from "./PianoKey";
 
 const meta: Meta<typeof PianoKey> = {
-  title: "Components/PianoKey",
+  title: "Instrument/PianoKey",
   component: PianoKey,
   parameters: {
     layout: "centered",

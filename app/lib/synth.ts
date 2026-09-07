@@ -1019,7 +1019,7 @@ class HybridSynthEngine {
   private finalCeilingGain: GainNode | null = null;
   private noiseBuffer: AudioBuffer | null = null;
   private activeVoices = new Map<string, HybridVoice>();
-  private readonly MAX_POLYPHONY = 16;
+  private readonly MAX_POLYPHONY = 48;
 
   public params: SynthParams = { ...SYNTH_PRESETS.grand_piano };
   public currentPresetKey = "grand_piano";
@@ -1139,12 +1139,15 @@ class HybridSynthEngine {
     customFreq?: number,
     duration?: number,
     velocity: number = 0.8,
+    presetOrParams?: string | SynthParams,
+    voiceKey?: string,
   ): void {
     const ctx = this.ensureContext();
     if (!ctx || !this.masterGain || !this.noiseBuffer) return;
 
-    if (this.activeVoices.has(noteName)) {
-      this.stopNote(noteName);
+    const activeKey = voiceKey || noteName;
+    if (this.activeVoices.has(activeKey)) {
+      this.stopNote(activeKey);
     }
 
     if (this.activeVoices.size >= this.MAX_POLYPHONY) {
@@ -1165,36 +1168,44 @@ class HybridSynthEngine {
       baseFreq = calculated;
     }
 
+    let targetParams = this.params;
+    if (typeof presetOrParams === "string") {
+      targetParams = SYNTH_PRESETS[presetOrParams] || this.params;
+    } else if (presetOrParams) {
+      targetParams = presetOrParams;
+    }
+
     const shiftedFreq =
-      baseFreq * Math.pow(2, this.octaveShift + this.params.octave);
+      baseFreq * Math.pow(2, this.octaveShift + targetParams.octave);
     const voice = new HybridVoice(
       ctx,
       this.masterGain,
       this.noiseBuffer,
-      this.params,
+      targetParams,
       shiftedFreq,
       duration,
       velocity,
       () => {
-        if (this.activeVoices.get(noteName) === voice) {
-          this.activeVoices.delete(noteName);
+        if (this.activeVoices.get(activeKey) === voice) {
+          this.activeVoices.delete(activeKey);
         }
       },
     );
-    this.activeVoices.set(noteName, voice);
+    this.activeVoices.set(activeKey, voice);
   }
 
-  public stopNote(noteName: string): void {
-    const voice = this.activeVoices.get(noteName);
+  public stopNote(noteNameOrKey: string): void {
+    const voice = this.activeVoices.get(noteNameOrKey);
     if (!voice) return;
     voice.triggerRelease();
-    this.activeVoices.delete(noteName);
+    this.activeVoices.delete(noteNameOrKey);
   }
 
   public playDrum(
     noteName: string,
     velocity: number = 0.8,
     kitName: string = "drum_set",
+    voiceKey?: string,
   ): void {
     const ctx = this.ensureContext();
     if (!ctx || !this.masterGain || !this.noiseBuffer) return;
@@ -1206,7 +1217,7 @@ class HybridSynthEngine {
     const shiftedFreq =
       baseFreq * Math.pow(2, drumParams.octave);
 
-    const drumKey = `drum-${noteName}`;
+    const drumKey = voiceKey || `drum-${noteName}`;
     if (this.activeVoices.has(drumKey)) {
       const old = this.activeVoices.get(drumKey);
       if (old) old.triggerRelease(true);

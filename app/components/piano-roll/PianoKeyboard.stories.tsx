@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PianoKeyboard } from "./PianoKeyboard";
 
 const meta: Meta<typeof PianoKeyboard> = {
-  title: "Components/PianoKeyboard",
+  title: "Instrument/PianoKeyboard",
   component: PianoKeyboard,
   parameters: {
     layout: "centered",
@@ -57,44 +57,40 @@ type Story = StoryObj<typeof PianoKeyboard>;
 
 export const Default: Story = {
   args: {
-    mode: "keyboard",
-    octaves: 2,
+    octaves: 1,
     startOctave: 4,
+    showMiniMap: true,
+    showHotkeys: true,
     showLabels: "c-only",
-    orientation: "horizontal",
     includeEndC: true,
     playAudio: true,
   },
 };
 
-export const Player: Story = {
+export const MultiOctave: Story = {
   args: {
-    mode: "player",
+    octaves: 2,
+    startOctave: 4,
+    showMiniMap: true,
+    showHotkeys: true,
   },
 };
 
-export const PlayerRecording: Story = {
+export const Recording: Story = {
   args: {
-    mode: "player",
+    octaves: 1,
+    startOctave: 4,
     isRecording: true,
     activeNotes: ["C4", "E4", "G4"],
+    showMiniMap: true,
+    showHotkeys: true,
   },
 };
 
 export const Vertical: Story = {
   args: {
-    mode: "keyboard",
     octaves: 1,
     startOctave: 4,
     orientation: "vertical",
-  },
-};
-
-export const WithActiveChords: Story = {
-  args: {
-    mode: "keyboard",
-    octaves: 2,
-    startOctave: 4,
-    activeNotes: ["C4", "E4", "G4", "B4"],
   },
 };

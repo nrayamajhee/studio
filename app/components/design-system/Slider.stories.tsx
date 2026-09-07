@@ -36,7 +36,7 @@ const meta: Meta<typeof Slider> = {
     },
     size: {
       control: "radio",
-      options: ["sm", "md", "lg"],
+      options: ["xs", "sm", "md", "lg"],
       description: "Thickness of the slider track",
     },
     disabled: {

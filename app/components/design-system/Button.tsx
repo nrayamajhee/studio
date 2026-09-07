@@ -25,6 +25,7 @@ export const buttonVariants = cva(
         secondary: "focus-visible:ring-font-light",
       },
       size: {
+        xs: "px-2 py-1 text-xs rounded-md gap-1.5",
         sm: "px-3.5 py-2 text-xs rounded-lg gap-2",
         md: "px-5 py-3 text-sm rounded-xl gap-3",
         lg: "px-6 py-4 text-base rounded-2xl gap-3.5",
@@ -223,11 +224,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(
           buttonVariants({ variant, tone, size, rounded, fullWidth, align }),
           isIconOnly &&
-            (size === "sm"
-              ? "p-2 aspect-square"
-              : size === "lg"
-                ? "p-3.5 aspect-square"
-                : "p-2.5 aspect-square"),
+            (size === "xs"
+              ? "p-1.5 aspect-square"
+              : size === "sm"
+                ? "p-2 aspect-square"
+                : size === "lg"
+                  ? "p-3.5 aspect-square"
+                  : "p-2.5 aspect-square"),
           isLoading && "cursor-wait",
           className,
         )}
@@ -241,7 +244,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               <Loader2
                 className={cn(
                   "animate-spin flex-shrink-0",
-                  size === "sm" ? "w-4 h-4" : "w-5 h-5",
+                  size === "xs" || size === "sm" ? "w-3.5 h-3.5" : "w-5 h-5",
                 )}
               />
             ) : (
@@ -257,6 +260,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 <span
                   className={cn(
                     "flex flex-col min-w-0",
+                    align === "between" && "flex-1 text-left items-start pr-1.5",
                     subtitle
                       ? "text-left items-start"
                       : align === "right"
@@ -271,7 +275,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                       asChild
                       className={cn(
                         "font-semibold leading-snug tracking-tight text-inherit dark:text-inherit truncate",
-                        size === "sm" ? "!text-xs" : size === "lg" ? "!text-base" : "!text-sm",
+                        size === "xs"
+                          ? "!text-[11px]"
+                          : size === "sm"
+                            ? "!text-xs"
+                            : size === "lg"
+                              ? "!text-base"
+                              : "!text-sm",
                       )}
                     >
                       <span>{content}</span>

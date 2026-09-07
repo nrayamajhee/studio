@@ -14,6 +14,7 @@ export const sliderVariants = cva(
         secondary: "focus-visible:ring-2 focus-visible:ring-stone-400/40",
       },
       size: {
+        xs: "",
         sm: "",
         md: "",
         lg: "",
@@ -109,20 +110,29 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
     };
 
     const sizeConfigs = {
+      xs: {
+        trackHeight: "4px",
+        trackRadius: "2px",
+        thumbSize: "11px",
+        inputHeight: "14px",
+      },
       sm: {
         trackHeight: "6px",
         trackRadius: "4px",
         thumbSize: "14px",
+        inputHeight: "18px",
       },
       md: {
         trackHeight: "8px",
         trackRadius: "5px",
         thumbSize: "16px",
+        inputHeight: "20px",
       },
       lg: {
         trackHeight: "10px",
         trackRadius: "6px",
         thumbSize: "18px",
+        inputHeight: "24px",
       },
     };
 
@@ -137,6 +147,7 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
       "--slider-track-height": sizeConfig.trackHeight,
       "--slider-track-radius": sizeConfig.trackRadius,
       "--slider-thumb-size": sizeConfig.thumbSize,
+      "--slider-input-height": sizeConfig.inputHeight,
       ...style,
     } as React.CSSProperties;
 
@@ -154,7 +165,12 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
         )}
       >
         {(label || valueDisplay !== undefined) && (
-          <div className="flex justify-between items-center text-[10px] mb-1">
+          <div
+            className={cn(
+              "flex justify-between items-center",
+              size === "xs" ? "text-[9px] mb-0.5 leading-tight" : "text-[10px] mb-1",
+            )}
+          >
             {label && (
               <label
                 htmlFor={id}

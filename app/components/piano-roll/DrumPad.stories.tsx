@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { DrumPad } from "./DrumPad";
 
 const meta: Meta<typeof DrumPad> = {
-  title: "Components/DrumPad",
+  title: "Instrument/DrumPad",
   component: DrumPad,
   parameters: {
     layout: "centered",

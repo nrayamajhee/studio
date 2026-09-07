@@ -24,14 +24,28 @@ const meta: Meta<typeof Dropdown> = {
       control: "object",
       description: "Options array with value and label",
     },
+    variant: {
+      control: "select",
+      options: ["solid", "outline", "ghost"],
+      description: "Button style variant for trigger",
+    },
     tone: {
-      control: "radio",
-      options: ["accent", "primary", "secondary"],
+      control: "select",
+      options: [
+        "secondary",
+        "primary",
+        "accent",
+        "info",
+        "blue",
+        "warning",
+        "error",
+        "success",
+      ],
       description: "Visual tone and theme colors",
     },
     size: {
       control: "radio",
-      options: ["sm", "md", "lg"],
+      options: ["xs", "sm", "md", "lg"],
       description: "Input size",
     },
     disabled: {
@@ -49,6 +63,7 @@ export const Default: Story = {
     label: "Waveform Option",
     options: sampleOptions,
     defaultValue: "triangle",
+    variant: "solid",
     tone: "primary",
     size: "sm",
   },
@@ -61,17 +76,36 @@ export const Default: Story = {
   ],
 };
 
-export const AccentTone: Story = {
+export const OutlineVariant: Story = {
   args: {
-    label: "Osc 1 Waveform",
+    label: "Outline Dropdown",
     options: sampleOptions,
-    defaultValue: "triangle",
-    tone: "accent",
+    defaultValue: "sawtooth",
+    variant: "outline",
+    tone: "secondary",
     size: "sm",
   },
   decorators: [
     (Story) => (
-      <div className="w-64 p-4 bg-[#0a0c10] rounded-xl border border-stone-800">
+      <div className="w-64">
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+export const PrimaryTone: Story = {
+  args: {
+    label: "Primary Dropdown",
+    options: sampleOptions,
+    defaultValue: "square",
+    variant: "solid",
+    tone: "primary",
+    size: "sm",
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-64">
         <Story />
       </div>
     ),

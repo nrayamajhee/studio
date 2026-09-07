@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { OctaveJumpControl } from "./OctaveJumpControl";
 
 const meta: Meta<typeof OctaveJumpControl> = {
-  title: "Components/PianoRoll/OctaveJumpControl",
+  title: "Instrument/OctaveJumpControl",
   component: OctaveJumpControl,
   parameters: {
     layout: "centered",

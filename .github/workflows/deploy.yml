@@ -36,7 +36,7 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Build static SPA
+      - name: Build static SPA and Storybook
         run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
@@ -44,6 +44,13 @@ jobs:
       - name: Prepare GitHub Pages artifacts
         run: |
           touch build/client/.nojekyll
+          REPO_NAME="${{ github.event.repository.name }}"
+          if [ -z "$REPO_NAME" ]; then
+            REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          fi
+          if [ -d "build/client/$REPO_NAME" ]; then
+            cp -r "build/client/$REPO_NAME"/* build/client/
+          fi
           cp build/client/index.html build/client/404.html
 
       - name: Setup Pages
