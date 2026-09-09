@@ -23,6 +23,7 @@ export interface Track {
   playerView: "keys" | "drums";
   synthParams: SynthParams;
   clipCount: number;
+  startMeasure?: number;
 }
 
 export interface Song {
@@ -94,6 +95,7 @@ export const DEFAULT_TRACKS: Track[] = [
     playerView: "drums",
     synthParams: { ...SYNTH_PRESETS.drum_set },
     clipCount: 4,
+    startMeasure: 0,
   },
   {
     id: "track-2",
@@ -147,6 +149,7 @@ export const DEFAULT_TRACKS: Track[] = [
     playerView: "keys",
     synthParams: { ...SYNTH_PRESETS.grand_piano },
     clipCount: 4,
+    startMeasure: 0,
   },
 ];
 
@@ -172,6 +175,7 @@ export interface StudioState {
   timeSignature?: "4/4" | "3/4" | "triplet";
   volume: number;
   isLooping: boolean;
+  isMetronomeOn?: boolean;
   selectedPreset: string;
   jumpOctave: number;
   velocity: number;
@@ -192,6 +196,7 @@ export const DEFAULT_STUDIO_STATE: StudioState = {
   timeSignature: "4/4",
   volume: 0.7,
   isLooping: true,
+  isMetronomeOn: false,
   selectedPreset: "grand_piano",
   jumpOctave: 4,
   velocity: 85,
@@ -358,6 +363,7 @@ export function addTrack(
     playerView: isDrum ? "drums" : "keys",
     synthParams: { ...synth.params },
     clipCount: newTrackProps.clipCount || 4,
+    startMeasure: newTrackProps.startMeasure ?? 0,
   };
 
   return {

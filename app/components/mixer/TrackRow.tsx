@@ -3,6 +3,7 @@ import { type Track } from "../../lib/studioStorage";
 import { TrackClip } from "./TrackClip";
 import { Button } from "../design-system/Button";
 import { Slider } from "../design-system/Slider";
+import { Caption } from "../design-system/Typography";
 import { cn } from "../../lib/utils";
 import {
   Drum,
@@ -17,6 +18,7 @@ export interface TrackRowProps {
   isActive: boolean;
   measureWidth: number;
   totalMeasures: number;
+  isSnapEnabled?: boolean;
   onSelect: () => void;
   onUpdate: (updates: Partial<Track>) => void;
   onDelete?: () => void;
@@ -28,6 +30,7 @@ export function TrackRow({
   isActive,
   measureWidth,
   totalMeasures,
+  isSnapEnabled,
   onSelect,
   onUpdate,
   onDelete,
@@ -69,16 +72,16 @@ export function TrackRow({
       className={cn(
         "flex h-24 border-b border-stone-200 dark:border-stone-800 transition-colors group/row focus:outline-none focus:ring-1 focus:ring-primary/40",
         isActive
-          ? "bg-stone-100/80 dark:bg-[#0f141f]"
-          : "hover:bg-stone-50/50 dark:hover:bg-[#0a0d14]/50",
+          ? "bg-stone-100/80 dark:bg-stone-900/60"
+          : "hover:bg-stone-50/50 dark:hover:bg-stone-900/30",
       )}
     >
       <div
         className={cn(
-          "w-72 lg:w-80 flex-shrink-0 flex flex-col justify-between p-2.5 border-r border-stone-200 dark:border-stone-800 sticky left-0 z-10 select-none",
+          "w-72 lg:w-80 flex-shrink-0 flex flex-col justify-between p-2.5 border-r border-stone-200 dark:border-stone-800 sticky left-0 z-30 select-none",
           isActive
-            ? "bg-stone-100 dark:bg-[#111622]"
-            : "bg-stone-50 dark:bg-[#0d1017]",
+            ? "bg-stone-100 dark:bg-stone-900"
+            : "bg-stone-50 dark:bg-surface-dark",
         )}
         style={{
           borderLeft: `4px solid ${track.color}`,
@@ -118,7 +121,7 @@ export function TrackRow({
                 "w-5 h-5 rounded text-[10px] font-bold font-mono p-0",
                 track.isMuted
                   ? "bg-amber-500 text-stone-900 shadow-sm"
-                  : "bg-stone-200 dark:bg-[#1a2130] text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 border border-stone-300 dark:border-stone-700",
+                  : "bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 border border-stone-300 dark:border-stone-700",
               )}
             >
               M
@@ -136,7 +139,7 @@ export function TrackRow({
                 "w-5 h-5 rounded text-[10px] font-bold font-mono p-0",
                 track.isSolo
                   ? "bg-yellow-400 text-stone-950 font-black shadow-sm"
-                  : "bg-stone-200 dark:bg-[#1a2130] text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 border border-stone-300 dark:border-stone-700",
+                  : "bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 border border-stone-300 dark:border-stone-700",
               )}
             >
               S
@@ -164,8 +167,12 @@ export function TrackRow({
 
         <div className="flex flex-col gap-0.5 pt-1">
           <div className="flex items-center justify-between text-[9px] font-mono text-stone-500 dark:text-stone-400">
-            <span>VOL</span>
-            <span>{volDb}</span>
+            <Caption asChild>
+              <span className="text-[9px] font-mono text-stone-500 dark:text-stone-400">VOL</span>
+            </Caption>
+            <Caption asChild>
+              <span className="text-[9px] font-mono text-stone-500 dark:text-stone-400">{volDb}</span>
+            </Caption>
           </div>
           <Slider
             min={0}
@@ -192,7 +199,9 @@ export function TrackRow({
           track={track}
           measureWidth={measureWidth}
           isSelected={isActive}
+          isSnapEnabled={isSnapEnabled}
           onClipCountChange={(count) => onUpdate({ clipCount: count })}
+          onMoveClip={(startMeasure) => onUpdate({ startMeasure })}
           onOpenInstrument={onOpenInstrument}
         />
       </div>

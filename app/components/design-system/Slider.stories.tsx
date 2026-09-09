@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Slider } from "./Slider";
+import { Card } from "./Card";
 
 const meta: Meta<typeof Slider> = {
   title: "Design System/Slider",
@@ -82,9 +83,9 @@ export const InfoTone: Story = {
   },
   decorators: [
     (Story) => (
-      <div className="w-64 p-4 bg-[#0a0c10] rounded-xl border border-stone-800">
+      <Card elevation="low" className="w-64 p-4 bg-surface-dark rounded-xl border border-stone-800">
         <Story />
-      </div>
+      </Card>
     ),
   ],
 };
@@ -102,9 +103,9 @@ export const AccentTone: Story = {
   },
   decorators: [
     (Story) => (
-      <div className="w-64 p-4 bg-[#0a0c10] rounded-xl border border-stone-800">
+      <Card elevation="low" className="w-64 p-4 bg-surface-dark rounded-xl border border-stone-800">
         <Story />
-      </div>
+      </Card>
     ),
   ],
 };

@@ -19,6 +19,7 @@ const meta = {
     isActive: { control: "boolean" },
     measureWidth: { control: { type: "range", min: 80, max: 200, step: 10 } },
     totalMeasures: { control: { type: "number", min: 4, max: 32 } },
+    isSnapEnabled: { control: "boolean" },
     onSelect: { action: "selected" },
     onUpdate: { action: "updated" },
     onDelete: { action: "deleted" },
@@ -36,6 +37,7 @@ export const Default: Story = {
     isActive: true,
     measureWidth: 140,
     totalMeasures: 16,
+    isSnapEnabled: true,
   },
   render: (args) => (
     <div className="w-[800px] bg-stone-900 rounded overflow-hidden">

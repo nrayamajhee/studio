@@ -4,6 +4,6 @@ export default {
   ssr: false,
   basename: process.env.BASE_PATH || "/",
   async prerender({ getStaticPaths }) {
-    return [...getStaticPaths(), "/instrument"];
+    return [...getStaticPaths(), "/studio"];
   },
 } satisfies Config;

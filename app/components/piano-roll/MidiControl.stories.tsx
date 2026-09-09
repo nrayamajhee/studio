@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { MidiControl } from "./MidiControl";
+import { Card } from "../design-system/Card";
+import { Caption } from "../design-system/Typography";
 
 const meta: Meta<typeof MidiControl> = {
   title: "Instrument/MidiControl",
@@ -19,12 +21,12 @@ export const Default: Story = {
 
 export const InHeaderContext: Story = {
   render: () => (
-    <div className="flex items-center gap-3 p-3 bg-white dark:bg-[#06080c] rounded-xl border border-stone-200 dark:border-[#1f2533] shadow-sm">
-      <span className="text-xs font-mono font-bold text-stone-500 uppercase">
+    <Card elevation="low" className="flex flex-row items-center gap-3 p-3 bg-white dark:bg-surface-dark rounded-xl border border-stone-200 dark:border-stone-800 shadow-sm">
+      <Caption className="text-xs font-mono font-bold text-stone-500 uppercase">
         Studio Transport
-      </span>
+      </Caption>
       <div className="h-4 w-px bg-stone-300 dark:bg-stone-700" />
       <MidiControl />
-    </div>
+    </Card>
   ),
 };

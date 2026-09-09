@@ -1,6 +1,7 @@
 import React, { forwardRef, useId } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
+import { Label, Caption } from "./Typography";
 
 export const sliderVariants = cva(
   "custom-slider appearance-none cursor-pointer transition-all focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
@@ -172,17 +173,21 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
             )}
           >
             {label && (
-              <label
-                htmlFor={id}
-                className="font-medium text-stone-700 dark:text-[#858b9c] truncate"
-              >
-                {label}
-              </label>
+              <Label asChild>
+                <label
+                  htmlFor={id}
+                  className="font-medium text-stone-700 dark:text-[#858b9c] truncate"
+                >
+                  {label}
+                </label>
+              </Label>
             )}
             {valueDisplay !== undefined && (
-              <span className="font-mono font-semibold text-stone-700 dark:text-[#e6e8ec] ml-2 flex-shrink-0">
-                {valueDisplay}
-              </span>
+              <Caption asChild>
+                <span className="font-mono font-semibold text-stone-700 dark:text-[#e6e8ec] ml-2 flex-shrink-0">
+                  {valueDisplay}
+                </span>
+              </Caption>
             )}
           </div>
         )}

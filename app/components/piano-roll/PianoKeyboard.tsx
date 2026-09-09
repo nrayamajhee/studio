@@ -15,6 +15,7 @@ import {
 import { synth } from "../../lib/synth";
 import { Button } from "../design-system/Button";
 import { Card } from "../design-system/Card";
+import { Label, Caption } from "../design-system/Typography";
 import { PianoKey } from "./PianoKey";
 import { cn } from "../../lib/utils";
 
@@ -360,13 +361,15 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
       100;
 
     return (
-      <div className="flex flex-col gap-1.5 pb-1 border-b border-stone-200 dark:border-[#1f2533]">
+      <div className="flex flex-col gap-1.5 pb-1 border-b border-stone-200 dark:border-stone-800">
         {isRecording && (
           <div className="flex items-center justify-end">
-            <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 animate-pulse bg-red-950/40 px-1.5 py-0.5 rounded border border-red-800/50">
-              <Radio className="w-3 h-3" />
-              REC
-            </span>
+            <Caption asChild>
+              <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 animate-pulse bg-red-950/40 px-1.5 py-0.5 rounded border border-red-800/50">
+                <Radio className="w-3 h-3" />
+                REC
+              </span>
+            </Caption>
           </div>
         )}
 
@@ -378,7 +381,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
             onClick={() => setBaseOctave((prev) => Math.max(1, prev - 1))}
             disabled={disabled || baseOctave <= 1}
             aria-label="Scroll octave left"
-            className="p-1 h-auto rounded bg-stone-100 hover:bg-stone-200 dark:bg-[#161a24] dark:hover:bg-[#232a3b] border border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300"
+            className="p-1 h-auto rounded bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </Button>
@@ -395,7 +398,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
             onMouseDown={handleMiniMapMouseDown}
             onWheel={handleMiniMapWheel}
             title="Mini Piano Map: Click or drag to scroll octaves"
-            className="relative flex-1 h-6 bg-stone-100 dark:bg-[#07080c] border border-stone-200 dark:border-[#1f2533] rounded-md overflow-hidden cursor-pointer flex items-end shadow-inner focus-visible:ring-1 focus-visible:ring-primary"
+            className="relative flex-1 h-6 bg-stone-100 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 rounded-md overflow-hidden cursor-pointer flex items-end shadow-inner focus-visible:ring-1 focus-visible:ring-primary"
           >
             <div className="absolute inset-0 flex">
               {MINI_MAP_OCTAVES.map((oct) => (
@@ -440,9 +443,11 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
                     },
                   )}
 
-                  <span className="absolute bottom-0 left-0.5 text-[7px] font-mono text-stone-900 font-bold pointer-events-none opacity-80">
-                    C{oct}
-                  </span>
+                  <Caption asChild>
+                    <span className="absolute bottom-0 left-0.5 text-[7px] font-mono text-stone-900 font-bold pointer-events-none opacity-80">
+                      C{oct}
+                    </span>
+                  </Caption>
                 </div>
               ))}
             </div>
@@ -463,7 +468,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
             onClick={() => setBaseOctave((prev) => Math.min(maxOctave, prev + 1))}
             disabled={disabled || baseOctave >= maxOctave}
             aria-label="Scroll octave right"
-            className="p-1 h-auto rounded bg-stone-100 hover:bg-stone-200 dark:bg-[#161a24] dark:hover:bg-[#232a3b] border border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300"
+            className="p-1 h-auto rounded bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300"
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </Button>
@@ -480,11 +485,12 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
     const descendingOctaves = [...octaveList].reverse();
 
     return (
-      <div
+      <Card
+        elevation="mid"
         role="group"
         aria-label="Piano keyboard"
         className={cn(
-          "inline-flex flex-col select-none bg-white dark:bg-[#0a0c10] border border-stone-200 dark:border-[#1f2533] rounded-xl overflow-hidden shadow-sm dark:shadow-lg p-2.5",
+          "inline-flex flex-col select-none bg-surface-light dark:bg-surface-dark border border-stone-200 dark:border-stone-800 rounded-xl overflow-hidden shadow-sm dark:shadow-lg p-2.5",
           className,
         )}
       >
@@ -594,7 +600,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
             </div>
           );
         })}
-      </div>
+      </Card>
     );
   }
 
@@ -602,14 +608,17 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
     <Card
       elevation="mid"
       className={cn(
-        "flex flex-col h-full w-full bg-white dark:bg-[#0a0c10] border border-stone-200 dark:border-[#1f2533] rounded-xl overflow-hidden shadow-sm dark:shadow-lg text-stone-900 dark:text-stone-100 p-2.5 gap-2 select-none",
+        "flex flex-col h-full w-full bg-surface-light dark:bg-surface-dark border border-stone-200 dark:border-stone-800 rounded-xl overflow-hidden shadow-sm dark:shadow-lg text-stone-900 dark:text-stone-100 p-2.5 gap-2 select-none",
         className,
       )}
     >
       {shouldShowMiniMap && renderMiniMap()}
 
       <div className="flex-1 flex items-center justify-center overflow-x-auto py-1">
-        <div className="relative flex items-start bg-stone-100 dark:bg-[#06080c] p-1.5 rounded-lg border border-stone-200 dark:border-[#1f2533] shadow-inner">
+        <Card
+          elevation="low"
+          className="relative flex flex-row items-start bg-stone-100 dark:bg-stone-950 p-1.5 rounded-lg border border-stone-200 dark:border-stone-800 shadow-inner"
+        >
           {keysList.map((item) => {
             const isPressed = isNotePressed(item.fullName);
             const isActive = activeNotesSet.has(item.fullName);
@@ -648,7 +657,7 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
               />
             );
           })}
-        </div>
+        </Card>
       </div>
     </Card>
   );

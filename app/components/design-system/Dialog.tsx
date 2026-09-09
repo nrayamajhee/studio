@@ -2,6 +2,9 @@ import React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { Card } from "./Card";
+import { Button } from "./Button";
+import { Title, Paragraph } from "./Typography";
 
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
@@ -34,21 +37,29 @@ export const DialogContent = React.forwardRef<
 >(({ className, children, showCloseButton = true, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-stone-200 dark:border-[#1f2533] bg-white dark:bg-[#0c0f16] p-6 shadow-2xl duration-150 rounded-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-md p-1 opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-600 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white cursor-pointer">
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
-      )}
+    <DialogPrimitive.Content asChild ref={ref} {...props}>
+      <Card
+        elevation="high"
+        className={cn(
+          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-stone-200 dark:border-stone-800 bg-surface-light dark:bg-surface-dark p-6 shadow-2xl duration-150 rounded-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
+          className,
+        )}
+      >
+        {children}
+        {showCloseButton && (
+          <DialogPrimitive.Close asChild>
+            <Button
+              variant="ghost"
+              tone="secondary"
+              size="xs"
+              className="absolute right-4 top-4 rounded-md p-1 opacity-70 transition-opacity hover:opacity-100 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogPrimitive.Close>
+        )}
+      </Card>
     </DialogPrimitive.Content>
   </DialogPortal>
 ));
@@ -86,14 +97,14 @@ export const DialogTitle = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title
-    ref={ref}
-    className={cn(
-      "text-lg font-semibold leading-none tracking-tight text-stone-900 dark:text-stone-100",
-      className,
-    )}
-    {...props}
-  />
+  <DialogPrimitive.Title asChild ref={ref} {...props}>
+    <Title
+      className={cn(
+        "text-lg font-semibold leading-none tracking-tight text-stone-900 dark:text-stone-100",
+        className,
+      )}
+    />
+  </DialogPrimitive.Title>
 ));
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
@@ -101,13 +112,13 @@ export const DialogDescription = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Description
-    ref={ref}
-    className={cn(
-      "text-xs text-stone-500 dark:text-stone-400 leading-relaxed",
-      className,
-    )}
-    {...props}
-  />
+  <DialogPrimitive.Description asChild ref={ref} {...props}>
+    <Paragraph
+      className={cn(
+        "text-xs text-stone-500 dark:text-stone-400 leading-relaxed",
+        className,
+      )}
+    />
+  </DialogPrimitive.Description>
 ));
 DialogDescription.displayName = DialogPrimitive.Description.displayName;

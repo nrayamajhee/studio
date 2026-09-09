@@ -1,16 +1,33 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useStudioStorage } from "../../lib/studioStorage";
-import { synth, type SynthParams } from "../../lib/synth";
+import {
+  synth,
+  type SynthParams,
+  type SynthFilterType,
+  type LfoDestination,
+  type EnvelopeMode,
+  type EffectsMode,
+} from "../../lib/synth";
 import { Card } from "../design-system/Card";
 import { Slider } from "../design-system/Slider";
 import { Dropdown } from "../design-system/Dropdown";
+import { Label } from "../design-system/Typography";
 import { cn } from "../../lib/utils";
+import {
+  ExciterVisualizer,
+  ToneCoreVisualizer,
+  FilterVisualizer,
+  LfoVisualizer,
+  AdsrVisualizer,
+  BodySpaceVisualizer,
+} from "./SynthVisualizers";
 
 export interface SynthControlsProps {
   className?: string;
   selectedPreset?: string;
   leftHeaderSlot?: React.ReactNode;
   rightHeaderSlot?: React.ReactNode;
+  orientation?: "horizontal" | "vertical";
 }
 
 export const SynthControls: React.FC<SynthControlsProps> = ({
@@ -18,6 +35,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
   selectedPreset = "grand_piano",
   leftHeaderSlot,
   rightHeaderSlot,
+  orientation = "horizontal",
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [studio, setStudio] = useStudioStorage();
@@ -48,12 +66,11 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
       const height = canvas.height;
 
       const isDark = document.documentElement.classList.contains("dark");
-      ctx.fillStyle = isDark ? "#07090e" : "#0f172a";
+      ctx.fillStyle = isDark ? "#0c0a09" : "#1c1917";
       ctx.fillRect(0, 0, width, height);
 
-      // Baseline glowing amber wire
       ctx.lineWidth = 1;
-      ctx.strokeStyle = isDark ? "#1e293b" : "#e2e8f0";
+      ctx.strokeStyle = isDark ? "#292524" : "#44403c";
       ctx.beginPath();
       ctx.moveTo(0, height / 2);
       ctx.lineTo(width, height / 2);
@@ -113,6 +130,19 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
     setStudio((prev) => ({ ...prev, synthParams: updated }));
   };
 
+  const isVertical = orientation === "vertical";
+  const cardClassName = cn(
+    "bg-surface-light dark:bg-surface-dark border border-stone-200 dark:border-stone-800 rounded-xl p-2.5 shadow-sm overflow-visible",
+    isVertical
+      ? "w-full flex-shrink-0 flex flex-col gap-1.5"
+      : "min-w-[150px] max-w-[195px] flex-1 flex flex-col justify-between",
+  );
+  const cardBodyClassName = cn(
+    isVertical
+      ? "space-y-1.5 flex flex-col"
+      : "space-y-1 flex-1 flex flex-col justify-between min-h-0",
+  );
+
   return (
     <div
       className={cn(
@@ -120,35 +150,44 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
         className,
       )}
     >
-      {/* Waveform Canvas Container & Expansion Slots */}
       <div className="flex items-center gap-1.5 flex-shrink-0 w-full">
         {leftHeaderSlot}
         <Card
           elevation="low"
-          className="flex-1 bg-stone-100 dark:bg-[#0b0e14] border border-stone-200 dark:border-[#1f2533] rounded-lg p-0.5 sm:p-1 flex flex-col justify-center flex-shrink-0 shadow-inner min-w-0"
+          className="flex-1 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg p-0.5 sm:p-1 flex flex-col justify-center flex-shrink-0 shadow-inner min-w-0"
         >
           <canvas
             ref={canvasRef}
             width={640}
             height={32}
-            className="w-full h-5 sm:h-6 rounded bg-[#0f172a] dark:bg-[#05070a] border border-stone-300 dark:border-[#171c26]"
+            className="w-full h-5 sm:h-6 rounded bg-stone-900 dark:bg-stone-950 border border-stone-300 dark:border-stone-800"
           />
         </Card>
         {rightHeaderSlot}
       </div>
 
-      {/* 6 Module Cards Side-by-Side */}
-      <div className="flex-1 min-h-0 flex items-stretch gap-2 overflow-x-auto pb-1">
-        {/* 1. Exciter / Click */}
-        <Card
-          elevation="low"
-          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2 flex flex-col justify-between min-w-[150px] max-w-[195px] flex-1 shadow-sm overflow-visible"
-        >
-          <span className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
+      <div
+        className={cn(
+          "flex-1 min-h-0",
+          isVertical
+            ? "flex flex-col gap-2 overflow-y-auto pr-0.5 custom-scrollbar"
+            : "flex items-stretch gap-2 overflow-x-auto pb-1",
+        )}
+      >
+        <Card elevation="low" className={cardClassName}>
+          <Label className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
             1. Exciter / Click
-          </span>
+          </Label>
 
-          <div className="space-y-1 flex-1 flex flex-col justify-between min-h-0">
+          <ExciterVisualizer
+            mode={params.exciterMode}
+            vol={params.exciterVol}
+            freq={params.exciterFreq}
+            decay={params.exciterDecay}
+            className="mb-1"
+          />
+
+          <div className={cardBodyClassName}>
             <Dropdown
               tone="primary"
               size="xs"
@@ -160,7 +199,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
                 { value: "noise", label: "Noise Transient (Pluck)" },
                 { value: "click", label: "High Click (Slap)" },
                 { value: "drum", label: "Acoustic Drum (Kick)" },
-                { value: "off", label: "Disabled" },
+                { value: "off", label: "Disabled (Bypass)" },
               ]}
             />
 
@@ -202,29 +241,34 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           </div>
         </Card>
 
-        {/* 2. Tone Core */}
-        <Card
-          elevation="low"
-          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2 flex flex-col justify-between min-w-[150px] max-w-[195px] flex-1 shadow-sm overflow-visible"
-        >
-          <span className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
+        <Card elevation="low" className={cardClassName}>
+          <Label className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
             2. Tone Core
-          </span>
+          </Label>
 
-          <div className="space-y-1 flex-1 flex flex-col justify-between min-h-0">
+          <ToneCoreVisualizer
+            osc1Wave={params.osc1Wave}
+            osc2Wave={params.osc2Wave}
+            detune={params.detune}
+            osc2Oct={params.osc2Oct}
+            className="mb-1"
+          />
+
+          <div className={cardBodyClassName}>
             <Dropdown
               tone="primary"
               size="xs"
               label="Osc 1 Waveform"
               value={params.osc1Wave}
               onChange={(val) =>
-                handleParamChange("osc1Wave", val as OscillatorType)
+                handleParamChange("osc1Wave", val as OscillatorType | "off")
               }
               options={[
                 { value: "triangle", label: "Triangle (Grand)" },
                 { value: "sawtooth", label: "Sawtooth (Bright)" },
                 { value: "square", label: "Square (Hollow)" },
                 { value: "sine", label: "Sine (Sub)" },
+                { value: "off", label: "Disabled (Off)" },
               ]}
             />
 
@@ -241,7 +285,7 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
                 { value: "sawtooth", label: "Sawtooth (Detune)" },
                 { value: "sine", label: "Sine (Sub Octave)" },
                 { value: "square", label: "Square (Lead)" },
-                { value: "off", label: "Disabled" },
+                { value: "off", label: "Disabled (Off)" },
               ]}
             />
 
@@ -274,29 +318,34 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           </div>
         </Card>
 
-        {/* 3. Filter Matrix */}
-        <Card
-          elevation="low"
-          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2 flex flex-col justify-between min-w-[150px] max-w-[195px] flex-1 shadow-sm overflow-visible"
-        >
-          <span className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
+        <Card elevation="low" className={cardClassName}>
+          <Label className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
             3. Filter Matrix
-          </span>
+          </Label>
 
-          <div className="space-y-1 flex-1 flex flex-col justify-between min-h-0">
+          <FilterVisualizer
+            filterType={params.filterType}
+            cutoff={params.cutoff}
+            envMod={params.envMod}
+            keytrack={params.keytrack}
+            className="mb-1"
+          />
+
+          <div className={cardBodyClassName}>
             <Dropdown
               tone="primary"
               size="xs"
               label="Filter Mode"
               value={params.filterType}
               onChange={(val) =>
-                handleParamChange("filterType", val as BiquadFilterType)
+                handleParamChange("filterType", val as SynthFilterType)
               }
               options={[
                 { value: "lowpass", label: "Lowpass (24dB)" },
                 { value: "bandpass", label: "Bandpass (12dB)" },
                 { value: "highpass", label: "Highpass (12dB)" },
                 { value: "notch", label: "Notch Filter" },
+                { value: "off", label: "Disabled (Bypass)" },
               ]}
             />
 
@@ -338,27 +387,34 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           </div>
         </Card>
 
-        {/* 4. LFO & Mod */}
-        <Card
-          elevation="low"
-          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2 flex flex-col justify-between min-w-[150px] max-w-[195px] flex-1 shadow-sm overflow-visible"
-        >
-          <span className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
+        <Card elevation="low" className={cardClassName}>
+          <Label className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
             4. LFO & Mod
-          </span>
+          </Label>
 
-          <div className="space-y-1 flex-1 flex flex-col justify-between min-h-0">
+          <LfoVisualizer
+            dest={params.lfoDest}
+            rate={params.lfoRate}
+            depth={params.lfoDepth}
+            ksFeed={params.ksFeed}
+            className="mb-1"
+          />
+
+          <div className={cardBodyClassName}>
             <Dropdown
               tone="primary"
               size="xs"
               label="LFO Destination"
               value={params.lfoDest}
-              onChange={(val) => handleParamChange("lfoDest", val as never)}
+              onChange={(val) =>
+                handleParamChange("lfoDest", val as LfoDestination)
+              }
               options={[
                 { value: "pitch", label: "Pitch (Vibrato / Chor)" },
                 { value: "filter", label: "Filter (Auto-Wah)" },
                 { value: "amp", label: "Volume (Tremolo)" },
                 { value: "pan", label: "Stereo Auto-Pan" },
+                { value: "off", label: "Disabled (Off)" },
               ]}
             />
 
@@ -400,16 +456,36 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           </div>
         </Card>
 
-        {/* 5. Amplitude ADSR */}
-        <Card
-          elevation="low"
-          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2 flex flex-col justify-between min-w-[150px] max-w-[195px] flex-1 shadow-sm overflow-visible"
-        >
-          <span className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
+        <Card elevation="low" className={cardClassName}>
+          <Label className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
             5. Amplitude ADSR
-          </span>
+          </Label>
 
-          <div className="space-y-1 flex-1 flex flex-col justify-between min-h-0">
+          <AdsrVisualizer
+            envMode={params.envMode || "adsr"}
+            attack={params.attack}
+            decay={params.decay}
+            sustain={params.sustain}
+            release={params.release}
+            className="mb-1"
+          />
+
+          <div className={cardBodyClassName}>
+            <Dropdown
+              tone="primary"
+              size="xs"
+              label="Envelope Mode"
+              value={params.envMode || "adsr"}
+              onChange={(val) =>
+                handleParamChange("envMode", val as EnvelopeMode)
+              }
+              options={[
+                { value: "adsr", label: "ADSR Envelope" },
+                { value: "gate", label: "Gate (Hold)" },
+                { value: "off", label: "Disabled (Bypass)" },
+              ]}
+            />
+
             <Slider
               tone="primary"
               size="xs"
@@ -460,16 +536,37 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
           </div>
         </Card>
 
-        {/* 6. Body & Space */}
-        <Card
-          elevation="low"
-          className="bg-white dark:bg-[#0e121a] border border-stone-200 dark:border-[#1f2533] rounded-xl p-2 flex flex-col justify-between min-w-[150px] max-w-[195px] flex-1 shadow-sm overflow-visible"
-        >
-          <span className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
+        <Card elevation="low" className={cardClassName}>
+          <Label className="text-[10px] font-bold tracking-wider text-stone-700 dark:text-stone-300 uppercase mb-0.5 block flex-shrink-0">
             6. Body & Space
-          </span>
+          </Label>
 
-          <div className="space-y-1 flex-1 flex flex-col justify-between min-h-0">
+          <BodySpaceVisualizer
+            fxMode={params.fxMode || "all"}
+            lowEq={params.lowEq}
+            drive={params.drive}
+            reverb={params.reverb}
+            masterVol={params.masterVol}
+            className="mb-1"
+          />
+
+          <div className={cardBodyClassName}>
+            <Dropdown
+              tone="primary"
+              size="xs"
+              label="Effects Mode"
+              value={params.fxMode || "all"}
+              onChange={(val) =>
+                handleParamChange("fxMode", val as EffectsMode)
+              }
+              options={[
+                { value: "all", label: "Enabled (All FX)" },
+                { value: "reverb", label: "Reverb Only" },
+                { value: "drive", label: "Drive Only" },
+                { value: "off", label: "Disabled (Bypass FX)" },
+              ]}
+            />
+
             <Slider
               tone="primary"
               size="xs"

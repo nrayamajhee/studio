@@ -10,6 +10,8 @@ import {
   DialogClose,
 } from "../design-system/Dialog";
 import { Button } from "../design-system/Button";
+import { Card } from "../design-system/Card";
+import { Label, Caption, Paragraph } from "../design-system/Typography";
 import {
   saveCustomPreset,
   PRESET_ICONS,
@@ -117,35 +119,42 @@ export const SaveSynthDialog: React.FC<SaveSynthDialogProps> = ({
           </DialogHeader>
 
           {/* Live Preview Card */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-stone-100 dark:bg-[#07090e] border border-stone-200 dark:border-[#1f2533]">
+          <Card
+            elevation="low"
+            className="flex flex-row items-center justify-between p-3 rounded-xl bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800"
+          >
             <div className="flex flex-col">
-              <span className="text-[11px] font-mono text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+              <Caption className="text-[11px] font-mono text-stone-500 dark:text-stone-400 uppercase tracking-wider font-semibold">
                 Preset Preview
-              </span>
-              <span className="text-xs text-stone-700 dark:text-stone-300">
+              </Caption>
+              <Caption className="text-xs text-stone-700 dark:text-stone-300">
                 How it will appear above presets:
-              </span>
+              </Caption>
             </div>
 
             <div className="flex items-center gap-2">
               {/* Unselected preview */}
-              <div
+              <Card
+                elevation="low"
                 className={cn(
                   "w-13 h-13 flex flex-col items-center justify-center p-1 rounded-lg border select-none",
-                  "bg-stone-100/80 dark:bg-[#0d1017] text-stone-600 dark:text-stone-400 border-stone-200/80 dark:border-[#1a202c]",
+                  "bg-stone-100/80 dark:bg-stone-900 text-stone-600 dark:text-stone-400 border-stone-200/80 dark:border-stone-800",
                 )}
                 title="Unselected state"
               >
                 <div className={activeColor.text}>
                   {renderPresetIcon(selectedIconId, "w-4 h-4")}
                 </div>
-                <span className="text-[8.5px] font-mono leading-none tracking-tight truncate max-w-full mt-1 text-center font-medium">
-                  {name.trim() || "Preset"}
-                </span>
-              </div>
+                <Caption asChild>
+                  <span className="text-[8.5px] font-mono leading-none tracking-tight truncate max-w-full mt-1 text-center font-medium">
+                    {name.trim() || "Preset"}
+                  </span>
+                </Caption>
+              </Card>
 
               {/* Selected preview */}
-              <div
+              <Card
+                elevation="low"
                 className={cn(
                   "w-13 h-13 flex flex-col items-center justify-center p-1 rounded-lg border select-none",
                   activeColor.selected,
@@ -155,25 +164,29 @@ export const SaveSynthDialog: React.FC<SaveSynthDialogProps> = ({
                 <div className="text-white">
                   {renderPresetIcon(selectedIconId, "w-4 h-4 text-white")}
                 </div>
-                <span className="text-[8.5px] font-mono leading-none tracking-tight truncate max-w-full mt-1 text-center font-bold text-white">
-                  {name.trim() || "Preset"}
-                </span>
-              </div>
+                <Caption asChild>
+                  <span className="text-[8.5px] font-mono leading-none tracking-tight truncate max-w-full mt-1 text-center font-bold text-white">
+                    {name.trim() || "Preset"}
+                  </span>
+                </Caption>
+              </Card>
             </div>
-          </div>
+          </Card>
 
           {/* Name input */}
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
-              <label
-                htmlFor="synth-preset-name"
-                className="text-xs font-semibold text-stone-800 dark:text-stone-200"
-              >
-                Preset Name
-              </label>
-              <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+              <Label asChild>
+                <label
+                  htmlFor="synth-preset-name"
+                  className="text-xs font-semibold text-stone-800 dark:text-stone-200"
+                >
+                  Preset Name
+                </label>
+              </Label>
+              <Caption className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
                 {name.length}/14
-              </span>
+              </Caption>
             </div>
             <input
               id="synth-preset-name"
@@ -185,21 +198,24 @@ export const SaveSynthDialog: React.FC<SaveSynthDialogProps> = ({
               }}
               placeholder="e.g. Warm Pad, Cosmic Lead"
               className={cn(
-                "w-full px-3 py-2 text-sm rounded-lg border bg-stone-50 dark:bg-[#0a0d14] text-stone-900 dark:text-stone-100 focus:outline-none transition-all",
+                "w-full px-3 py-2 text-sm rounded-lg border bg-stone-50 dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none transition-all",
                 error
                   ? "border-red-500 focus:ring-2 focus:ring-red-400"
                   : "border-stone-300 dark:border-stone-700 focus:ring-2 focus:ring-primary focus:border-primary",
               )}
             />
-            {error && <p className="text-[11px] text-red-500 mt-0.5">{error}</p>}
+            {error && <Caption className="text-[11px] text-red-500 mt-0.5 block">{error}</Caption>}
           </div>
 
           {/* Icon Picker */}
           <div className="space-y-1.5">
-            <span className="text-xs font-semibold text-stone-800 dark:text-stone-200 block">
+            <Label className="text-xs font-semibold text-stone-800 dark:text-stone-200 block">
               Select Icon
-            </span>
-            <div className="grid grid-cols-5 gap-1.5 p-2 rounded-xl bg-stone-50 dark:bg-[#0a0d14] border border-stone-200 dark:border-stone-800 max-h-36 overflow-y-auto">
+            </Label>
+            <Card
+              elevation="low"
+              className="grid grid-cols-5 gap-1.5 p-2 rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 max-h-36 overflow-y-auto"
+            >
               {PRESET_ICONS.map((item) => {
                 const isSelected = selectedIconId === item.id;
                 return (
@@ -216,25 +232,30 @@ export const SaveSynthDialog: React.FC<SaveSynthDialogProps> = ({
                       "flex flex-col items-center justify-center p-2 h-auto rounded-lg border transition-all cursor-pointer",
                       isSelected
                         ? "shadow-sm ring-1 ring-primary"
-                        : "bg-white dark:bg-[#121622] hover:bg-stone-200/60 dark:hover:bg-[#1b2234] border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300",
+                        : "bg-white dark:bg-stone-800 hover:bg-stone-200/60 dark:hover:bg-stone-700 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300",
                     )}
                   >
                     {renderPresetIcon(item.id, "w-4 h-4")}
-                    <span className="text-[8px] font-mono truncate max-w-full mt-1">
-                      {item.name.split(" ")[0]}
-                    </span>
+                    <Caption asChild>
+                      <span className="text-[8px] font-mono truncate max-w-full mt-1">
+                        {item.name.split(" ")[0]}
+                      </span>
+                    </Caption>
                   </Button>
                 );
               })}
-            </div>
+            </Card>
           </div>
 
           {/* Color Accent Picker */}
           <div className="space-y-1.5">
-            <span className="text-xs font-semibold text-stone-800 dark:text-stone-200 block">
+            <Label className="text-xs font-semibold text-stone-800 dark:text-stone-200 block">
               Accent Color
-            </span>
-            <div className="flex items-center gap-2 p-2 rounded-xl bg-stone-50 dark:bg-[#0a0d14] border border-stone-200 dark:border-stone-800 overflow-x-auto">
+            </Label>
+            <Card
+              elevation="low"
+              className="flex flex-row items-center gap-2 p-2 rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 overflow-x-auto"
+            >
               {PRESET_COLORS.map((c) => {
                 const isSelected = selectedColorId === c.id;
                 return (
@@ -258,7 +279,7 @@ export const SaveSynthDialog: React.FC<SaveSynthDialogProps> = ({
                   </Button>
                 );
               })}
-            </div>
+            </Card>
           </div>
 
           <DialogFooter>

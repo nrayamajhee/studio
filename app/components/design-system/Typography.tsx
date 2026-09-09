@@ -4,7 +4,7 @@ import { cn } from "../../lib/utils";
 
 export interface HeadingProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const Heading = forwardRef<HTMLDivElement, HeadingProps>(
@@ -30,7 +30,7 @@ Heading.displayName = "Heading";
 
 export interface TitleProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const Title = forwardRef<HTMLDivElement, TitleProps>(
@@ -56,7 +56,7 @@ Title.displayName = "Title";
 
 export interface SubtitleProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const Subtitle = forwardRef<HTMLDivElement, SubtitleProps>(
@@ -81,7 +81,7 @@ Subtitle.displayName = "Subtitle";
 
 export interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
   asChild?: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const Paragraph = forwardRef<HTMLParagraphElement, ParagraphProps>(
@@ -106,7 +106,7 @@ Paragraph.displayName = "Paragraph";
 
 export interface LabelProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const Label = forwardRef<HTMLDivElement, LabelProps>(
@@ -131,7 +131,7 @@ Label.displayName = "Label";
 
 export interface CaptionProps extends React.HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const Caption = forwardRef<HTMLDivElement, CaptionProps>(

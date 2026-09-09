@@ -296,6 +296,40 @@ export function isNoteInKey(
   return SCALES[scale].intervals.includes(interval);
 }
 
+export function getRootKeySemitoneDelta(
+  oldKey: string,
+  newKey: string,
+): number {
+  const oldIdx = ROOT_KEYS.indexOf(oldKey as (typeof ROOT_KEYS)[number]);
+  const newIdx = ROOT_KEYS.indexOf(newKey as (typeof ROOT_KEYS)[number]);
+  if (oldIdx === -1 || newIdx === -1) return 0;
+  let diff = newIdx - oldIdx;
+  if (diff > 6) diff -= 12;
+  if (diff < -6) diff += 12;
+  return diff;
+}
+
+export function snapNoteToScale(
+  noteFullName: string,
+  rootKey: string,
+  scale: ScaleType,
+): string {
+  if (scale === "chromatic") return noteFullName;
+  const match = noteFullName.match(/^([A-G]#?)(-?\d+)$/);
+  if (!match) return noteFullName;
+  const pitch = match[1];
+  if (isNoteInKey(pitch, rootKey, scale)) return noteFullName;
+
+  for (const delta of [-1, 1, -2, 2]) {
+    const candidate = transposeNote(noteFullName, delta);
+    const cMatch = candidate.match(/^([A-G]#?)(-?\d+)$/);
+    if (cMatch && isNoteInKey(cMatch[1], rootKey, scale)) {
+      return candidate;
+    }
+  }
+  return noteFullName;
+}
+
 export type ChordQuality = "Major" | "Minor";
 
 export interface ProgressionStep {

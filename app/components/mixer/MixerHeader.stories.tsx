@@ -21,6 +21,8 @@ const meta = {
     onStop: () => {},
     onLoopToggle: () => {},
     onBpmChange: () => {},
+    volume: 0.7,
+    onVolumeChange: () => {},
   },
   argTypes: {
     isPlaying: { control: "boolean" },
@@ -28,10 +30,12 @@ const meta = {
     bpm: { control: { type: "range", min: 40, max: 240, step: 1 } },
     currentStep: { control: { type: "number", min: 0, max: 64 } },
     totalStepsPerBar: { control: "number" },
+    volume: { control: { type: "range", min: 0, max: 1, step: 0.01 } },
     onPlayToggle: { action: "playToggled" },
     onStop: { action: "stopped" },
     onLoopToggle: { action: "loopToggled" },
     onBpmChange: { action: "bpmChanged" },
+    onVolumeChange: { action: "volumeChanged" },
   },
 } satisfies Meta<typeof MixerHeader>;
 
@@ -45,6 +49,7 @@ export const Default: Story = {
     bpm: 72,
     currentStep: 0,
     totalStepsPerBar: 16,
+    volume: 0.7,
   },
 };
 

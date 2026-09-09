@@ -10,6 +10,8 @@ import {
   DialogClose,
 } from "./Dialog";
 import { Button } from "./Button";
+import { Card } from "./Card";
+import { Label } from "./Typography";
 
 const meta: Meta = {
   title: "Design System/Dialog",
@@ -73,12 +75,15 @@ export const CustomContent: Story = {
         </DialogHeader>
         <div className="space-y-3 py-2">
           <div className="space-y-1">
-            <span className="text-xs font-medium text-stone-700 dark:text-stone-300">
+            <Label className="text-xs font-medium text-stone-700 dark:text-stone-300">
               Output Device
-            </span>
-            <div className="p-2 text-xs rounded-lg border border-stone-200 dark:border-[#1f2533] bg-stone-50 dark:bg-[#06080c] text-stone-800 dark:text-stone-200">
+            </Label>
+            <Card
+              elevation="low"
+              className="p-2 text-xs rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 text-stone-800 dark:text-stone-200"
+            >
               Default Audio Output (Speakers)
-            </div>
+            </Card>
           </div>
         </div>
         <DialogFooter>

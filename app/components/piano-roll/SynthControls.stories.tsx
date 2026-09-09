@@ -33,6 +33,11 @@ const meta: Meta<typeof SynthControls> = {
       ],
       description: "Active preset identifier",
     },
+    orientation: {
+      control: "radio",
+      options: ["horizontal", "vertical"],
+      description: "Layout orientation of synthesis steps",
+    },
   },
 };
 
@@ -42,6 +47,20 @@ type Story = StoryObj<typeof SynthControls>;
 export const Default: Story = {
   args: {
     selectedPreset: "grand_piano",
+  },
+};
+
+export const Vertical: Story = {
+  decorators: [
+    (Story) => (
+      <div className="h-[500px] w-72">
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    selectedPreset: "grand_piano",
+    orientation: "vertical",
   },
 };
 
@@ -56,3 +75,4 @@ export const BassPreset: Story = {
     selectedPreset: "base_guitar",
   },
 };
+

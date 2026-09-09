@@ -1,5 +1,6 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "../design-system/Button";
 import { cn } from "../../lib/utils";
 import { getPresetJumpConfig } from "./types";
 
@@ -60,41 +61,49 @@ export const OctaveJumpControl: React.FC<OctaveJumpControlProps> = ({
   return (
     <div
       className={cn(
-        "flex items-center bg-stone-200 dark:bg-stone-700 rounded h-7 px-0.5 text-stone-800 dark:text-stone-100 select-none",
+        "flex items-center bg-stone-200 dark:bg-stone-700 rounded h-6 p-0.5 text-stone-800 dark:text-stone-100 select-none gap-0.5",
         className,
       )}
       onWheel={handleWheel}
       title={`Jump to Octave: C${octave}. Click < > to cycle, click label for next, scroll to adjust.`}
     >
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        tone="secondary"
+        size="sm"
+        iconOnly
         onClick={handlePrev}
         title="Previous jump octave (Click <)"
         aria-label="Previous jump octave"
-        className="h-6 w-4 sm:w-5 flex items-center justify-center rounded hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 transition-colors cursor-pointer"
+        className="h-5 w-4 p-0 rounded hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 border-0 flex items-center justify-center"
       >
         <ChevronLeft className="w-3 h-3" />
-      </button>
+      </Button>
 
-      <button
-        type="button"
+      <Button
+        variant="solid"
+        tone="secondary"
+        size="sm"
         onClick={handleNext}
         title={`Jump: C${octave}. Click to cycle next.`}
         aria-label={`Jump to octave C${octave}`}
-        className="h-6 px-1.5 flex items-center justify-center font-mono text-xs font-semibold hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100 rounded transition-colors cursor-pointer"
+        className="h-5 px-1.5 rounded font-mono text-[11px] font-bold"
       >
-        <span className="font-bold">C{octave}</span>
-      </button>
+        C{octave}
+      </Button>
 
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        tone="secondary"
+        size="sm"
+        iconOnly
         onClick={handleNext}
         title="Next jump octave (Click >)"
         aria-label="Next jump octave"
-        className="h-6 w-4 sm:w-5 flex items-center justify-center rounded hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 transition-colors cursor-pointer"
+        className="h-5 w-4 p-0 rounded hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-300 border-0 flex items-center justify-center"
       >
         <ChevronRight className="w-3 h-3" />
-      </button>
+      </Button>
     </div>
   );
 };

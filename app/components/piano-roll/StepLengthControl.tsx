@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Button } from "../design-system/Button";
+import { Card } from "../design-system/Card";
+import { Caption } from "../design-system/Typography";
 import { cn } from "../../lib/utils";
 
 export type TimeSignature = "4/4" | "3/4" | "triplet";
@@ -282,13 +284,19 @@ export const StepLengthControl: React.FC<StepLengthControlProps> = ({
         aria-expanded={isOpen}
         className="!h-6 w-[100px] !px-1 min-w-[100px] max-w-[100px] flex items-center justify-center gap-1 font-mono text-xs font-semibold text-stone-800 dark:text-stone-100 rounded hover:bg-stone-300 dark:hover:bg-stone-600 border-0 flex-shrink-0"
       >
-        <span className="font-bold flex-shrink-0">{activePreset.steps}</span>
-        <span className="text-[9px] px-1 py-0.5 rounded font-mono font-bold bg-stone-300/80 dark:bg-stone-600/80 text-stone-700 dark:text-stone-200 flex-shrink-0">
-          {activePreset.sigLabel}
-        </span>
-        <span className="text-[10px] text-stone-500 dark:text-stone-400 font-normal truncate">
-          {activePreset.barsLabel}
-        </span>
+        <Caption asChild>
+          <span className="font-bold flex-shrink-0">{activePreset.steps}</span>
+        </Caption>
+        <Caption asChild>
+          <span className="text-[9px] px-1 py-0.5 rounded font-mono font-bold bg-stone-300/80 dark:bg-stone-600/80 text-stone-700 dark:text-stone-200 flex-shrink-0">
+            {activePreset.sigLabel}
+          </span>
+        </Caption>
+        <Caption asChild>
+          <span className="text-[10px] text-stone-500 dark:text-stone-400 font-normal truncate">
+            {activePreset.barsLabel}
+          </span>
+        </Caption>
       </Button>
 
       <Button
@@ -304,15 +312,16 @@ export const StepLengthControl: React.FC<StepLengthControlProps> = ({
       </Button>
 
       {isOpen && (
-        <div
+        <Card
+          elevation="high"
           role="listbox"
           aria-label="Time signature and pattern length options"
-          className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 z-50 w-60 p-1.5 bg-surface-light dark:bg-[#0e121b] border border-stone-300 dark:border-stone-700 rounded-lg shadow-2xl text-xs select-none backdrop-blur-md"
+          className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 z-50 w-60 p-1.5 bg-surface-light dark:bg-stone-900 border border-stone-300 dark:border-stone-700 rounded-lg shadow-2xl text-xs select-none backdrop-blur-md"
         >
           <div className="mb-1.5 pb-1.5 border-b border-stone-200 dark:border-stone-800">
-            <div className="px-2 py-0.5 text-[10px] font-mono font-bold text-stone-400 dark:text-stone-400 uppercase tracking-wider">
+            <Caption className="px-2 py-0.5 text-[10px] font-mono font-bold text-stone-400 dark:text-stone-400 uppercase tracking-wider block">
               4/4 Standard Time
-            </div>
+            </Caption>
             <div className="grid grid-cols-2 gap-1 mt-1">
               {fourFourPresets.map((preset) => {
                 const isSelected =
@@ -343,9 +352,9 @@ export const StepLengthControl: React.FC<StepLengthControlProps> = ({
           </div>
 
           <div className="mb-1.5 pb-1.5 border-b border-stone-200 dark:border-stone-800">
-            <div className="px-2 py-0.5 text-[10px] font-mono font-bold text-stone-400 dark:text-stone-400 uppercase tracking-wider">
+            <Caption className="px-2 py-0.5 text-[10px] font-mono font-bold text-stone-400 dark:text-stone-400 uppercase tracking-wider block">
               3/4 Waltz Time
-            </div>
+            </Caption>
             <div className="grid grid-cols-2 gap-1 mt-1">
               {threeFourPresets.map((preset) => {
                 const isSelected =
@@ -376,9 +385,9 @@ export const StepLengthControl: React.FC<StepLengthControlProps> = ({
           </div>
 
           <div>
-            <div className="px-2 py-0.5 text-[10px] font-mono font-bold text-stone-400 dark:text-stone-400 uppercase tracking-wider">
+            <Caption className="px-2 py-0.5 text-[10px] font-mono font-bold text-stone-400 dark:text-stone-400 uppercase tracking-wider block">
               Triplets (12/8 Feel)
-            </div>
+            </Caption>
             <div className="grid grid-cols-1 gap-1 mt-1">
               {tripletPresets.map((preset) => {
                 const isSelected =
@@ -409,7 +418,7 @@ export const StepLengthControl: React.FC<StepLengthControlProps> = ({
               })}
             </div>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

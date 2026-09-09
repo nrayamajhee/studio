@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PresetSelector } from "./PresetSelector";
+import { Card } from "../design-system/Card";
 
 const meta: Meta<typeof PresetSelector> = {
   title: "Instrument/PresetSelector",
@@ -62,6 +63,20 @@ export const DrumsSelected: Story = {
       <div className="w-18 h-[280px]">
         <Story />
       </div>
+    ),
+  ],
+};
+
+export const GridMode: Story = {
+  args: {
+    selectedPreset: "grand_piano",
+    variant: "grid",
+  },
+  decorators: [
+    (Story) => (
+      <Card elevation="low" className="w-64 p-3 bg-stone-50 dark:bg-surface-dark border border-stone-200 dark:border-stone-800 rounded-lg">
+        <Story />
+      </Card>
     ),
   ],
 };

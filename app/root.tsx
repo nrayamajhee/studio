@@ -9,6 +9,8 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { Heading, Paragraph } from "./components/design-system/Typography";
+import { Card } from "./components/design-system/Card";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -80,13 +82,13 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
+    <main className="pt-16 p-4 container mx-auto space-y-4">
+      <Heading className="text-2xl font-bold">{message}</Heading>
+      <Paragraph>{details}</Paragraph>
       {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
+        <Card elevation="low" className="w-full p-4 overflow-x-auto">
           <code>{stack}</code>
-        </pre>
+        </Card>
       )}
     </main>
   );

@@ -12,10 +12,9 @@ const meta = {
     measureWidth: {
       control: { type: "range", min: 80, max: 240, step: 10 },
     },
-    isSelected: {
-      control: "boolean",
-    },
+    isSnapEnabled: { control: "boolean" },
     onClipCountChange: { action: "clipCountChanged" },
+    onMoveClip: { action: "clipMoved" },
     onOpenInstrument: { action: "openInstrument" },
   },
 } satisfies Meta<typeof TrackClip>;
@@ -27,6 +26,7 @@ export const Default: Story = {
   args: {
     track: DEFAULT_TRACKS[1],
     measureWidth: 140,
+    isSnapEnabled: true,
     isSelected: false,
   },
   render: (args) => (

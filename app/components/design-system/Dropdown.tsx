@@ -9,6 +9,8 @@ import {
   type ButtonTone,
   type ButtonSize,
 } from "./Button";
+import { Card } from "./Card";
+import { Label } from "./Typography";
 
 export const dropdownVariants = buttonVariants;
 export type DropdownVariantProps = {
@@ -103,15 +105,17 @@ export const Dropdown: React.FC<DropdownProps> = ({
   return (
     <div className={cn("w-full flex flex-col", className)}>
       {label && (
-        <label
-          htmlFor={id}
-          className={cn(
-            "font-medium text-stone-700 dark:text-stone-300 truncate block",
-            size === "xs" ? "text-[9px] mb-0.5 leading-tight" : "text-[10px] mb-1",
-          )}
-        >
-          {label}
-        </label>
+        <Label asChild>
+          <label
+            htmlFor={id}
+            className={cn(
+              "font-medium text-stone-700 dark:text-stone-300 truncate block",
+              size === "xs" ? "text-[9px] mb-0.5 leading-tight" : "text-[10px] mb-1",
+            )}
+          >
+            {label}
+          </label>
+        </Label>
       )}
 
       <Popover.Root open={open} onOpenChange={disabled ? undefined : setOpen}>
@@ -151,49 +155,52 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
         <Popover.Portal>
           <Popover.Content
+            asChild
             align={align}
             side={side}
             sideOffset={sideOffset}
-            className={cn(
-              "z-50 min-w-[var(--radix-popover-trigger-width)] max-h-56 overflow-y-auto rounded-lg p-1 text-xs shadow-xl backdrop-blur-md outline-none",
-              tone === "accent"
-                ? "bg-white/95 dark:bg-[#0a0d14]/95 border border-stone-200 dark:border-[#232a3b] text-stone-900 dark:text-stone-200"
-                : "bg-white/95 dark:bg-stone-900/95 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100",
-              contentClassName,
-            )}
           >
-            <div className="space-y-0.5">
-              {normalizedOptions.map((opt) => {
-                const isSelected = String(opt.value) === String(currentValue);
+            <Card
+              elevation="high"
+              className={cn(
+                "z-50 min-w-[var(--radix-popover-trigger-width)] max-h-56 overflow-y-auto rounded-lg p-1 text-xs shadow-xl backdrop-blur-md outline-none",
+                "bg-white/95 dark:bg-stone-900/95 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100",
+                contentClassName,
+              )}
+            >
+              <div className="space-y-0.5">
+                {normalizedOptions.map((opt) => {
+                  const isSelected = String(opt.value) === String(currentValue);
 
-                return (
-                  <Button
-                    key={opt.value}
-                    variant="ghost"
-                    tone="secondary"
-                    size="xs"
-                    disabled={opt.disabled}
-                    onClick={() => handleSelect(opt.value)}
-                    className={cn(
-                      "w-full flex items-center justify-between px-2 py-1.5 rounded text-[11px] font-sans font-medium transition-colors text-left select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0 shadow-none",
-                      isSelected
-                        ? "bg-primary text-white font-bold shadow-sm hover:bg-primary"
-                        : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-white",
-                    )}
-                  >
-                    <span className="truncate">{opt.label}</span>
-                    {isSelected && (
-                      <Check
-                        className={cn(
-                          "w-3 h-3 flex-shrink-0 ml-1.5",
-                          tone === "accent" ? "text-stone-950" : "text-white",
-                        )}
-                      />
-                    )}
-                  </Button>
-                );
-              })}
-            </div>
+                  return (
+                    <Button
+                      key={opt.value}
+                      variant="ghost"
+                      tone="secondary"
+                      size="xs"
+                      disabled={opt.disabled}
+                      onClick={() => handleSelect(opt.value)}
+                      className={cn(
+                        "w-full flex items-center justify-between px-2 py-1.5 rounded text-[11px] font-sans font-medium transition-colors text-left select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0 shadow-none",
+                        isSelected
+                          ? "bg-primary text-white font-bold shadow-sm hover:bg-primary"
+                          : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-white",
+                      )}
+                    >
+                      <span className="truncate">{opt.label}</span>
+                      {isSelected && (
+                        <Check
+                          className={cn(
+                            "w-3 h-3 flex-shrink-0 ml-1.5",
+                            tone === "accent" ? "text-stone-950" : "text-white",
+                          )}
+                        />
+                      )}
+                    </Button>
+                  );
+                })}
+              </div>
+            </Card>
           </Popover.Content>
         </Popover.Portal>
       </Popover.Root>

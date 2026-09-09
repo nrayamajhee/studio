@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from "../design-system/Dialog";
 import { Button } from "../design-system/Button";
+import { Label, Title, Caption } from "../design-system/Typography";
 import { TRACK_COLORS, type Track } from "../../lib/studioStorage";
 import { Drum, Piano, Music } from "lucide-react";
 
@@ -55,6 +56,7 @@ export function AddTrackDialog({
       color: selectedColor,
       playerView: isDrum ? "drums" : "keys",
       clipCount: isDrum ? 8 : 4,
+      startMeasure: 0,
       volume: 0.8,
     });
     onClose();
@@ -68,12 +70,14 @@ export function AddTrackDialog({
         </DialogHeader>
         <div className="space-y-4 text-xs">
           <div>
-            <label
-              htmlFor="add-track-name"
-              className="block font-bold text-stone-700 dark:text-stone-300 mb-1"
-            >
-              Track Name
-            </label>
+            <Label asChild>
+              <label
+                htmlFor="add-track-name"
+                className="block font-bold text-stone-700 dark:text-stone-300 mb-1"
+              >
+                Track Name
+              </label>
+            </Label>
             <input
               id="add-track-name"
               type="text"
@@ -84,9 +88,9 @@ export function AddTrackDialog({
           </div>
 
           <div>
-            <span className="block font-bold text-stone-700 dark:text-stone-300 mb-1.5">
+            <Label className="block font-bold text-stone-700 dark:text-stone-300 mb-1.5">
               Select Instrument Preset
-            </span>
+            </Label>
             <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
               {PRESET_OPTIONS.map((opt) => {
                 const isSelected = selectedPreset === opt.id;
@@ -108,10 +112,12 @@ export function AddTrackDialog({
                   >
                     <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                     <div className="truncate">
-                      <div className="truncate font-semibold">{opt.name}</div>
-                      <div className="text-[10px] opacity-70 font-normal">
+                      <Title asChild>
+                        <div className="truncate font-semibold text-xs">{opt.name}</div>
+                      </Title>
+                      <Caption className="text-[10px] opacity-70 font-normal block">
                         {opt.category}
-                      </div>
+                      </Caption>
                     </div>
                   </Button>
                 );
@@ -120,9 +126,9 @@ export function AddTrackDialog({
           </div>
 
           <div>
-            <span className="block font-bold text-stone-700 dark:text-stone-300 mb-1.5">
+            <Label className="block font-bold text-stone-700 dark:text-stone-300 mb-1.5">
               Track Color
-            </span>
+            </Label>
             <div className="flex items-center gap-2">
               {TRACK_COLORS.map((c) => (
                 <Button

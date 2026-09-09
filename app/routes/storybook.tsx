@@ -20,22 +20,22 @@ export default function StorybookRoute() {
   const storybookUrl = `${rawBase}/storybook-static/index.html`;
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-white dark:bg-[#07090e] text-stone-900 dark:text-stone-100 flex flex-col font-sans transition-colors duration-200">
-      <header className="h-12 border-b border-stone-200 dark:border-stone-800/80 bg-stone-100/90 dark:bg-[#0c1017]/90 backdrop-blur-md px-3 sm:px-4 flex items-center z-20 flex-shrink-0">
-        <Link to="/mixer">
+    <div className="h-screen w-screen overflow-hidden bg-white dark:bg-surface-dark text-stone-900 dark:text-stone-100 flex flex-col font-sans transition-colors duration-200">
+      <header className="h-12 border-b border-stone-200 dark:border-stone-800/80 bg-stone-100/90 dark:bg-stone-900/90 backdrop-blur-md px-3 sm:px-4 flex items-center z-20 flex-shrink-0">
+        <Link to="/studio">
           <Button
             variant="solid"
             tone="secondary"
             size="sm"
             leadingIcon={<ArrowLeft className="w-3.5 h-3.5" />}
-            className="bg-white dark:bg-[#151a24] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white"
+            className="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white"
           >
             Back to Studio
           </Button>
         </Link>
       </header>
 
-      <main className="flex-1 w-full h-full relative overflow-hidden bg-white dark:bg-[#07090e]">
+      <main className="flex-1 w-full h-full relative overflow-hidden bg-white dark:bg-surface-dark">
         <iframe
           src={storybookUrl}
           title="Studio Storybook"

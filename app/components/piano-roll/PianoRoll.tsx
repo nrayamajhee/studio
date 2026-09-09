@@ -16,10 +16,14 @@ import {
   type ScaleType,
   getTargetNoteForPreset,
   getPresetJumpConfig,
+  getRootKeySemitoneDelta,
+  snapNoteToScale,
 } from "./types";
 import { synth } from "../../lib/synth";
 import { Button } from "../design-system/Button";
 import { Dropdown } from "../design-system/Dropdown";
+import { Card } from "../design-system/Card";
+import { Label, Caption, Title } from "../design-system/Typography";
 import { cn } from "../../lib/utils";
 import {
   ChevronLeft,
@@ -208,25 +212,12 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
           : 4;
   const [internalRootKey, setInternalRootKey] = useState("C");
   const rootKey = controlledRootKey ?? internalRootKey;
-  const setRootKey = (val: string) => {
-    if (controlledRootKey === undefined) {
-      setInternalRootKey(val);
-    }
-    if (onRootKeyChange) {
-      onRootKeyChange(val);
-    }
-  };
-
   const [internalScale, setInternalScale] = useState<ScaleType>("major");
   const scale = controlledScale ?? internalScale;
-  const setScale = (val: ScaleType) => {
-    if (controlledScale === undefined) {
-      setInternalScale(val);
-    }
-    if (onScaleChange) {
-      onScaleChange(val);
-    }
-  };
+  const [lastLoadedPatternId, setLastLoadedPatternId] = useState<string | null>(null);
+
+  const prevRootKeyRef = useRef(rootKey);
+  const prevScaleRef = useRef(scale);
 
   const [internalActiveNotes, setInternalActiveNotes] = useState<Set<string>>(
     () => {
@@ -1314,9 +1305,208 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     updateNotes(next);
   };
 
+  const applyRootKeyChange = useCallback(
+    (newRootKey: string, oldRootKey: string) => {
+      if (newRootKey === oldRootKey) return;
+      const delta = getRootKeySemitoneDelta(oldRootKey, newRootKey);
+
+      if (lastLoadedPatternId) {
+        const pattern = PATTERN_PRESETS.find((p) => p.id === lastLoadedPatternId);
+        if (pattern) {
+          const rootIndex = ROOT_KEYS.indexOf(newRootKey as (typeof ROOT_KEYS)[number]);
+          const semitoneOffset = rootIndex !== -1 ? rootIndex : 0;
+          const next = new Set<string>();
+          for (const item of pattern.notes) {
+            const lastDash = item.lastIndexOf("-");
+            if (lastDash === -1) continue;
+            let noteName = item.slice(0, lastDash);
+            const step = parseInt(item.slice(lastDash + 1), 10);
+            if (step < totalSteps) {
+              if (pattern.category === "chord" && semitoneOffset !== 0) {
+                noteName = transposeNote(noteName, semitoneOffset);
+              }
+              if (scale !== "chromatic") {
+                noteName = snapNoteToScale(noteName, newRootKey, scale);
+              }
+              next.add(`${noteName}-${step}`);
+            }
+          }
+          updateDisabledNotes(new Set());
+          updateSelectedNotes(new Set());
+          updateNotes(next);
+        }
+      } else if (delta !== 0 && activeNotes.size > 0) {
+        const next = new Set<string>();
+        const nextDisabled = new Set<string>();
+        const nextSelected = new Set<string>();
+        const nextVelocities: Record<string, number> = {};
+
+        for (const item of activeNotes) {
+          const lastDash = item.lastIndexOf("-");
+          if (lastDash === -1) continue;
+          const noteName = item.slice(0, lastDash);
+          const step = parseInt(item.slice(lastDash + 1), 10);
+          const transposed = transposeNote(noteName, delta);
+          const newKey = `${transposed}-${step}`;
+          next.add(newKey);
+          if (disabledNotes.has(item)) nextDisabled.add(newKey);
+          if (selectedNotes.has(item)) nextSelected.add(newKey);
+          nextVelocities[newKey] = noteVelocities[item] ?? velocity;
+        }
+        updateNoteVelocities(nextVelocities);
+        updateDisabledNotes(nextDisabled);
+        updateSelectedNotes(nextSelected);
+        updateNotes(next);
+      }
+
+      const targetOctave = jumpConfig.defaultOctave;
+      scrollToNote(`${newRootKey}${targetOctave}`, true);
+    },
+    [
+      lastLoadedPatternId,
+      totalSteps,
+      scale,
+      activeNotes,
+      disabledNotes,
+      selectedNotes,
+      noteVelocities,
+      velocity,
+      jumpConfig.defaultOctave,
+      scrollToNote,
+      updateDisabledNotes,
+      updateSelectedNotes,
+      updateNotes,
+      updateNoteVelocities,
+    ],
+  );
+
+  const applyScaleChange = useCallback(
+    (newScale: ScaleType) => {
+      if (lastLoadedPatternId) {
+        const pattern = PATTERN_PRESETS.find((p) => p.id === lastLoadedPatternId);
+        if (pattern) {
+          const rootIndex = ROOT_KEYS.indexOf(rootKey as (typeof ROOT_KEYS)[number]);
+          const semitoneOffset = rootIndex !== -1 ? rootIndex : 0;
+          const next = new Set<string>();
+          for (const item of pattern.notes) {
+            const lastDash = item.lastIndexOf("-");
+            if (lastDash === -1) continue;
+            let noteName = item.slice(0, lastDash);
+            const step = parseInt(item.slice(lastDash + 1), 10);
+            if (step < totalSteps) {
+              if (pattern.category === "chord" && semitoneOffset !== 0) {
+                noteName = transposeNote(noteName, semitoneOffset);
+              }
+              if (newScale !== "chromatic") {
+                noteName = snapNoteToScale(noteName, rootKey, newScale);
+              }
+              next.add(`${noteName}-${step}`);
+            }
+          }
+          updateDisabledNotes(new Set());
+          updateSelectedNotes(new Set());
+          updateNotes(next);
+        }
+      } else if (activeNotes.size > 0 && newScale !== "chromatic") {
+        const next = new Set<string>();
+        const nextDisabled = new Set<string>();
+        const nextSelected = new Set<string>();
+        const nextVelocities: Record<string, number> = {};
+
+        for (const item of activeNotes) {
+          const lastDash = item.lastIndexOf("-");
+          if (lastDash === -1) continue;
+          const noteName = item.slice(0, lastDash);
+          const step = parseInt(item.slice(lastDash + 1), 10);
+          const snapped = snapNoteToScale(noteName, rootKey, newScale);
+          const newKey = `${snapped}-${step}`;
+          next.add(newKey);
+          if (disabledNotes.has(item)) nextDisabled.add(newKey);
+          if (selectedNotes.has(item)) nextSelected.add(newKey);
+          nextVelocities[newKey] = noteVelocities[item] ?? velocity;
+        }
+        updateNoteVelocities(nextVelocities);
+        updateDisabledNotes(nextDisabled);
+        updateSelectedNotes(nextSelected);
+        updateNotes(next);
+      }
+
+      const targetOctave = jumpConfig.defaultOctave;
+      scrollToNote(`${rootKey}${targetOctave}`, true);
+    },
+    [
+      lastLoadedPatternId,
+      rootKey,
+      totalSteps,
+      activeNotes,
+      disabledNotes,
+      selectedNotes,
+      noteVelocities,
+      velocity,
+      jumpConfig.defaultOctave,
+      scrollToNote,
+      updateDisabledNotes,
+      updateSelectedNotes,
+      updateNotes,
+      updateNoteVelocities,
+    ],
+  );
+
+  const setRootKey = useCallback(
+    (val: string) => {
+      const prev = rootKey;
+      if (controlledRootKey === undefined) {
+        setInternalRootKey(val);
+      }
+      prevRootKeyRef.current = val;
+      if (onRootKeyChange) {
+        onRootKeyChange(val);
+      }
+      applyRootKeyChange(val, prev);
+    },
+    [controlledRootKey, rootKey, onRootKeyChange, applyRootKeyChange],
+  );
+
+  const setScale = useCallback(
+    (val: ScaleType) => {
+      if (controlledScale === undefined) {
+        setInternalScale(val);
+      }
+      prevScaleRef.current = val;
+      if (onScaleChange) {
+        onScaleChange(val);
+      }
+      applyScaleChange(val);
+    },
+    [controlledScale, onScaleChange, applyScaleChange],
+  );
+
+  useEffect(() => {
+    if (
+      controlledRootKey !== undefined &&
+      controlledRootKey !== prevRootKeyRef.current
+    ) {
+      const oldKey = prevRootKeyRef.current;
+      prevRootKeyRef.current = controlledRootKey;
+      applyRootKeyChange(controlledRootKey, oldKey);
+    }
+  }, [controlledRootKey, applyRootKeyChange]);
+
+  useEffect(() => {
+    if (
+      controlledScale !== undefined &&
+      controlledScale !== prevScaleRef.current
+    ) {
+      prevScaleRef.current = controlledScale;
+      applyScaleChange(controlledScale);
+    }
+  }, [controlledScale, applyScaleChange]);
+
   const loadPattern = (presetId: string) => {
     const pattern = PATTERN_PRESETS.find((p) => p.id === presetId);
     if (!pattern) return;
+
+    setLastLoadedPatternId(presetId);
 
     const rootIndex = ROOT_KEYS.indexOf(rootKey as (typeof ROOT_KEYS)[number]);
     const semitoneOffset = rootIndex !== -1 ? rootIndex : 0;
@@ -1331,6 +1521,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
         if (pattern.category === "chord" && semitoneOffset !== 0) {
           noteName = transposeNote(noteName, semitoneOffset);
         }
+        if (scale !== "chromatic") {
+          noteName = snapNoteToScale(noteName, rootKey, scale);
+        }
         next.add(`${noteName}-${step}`);
       }
     }
@@ -1340,7 +1533,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     if (pattern.category === "drum") {
       scrollToNote("C1", true);
     } else {
-      scrollToNote("C4", true);
+      scrollToNote(`${rootKey}${jumpConfig.defaultOctave}`, true);
     }
   };
 
@@ -1362,12 +1555,12 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
         <div className="flex flex-col min-w-max w-full">
           <div className="sticky top-0 z-30 flex w-full bg-surface dark:bg-stone-900 border-b border-stone-300 dark:border-stone-700 shadow-sm">
             <div className="sticky left-0 z-40 w-32 sm:w-40 flex-shrink-0 bg-surface dark:bg-stone-900 px-3 py-2 border-r-2 border-stone-300 dark:border-stone-700 flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold text-stone-400">
+              <Label className="text-[10px] font-mono font-bold text-stone-400">
                 PITCH
-              </span>
-              <span className="text-[10px] font-mono font-bold text-stone-700 dark:text-stone-300">
+              </Label>
+              <Caption className="text-[10px] font-mono font-bold text-stone-700 dark:text-stone-300">
                 {rootKey} {scale !== "chromatic" ? scale : ""}
-              </span>
+              </Caption>
             </div>
 
             <div className="flex flex-shrink-0">
@@ -1764,23 +1957,29 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                           }}
                                         >
                                           <div className="flex items-center justify-between w-full leading-none">
-                                            <span
-                                              className={cn(
-                                                "leading-tight font-bold",
-                                                isNoteDisabled &&
-                                                  "line-through opacity-75",
-                                              )}
-                                            >
-                                              {note.fullName}
-                                            </span>
+                                            <Caption asChild>
+                                              <span
+                                                className={cn(
+                                                  "leading-tight font-bold",
+                                                  isNoteDisabled &&
+                                                    "line-through opacity-75",
+                                                )}
+                                              >
+                                                {note.fullName}
+                                              </span>
+                                            </Caption>
                                             {isNoteDisabled ? (
-                                              <span className="text-[7px] font-mono font-bold px-0.5 py-0 rounded bg-stone-500/20 dark:bg-stone-600/40 text-stone-600 dark:text-stone-300">
-                                                OFF
-                                              </span>
+                                              <Caption asChild>
+                                                <span className="text-[7px] font-mono font-bold px-0.5 py-0 rounded bg-stone-500/20 dark:bg-stone-600/40 text-stone-600 dark:text-stone-300">
+                                                  OFF
+                                                </span>
+                                              </Caption>
                                             ) : (
-                                              <span className="text-[8px] font-mono opacity-90 select-none">
-                                                {noteVel}%
-                                              </span>
+                                              <Caption asChild>
+                                                <span className="text-[8px] font-mono opacity-90 select-none">
+                                                  {noteVel}%
+                                                </span>
+                                              </Caption>
                                             )}
                                           </div>
                                           <div className="w-full">
@@ -1808,10 +2007,11 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                         </div>
 
                                         {isPopoverOpen && (
-                                          <div
+                                          <Card
+                                            elevation="high"
                                             data-velocity-popover="true"
                                             className={cn(
-                                              "absolute z-50 flex items-center gap-1.5 px-2.5 py-1.5 bg-stone-900/95 dark:bg-[#0c0f17] text-white rounded-lg shadow-2xl border border-stone-700/80 dark:border-stone-700 backdrop-blur-md pointer-events-auto select-none min-w-[168px]",
+                                              "absolute z-50 flex flex-row items-center gap-1.5 px-2.5 py-1.5 bg-stone-900/95 dark:bg-stone-900 text-white rounded-lg shadow-2xl border border-stone-700/80 dark:border-stone-700 backdrop-blur-md pointer-events-auto select-none min-w-[168px]",
                                               stepNumber === 0
                                                 ? "left-0"
                                                 : stepNumber >= totalSteps - 1
@@ -1822,9 +2022,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                                 : "bottom-full mb-1.5",
                                             )}
                                           >
-                                            <span className="text-[9px] font-mono text-stone-400 uppercase font-semibold flex-shrink-0">
+                                            <Caption className="text-[9px] font-mono text-stone-400 uppercase font-semibold flex-shrink-0">
                                               Vel
-                                            </span>
+                                            </Caption>
                                             <input
                                               type="range"
                                               min={5}
@@ -1857,9 +2057,11 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                               aria-label={`${note.fullName} velocity`}
                                               className="w-20 h-1.5 bg-stone-700 rounded-lg appearance-none cursor-pointer accent-primary"
                                             />
-                                            <span className="text-[10px] font-mono font-bold text-primary-light min-w-[28px] text-right">
-                                              {noteVel}%
-                                            </span>
+                                            <Caption asChild>
+                                              <span className="text-[10px] font-mono font-bold text-primary-light min-w-[28px] text-right">
+                                                {noteVel}%
+                                              </span>
+                                            </Caption>
                                             <Button
                                               variant="ghost"
                                               tone="secondary"
@@ -1882,11 +2084,11 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                                     ? "right-4"
                                                     : "left-1/2 -translate-x-1/2",
                                                 note.octave >= 10
-                                                  ? "bottom-full border-b-stone-900/95 dark:border-b-[#0c0f17]"
-                                                  : "top-full border-t-stone-900/95 dark:border-t-[#0c0f17]",
+                                                  ? "bottom-full border-b-stone-900/95 dark:border-b-stone-900"
+                                                  : "top-full border-t-stone-900/95 dark:border-t-stone-900",
                                               )}
                                             />
-                                          </div>
+                                          </Card>
                                         )}
                                       </div>
                                     )}
@@ -1908,11 +2110,11 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
         </div>
       </div>
 
-      <div className="w-full flex items-center justify-between px-2.5 py-1.5 bg-stone-100/90 dark:bg-[#07090e] border-t border-stone-300 dark:border-stone-800 gap-2 overflow-x-auto flex-shrink-0 select-none z-30 no-scrollbar">
+      <div className="w-full flex items-center justify-between px-2.5 py-1.5 bg-stone-100/90 dark:bg-surface-dark border-t border-stone-300 dark:border-stone-800 gap-2 overflow-x-auto flex-shrink-0 select-none z-30 no-scrollbar">
         <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+          <Label className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
             Key:
-          </span>
+          </Label>
           <Dropdown
             size="xs"
             value={rootKey}
@@ -1935,9 +2137,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
 
         <div className="flex items-center gap-3 flex-shrink-0">
           <div className="flex items-center gap-1 flex-shrink-0">
-            <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+            <Label className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
               Piano:
-            </span>
+            </Label>
             <Dropdown
               size="xs"
               placeholder="Piano Presets..."
@@ -1954,9 +2156,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
           </div>
 
           <div className="flex items-center gap-1 flex-shrink-0">
-            <span className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
+            <Label className="text-[10px] font-mono uppercase font-bold text-stone-500 dark:text-stone-400">
               Drums:
-            </span>
+            </Label>
             <Dropdown
               size="xs"
               placeholder="Drum Presets..."
@@ -1975,11 +2177,12 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
       </div>
 
       {contextMenu && (
-        <div
+        <Card
+          elevation="high"
           role="menu"
           aria-label="Note context menu"
           tabIndex={-1}
-          className="fixed z-50 min-w-[190px] p-1 bg-white/95 dark:bg-[#151922]/95 backdrop-blur-md rounded-xl shadow-xl border border-stone-200/90 dark:border-stone-800/90 text-xs text-stone-700 dark:text-stone-300 font-sans select-none animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-0.5 focus:outline-none"
+          className="fixed z-50 min-w-[190px] p-1 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md rounded-xl shadow-xl border border-stone-200/90 dark:border-stone-800/90 text-xs text-stone-700 dark:text-stone-300 font-sans select-none animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-0.5 focus:outline-none"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => {
@@ -1988,9 +2191,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
           }}
         >
           {selectedNotes.size > 0 && (
-            <div className="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 border-b border-stone-100 dark:border-stone-800/60 mb-1">
+            <Caption className="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 border-b border-stone-100 dark:border-stone-800/60 mb-1">
               {selectedNotes.size} note{selectedNotes.size > 1 ? "s" : ""} selected
-            </div>
+            </Caption>
           )}
           <Button
             variant="ghost"
@@ -2186,57 +2389,70 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                 <X className="w-3.5 h-3.5 text-stone-500" />
                 Deselect
               </span>
-              <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
-                Esc
-              </span>
+              <Caption asChild>
+                <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+                  Esc
+                </span>
+              </Caption>
             </Button>
           )}
-        </div>
+        </Card>
       )}
 
       {noteDrag && noteDrag.isDragging && (
-        <div
-          className="fixed pointer-events-none z-50 flex items-center gap-1.5 px-2.5 py-1 bg-stone-900/95 dark:bg-[#0c0f17]/95 text-white rounded-md shadow-2xl border border-stone-700/80 text-[11px] font-mono backdrop-blur-md -translate-x-1/2 -translate-y-9 transition-transform"
+        <Card
+          elevation="high"
+          className="fixed pointer-events-none z-50 flex flex-row items-center gap-1.5 px-2.5 py-1 bg-stone-900/95 dark:bg-stone-900/95 text-white rounded-md shadow-2xl border border-stone-700/80 text-[11px] font-mono backdrop-blur-md -translate-x-1/2 -translate-y-9 transition-transform"
           style={{ left: noteDrag.currentX, top: noteDrag.currentY }}
         >
           {noteDrag.isCopy && (
-            <span className="px-1 py-0.2 rounded text-[9px] font-bold bg-amber-400 text-stone-950">
-              COPY
-            </span>
+            <Caption asChild>
+              <span className="px-1 py-0.2 rounded text-[9px] font-bold bg-amber-400 text-stone-950">
+                COPY
+              </span>
+            </Caption>
           )}
-          <span className="font-bold text-primary-light">
-            {notes[noteDrag.primaryRow + noteDrag.deltaRow]?.fullName}
-          </span>
-          <span className="text-stone-400">
-            Step {noteDrag.primaryStep + noteDrag.deltaStep + 1}
-          </span>
-          {(noteDrag.deltaRow !== 0 || noteDrag.deltaStep !== 0) && (
-            <span className="text-[10px] text-stone-400 pl-1 border-l border-stone-700">
-              {noteDrag.deltaRow !== 0 && (
-                <span>
-                  {-noteDrag.deltaRow > 0
-                    ? `+${-noteDrag.deltaRow}`
-                    : `${-noteDrag.deltaRow}`}{" "}
-                  st
-                </span>
-              )}
-              {noteDrag.deltaRow !== 0 && noteDrag.deltaStep !== 0 && " • "}
-              {noteDrag.deltaStep !== 0 && (
-                <span>
-                  {noteDrag.deltaStep > 0
-                    ? `+${noteDrag.deltaStep}`
-                    : `${noteDrag.deltaStep}`}{" "}
-                  step{Math.abs(noteDrag.deltaStep) > 1 ? "s" : ""}
-                </span>
-              )}
+          <Caption asChild>
+            <span className="font-bold text-primary-light">
+              {notes[noteDrag.primaryRow + noteDrag.deltaRow]?.fullName}
             </span>
+          </Caption>
+          <Caption asChild>
+            <span className="text-stone-400">
+              Step {noteDrag.primaryStep + noteDrag.deltaStep + 1}
+            </span>
+          </Caption>
+          {(noteDrag.deltaRow !== 0 || noteDrag.deltaStep !== 0) && (
+            <Caption asChild>
+              <span className="text-[10px] text-stone-400 pl-1 border-l border-stone-700">
+                {noteDrag.deltaRow !== 0 && (
+                  <span>
+                    {-noteDrag.deltaRow > 0
+                      ? `+${-noteDrag.deltaRow}`
+                      : `${-noteDrag.deltaRow}`}{" "}
+                    st
+                  </span>
+                )}
+                {noteDrag.deltaRow !== 0 && noteDrag.deltaStep !== 0 && " • "}
+                {noteDrag.deltaStep !== 0 && (
+                  <span>
+                    {noteDrag.deltaStep > 0
+                      ? `+${noteDrag.deltaStep}`
+                      : `${noteDrag.deltaStep}`}{" "}
+                    step{Math.abs(noteDrag.deltaStep) > 1 ? "s" : ""}
+                  </span>
+                )}
+              </span>
+            </Caption>
           )}
           {noteDrag.draggedNotes.length > 1 && (
-            <span className="text-[9px] px-1 rounded bg-stone-800 text-stone-300">
-              +{noteDrag.draggedNotes.length - 1} more
-            </span>
+            <Caption asChild>
+              <span className="text-[9px] px-1 rounded bg-stone-800 text-stone-300">
+                +{noteDrag.draggedNotes.length - 1} more
+              </span>
+            </Caption>
           )}
-        </div>
+        </Card>
       )}
 
     </div>

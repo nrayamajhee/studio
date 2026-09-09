@@ -7,11 +7,11 @@ import {
 import { synth } from "../../lib/synth";
 import { Button } from "../design-system/Button";
 import { Card } from "../design-system/Card";
+import { Title, Paragraph, Label, Caption } from "../design-system/Typography";
 import { cn } from "../../lib/utils";
 import {
   Cable,
   RefreshCw,
-  Sliders,
   Drum,
   Piano,
   OctagonAlert,
@@ -29,11 +29,17 @@ export interface MidiControlProps {
 export const MidiControl: React.FC<MidiControlProps> = ({ className }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [devices, setDevices] = useState<MidiDeviceInfo[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<string>("all");
-  const [drumChannel, setDrumChannel] = useState<number>(10);
-  const [octaveShift, setOctaveShift] = useState<number>(0);
-  const [isSupported, setIsSupported] = useState<boolean>(false);
-  const [hasAccess, setHasAccess] = useState<boolean>(false);
+  const [selectedDevice, setSelectedDevice] = useState<string>(() =>
+    midiManager.getSelectedInput(),
+  );
+  const [drumChannel, setDrumChannel] = useState<number>(() =>
+    midiManager.getDrumChannel(),
+  );
+  const [octaveShift, setOctaveShift] = useState<number>(() =>
+    midiManager.getOctaveShift(),
+  );
+  const [isSupported] = useState<boolean>(() => midiManager.isSupported());
+  const [, setHasAccess] = useState<boolean>(false);
   const [activityLog, setActivityLog] = useState<MidiActivityItem[]>([]);
   const [sustainPedal, setSustainPedal] = useState<boolean>(false);
   const [hasRecentTraffic, setHasRecentTraffic] = useState(false);
@@ -42,10 +48,6 @@ export const MidiControl: React.FC<MidiControlProps> = ({ className }) => {
   const trafficTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setIsSupported(midiManager.isSupported());
-    setSelectedDevice(midiManager.getSelectedInput());
-    setDrumChannel(midiManager.getDrumChannel());
-    setOctaveShift(midiManager.getOctaveShift());
 
     // Automatically attempt connection on mount if supported
     if (midiManager.isSupported()) {
@@ -156,8 +158,8 @@ export const MidiControl: React.FC<MidiControlProps> = ({ className }) => {
         className={cn(
           "flex items-center gap-1.5 px-2 py-0.5 h-7 text-xs font-mono rounded-lg border transition-all cursor-pointer select-none",
           isOpen
-            ? "bg-stone-200 dark:bg-[#1a202c] border-stone-400 dark:border-stone-600 text-stone-900 dark:text-white shadow-sm"
-            : "bg-white dark:bg-[#0c0f16] hover:bg-stone-100 dark:hover:bg-[#161c28] border-stone-200 dark:border-[#1f2533] text-stone-700 dark:text-stone-300",
+            ? "bg-stone-200 dark:bg-stone-800 border-stone-400 dark:border-stone-700 text-stone-900 dark:text-white shadow-sm"
+            : "bg-white dark:bg-surface-dark hover:bg-stone-100 dark:hover:bg-stone-800 border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300",
         )}
       >
         <div className="relative flex items-center justify-center">
@@ -196,19 +198,19 @@ export const MidiControl: React.FC<MidiControlProps> = ({ className }) => {
       {isOpen && (
         <Card
           elevation="high"
-          className="absolute right-0 top-full mt-1.5 z-50 w-80 sm:w-96 p-3 bg-white/95 dark:bg-[#0c0f16]/95 backdrop-blur-md rounded-xl border border-stone-200 dark:border-[#1f2533] shadow-2xl text-stone-900 dark:text-stone-100 animate-in fade-in zoom-in-95 duration-150"
+          className="absolute right-0 top-full mt-1.5 z-50 w-80 sm:w-96 p-3 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-md rounded-xl border border-stone-200 dark:border-stone-800 shadow-2xl text-stone-900 dark:text-stone-100 animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-2 border-b border-stone-200 dark:border-[#1f2533]">
+          <div className="flex items-center justify-between pb-2 border-b border-stone-200 dark:border-stone-800">
             <div className="flex items-center gap-2">
               <Cable className="w-4 h-4 text-primary" />
               <div>
-                <h4 className="text-xs font-bold leading-tight">
+                <Title className="text-xs font-bold leading-tight">
                   Web MIDI Controller
-                </h4>
-                <p className="text-[10px] text-stone-500 dark:text-stone-400 font-mono">
+                </Title>
+                <Caption className="text-[10px] text-stone-500 dark:text-stone-400 font-mono">
                   Keyboard & Drum Pads
-                </p>
+                </Caption>
               </div>
             </div>
 
@@ -218,7 +220,7 @@ export const MidiControl: React.FC<MidiControlProps> = ({ className }) => {
               size="sm"
               onClick={handleRequestAccess}
               title="Rescan connected MIDI hardware"
-              className="px-2 py-0.5 h-6 text-[10px] rounded bg-stone-100 dark:bg-[#161b26] hover:bg-stone-200 dark:hover:bg-[#202838] border border-stone-200 dark:border-[#1f2533] text-stone-700 dark:text-stone-300"
+              className="px-2 py-0.5 h-6 text-[10px] rounded bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300"
             >
               <RefreshCw className="w-3 h-3 mr-1 text-stone-500" />
               Scan
@@ -226,38 +228,44 @@ export const MidiControl: React.FC<MidiControlProps> = ({ className }) => {
           </div>
 
           {/* Connected Devices List */}
-          <div className="py-2.5 border-b border-stone-200 dark:border-[#1f2533] space-y-1.5">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-stone-700 dark:text-stone-300">
+          <div className="py-2.5 border-b border-stone-200 dark:border-stone-800 space-y-1.5">
+            <Label className="flex items-center justify-between text-[11px] font-semibold text-stone-700 dark:text-stone-300 w-full">
               <span>Connected Devices</span>
-              <span className="text-[10px] font-mono text-stone-500">
+              <span className="text-[10px] font-mono text-stone-500 font-normal">
                 {connectedCount} detected
               </span>
-            </div>
+            </Label>
 
             {!isSupported ? (
-              <div className="p-2 rounded bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-700 dark:text-amber-400 flex items-start gap-1.5">
+              <Card
+                elevation="low"
+                className="flex flex-row items-start gap-1.5 p-2 rounded bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-700 dark:text-amber-400"
+              >
                 <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                <span>
+                <Caption className="text-[11px] text-amber-700 dark:text-amber-400 leading-normal">
                   Web MIDI is not supported in this browser. Please use Google Chrome, Microsoft Edge, or a Web MIDI-compatible browser.
-                </span>
-              </div>
+                </Caption>
+              </Card>
             ) : devices.length === 0 ? (
-              <div className="p-2 rounded bg-stone-100 dark:bg-[#121620] border border-stone-200 dark:border-[#1f2533] text-[11px] text-stone-600 dark:text-stone-400 space-y-1">
-                <p>No MIDI hardware detected.</p>
-                <p className="text-[10px] text-stone-500">
+              <Card
+                elevation="low"
+                className="p-2 rounded bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-[11px] text-stone-600 dark:text-stone-400 space-y-1"
+              >
+                <Paragraph className="text-[11px] leading-tight">No MIDI hardware detected.</Paragraph>
+                <Caption className="text-[10px] text-stone-500 leading-normal">
                   Connect your USB or Bluetooth MIDI keyboard or drum pads (e.g. Akai MPK Mini, Launchkey, MiniLab) and click Scan.
-                </p>
-              </div>
+                </Caption>
+              </Card>
             ) : (
               <div className="space-y-1 max-h-32 overflow-y-auto">
-                <button
-                  type="button"
+                <Button
+                  variant="solid"
+                  tone={selectedDevice === "all" ? "primary" : "secondary"}
+                  size="sm"
                   onClick={() => handleDeviceSelect("all")}
                   className={cn(
-                    "flex items-center justify-between w-full px-2 py-1 text-left rounded text-xs transition-colors",
-                    selectedDevice === "all"
-                      ? "bg-primary/10 text-primary font-bold border border-primary/30"
-                      : "bg-stone-50 dark:bg-[#121620] hover:bg-stone-100 dark:hover:bg-[#181d2a] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533]",
+                    "w-full justify-between h-7 px-2 text-xs font-normal",
+                    selectedDevice === "all" && "font-bold",
                   )}
                 >
                   <span className="flex items-center gap-1.5 truncate">
@@ -265,18 +273,18 @@ export const MidiControl: React.FC<MidiControlProps> = ({ className }) => {
                     All Connected Devices (Omni)
                   </span>
                   {selectedDevice === "all" && <Check className="w-3 h-3" />}
-                </button>
+                </Button>
 
                 {devices.map((device) => (
-                  <button
+                  <Button
                     key={device.id}
-                    type="button"
+                    variant="solid"
+                    tone={selectedDevice === device.id ? "primary" : "secondary"}
+                    size="sm"
                     onClick={() => handleDeviceSelect(device.id)}
                     className={cn(
-                      "flex items-center justify-between w-full px-2 py-1 text-left rounded text-xs transition-colors",
-                      selectedDevice === device.id
-                        ? "bg-primary/10 text-primary font-bold border border-primary/30"
-                        : "bg-stone-50 dark:bg-[#121620] hover:bg-stone-100 dark:hover:bg-[#181d2a] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#1f2533]",
+                      "w-full justify-between h-7 px-2 text-xs font-normal",
+                      selectedDevice === device.id && "font-bold",
                     )}
                   >
                     <div className="flex items-center gap-1.5 truncate">
@@ -296,25 +304,25 @@ export const MidiControl: React.FC<MidiControlProps> = ({ className }) => {
                     {selectedDevice === device.id && (
                       <Check className="w-3 h-3 flex-shrink-0" />
                     )}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
           </div>
 
           {/* Configuration: Drum Channel & Octave Shift */}
-          <div className="py-2.5 border-b border-stone-200 dark:border-[#1f2533] space-y-2 text-xs">
+          <div className="py-2.5 border-b border-stone-200 dark:border-stone-800 space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 text-stone-700 dark:text-stone-300 font-medium">
+              <Label className="flex items-center gap-1 text-stone-700 dark:text-stone-300 font-medium text-xs">
                 <Drum className="w-3.5 h-3.5 text-stone-500" />
                 Drum Pads Channel:
-              </span>
+              </Label>
               <select
                 value={drumChannel}
                 onChange={(e) =>
                   handleDrumChannelSelect(parseInt(e.target.value, 10))
                 }
-                className="px-2 py-0.5 text-xs font-mono rounded bg-stone-100 dark:bg-[#161b26] border border-stone-200 dark:border-[#1f2533] text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary"
+                className="px-2 py-0.5 text-xs font-mono rounded bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option value={10}>Channel 10 (GM Standard)</option>
                 <option value={0}>Omni (All Channels)</option>
@@ -327,25 +335,22 @@ export const MidiControl: React.FC<MidiControlProps> = ({ className }) => {
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 text-stone-700 dark:text-stone-300 font-medium">
+              <Label className="flex items-center gap-1 text-stone-700 dark:text-stone-300 font-medium text-xs">
                 <Piano className="w-3.5 h-3.5 text-stone-500" />
                 Keyboard Octave Shift:
-              </span>
+              </Label>
               <div className="flex items-center gap-1">
                 {[-2, -1, 0, 1, 2].map((shift) => (
-                  <button
+                  <Button
                     key={shift}
-                    type="button"
+                    variant="solid"
+                    tone={octaveShift === shift ? "primary" : "secondary"}
+                    size="sm"
                     onClick={() => handleOctaveShift(shift)}
-                    className={cn(
-                      "px-1.5 py-0.5 text-[10px] font-mono rounded border transition-colors",
-                      octaveShift === shift
-                        ? "bg-primary text-white font-bold border-primary shadow-sm"
-                        : "bg-stone-100 dark:bg-[#161b26] border-stone-200 dark:border-[#1f2533] text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-[#202838]",
-                    )}
+                    className="px-1.5 py-0.5 h-6 min-w-[24px] text-[10px] font-mono rounded"
                   >
                     {shift > 0 ? `+${shift}` : shift}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -354,38 +359,45 @@ export const MidiControl: React.FC<MidiControlProps> = ({ className }) => {
           {/* Live Activity Monitor */}
           <div className="pt-2 space-y-1.5">
             <div className="flex items-center justify-between text-[11px] font-semibold text-stone-700 dark:text-stone-300">
-              <span className="flex items-center gap-1">
+              <Label className="flex items-center gap-1 font-semibold text-[11px]">
                 <Activity className="w-3 h-3 text-stone-400" />
                 Live MIDI Activity
-              </span>
+              </Label>
               <div className="flex items-center gap-2">
                 {sustainPedal && (
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40 animate-pulse">
-                    SUSTAIN ON
-                  </span>
+                  <Caption asChild>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40 animate-pulse">
+                      SUSTAIN ON
+                    </span>
+                  </Caption>
                 )}
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  tone="error"
+                  size="sm"
                   onClick={handlePanic}
                   title="Kill all active notes immediately"
-                  className="flex items-center gap-0.5 text-[10px] text-red-600 dark:text-red-400 hover:underline font-mono"
+                  className="h-5 px-1.5 text-[10px] font-mono flex items-center gap-0.5"
                 >
                   <OctagonAlert className="w-2.5 h-2.5" />
                   Panic
-                </button>
+                </Button>
               </div>
             </div>
 
-            <div className="p-1.5 rounded bg-stone-100 dark:bg-[#06080c] border border-stone-200 dark:border-[#1f2533] min-h-[50px] max-h-24 overflow-y-auto font-mono text-[10px] space-y-0.5 shadow-inner">
+            <Card
+              elevation="low"
+              className="p-1.5 rounded bg-stone-100 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 min-h-[50px] max-h-24 overflow-y-auto font-mono text-[10px] space-y-0.5 shadow-inner"
+            >
               {activityLog.length === 0 ? (
-                <span className="text-stone-400 dark:text-stone-600 italic">
+                <Caption className="text-stone-400 dark:text-stone-600 italic block">
                   Press keys or strike drum pads to view live messages...
-                </span>
+                </Caption>
               ) : (
                 activityLog.map((act) => (
-                  <div
+                  <Caption
                     key={act.id}
-                    className="flex items-center justify-between text-stone-600 dark:text-stone-400 animate-in fade-in duration-75"
+                    className="flex items-center justify-between text-stone-600 dark:text-stone-400 animate-in fade-in duration-75 text-[10px] font-mono w-full"
                   >
                     <span className="flex items-center gap-1 truncate">
                       <span
@@ -406,10 +418,10 @@ export const MidiControl: React.FC<MidiControlProps> = ({ className }) => {
                       <span>{act.value}</span>
                       <span className="text-stone-400">Ch{act.channel}</span>
                     </span>
-                  </div>
+                  </Caption>
                 ))
               )}
-            </div>
+            </Card>
           </div>
         </Card>
       )}

@@ -7,3 +7,4 @@ export * from "./SynthControls";
 export * from "./DrumPad";
 export * from "./MidiControl";
 export * from "./SaveSynthDialog";
+export * from "./SynthVisualizers";

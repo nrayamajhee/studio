@@ -1,13 +1,16 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import { type Track } from "../../lib/studioStorage";
 import { Button } from "../design-system/Button";
+import { Caption } from "../design-system/Typography";
 import { cn } from "../../lib/utils";
-import { Drum, Piano, Music, X, Plus, Minus } from "lucide-react";
+import { Drum, Piano, Music, X, Plus, Minus, GripVertical } from "lucide-react";
 
 export interface TrackClipProps {
   track: Track;
-  measureWidth: number; // width in pixels per measure
+  measureWidth: number;
+  isSnapEnabled?: boolean;
   onClipCountChange?: (count: number) => void;
+  onMoveClip?: (startMeasure: number) => void;
   onOpenInstrument?: () => void;
   isSelected?: boolean;
 }
@@ -44,10 +47,73 @@ function noteToMidi(noteName: string): number {
 export function TrackClip({
   track,
   measureWidth,
+  isSnapEnabled = true,
   onClipCountChange,
+  onMoveClip,
   onOpenInstrument,
   isSelected = false,
 }: TrackClipProps) {
+  const [dragMeasureOffset, setDragMeasureOffset] = useState<number | null>(null);
+  const dragRef = useRef<{
+    startX: number;
+    initialMeasure: number;
+    hasMoved: boolean;
+  } | null>(null);
+
+  const startMeasure = track.startMeasure || 0;
+  const effectiveStartMeasure =
+    dragMeasureOffset !== null ? dragMeasureOffset : startMeasure;
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    if (e.button !== 0) return;
+
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    dragRef.current = {
+      startX: e.clientX,
+      initialMeasure: startMeasure,
+      hasMoved: false,
+    };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current) return;
+    const deltaX = e.clientX - dragRef.current.startX;
+    if (!dragRef.current.hasMoved && Math.abs(deltaX) < 4) return;
+    dragRef.current.hasMoved = true;
+
+    const deltaMeasures = deltaX / measureWidth;
+    let targetMeasure = dragRef.current.initialMeasure + deltaMeasures;
+
+    if (isSnapEnabled) {
+      targetMeasure = Math.round(targetMeasure);
+    } else {
+      targetMeasure = Math.round(targetMeasure * 4) / 4;
+    }
+
+    setDragMeasureOffset(Math.max(0, targetMeasure));
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current) return;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch (_e) {
+      // Ignored if capture already released
+    }
+
+    if (dragRef.current.hasMoved && dragMeasureOffset !== null) {
+      onMoveClip?.(dragMeasureOffset);
+    }
+    dragRef.current = null;
+    setDragMeasureOffset(null);
+  };
+
+  const handlePointerCancel = () => {
+    dragRef.current = null;
+    setDragMeasureOffset(null);
+  };
+
   const parsedNotes = useMemo(() => {
     const disabledSet = new Set(track.disabledNotes || []);
     const items: Array<{
@@ -138,17 +204,36 @@ export function TrackClip({
 
   return (
     <div
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       className={cn(
-        "flex h-full relative select-none rounded group/clip",
+        "flex h-full relative select-none rounded group/clip cursor-grab active:cursor-grabbing focus:outline-none transition-[margin-left] duration-75",
         isSelected && "ring-1 ring-primary/80",
+        dragMeasureOffset !== null &&
+          "ring-2 ring-primary shadow-xl opacity-90 z-30 !transition-none",
       )}
       style={{
+        marginLeft: `${effectiveStartMeasure * measureWidth}px`,
         width: `${measureWidth * clipCount}px`,
         minWidth: `${measureWidth * clipCount}px`,
         maxWidth: `${measureWidth * clipCount}px`,
       }}
       onDoubleClick={onOpenInstrument}
+      title="Drag to move horizontally | Arrow keys to nudge | Double click to edit"
     >
+      {dragMeasureOffset !== null && (
+        <div className="absolute top-1 left-1.5 px-2 py-0.5 rounded bg-primary text-white text-[10px] font-mono font-bold shadow-lg pointer-events-none z-50 flex items-center gap-1 whitespace-nowrap">
+          <span>Bar {Math.floor(effectiveStartMeasure) + 1}</span>
+          {effectiveStartMeasure % 1 !== 0 && (
+            <span className="opacity-80">
+              : Beat {Math.round((effectiveStartMeasure % 1) * 4) + 1}
+            </span>
+          )}
+        </div>
+      )}
+
       {Array.from({ length: clipCount }).map((_, barIdx) => {
         const isFirst = barIdx === 0;
 
@@ -203,14 +288,20 @@ export function TrackClip({
                   </Button>
                 )}
 
+                {isFirst && (
+                  <GripVertical className="w-2.5 h-2.5 text-stone-400 dark:text-stone-500 opacity-60 group-hover/clip:opacity-100 flex-shrink-0 -ml-0.5 mr-0.5" />
+                )}
+
                 <InstrumentIcon
                   className="w-3 h-3 flex-shrink-0"
                   style={{ color: track.color }}
                 />
 
-                <span className="truncate font-semibold">
-                  {isFirst ? track.name : `${track.name} #${barIdx + 1}`}
-                </span>
+                <Caption asChild>
+                  <span className="truncate font-semibold text-[10px]">
+                    {isFirst ? track.name : `${track.name} #${barIdx + 1}`}
+                  </span>
+                </Caption>
               </div>
 
               {isFirst && (

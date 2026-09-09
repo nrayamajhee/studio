@@ -1,7 +1,16 @@
 import { noteToFrequency } from "../components/piano-roll/types";
 
 export type ExciterMode = "thud" | "noise" | "click" | "drum" | "off";
-export type LfoDestination = "pitch" | "filter" | "tremolo";
+export type SynthFilterType = BiquadFilterType | "off";
+export type LfoDestination =
+  | "pitch"
+  | "filter"
+  | "tremolo"
+  | "amp"
+  | "pan"
+  | "off";
+export type EnvelopeMode = "adsr" | "gate" | "off";
+export type EffectsMode = "all" | "reverb" | "drive" | "off";
 
 export interface SynthParams {
   name: string;
@@ -9,11 +18,11 @@ export interface SynthParams {
   exciterVol: number;
   exciterFreq: number;
   exciterDecay: number;
-  osc1Wave: OscillatorType;
+  osc1Wave: OscillatorType | "off";
   osc2Wave: OscillatorType | "off";
   detune: number;
   osc2Oct: number;
-  filterType: BiquadFilterType;
+  filterType: SynthFilterType;
   cutoff: number;
   envMod: number;
   keytrack: number;
@@ -21,10 +30,12 @@ export interface SynthParams {
   lfoRate: number;
   lfoDepth: number;
   ksFeed: number;
+  envMode?: EnvelopeMode;
   attack: number;
   decay: number;
   sustain: number;
   release: number;
+  fxMode?: EffectsMode;
   lowEq: number;
   drive: number;
   reverb: number;
@@ -702,10 +713,10 @@ function makeDistortionCurve(amount = 0): Float32Array {
 }
 
 class HybridVoice {
-  private osc1: OscillatorNode;
+  private osc1?: OscillatorNode;
   private osc2?: OscillatorNode;
   private lfo?: OscillatorNode;
-  private filter: BiquadFilterNode;
+  private filter?: BiquadFilterNode;
   private ampGain: GainNode;
   private voiceMixer: GainNode;
   private ctx: AudioContext;
@@ -715,7 +726,7 @@ class HybridVoice {
   private autoReleaseTimer?: ReturnType<typeof setTimeout>;
   private baseFreq: number;
   private osc2Freq?: number;
-  private baseCutoff: number;
+  private baseCutoff = 1000;
 
   constructor(
     ctx: AudioContext,
@@ -741,54 +752,66 @@ class HybridVoice {
       this.triggerExciter(now, freq, this.voiceMixer, noiseBuffer, this.velocity);
     }
 
-    this.filter = ctx.createBiquadFilter();
-    this.filter.type = params.filterType;
-    this.filter.Q.setValueAtTime(1.2, now);
+    const isFilterActive = params.filterType !== "off";
+    if (isFilterActive) {
+      this.filter = ctx.createBiquadFilter();
+      this.filter.type = params.filterType as BiquadFilterType;
+      this.filter.Q.setValueAtTime(1.2, now);
 
-    const semitoneRatio = Math.log2(freq / 261.63);
-    const trackingMultiplier = 1.0 + semitoneRatio * params.keytrack;
-    const trackedCutoff = Math.max(
-      40,
-      params.cutoff * Math.max(0.1, trackingMultiplier),
-    );
-    this.baseCutoff = trackedCutoff;
+      const semitoneRatio = Math.log2(freq / 261.63);
+      const trackingMultiplier = 1.0 + semitoneRatio * params.keytrack;
+      const trackedCutoff = Math.max(
+        40,
+        params.cutoff * Math.max(0.1, trackingMultiplier),
+      );
+      this.baseCutoff = trackedCutoff;
 
-    const filterVelScale = 0.6 + 0.4 * this.velocity;
-    const startSweep = Math.min(18000, trackedCutoff + params.envMod * filterVelScale);
-    this.filter.frequency.setValueAtTime(startSweep, now);
-    this.filter.frequency.exponentialRampToValueAtTime(
-      trackedCutoff,
-      now + Math.min(0.6, params.decay * 0.5),
-    );
+      const filterVelScale = 0.6 + 0.4 * this.velocity;
+      const startSweep = Math.min(18000, trackedCutoff + params.envMod * filterVelScale);
+      this.filter.frequency.setValueAtTime(startSweep, now);
+      this.filter.frequency.exponentialRampToValueAtTime(
+        trackedCutoff,
+        now + Math.min(0.6, params.decay * 0.5),
+      );
+    }
 
-    this.osc1 = ctx.createOscillator();
-    this.osc1.type = params.osc1Wave;
-    this.osc1.frequency.setValueAtTime(freq, now);
+    this.ampGain = ctx.createGain();
+    this.ampGain.gain.setValueAtTime(0.0001, now);
 
+    const targetNode = this.filter ? this.filter : this.ampGain;
+
+    const hasOsc1 = params.osc1Wave !== "off";
     const hasOsc2 = params.osc2Wave !== "off";
-    const osc1Gain = ctx.createGain();
-    osc1Gain.gain.setValueAtTime(hasOsc2 ? 0.6 : 0.85, now);
-    this.osc1.connect(osc1Gain);
 
-    if (params.ksFeed > 0.05) {
-      const delayNode = ctx.createDelay();
-      const feedbackGain = ctx.createGain();
-      const delayFilter = ctx.createBiquadFilter();
+    if (hasOsc1) {
+      this.osc1 = ctx.createOscillator();
+      this.osc1.type = params.osc1Wave as OscillatorType;
+      this.osc1.frequency.setValueAtTime(freq, now);
 
-      const period = 1.0 / Math.max(40, freq);
-      delayNode.delayTime.setValueAtTime(period, now);
-      delayFilter.type = "lowpass";
-      delayFilter.frequency.setValueAtTime(Math.min(8000, freq * 4), now);
-      feedbackGain.gain.setValueAtTime(params.ksFeed, now);
+      const osc1Gain = ctx.createGain();
+      osc1Gain.gain.setValueAtTime(hasOsc2 ? 0.6 : 0.85, now);
+      this.osc1.connect(osc1Gain);
 
-      delayNode.connect(delayFilter);
-      delayFilter.connect(feedbackGain);
-      feedbackGain.connect(delayNode);
+      if (params.ksFeed > 0.05) {
+        const delayNode = ctx.createDelay();
+        const feedbackGain = ctx.createGain();
+        const delayFilter = ctx.createBiquadFilter();
 
-      osc1Gain.connect(delayNode);
-      delayNode.connect(this.filter);
-    } else {
-      osc1Gain.connect(this.filter);
+        const period = 1.0 / Math.max(40, freq);
+        delayNode.delayTime.setValueAtTime(period, now);
+        delayFilter.type = "lowpass";
+        delayFilter.frequency.setValueAtTime(Math.min(8000, freq * 4), now);
+        feedbackGain.gain.setValueAtTime(params.ksFeed, now);
+
+        delayNode.connect(delayFilter);
+        delayFilter.connect(feedbackGain);
+        feedbackGain.connect(delayNode);
+
+        osc1Gain.connect(delayNode);
+        delayNode.connect(targetNode);
+      } else {
+        osc1Gain.connect(targetNode);
+      }
     }
 
     if (hasOsc2) {
@@ -798,16 +821,18 @@ class HybridVoice {
       this.osc2Freq = targetFreq;
       this.osc2.frequency.setValueAtTime(targetFreq, now);
       this.osc2.detune.setValueAtTime(params.detune, now);
-      this.osc1.detune.setValueAtTime(-params.detune, now);
+      if (this.osc1) {
+        this.osc1.detune.setValueAtTime(-params.detune, now);
+      }
 
       const osc2Gain = ctx.createGain();
-      osc2Gain.gain.setValueAtTime(0.5, now);
+      osc2Gain.gain.setValueAtTime(hasOsc1 ? 0.5 : 0.85, now);
       this.osc2.connect(osc2Gain);
-      osc2Gain.connect(this.filter);
+      osc2Gain.connect(targetNode);
     }
 
     let lfoGain: GainNode | undefined;
-    if (params.lfoDepth > 0) {
+    if (params.lfoDepth > 0 && params.lfoDest !== "off") {
       this.lfo = ctx.createOscillator();
       lfoGain = ctx.createGain();
       this.lfo.frequency.setValueAtTime(params.lfoRate, now);
@@ -815,42 +840,58 @@ class HybridVoice {
       this.lfo.start(now);
 
       if (params.lfoDest === "pitch") {
-        this.lfo.connect(this.osc1.detune);
+        if (this.osc1) this.lfo.connect(this.osc1.detune);
         if (this.osc2) this.lfo.connect(this.osc2.detune);
-      } else if (params.lfoDest === "filter") {
+      } else if (params.lfoDest === "filter" && this.filter) {
         lfoGain.gain.setValueAtTime(params.lfoDepth * 15, now);
         this.lfo.connect(this.filter.frequency);
       }
     }
 
-    this.ampGain = ctx.createGain();
-    this.ampGain.gain.setValueAtTime(0.0001, now);
-
     const peakAmp = 0.12 * Math.pow(this.velocity, 1.25);
+    const envMode = params.envMode || "adsr";
     const attackTime = Math.max(0.002, params.attack);
-    this.ampGain.gain.linearRampToValueAtTime(peakAmp, now + attackTime);
+
+    if (envMode === "off") {
+      this.ampGain.gain.setValueAtTime(peakAmp, now);
+    } else if (envMode === "gate") {
+      this.ampGain.gain.linearRampToValueAtTime(peakAmp, now + 0.002);
+    } else {
+      this.ampGain.gain.linearRampToValueAtTime(peakAmp, now + attackTime);
+
+      const scaledDecay =
+        params.decay *
+        Math.pow(261.63 / Math.max(freq, 60), 0.25) *
+        (0.75 + 0.5 * this.velocity);
+      const effectiveSustain = Math.max(params.sustain, 0.16 * this.velocity);
+      const susLevel = Math.max(0.0001, peakAmp * effectiveSustain);
+      this.ampGain.gain.exponentialRampToValueAtTime(
+        susLevel,
+        now + attackTime + scaledDecay,
+      );
+    }
+
+    if (
+      params.lfoDepth > 0 &&
+      (params.lfoDest === "tremolo" || params.lfoDest === "amp") &&
+      lfoGain
+    ) {
+      lfoGain.gain.setValueAtTime(params.lfoDepth * 0.015, now);
+      this.lfo?.connect(this.ampGain.gain);
+    }
+
+    if (this.filter) {
+      this.filter.connect(this.ampGain);
+    }
+    this.ampGain.connect(this.voiceMixer);
+
+    if (this.osc1) this.osc1.start(now);
+    if (this.osc2) this.osc2.start(now);
 
     const scaledDecay =
       params.decay *
       Math.pow(261.63 / Math.max(freq, 60), 0.25) *
       (0.75 + 0.5 * this.velocity);
-    const effectiveSustain = Math.max(params.sustain, 0.16 * this.velocity);
-    const susLevel = Math.max(0.0001, peakAmp * effectiveSustain);
-    this.ampGain.gain.exponentialRampToValueAtTime(
-      susLevel,
-      now + attackTime + scaledDecay,
-    );
-
-    if (params.lfoDepth > 0 && params.lfoDest === "tremolo" && lfoGain) {
-      lfoGain.gain.setValueAtTime(params.lfoDepth * 0.015, now);
-      this.lfo?.connect(this.ampGain.gain);
-    }
-
-    this.filter.connect(this.ampGain);
-    this.ampGain.connect(this.voiceMixer);
-
-    this.osc1.start(now);
-    if (this.osc2) this.osc2.start(now);
 
     if (duration !== undefined && duration > 0) {
       this.autoReleaseTimer = setTimeout(() => {
@@ -960,12 +1001,14 @@ class HybridVoice {
 
     const currentAmp = Math.max(0.0001, this.ampGain.gain.value);
     this.ampGain.gain.setValueAtTime(currentAmp, now);
-    const minRelease = 0.35 + 0.45 * this.velocity;
-    const releaseTime = fast ? 0.015 : Math.max(minRelease, this.params.release);
+    const envMode = this.params.envMode || "adsr";
+    const releaseTime = fast || envMode === "off"
+      ? 0.015
+      : Math.max(0.35 + 0.45 * this.velocity, this.params.release);
     this.ampGain.gain.exponentialRampToValueAtTime(0.00001, now + releaseTime);
 
     const stopAt = now + releaseTime + 0.02;
-    this.osc1.stop(stopAt);
+    if (this.osc1) this.osc1.stop(stopAt);
     if (this.osc2) this.osc2.stop(stopAt);
     if (this.lfo) this.lfo.stop(stopAt);
 
@@ -987,8 +1030,10 @@ class HybridVoice {
   public setPitchBend(ratio: number) {
     if (this.isReleased) return;
     const now = this.ctx.currentTime;
-    this.osc1.frequency.cancelScheduledValues(now);
-    this.osc1.frequency.setValueAtTime(this.baseFreq * ratio, now);
+    if (this.osc1) {
+      this.osc1.frequency.cancelScheduledValues(now);
+      this.osc1.frequency.setValueAtTime(this.baseFreq * ratio, now);
+    }
     if (this.osc2 && this.osc2Freq) {
       this.osc2.frequency.cancelScheduledValues(now);
       this.osc2.frequency.setValueAtTime(this.osc2Freq * ratio, now);
@@ -996,7 +1041,7 @@ class HybridVoice {
   }
 
   public setFilterOffset(offset: number) {
-    if (this.isReleased) return;
+    if (this.isReleased || !this.filter) return;
     const now = this.ctx.currentTime;
     this.filter.frequency.cancelScheduledValues(now);
     this.filter.frequency.setValueAtTime(
@@ -1120,6 +1165,7 @@ class HybridSynthEngine {
       this.analyser.connect(this.masterLimiter);
       this.masterLimiter.connect(this.finalCeilingGain);
       this.finalCeilingGain.connect(this.audioCtx.destination);
+      this.applyFxParams();
     }
 
     if (this.audioCtx.state === "suspended") {
@@ -1378,18 +1424,27 @@ class HybridSynthEngine {
   private applyFxParams(): void {
     if (!this.audioCtx) return;
     const now = this.audioCtx.currentTime;
+    const fxMode = this.params.fxMode || "all";
+    const isFxDisabled = fxMode === "off";
+    const isDriveActive =
+      !isFxDisabled && (fxMode === "all" || fxMode === "drive");
+    const isReverbActive =
+      !isFxDisabled && (fxMode === "all" || fxMode === "reverb");
 
     if (this.lowShelfEQ) {
-      this.lowShelfEQ.gain.setValueAtTime(this.params.lowEq, now);
+      const eqGain = isFxDisabled ? 0 : this.params.lowEq;
+      this.lowShelfEQ.gain.setValueAtTime(eqGain, now);
     }
     if (this.distortionNode) {
+      const effectiveDrive = isDriveActive ? this.params.drive : 0;
       this.distortionNode.curve = makeDistortionCurve(
-        this.params.drive,
+        effectiveDrive,
       ) as unknown as Float32Array<ArrayBuffer>;
     }
     if (this.dryGain && this.wetGain) {
-      this.dryGain.gain.setValueAtTime(1.0 - this.params.reverb, now);
-      this.wetGain.gain.setValueAtTime(this.params.reverb, now);
+      const effectiveReverb = isReverbActive ? this.params.reverb : 0;
+      this.dryGain.gain.setValueAtTime(1.0 - effectiveReverb, now);
+      this.wetGain.gain.setValueAtTime(effectiveReverb, now);
     }
     if (this.masterGain) {
       this.masterGain.gain.setValueAtTime(this.params.masterVol, now);

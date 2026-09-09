@@ -5,6 +5,7 @@ const isDev =
 
 export default [
   index("routes/home.tsx"),
+  route("studio/:trackId?", "routes/studio.tsx"),
   route("mixer", "routes/mixer.tsx"),
   route("instrument/:instrumentId?", "routes/instrument.tsx"),
   ...(!isDev ? [route("storybook", "routes/storybook.tsx")] : []),

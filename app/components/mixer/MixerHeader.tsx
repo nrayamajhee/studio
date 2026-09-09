@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router";
 import { Button } from "../design-system/Button";
+import { Slider } from "../design-system/Slider";
+import { Card } from "../design-system/Card";
+import { Title, Caption } from "../design-system/Typography";
 import { useTheme } from "../../hooks/useTheme";
 import { cn } from "../../lib/utils";
 import {
@@ -14,6 +17,9 @@ import {
   Monitor,
   ChevronLeft,
   ChevronRight,
+  Volume2,
+  Volume1,
+  VolumeX,
 } from "lucide-react";
 
 export interface MixerHeaderProps {
@@ -32,6 +38,8 @@ export interface MixerHeaderProps {
   activeTrackId?: string;
   activeTrackName?: string;
   activeTrackColor?: string;
+  volume?: number;
+  onVolumeChange?: (volume: number) => void;
 }
 
 export function MixerHeader({
@@ -44,8 +52,40 @@ export function MixerHeader({
   onBpmChange,
   currentStep,
   totalStepsPerBar,
+  volume,
+  onVolumeChange,
 }: MixerHeaderProps) {
   const { theme, nextTheme, cycleTheme } = useTheme();
+
+  const currentVolume = volume ?? 0.7;
+  const prevVolumeRef = useRef(currentVolume > 0 ? currentVolume : 0.7);
+
+  const handleVolumeChange = (newVol: number) => {
+    const clamped = Math.max(0, Math.min(1, newVol));
+    if (onVolumeChange) {
+      onVolumeChange(clamped);
+    }
+    if (clamped > 0) {
+      prevVolumeRef.current = clamped;
+    }
+  };
+
+  const handleVolumeToggleMute = () => {
+    if (currentVolume > 0) {
+      prevVolumeRef.current = currentVolume;
+      handleVolumeChange(0);
+    } else {
+      handleVolumeChange(prevVolumeRef.current || 0.7);
+    }
+  };
+
+  const handleVolumeWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.05 : -0.05;
+    handleVolumeChange(
+      Math.max(0, Math.min(1, Math.round((currentVolume + delta) * 100) / 100)),
+    );
+  };
 
   const [isEditingBpm, setIsEditingBpm] = useState(false);
   const [rawBpmInput, setRawBpmInput] = useState("");
@@ -85,8 +125,8 @@ export function MixerHeader({
   const tickStr = currentTick.toString().padStart(2, "0");
 
   return (
-    <header className="w-full flex items-center justify-between px-3 py-2 border-b border-stone-200 dark:border-stone-800 bg-surface-light/95 dark:bg-stone-900/95 backdrop-blur-sm flex-shrink-0 z-50">
-      <div className="flex items-center gap-3 sm:gap-4">
+    <header className="relative w-full flex items-center justify-between px-3 py-2 border-b border-stone-200 dark:border-stone-800 bg-surface-light/95 dark:bg-stone-900/95 backdrop-blur-sm flex-shrink-0 z-50">
+      <div className="flex items-center gap-2 sm:gap-3">
         <Button
           asChild
           variant="solid"
@@ -158,17 +198,6 @@ export function MixerHeader({
         </div>
 
         <div
-          className="flex items-center px-2 py-1 bg-stone-200/70 dark:bg-stone-950 font-mono text-xs font-bold rounded border border-stone-300 dark:border-stone-800 tracking-wider shadow-inner"
-          title="Timeline Position (Bar : Beat : Tick)"
-        >
-          <span className="text-primary-dark dark:text-primary-light">{barStr}</span>
-          <span className="text-stone-400 mx-1">:</span>
-          <span className="text-stone-700 dark:text-stone-200">{beatStr}</span>
-          <span className="text-stone-400 mx-1">:</span>
-          <span className="text-stone-500 text-[10px]">{tickStr}</span>
-        </div>
-
-        <div
           className="flex items-center bg-stone-200 dark:bg-stone-700 rounded h-7 px-0.5 text-stone-800 dark:text-stone-100"
           onWheel={handleBpmWheel}
           title={`Tempo: ${bpm} BPM (Scroll wheel or type to edit)`}
@@ -222,7 +251,72 @@ export function MixerHeader({
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-center sm:absolute sm:left-1/2 sm:-translate-x-1/2 pointer-events-auto">
+        <Card
+          elevation="low"
+          className="flex flex-row items-center px-2 py-1 bg-stone-200/70 dark:bg-stone-950 font-mono text-xs font-bold rounded border border-stone-300 dark:border-stone-800 tracking-wider shadow-inner"
+          title="Timeline Position (Bar : Beat : Tick)"
+        >
+          <Caption asChild>
+            <span className="text-primary-dark dark:text-primary-light font-mono text-xs font-bold">
+              {barStr}
+            </span>
+          </Caption>
+          <Caption className="text-stone-400 mx-1">:</Caption>
+          <Caption asChild>
+            <span className="text-stone-700 dark:text-stone-200 font-mono text-xs font-bold">{beatStr}</span>
+          </Caption>
+          <Caption className="text-stone-400 mx-1">:</Caption>
+          <Caption asChild>
+            <span className="text-stone-500 text-[10px] font-mono font-bold">{tickStr}</span>
+          </Caption>
+        </Card>
+      </div>
+
+      <div className="flex items-center gap-2 sm:gap-3">
+        {onVolumeChange !== undefined && (
+          <div
+            className="flex items-center gap-1.5 px-0.5"
+            onWheel={handleVolumeWheel}
+          >
+            <Button
+              variant="solid"
+              tone="secondary"
+              size="sm"
+              iconOnly
+              onClick={handleVolumeToggleMute}
+              title={`Master Volume: ${Math.round(currentVolume * 100)}% (Click to toggle mute, scroll to adjust)`}
+              aria-label={`Master Volume: ${Math.round(currentVolume * 100)}%`}
+              className="p-1.5 h-auto rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-100 flex-shrink-0"
+            >
+              {currentVolume === 0 ? (
+                <VolumeX className="w-3.5 h-3.5 text-stone-400" />
+              ) : currentVolume < 0.5 ? (
+                <Volume1 className="w-3.5 h-3.5" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5" />
+              )}
+            </Button>
+
+            <Slider
+              tone="primary"
+              size="sm"
+              min={0}
+              max={1}
+              step={0.01}
+              value={currentVolume}
+              onChange={(val) => handleVolumeChange(val)}
+              className="w-14 sm:w-20"
+            />
+
+            <Caption asChild>
+              <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400 w-7 text-right select-none flex-shrink-0">
+                {Math.round(currentVolume * 100)}%
+              </span>
+            </Caption>
+          </div>
+        )}
+
         <Button
           variant="solid"
           tone="secondary"

@@ -42,7 +42,7 @@ export const Default: Story = {
     isPlaying: false,
   },
   render: (args) => (
-    <div className="h-[400px] w-full bg-[#07090e] flex flex-col">
+    <div className="h-[400px] w-full bg-surface-dark flex flex-col">
       <MixerTimeline {...args} />
     </div>
   ),
@@ -57,7 +57,7 @@ export const PlayingWithPlayhead: Story = {
     isPlaying: true,
   },
   render: (args) => (
-    <div className="h-[400px] w-full bg-[#07090e] flex flex-col">
+    <div className="h-[400px] w-full bg-surface-dark flex flex-col">
       <MixerTimeline {...args} />
     </div>
   ),

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { synth } from "../../lib/synth";
 import { Button } from "../design-system/Button";
 import { Card } from "../design-system/Card";
+import { Label, Caption } from "../design-system/Typography";
 import { cn } from "../../lib/utils";
 import { Radio } from "lucide-react";
 
@@ -356,24 +357,26 @@ export const DrumPad: React.FC<DrumPadProps> = ({
     <Card
       elevation="mid"
       className={cn(
-        "flex flex-col h-full w-full bg-white dark:bg-[#0a0c10] border border-stone-200 dark:border-[#1f2533] rounded-xl overflow-hidden shadow-sm dark:shadow-lg text-stone-900 dark:text-stone-100 p-2.5 gap-2 select-none",
+        "flex flex-col h-full w-full bg-surface-light dark:bg-surface-dark border border-stone-200 dark:border-stone-800 rounded-xl overflow-hidden shadow-sm dark:shadow-lg text-stone-900 dark:text-stone-100 p-2.5 gap-2 select-none",
         className,
       )}
     >
-      <div className="flex items-center justify-between pb-1 border-b border-stone-200 dark:border-[#1f2533] flex-shrink-0">
+      <div className="flex items-center justify-between pb-1 border-b border-stone-200 dark:border-stone-800 flex-shrink-0">
         <div>
           {isRecording && (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 animate-pulse bg-red-950/40 px-1.5 py-0.5 rounded border border-red-800/50">
-              <Radio className="w-3 h-3" />
-              REC
-            </span>
+            <Caption asChild>
+              <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 animate-pulse bg-red-950/40 px-1.5 py-0.5 rounded border border-red-800/50">
+                <Radio className="w-3 h-3" />
+                REC
+              </span>
+            </Caption>
           )}
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-bold tracking-wider text-stone-500 dark:text-stone-400 uppercase">
+          <Label className="text-[10px] font-bold tracking-wider text-stone-500 dark:text-stone-400 uppercase">
             BANK
-          </span>
+          </Label>
           <div className="flex items-center gap-1">
             <Button
               variant="solid"
@@ -386,7 +389,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
                 "px-2 py-0.5 h-6 text-[10px] rounded border transition-colors",
                 bank === 0
                   ? "bg-primary text-white border-primary-light font-bold shadow-sm"
-                  : "bg-stone-100 hover:bg-stone-200 dark:bg-[#161a24] dark:hover:bg-[#232a3b] border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300",
+                  : "bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300",
               )}
             >
               A
@@ -402,7 +405,7 @@ export const DrumPad: React.FC<DrumPadProps> = ({
                 "px-2 py-0.5 h-6 text-[10px] rounded border transition-colors",
                 bank === 1
                   ? "bg-primary text-white border-primary-light font-bold shadow-sm"
-                  : "bg-stone-100 hover:bg-stone-200 dark:bg-[#161a24] dark:hover:bg-[#232a3b] border-stone-200 dark:border-[#232a3b] text-stone-700 dark:text-stone-300",
+                  : "bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300",
               )}
             >
               B
@@ -411,7 +414,10 @@ export const DrumPad: React.FC<DrumPadProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 grid grid-cols-4 grid-rows-4 gap-1.5 p-1 bg-stone-100 dark:bg-[#06080c] rounded-lg border border-stone-200 dark:border-[#1f2533] shadow-inner">
+      <Card
+        elevation="low"
+        className="flex-1 min-h-0 grid grid-cols-4 grid-rows-4 gap-1.5 p-1 bg-stone-100 dark:bg-stone-950 rounded-lg border border-stone-200 dark:border-stone-800 shadow-inner"
+      >
         {pads.map((pad) => {
           const isActive =
             pressedPads.has(pad.note) ||
@@ -452,25 +458,29 @@ export const DrumPad: React.FC<DrumPadProps> = ({
                 >
                   {pad.key}
                 </kbd>
-                <span
-                  className={cn(
-                    "text-[8px] font-mono leading-tight truncate ml-1",
-                    isActive ? "text-stone-900 font-bold" : "text-stone-600 dark:text-stone-300 opacity-70",
-                  )}
-                >
-                  {pad.note}
-                </span>
+                <Caption asChild>
+                  <span
+                    className={cn(
+                      "text-[8px] font-mono leading-tight truncate ml-1",
+                      isActive ? "text-stone-900 font-bold" : "text-stone-600 dark:text-stone-300 opacity-70",
+                    )}
+                  >
+                    {pad.note}
+                  </span>
+                </Caption>
               </div>
 
               <div className="w-full min-w-0 truncate pointer-events-none mt-auto">
-                <span
-                  className={cn(
-                    "block text-[10px] sm:text-[11px] font-medium truncate leading-tight tracking-tight",
-                    isActive ? "font-bold text-stone-950" : "",
-                  )}
-                >
-                  {pad.label}
-                </span>
+                <Caption asChild>
+                  <span
+                    className={cn(
+                      "block text-[10px] sm:text-[11px] font-medium truncate leading-tight tracking-tight",
+                      isActive ? "font-bold text-stone-950" : "",
+                    )}
+                  >
+                    {pad.label}
+                  </span>
+                </Caption>
               </div>
 
               <div
@@ -484,15 +494,15 @@ export const DrumPad: React.FC<DrumPadProps> = ({
             </Button>
           );
         })}
-      </div>
+      </Card>
 
-      <div className="text-[10px] text-stone-500 dark:text-stone-400 text-center flex items-center justify-between pt-1 border-t border-stone-200 dark:border-[#1f2533] flex-shrink-0">
-        <span className="truncate">
-          Keys: <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">1-4</kbd> <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">Q-R</kbd> <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">A-F</kbd> <kbd className="bg-stone-100 dark:bg-[#161a24] text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-[#232a3b]">Z-V</kbd>
-        </span>
-        <span className="text-[9px] text-stone-500 dark:text-stone-400 font-mono font-medium">
+      <div className="flex items-center justify-between pt-1 border-t border-stone-200 dark:border-stone-800 flex-shrink-0">
+        <Caption className="text-[10px] text-stone-500 dark:text-stone-400 truncate">
+          Keys: <kbd className="bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-stone-700">1-4</kbd> <kbd className="bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-stone-700">Q-R</kbd> <kbd className="bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-stone-700">A-F</kbd> <kbd className="bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-300 px-1 py-0.5 rounded border border-stone-300 dark:border-stone-700">Z-V</kbd>
+        </Caption>
+        <Caption className="text-[9px] text-stone-500 dark:text-stone-400 font-mono font-medium">
           4x4 Dynamic
-        </span>
+        </Caption>
       </div>
     </Card>
   );
