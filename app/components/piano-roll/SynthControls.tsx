@@ -25,6 +25,12 @@ import {
 export interface SynthControlsProps {
   className?: string;
   selectedPreset?: string;
+  params?: SynthParams;
+  onParamChange?: <K extends keyof SynthParams>(
+    key: K,
+    value: SynthParams[K],
+  ) => void;
+  onParamsChange?: (newParams: SynthParams) => void;
   leftHeaderSlot?: React.ReactNode;
   rightHeaderSlot?: React.ReactNode;
   orientation?: "horizontal" | "vertical";
@@ -33,23 +39,34 @@ export interface SynthControlsProps {
 export const SynthControls: React.FC<SynthControlsProps> = ({
   className,
   selectedPreset = "grand_piano",
+  params: controlledParams,
+  onParamChange,
+  onParamsChange,
   leftHeaderSlot,
   rightHeaderSlot,
   orientation = "horizontal",
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [studio, setStudio] = useStudioStorage();
-  const [params, setParams] = useState<SynthParams>(
-    () => studio.synthParams ?? { ...synth.params },
+  const [internalParams, setInternalParams] = useState<SynthParams>(
+    () => controlledParams ?? studio.synthParams ?? { ...synth.params },
   );
   const [prevPreset, setPrevPreset] = useState(selectedPreset);
 
-  if (selectedPreset !== prevPreset) {
+  const params = controlledParams ?? internalParams;
+
+  if (!controlledParams && selectedPreset !== prevPreset) {
     setPrevPreset(selectedPreset);
     const newParams = { ...synth.params };
-    setParams(newParams);
+    setInternalParams(newParams);
     setStudio((prev) => ({ ...prev, synthParams: newParams }));
   }
+
+  useEffect(() => {
+    if (controlledParams) {
+      synth.setParams(controlledParams);
+    }
+  }, [controlledParams]);
 
   // Realtime oscilloscope animation
   useEffect(() => {
@@ -125,9 +142,13 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
     value: SynthParams[K],
   ) => {
     synth.updateParam(key, value);
-    const updated = { ...synth.params, [key]: value };
-    setParams(updated);
+    const updated = { ...params, [key]: value };
+    if (!controlledParams) {
+      setInternalParams(updated);
+    }
     setStudio((prev) => ({ ...prev, synthParams: updated }));
+    onParamChange?.(key, value);
+    onParamsChange?.(updated);
   };
 
   const isVertical = orientation === "vertical";
@@ -261,14 +282,13 @@ export const SynthControls: React.FC<SynthControlsProps> = ({
               label="Osc 1 Waveform"
               value={params.osc1Wave}
               onChange={(val) =>
-                handleParamChange("osc1Wave", val as OscillatorType | "off")
+                handleParamChange("osc1Wave", val as OscillatorType)
               }
               options={[
                 { value: "triangle", label: "Triangle (Grand)" },
                 { value: "sawtooth", label: "Sawtooth (Bright)" },
                 { value: "square", label: "Square (Hollow)" },
                 { value: "sine", label: "Sine (Sub)" },
-                { value: "off", label: "Disabled (Off)" },
               ]}
             />
 

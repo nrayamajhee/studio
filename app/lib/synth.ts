@@ -18,7 +18,7 @@ export interface SynthParams {
   exciterVol: number;
   exciterFreq: number;
   exciterDecay: number;
-  osc1Wave: OscillatorType | "off";
+  osc1Wave: OscillatorType;
   osc2Wave: OscillatorType | "off";
   detune: number;
   osc2Oct: number;
@@ -780,38 +780,35 @@ class HybridVoice {
 
     const targetNode = this.filter ? this.filter : this.ampGain;
 
-    const hasOsc1 = params.osc1Wave !== "off";
     const hasOsc2 = params.osc2Wave !== "off";
 
-    if (hasOsc1) {
-      this.osc1 = ctx.createOscillator();
-      this.osc1.type = params.osc1Wave as OscillatorType;
-      this.osc1.frequency.setValueAtTime(freq, now);
+    this.osc1 = ctx.createOscillator();
+    this.osc1.type = params.osc1Wave;
+    this.osc1.frequency.setValueAtTime(freq, now);
 
-      const osc1Gain = ctx.createGain();
-      osc1Gain.gain.setValueAtTime(hasOsc2 ? 0.6 : 0.85, now);
-      this.osc1.connect(osc1Gain);
+    const osc1Gain = ctx.createGain();
+    osc1Gain.gain.setValueAtTime(hasOsc2 ? 0.6 : 0.85, now);
+    this.osc1.connect(osc1Gain);
 
-      if (params.ksFeed > 0.05) {
-        const delayNode = ctx.createDelay();
-        const feedbackGain = ctx.createGain();
-        const delayFilter = ctx.createBiquadFilter();
+    if (params.ksFeed > 0.05) {
+      const delayNode = ctx.createDelay();
+      const feedbackGain = ctx.createGain();
+      const delayFilter = ctx.createBiquadFilter();
 
-        const period = 1.0 / Math.max(40, freq);
-        delayNode.delayTime.setValueAtTime(period, now);
-        delayFilter.type = "lowpass";
-        delayFilter.frequency.setValueAtTime(Math.min(8000, freq * 4), now);
-        feedbackGain.gain.setValueAtTime(params.ksFeed, now);
+      const period = 1.0 / Math.max(40, freq);
+      delayNode.delayTime.setValueAtTime(period, now);
+      delayFilter.type = "lowpass";
+      delayFilter.frequency.setValueAtTime(Math.min(8000, freq * 4), now);
+      feedbackGain.gain.setValueAtTime(params.ksFeed, now);
 
-        delayNode.connect(delayFilter);
-        delayFilter.connect(feedbackGain);
-        feedbackGain.connect(delayNode);
+      delayNode.connect(delayFilter);
+      delayFilter.connect(feedbackGain);
+      feedbackGain.connect(delayNode);
 
-        osc1Gain.connect(delayNode);
-        delayNode.connect(targetNode);
-      } else {
-        osc1Gain.connect(targetNode);
-      }
+      osc1Gain.connect(delayNode);
+      delayNode.connect(targetNode);
+    } else {
+      osc1Gain.connect(targetNode);
     }
 
     if (hasOsc2) {
@@ -821,12 +818,10 @@ class HybridVoice {
       this.osc2Freq = targetFreq;
       this.osc2.frequency.setValueAtTime(targetFreq, now);
       this.osc2.detune.setValueAtTime(params.detune, now);
-      if (this.osc1) {
-        this.osc1.detune.setValueAtTime(-params.detune, now);
-      }
+      this.osc1.detune.setValueAtTime(-params.detune, now);
 
       const osc2Gain = ctx.createGain();
-      osc2Gain.gain.setValueAtTime(hasOsc1 ? 0.5 : 0.85, now);
+      osc2Gain.gain.setValueAtTime(0.5, now);
       this.osc2.connect(osc2Gain);
       osc2Gain.connect(targetNode);
     }
@@ -836,15 +831,21 @@ class HybridVoice {
       this.lfo = ctx.createOscillator();
       lfoGain = ctx.createGain();
       this.lfo.frequency.setValueAtTime(params.lfoRate, now);
-      lfoGain.gain.setValueAtTime(params.lfoDepth, now);
       this.lfo.start(now);
 
       if (params.lfoDest === "pitch") {
-        if (this.osc1) this.lfo.connect(this.osc1.detune);
-        if (this.osc2) this.lfo.connect(this.osc2.detune);
+        lfoGain.gain.setValueAtTime(params.lfoDepth * 70, now);
+        this.lfo.connect(lfoGain);
+        if (this.osc1) lfoGain.connect(this.osc1.detune);
+        if (this.osc2) lfoGain.connect(this.osc2.detune);
       } else if (params.lfoDest === "filter" && this.filter) {
-        lfoGain.gain.setValueAtTime(params.lfoDepth * 15, now);
-        this.lfo.connect(this.filter.frequency);
+        lfoGain.gain.setValueAtTime(params.lfoDepth * 1500, now);
+        this.lfo.connect(lfoGain);
+        lfoGain.connect(this.filter.frequency);
+      } else if (params.lfoDest === "tremolo" || params.lfoDest === "amp") {
+        lfoGain.gain.setValueAtTime(params.lfoDepth * 0.05, now);
+        this.lfo.connect(lfoGain);
+        lfoGain.connect(this.ampGain.gain);
       }
     }
 
@@ -863,21 +864,15 @@ class HybridVoice {
         params.decay *
         Math.pow(261.63 / Math.max(freq, 60), 0.25) *
         (0.75 + 0.5 * this.velocity);
-      const effectiveSustain = Math.max(params.sustain, 0.16 * this.velocity);
+      const effectiveSustain = Math.max(
+        0.0001,
+        params.sustain * (0.8 + 0.2 * this.velocity),
+      );
       const susLevel = Math.max(0.0001, peakAmp * effectiveSustain);
       this.ampGain.gain.exponentialRampToValueAtTime(
         susLevel,
-        now + attackTime + scaledDecay,
+        now + attackTime + Math.max(0.02, scaledDecay),
       );
-    }
-
-    if (
-      params.lfoDepth > 0 &&
-      (params.lfoDest === "tremolo" || params.lfoDest === "amp") &&
-      lfoGain
-    ) {
-      lfoGain.gain.setValueAtTime(params.lfoDepth * 0.015, now);
-      this.lfo?.connect(this.ampGain.gain);
     }
 
     if (this.filter) {
@@ -899,7 +894,7 @@ class HybridVoice {
       }, duration * 1000);
     } else {
       const naturalDuration =
-        (attackTime + scaledDecay + Math.max(0.6, params.release)) * 1000;
+        (attackTime + scaledDecay + Math.max(0.05, params.release)) * 1000;
       this.autoReleaseTimer = setTimeout(() => {
         this.triggerRelease(false, onEnded);
       }, naturalDuration);
@@ -1002,9 +997,8 @@ class HybridVoice {
     const currentAmp = Math.max(0.0001, this.ampGain.gain.value);
     this.ampGain.gain.setValueAtTime(currentAmp, now);
     const envMode = this.params.envMode || "adsr";
-    const releaseTime = fast || envMode === "off"
-      ? 0.015
-      : Math.max(0.35 + 0.45 * this.velocity, this.params.release);
+    const releaseTime =
+      fast || envMode === "off" ? 0.015 : Math.max(0.01, this.params.release);
     this.ampGain.gain.exponentialRampToValueAtTime(0.00001, now + releaseTime);
 
     const stopAt = now + releaseTime + 0.02;
@@ -1048,6 +1042,20 @@ class HybridVoice {
       Math.max(40, Math.min(18000, this.baseCutoff + offset)),
       now,
     );
+  }
+
+  public updateCutoff(cutoff: number) {
+    if (this.isReleased || !this.filter) return;
+    const now = this.ctx.currentTime;
+    const semitoneRatio = Math.log2(this.baseFreq / 261.63);
+    const trackingMultiplier = 1.0 + semitoneRatio * this.params.keytrack;
+    const trackedCutoff = Math.max(
+      40,
+      cutoff * Math.max(0.1, trackingMultiplier),
+    );
+    this.baseCutoff = trackedCutoff;
+    this.filter.frequency.cancelScheduledValues(now);
+    this.filter.frequency.setTargetAtTime(trackedCutoff, now, 0.02);
   }
 }
 
@@ -1222,7 +1230,7 @@ class HybridSynthEngine {
     }
 
     const shiftedFreq =
-      baseFreq * Math.pow(2, this.octaveShift + targetParams.octave);
+      baseFreq * Math.pow(2, targetParams.octave || 0);
     const voice = new HybridVoice(
       ctx,
       this.masterGain,
@@ -1413,12 +1421,27 @@ class HybridSynthEngine {
     return { ...this.params };
   }
 
+  public setParams(newParams: SynthParams): void {
+    this.params = { ...newParams };
+    this.octaveShift = newParams.octave || 0;
+    this.applyFxParams();
+  }
+
   public updateParam<K extends keyof SynthParams>(
     key: K,
     value: SynthParams[K],
   ): void {
     this.params[key] = value;
+    if (key === "octave") {
+      this.octaveShift = (value as number) || 0;
+    }
     this.applyFxParams();
+
+    if (key === "cutoff" && typeof value === "number") {
+      for (const voice of this.activeVoices.values()) {
+        voice.updateCutoff(value);
+      }
+    }
   }
 
   private applyFxParams(): void {

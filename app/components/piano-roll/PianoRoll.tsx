@@ -19,7 +19,7 @@ import {
   getRootKeySemitoneDelta,
   snapNoteToScale,
 } from "./types";
-import { synth } from "../../lib/synth";
+import { synth, type SynthParams } from "../../lib/synth";
 import { Button } from "../design-system/Button";
 import { Dropdown } from "../design-system/Dropdown";
 import { Card } from "../design-system/Card";
@@ -62,6 +62,7 @@ export interface PianoRollProps {
   velocity?: number;
   onVelocityChange?: (velocity: number) => void;
   selectedPreset?: string;
+  synthParams?: SynthParams;
   externalPressedKeys?: string[];
   rootKey?: string;
   onRootKeyChange?: (rootKey: string) => void;
@@ -92,6 +93,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
   velocity: controlledVelocity,
   onVelocityChange: _onVelocityChange,
   selectedPreset = "grand_piano",
+  synthParams,
   externalPressedKeys = [],
   rootKey: controlledRootKey,
   onRootKeyChange,
@@ -661,7 +663,13 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
               const vel =
                 (noteVelocitiesRef.current[drag.primaryNoteKey] ??
                   velocityRef.current) / 100;
-              synth.playNote(targetNoteName, undefined, 0.2, vel);
+              synth.playNote(
+                targetNoteName,
+                undefined,
+                0.2,
+                vel,
+                synthParams || selectedPreset,
+              );
             }
           }
 
@@ -800,7 +808,13 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
               const vel =
                 (noteVelocitiesRef.current[drag.primaryNoteKey] ??
                   velocityRef.current) / 100;
-              synth.playNote(targetNoteName, undefined, 0.35, vel);
+              synth.playNote(
+                targetNoteName,
+                undefined,
+                0.35,
+                vel,
+                synthParams || selectedPreset,
+              );
             }
           }
         }
@@ -959,7 +973,13 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
       handleNoteVelocityChange(noteKey, noteVel);
       const vel = noteVel / 100;
       const sustainSec = 0.8 + 1.2 * vel;
-      synth.playNote(noteFullName, undefined, sustainSec, vel);
+      synth.playNote(
+        noteFullName,
+        undefined,
+        sustainSec,
+        vel,
+        synthParams || selectedPreset,
+      );
     },
     [
       activeNotes,
@@ -1252,7 +1272,13 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
     setPressedKey(noteFullName);
     const vel = velocity / 100;
     const sustainSec = 0.8 + 1.2 * vel;
-    synth.playNote(noteFullName, undefined, sustainSec, vel);
+    synth.playNote(
+      noteFullName,
+      undefined,
+      sustainSec,
+      vel,
+      synthParams || selectedPreset,
+    );
     setTimeout(() => {
       setPressedKey((current) => (current === noteFullName ? null : current));
     }, 180);
@@ -2052,6 +2078,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({
                                                   undefined,
                                                   0.3,
                                                   v,
+                                                  synthParams || selectedPreset,
                                                 );
                                               }}
                                               aria-label={`${note.fullName} velocity`}

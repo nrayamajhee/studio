@@ -32,7 +32,7 @@ import { OctaveJumpControl } from "../components/piano-roll/OctaveJumpControl";
 import { StepLengthControl } from "../components/piano-roll/StepLengthControl";
 import { MidiControl } from "../components/piano-roll/MidiControl";
 import { getPresetJumpConfig } from "../components/piano-roll/types";
-import { synth } from "../lib/synth";
+import { synth, type SynthParams } from "../lib/synth";
 import { midiManager } from "../lib/midi";
 import { cn } from "../lib/utils";
 import {
@@ -411,6 +411,23 @@ export default function Studio() {
       }
     },
     [activeTrack.id, setStudio],
+  );
+
+  useEffect(() => {
+    if (activeTrack?.synthParams) {
+      synth.setParams(activeTrack.synthParams);
+    } else if (activeTrack?.preset) {
+      synth.loadPreset(activeTrack.preset);
+    }
+  }, [activeTrack?.id, activeTrack?.preset]);
+
+  const handleSynthParamsChange = useCallback(
+    (newParams: SynthParams) => {
+      synth.setParams(newParams);
+      handleUpdateTrack(activeTrack.id, { synthParams: newParams });
+      setStudio((prev) => ({ ...prev, synthParams: newParams }));
+    },
+    [activeTrack.id, handleUpdateTrack, setStudio],
   );
 
   const handleClearNotes = () => {
@@ -1065,6 +1082,7 @@ export default function Studio() {
                           setStudio((prev) => ({ ...prev, velocity: vel }))
                         }
                         selectedPreset={activeTrack.preset}
+                        synthParams={activeTrack.synthParams}
                         rootKey={activeTrack.rootKey || studio.rootKey || "C"}
                         onRootKeyChange={(rk) => {
                           handleUpdateTrack(activeTrack.id, { rootKey: rk });
@@ -1158,6 +1176,8 @@ export default function Studio() {
               <div className="flex-1 min-h-0 p-3 pt-4 overflow-hidden">
                 <SynthControls
                   selectedPreset={activeTrack.preset}
+                  params={activeTrack.synthParams}
+                  onParamsChange={handleSynthParamsChange}
                   orientation="vertical"
                   className="h-full"
                 />
