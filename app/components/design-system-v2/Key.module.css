@@ -1,0 +1,148 @@
+.key {
+  --key-scale-x: 1;
+  --key-scale-y: 1;
+  --key-rotation: 0deg;
+
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0;
+  justify-content: flex-end;
+  cursor: pointer;
+  touch-action: none;
+  color: var(--color-font-dark);
+  background-color: color-mix(
+    in srgb,
+    var(--color-surface-light) 25%,
+    transparent
+  );
+  border-color: color-mix(in srgb, var(--color-surface-light) 25%, transparent);
+  outline: none;
+  box-shadow: var(--shadow-low);
+  transform-origin: center top;
+  transform: perspective(700px) rotateX(var(--key-rotation))
+    scale(var(--key-scale-x), var(--key-scale-y));
+  translate: none;
+  transition:
+    transform 140ms ease-out,
+    box-shadow 140ms ease-out,
+    background-color 140ms ease-out,
+    border-color 140ms ease-out;
+}
+
+.black {
+  color: var(--color-surface-light);
+  background-color: color-mix(in srgb, var(--color-font-dark) 80%, transparent);
+  box-shadow:
+    var(--shadow-low),
+    inset 0 1px 1px
+      color-mix(in srgb, var(--color-surface-light) 25%, transparent);
+}
+
+@media (hover: hover) {
+  .key:hover {
+    border-color: var(--color-surface-light);
+    background-color: color-mix(
+      in srgb,
+      var(--color-surface-light) 65%,
+      transparent
+    );
+  }
+
+  .black:hover {
+    background-color: color-mix(
+      in srgb,
+      var(--color-font-dark) 60%,
+      var(--color-surface-light)
+    );
+  }
+}
+
+.key:focus-visible {
+  border-color: var(--color-surface-light);
+}
+
+.key[aria-pressed="true"] {
+  --key-rotation: -7deg;
+
+  border-color: color-mix(in srgb, var(--color-surface-light) 50%, transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--color-surface-light) 45%,
+    transparent
+  );
+  box-shadow: var(--shadow-low);
+  transition-duration: 70ms;
+}
+
+.black[aria-pressed="true"] {
+  background-color: color-mix(
+    in srgb,
+    var(--color-font-dark) 75%,
+    var(--color-surface-light)
+  );
+}
+
+.labels {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--key-labels-gap, 5px);
+  margin-bottom: var(--key-labels-offset, 14px);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.glyphKey {
+  align-items: center;
+  justify-content: center;
+}
+
+.glyph {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+.black .labels {
+  transform: scale(calc(1 / var(--key-scale-x)), calc(1 / var(--key-scale-y)));
+  transform-origin: center bottom;
+}
+
+.hotkey {
+  font-family: var(--font-sans);
+  font-size: var(--key-hotkey-size, 10px);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.note {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--key-note-size, 14px);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.selected {
+  border-color: color-mix(in srgb, var(--color-primary-light) 70%, transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--color-primary-light) 30%,
+    transparent
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .key {
+    transition: none;
+  }
+
+  .key[aria-pressed="true"] {
+    --key-rotation: 0deg;
+  }
+}
