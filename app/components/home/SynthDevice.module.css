@@ -1,0 +1,202 @@
+.stage {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  container-type: size;
+}
+
+.frame {
+  /* tan(atan2(a, b)) divides two lengths into a plain number, so the
+     1348×540 device scales to fit its container without JavaScript. */
+  --scale: min(1, tan(atan2(100cqw, 1348px)), tan(atan2(100cqh, 540px)));
+
+  position: relative;
+  width: calc(1348px * var(--scale));
+  height: calc(540px * var(--scale));
+}
+
+/* Theme colors are color-mix(light, dark var(--theme-mix)) so they fade with
+   the page instead of snapping when the theme toggles. */
+.device {
+  --synth-ink: color-mix(in srgb, #1d1d1f, #0e0e0f var(--theme-mix));
+  --synth-chalk: #f4f3ef;
+  --synth-orange: #f26b1d;
+  --synth-green: #3aa655;
+  --synth-blue: #2f7de1;
+  /* One spacing for the bezel and every gap between groups; the device size
+     is 2×222 pads + 776 keybed + 4 gaps wide and 2×222 rows + 3 gaps tall. */
+  --gap: 32px;
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  width: 1348px;
+  height: 540px;
+  padding: var(--gap);
+  border-radius: 88px;
+  corner-shape: squircle;
+  background: color-mix(in srgb, #d6d5d0, #2a2a2d var(--theme-mix));
+  box-shadow:
+    0 50px 90px -40px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.45),
+        rgb(0 0 0 / 0.8) var(--theme-mix)
+      ),
+    0 12px 24px -12px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.25),
+        rgb(0 0 0 / 0.6) var(--theme-mix)
+      ),
+    inset 0 2px 0
+      color-mix(
+        in srgb,
+        rgb(255 255 255 / 0.75),
+        rgb(255 255 255 / 0.1) var(--theme-mix)
+      ),
+    inset 0 -3px 0
+      color-mix(in srgb, rgb(0 0 0 / 0.08), rgb(0 0 0 / 0.35) var(--theme-mix));
+  transform: scale(var(--scale));
+  transform-origin: 0 0;
+  user-select: none;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap);
+}
+
+.knobColumn {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  height: 222px;
+}
+
+.pads {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.bank {
+  flex-shrink: 0;
+  width: 222px;
+  height: 222px;
+}
+
+.padRow {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.screen {
+  flex: 1;
+  height: 222px;
+  padding: 10px;
+  border-radius: 22px;
+  background: color-mix(in srgb, #141413, #0b0b0c var(--theme-mix));
+  box-shadow:
+    inset 0 0 0 1px
+      color-mix(
+        in srgb,
+        rgb(255 255 255 / 0.06),
+        rgb(255 255 255 / 0.05) var(--theme-mix)
+      ),
+    0 1px 0
+      color-mix(
+        in srgb,
+        rgb(255 255 255 / 0.8),
+        rgb(255 255 255 / 0.08) var(--theme-mix)
+      );
+}
+
+.glass {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 18px 22px;
+  border-radius: 14px;
+  background: #050505;
+}
+
+.readout {
+  position: absolute;
+  top: 12px;
+  right: 22px;
+  left: 22px;
+  display: flex;
+  justify-content: space-between;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(244 243 239 / 0.6);
+}
+
+.scope {
+  width: 100%;
+  height: 150px;
+}
+
+.keybed {
+  padding: 0 12px 12px;
+  border-radius: 4px 4px 18px 18px;
+  background: color-mix(
+    in srgb,
+    rgb(20 20 19 / 0.07),
+    rgb(0 0 0 / 0.28) var(--theme-mix)
+  );
+  box-shadow:
+    inset 0 4px calc(8px + 2px * var(--theme-dark)) -2px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.28),
+        rgb(0 0 0 / 0.7) var(--theme-mix)
+      ),
+    inset 0 1px 2px
+      color-mix(in srgb, rgb(20 20 19 / 0.2), rgb(0 0 0 / 0.5) var(--theme-mix)),
+    inset 0 -1px 0
+      color-mix(
+        in srgb,
+        rgb(255 255 255 / 0.55),
+        rgb(255 255 255 / 0.06) var(--theme-mix)
+      ),
+    0 1px 0
+      color-mix(
+        in srgb,
+        rgb(255 255 255 / 0.7),
+        rgb(255 255 255 / 0.08) var(--theme-mix)
+      );
+}
+
+.keys {
+  position: relative;
+  width: 752px;
+  height: 210px;
+}
+
+.slot {
+  position: absolute;
+  top: 0;
+}
+
+/* White keys are 50px wide on a 54px pitch. */
+.whiteSlot {
+  left: calc(var(--slot) * 54px);
+}
+
+/* Centers each 30px black key on the 4px gap before white key --slot. */
+.blackSlot {
+  left: calc(var(--slot) * 54px - 17px);
+}

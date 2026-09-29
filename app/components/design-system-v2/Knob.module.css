@@ -1,0 +1,86 @@
+.knob {
+  width: 68px;
+  height: 68px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: none;
+  translate: none;
+  filter: drop-shadow(
+      0 10px 7px
+        color-mix(
+          in srgb,
+          rgb(20 20 19 / 0.28),
+          rgb(0 0 0 / 0.55) var(--theme-mix)
+        )
+    )
+    drop-shadow(
+      0 3px 2px
+        color-mix(
+          in srgb,
+          rgb(20 20 19 / 0.35),
+          rgb(0 0 0 / 0.6) var(--theme-mix)
+        )
+    );
+}
+
+.knob:focus-visible {
+  outline: 3px solid #2f7de1;
+  outline-offset: 3px;
+}
+
+.cap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(
+      circle,
+      rgb(0 0 0 / 0) 72%,
+      rgb(0 0 0 / 0.22) 88%,
+      rgb(0 0 0 / 0.34) 100%
+    ),
+    var(--knob-color);
+  transition: transform 200ms ease;
+}
+
+.top {
+  display: flex;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 38% 30%,
+      rgb(255 255 255 / 0.42),
+      rgb(255 255 255 / 0) 55%
+    ),
+    radial-gradient(circle, rgb(0 0 0 / 0) 70%, rgb(0 0 0 / 0.12)),
+    var(--knob-color);
+  box-shadow:
+    0 0 0 1.5px rgb(0 0 0 / 0.14),
+    0 1px 2px rgb(0 0 0 / 0.25);
+}
+
+.knob:active .top {
+  filter: brightness(0.95);
+}
+
+.mark {
+  width: 4px;
+  height: 14px;
+  margin-top: 5px;
+  border-radius: 2px;
+  background: var(--knob-mark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cap {
+    transition: none;
+  }
+}

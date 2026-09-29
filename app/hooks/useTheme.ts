@@ -3,22 +3,13 @@ import { useLocalStorage, useMediaQuery } from "usehooks-ts";
 
 export type Theme = "light" | "dark" | "system";
 
-export const getNextTheme = (
-  currentTheme: Theme,
-  isDarkPreferred: boolean,
-): Theme => {
-  if (isDarkPreferred) {
-    return currentTheme === "system"
+export const getNextTheme = (currentTheme: Theme): Theme => {
+  if (currentTheme === "system") {
+    return document.documentElement.classList.contains("dark") === true
       ? "light"
-      : currentTheme === "light"
-        ? "dark"
-        : "system";
+      : "dark";
   }
-  return currentTheme === "system"
-    ? "dark"
-    : currentTheme === "dark"
-      ? "light"
-      : "system";
+  return currentTheme === "light" ? "dark" : "light";
 };
 
 export function useTheme() {
@@ -42,7 +33,9 @@ export function useTheme() {
     }
   }, [theme, systemPrefersDark]);
 
-  const nextTheme = getNextTheme(theme, systemPrefersDark);
+  const nextTheme = getNextTheme(
+    theme === "system" ? (systemPrefersDark ? "dark" : "light") : theme,
+  );
 
   const cycleTheme = () => {
     setTheme(nextTheme);

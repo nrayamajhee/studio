@@ -1,96 +1,81 @@
 import React from "react";
 import type { Route } from "./+types/home";
-import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
-import { useStudioStorage } from "../lib/studioStorage";
 import { Button } from "../components/design-system/Button";
-import { GoogleIcon } from "../components/design-system/Icons";
-import {
-  Heading,
-  Subtitle,
-  Paragraph,
-  Caption,
-} from "../components/design-system/Typography";
-import { MOCK_GOOGLE_USER } from "../lib/mockUser";
-import {
-  Sun,
-  Moon,
-  Monitor,
-} from "lucide-react";
+import { SynthDevice } from "../components/home/SynthDevice";
+import { Sun, Moon } from "lucide-react";
 
 export function meta(_args: Route.MetaArgs) {
   return [
-    { title: "Studio - Modal Synthesizer & Piano Roll Sequencer" },
+    { title: "Studio" },
     {
       name: "description",
-      content:
-        "Professional browser-based synthesizer and 10-octave piano roll sequencer.",
+      content: "Studio",
     },
   ];
 }
 
 export default function Home() {
   const { theme, nextTheme, cycleTheme } = useTheme();
-  const navigate = useNavigate();
-
-  const [, setStudio] = useStudioStorage();
-
-  const handleGoogleLogin = () => {
-    setStudio((prev) => ({
-      ...prev,
-      user: { ...MOCK_GOOGLE_USER, loggedAt: Date.now() },
-    }));
-    navigate("/studio");
-  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-stone-50 via-stone-100 to-stone-200 dark:from-stone-950 dark:via-surface-dark dark:to-stone-900 text-stone-900 dark:text-stone-100 flex flex-col items-center justify-center p-4 sm:p-8 font-sans transition-colors duration-200 selection:bg-primary/30">
+    <div className="home-background relative w-full h-dvh overflow-hidden select-none">
+      <div className="absolute inset-0 transition-opacity duration-400 ease-in-out opacity-100 dark:opacity-0 pointer-events-none">
+        <div
+          className="absolute -bottom-[60vmax] -left-[60vmax] w-[120vmax] h-[120vmax] animate-sunset-traverse mix-blend-screen"
+          style={{
+            background:
+              "radial-gradient(circle closest-side at 50% 50%, rgba(255, 248, 221, 0.98) 0%, rgba(255, 232, 173, 0.88) 15%, rgba(255, 207, 134, 0.65) 32%, rgba(250, 183, 139, 0.36) 52%, rgba(239, 189, 184, 0.13) 72%, rgba(239, 189, 184, 0.025) 88%, rgba(239, 189, 184, 0) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 120% 60% at 50% 100%, rgba(246, 197, 163, 0.2) 0%, rgba(239, 189, 184, 0.07) 45%, rgba(239, 189, 184, 0) 100%)",
+          }}
+        />
+      </div>
+
+      <div className="absolute inset-0 transition-opacity duration-400 ease-in-out opacity-0 dark:opacity-100 pointer-events-none">
+        <div
+          className="absolute -bottom-[45vmax] -left-[45vmax] w-[90vmax] h-[90vmax] animate-sunset-traverse mix-blend-screen"
+          style={{
+            background:
+              "radial-gradient(circle closest-side at 50% 50%, rgba(167, 185, 211, 0.3) 0%, rgba(144, 165, 196, 0.23) 18%, rgba(112, 137, 173, 0.14) 38%, rgba(89, 103, 129, 0.06) 60%, rgba(89, 103, 129, 0.015) 80%, rgba(89, 103, 129, 0) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 120% 60% at 50% 100%, rgba(124, 121, 140, 0.12) 0%, rgba(89, 103, 129, 0.04) 45%, rgba(89, 103, 129, 0) 100%)",
+          }}
+        />
+      </div>
+
+      <main className="absolute inset-0 z-10 px-4 py-20 sm:px-6">
+        <SynthDevice />
+      </main>
+
       <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50">
         <Button
           variant="solid"
           tone="secondary"
           rounded
           size="sm"
-          className="bg-white/80 dark:bg-stone-900/80 backdrop-blur shadow-sm hover:bg-white dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-800"
+          className="bg-white/50 dark:bg-white/50 backdrop-blur-xl shadow-low border-2 border-white/45 dark:border-white/15 text-font dark:text-surface transition-all duration-400 hover:bg-white/65 dark:hover:bg-white/65"
           leadingIcon={
             nextTheme === "light" ? (
-              <Sun className="w-4 h-4 text-amber-500" />
-            ) : nextTheme === "dark" ? (
-              <Moon className="w-4 h-4 text-blue-400" />
+              <Sun className="w-4 h-4" />
             ) : (
-              <Monitor className="w-4 h-4 text-stone-500 dark:text-stone-400" />
+              <Moon className="w-4 h-4" />
             )
           }
           onClick={cycleTheme}
-          aria-label={`Theme: ${theme}. Click to change.`}
+          aria-label={`Theme: ${theme}. Click to switch to ${nextTheme}.`}
         />
       </div>
-
-      <main className="flex flex-col items-center text-center gap-6 max-w-md w-full">
-        <div className="flex flex-col items-center gap-1.5">
-          <Caption className="text-stone-500 dark:text-stone-400 tracking-wider uppercase text-xs font-mono">
-            {"Nishan's"}
-          </Caption>
-          <Heading className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Studio
-          </Heading>
-          <Subtitle className="text-stone-600 dark:text-stone-400 text-sm">
-            A quiet, minimal canvas for loud ideas.
-          </Subtitle>
-        </div>
-
-        <Button
-          variant="outline"
-          tone="secondary"
-          size="md"
-          rounded
-          onClick={handleGoogleLogin}
-          leadingIcon={<GoogleIcon className="w-4 h-4 flex-shrink-0" />}
-          className="bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-100 border-stone-300 dark:border-stone-700 font-medium shadow-sm transition-all px-5 py-2.5"
-        >
-          Login with Google
-        </Button>
-      </main>
     </div>
   );
 }

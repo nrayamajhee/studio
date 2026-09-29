@@ -1,0 +1,50 @@
+.pad {
+  width: 68px;
+  height: 68px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  color: color-mix(in srgb, #6b6963, #b9b7b0 var(--theme-mix));
+  background: color-mix(in srgb, #eeede9, #3a3a3e var(--theme-mix));
+  box-shadow:
+    inset 0 -5px 0 color-mix(in srgb, #b3b1aa, #1c1c1f var(--theme-mix)),
+    inset 0 1px 0
+      color-mix(in srgb, #ffffff, rgb(255 255 255 / 0.1) var(--theme-mix)),
+    0 4px 8px -4px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.35),
+        rgb(0 0 0 / 0.6) var(--theme-mix)
+      );
+  touch-action: manipulation;
+  translate: none;
+  /* Own transitions would snap to the end color while --theme-dark fades (Firefox). */
+  transition: none;
+}
+
+.pad[data-lit] {
+  color: #ffffff;
+  background: var(--pad-accent);
+  box-shadow:
+    inset 0 -2px 0 rgb(0 0 0 / 0.25),
+    inset 0 3px 6px rgb(0 0 0 / 0.2);
+}
+
+.pad:focus-visible {
+  outline: 3px solid #2f7de1;
+  outline-offset: 3px;
+}
+
+.face {
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.face svg {
+  width: 22px;
+  height: 22px;
+}
