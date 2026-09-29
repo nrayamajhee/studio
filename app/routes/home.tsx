@@ -2,7 +2,7 @@ import React from "react";
 import type { Route } from "./+types/home";
 import { useTheme } from "../hooks/useTheme";
 import { Button } from "../components/design-system/Button";
-import { HomePiano } from "../components/home/HomePiano";
+import { SynthDevice } from "../components/home/SynthDevice";
 import { Sun, Moon } from "lucide-react";
 
 export function meta(_args: Route.MetaArgs) {
@@ -20,7 +20,7 @@ export default function Home() {
 
   return (
     <div className="home-background relative w-full h-dvh overflow-hidden select-none">
-      <div className="absolute inset-0 transition-opacity duration-1000 ease-in-out opacity-100 dark:opacity-0 pointer-events-none">
+      <div className="absolute inset-0 transition-opacity duration-400 ease-in-out opacity-100 dark:opacity-0 pointer-events-none">
         <div
           className="absolute -bottom-[60vmax] -left-[60vmax] w-[120vmax] h-[120vmax] animate-sunset-traverse mix-blend-screen"
           style={{
@@ -37,7 +37,7 @@ export default function Home() {
         />
       </div>
 
-      <div className="absolute inset-0 transition-opacity duration-1000 ease-in-out opacity-0 dark:opacity-100 pointer-events-none">
+      <div className="absolute inset-0 transition-opacity duration-400 ease-in-out opacity-0 dark:opacity-100 pointer-events-none">
         <div
           className="absolute -bottom-[45vmax] -left-[45vmax] w-[90vmax] h-[90vmax] animate-sunset-traverse mix-blend-screen"
           style={{
@@ -54,8 +54,8 @@ export default function Home() {
         />
       </div>
 
-      <main className="absolute inset-0 z-10 grid place-items-center overflow-y-auto px-4 py-20 sm:px-6">
-        <HomePiano className="max-w-5xl" />
+      <main className="absolute inset-0 z-10 px-4 py-20 sm:px-6">
+        <SynthDevice />
       </main>
 
       <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50">
@@ -64,7 +64,7 @@ export default function Home() {
           tone="secondary"
           rounded
           size="sm"
-          className="bg-white/50 dark:bg-white/50 backdrop-blur-xl shadow-low border-2 border-white/45 dark:border-white/15 text-font dark:text-surface transition-all duration-300 hover:bg-white/65 dark:hover:bg-white/65"
+          className="bg-white/50 dark:bg-white/50 backdrop-blur-xl shadow-low border-2 border-white/45 dark:border-white/15 text-font dark:text-surface transition-all duration-400 hover:bg-white/65 dark:hover:bg-white/65"
           leadingIcon={
             nextTheme === "light" ? (
               <Sun className="w-4 h-4" />

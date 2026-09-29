@@ -51,47 +51,66 @@ npm install
 
 ## The Device (Home Page)
 
-The home page (`app/routes/home.tsx`) renders The Device on a full-screen sky gradient (sunset in light mode, blue hour in dark mode). It is a digital replica of a physical synthesizer unit with:
+The home page (`app/routes/home.tsx`) renders The Device on a full-screen sky gradient (sunset in light mode, blue hour in dark mode). It implements the [Synth UI design canvas](https://claude.ai/artifact/CrrBAERp6Gc7j3Aon8k7XY) (artboards "Synth" for light and "Synth — dark"):
 
-- **Home row** — a compact transport strip (no longer full-width): two `< >` navigator groups and numbered section squares:
-  - **Section navigator `< 01/06 · Exciter >`** — cycles the six synth sections (keyboard hotkeys `1`–`6` jump directly).
-  - **Preset navigator `< Electric Guitar · 1/22 >`** — cycles every preset in `SYNTH_PRESETS` (the same stack the studio page uses).
-  - **Numbered squares `1`–`6`** — direct section jumps; the active one is highlighted.
-- **Piano keys** — one octave (C–B) with raised black keys. Keys are glass Cards that rotate around their top edge when pressed and show engraved hotkeys (`A W S E D F T G Y H U J`).
-- **Drum pads** — 16 black `Pad` buttons in a 4×4 grid at the same unit size as the home-row squares, covering a chromatic drum range (C1–D#2) with hotkeys `I O P [ ] K L ; M , . / N B V C`.
-- **Screen** — a dark solid card between the knobs showing the current instrument, section counter, the live output waveform (oscilloscope from the Studio sidebar) at the top, the selected section's visualization, and four parameter readouts. Screen and knobs are frozen in place: switching sections must never resize, shift, or reflow them.
-- **Four knobs** — two on each side of the screen. They edit the four parameters of the selected section. Dragging is slider-like: only horizontal pointer movement changes the value (right increases, left decreases), and the 0 (bottom-left) and MAX (bottom-right) end notches float beside each dial.
-- **Theme** — first visit follows the system preference; the top-right button then toggles only between light and dark.
+The layout is two rows:
+
+```
+| 3×3 pads | 2 knobs | screen | 2 knobs | 3×3 pads |
+| 3×3 pads |          keybed           | 3×3 pads |
+```
+
+- **Knobs** — four gear-edged knobs, pad-sized (68 px), in two evenly spaced stacked pairs: Waveform and Volume left of the screen, Release and Filter cutoff right of it. They override the current preset's `osc1Wave`, `masterVol`, `release`, and `cutoff` in four detents (−135°, −45°, 45°, 135°). Drag horizontally (24 px per detent, right increases), scroll (one wheel notch per detent), or click to advance and wrap. A freshly loaded preset shows its nearest detent.
+- **Screen** — a black oscilloscope bezel that draws three cycles of the current waveform, with the preset name (top left) and octave shift (top right).
+- **Presets** (top-left 3×3) — Piano, Guitar, Bass, Drums, Flute, Sax (the `/studio` preset-panel icons), Synth, Strings, Organ. A pad also stays lit for related presets reached with Shift + arrows (e.g. Piano for Rhodes, Electronic Piano, Lo-Fi Keys).
+- **Keybed** — two octaves, F3–E5 (14 white, 10 black keys), in a recessed well. Keys sustain while held and are engraved with their hotkey and note name (C keys show their octave).
+- **Chord macros** (top-right 3×3) — Maj, Min, Dom7, Maj7, Min7, Sus4, Power, Dim, Add9. Toggling one makes every key play that chord from its root; toggle it again for single notes.
+- **Bottom-left 3×3** — ← / → (octave down/up, −2…+2) and Shift, three unassigned pads, then the transport row: Play, Stop, Record. With Shift latched, ← / → step through every preset in `SYNTH_PRESETS`. Record captures what you play on the keys; Play plays the take back.
+- **Bottom-right 3×3** — six unassigned pads above the recorder row: Tape (free timing, plays once), Sequencer (quantized to 16th notes at 120 BPM, loops whole bars), and a 120 BPM Metronome toggle.
+- **Theme** — first visit follows the system preference; the top-right button then toggles only between light and dark with a 400 ms cross-fade.
+
+### Keyboard hotkeys
+
+Hotkeys match physical key positions (`KeyboardEvent.code`, labelled as QWERTY):
+
+Three zones, each with its white keys on one row and every black key on the row above, between its neighbours. Zones meet at B|C, where there is no black key.
+
+| Zone | White keys | Black keys |
+| --- | --- | --- |
+| Left | `Q W E R` → F3 G3 A3 B3 | `2 3 4` → F♯3 G♯3 A♯3 |
+| Middle | `Z X C V B N M` → C4 D4 E4 F4 G4 A4 B4 | `S D G H J` → C♯4 D♯4 F♯4 G♯4 A♯4 |
+| Right | `P [ ]` → C5 D5 E5 | `- =` → C♯5 D♯5 |
 
 ### Device architecture
 
 | Path | Purpose |
 | --- | --- |
-| `app/routes/home.tsx` | Route shell: gradient background, theme toggle, centers The Device |
-| `app/components/home/HomePiano.tsx` | The Device itself: state for preset, section, and pressed notes; wiring to the synth engine |
-| `app/components/home/SynthScreen.tsx` | The dark screen (visualization + readouts) |
-| `app/components/home/synthSections.ts` | The six synth sections; each exposes four controls with `value`/`display`/`update` mappers (0–100 knob space) |
-| `app/components/design-system-v2/` | Device primitives: `Card` (solid/glass), `Key`, `Knob`, `Pad` (square Key); exported via `index.ts` |
-| `app/lib/synth.ts` | Shared synth engine (`synth` singleton, `SYNTH_PRESETS`); The Device plays through `synth.playNote` / `synth.playDrum` |
+| `app/routes/home.tsx` | Route shell: gradient background, theme toggle, hosts The Device |
+| `app/components/home/SynthDevice.tsx` | The Device itself: layout, preset/knob/octave/chord state, hotkeys, keybed, screen |
+| `app/components/home/useTransport.ts` | Play/stop/record, tape vs sequencer takes, metronome |
+| `app/components/design-system-v2/` | Device primitives exported via `index.ts`: `Key` (piano key with hotkey/note labels, hold to play), `Knob` (gear-edged stepped knob: drag, scroll, click), `Pad` (square pad with an icon or text face; also exports `pressProps`) |
+| `app/lib/synth.ts` | Shared synth engine; The Device plays through `synth.loadPreset`, `playNote` / `stopNote`, `updateParam`, `playMetronomeTick` |
 
 Design rules for The Device:
 
-- All interactive surfaces are built from the same `Card`/`Key`/`Pad` family — same semantics, scaled by CSS (`aspect-ratio`), never squeezed.
-- The 16-track grid in `HomePiano.module.css` aligns the keybed (12 tracks) and the 4×4 drum grid (4 tracks); keep knobs and screen at fixed sizes.
-- Keyboard hotkeys must never overlap between piano notes, sections, and drum notes.
+- The Device is laid out at a native 1348×540 px and scaled uniformly by CSS (`--scale` in `SynthDevice.module.css`) to fit its container. Never reflow or squeeze its parts.
+- One spacing value, `--gap` (32 px), is the bezel padding on all four sides and every gap between groups (pads, knobs, screen, key well, rows). Pads inside a 3×3 use 9 px.
+- Light and dark values mirror the two artboards. Write each as `color-mix(in srgb, <light>, <dark> var(--theme-mix))` so it fades with the page's 400 ms theme cross-fade (`--theme-dark` in `app.css`), and keep color transitions off those elements; their own transitions snap to the end color mid-fade.
+- Pads trigger on press (pointerdown); keys sound while held; knobs step on drag, scroll, or click.
+- Keyboard hotkeys must never overlap between keys and any future pad shortcuts.
 
 ## Storybook
 
-Stories are colocated with their components (`Component.stories.tsx`) and organized under two top-level titles:
+Stories are colocated with their components (`Component.stories.tsx`) and organized under two top-level titles. Components used only by `/studio` have no stories.
 
-- **`Design System V2/*`** — `Card`, `Key`, `Knob`, `Pad`.
-- **`Home/*`** — `Device` (`HomePiano`), `Synth Screen`.
+- **`Design System V2/*`** — `Key`, `Knob`, `Pad`.
+- **`Home/*`** — `Device` (`SynthDevice`).
 
 Setup conventions:
 
 - Every component starts with a `Default` story that binds cleanly to its props so Autodocs and the Controls panel work out of the box.
 - Components use the `autodocs` tag and `layout: "centered"` (or `"padded"` for surfaces).
-- Glass/translucent components are showcased over the `.home-background` gradient class via a decorator so their translucency is visible.
+- The Device story renders over the `.home-background` gradient via a decorator.
 - Light/dark coverage comes from the theme addon (`@storybook/addon-themes`); components must be correct in both modes.
 
 ## Ignore `/studio`

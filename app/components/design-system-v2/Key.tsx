@@ -1,98 +1,71 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, KeyboardEvent } from "react";
 import { Button } from "../design-system/Button";
-import { Card } from "./Card";
 import { cn } from "../../lib/utils";
 import styles from "./Key.module.css";
 
 export interface KeyProps {
-  note: string;
-  label?: string;
-  glyph?: string;
-  ariaLabel?: string;
-  hotkey?: string;
+  label: string;
   variant?: "white" | "black";
-  isPressed?: boolean;
-  isSelected?: boolean;
-  onPress?: (note: string) => void;
-  onRelease?: (note: string) => void;
+  note?: string;
+  hotkey?: string;
+  lit?: boolean;
+  onPress?: () => void;
+  onRelease?: () => void;
   className?: string;
   style?: CSSProperties;
 }
 
+const isActivation = (event: KeyboardEvent) =>
+  event.key === " " || event.key === "Enter";
+
 export function Key({
-  note,
   label,
-  glyph,
-  ariaLabel,
-  hotkey,
   variant = "white",
-  isPressed = false,
-  isSelected = false,
+  note,
+  hotkey,
+  lit = false,
   onPress,
   onRelease,
   className,
   style,
 }: KeyProps) {
+  const release = () => onRelease?.();
+
   return (
-    <Card
-      asChild
-      variant="glass"
-      elevation="low"
-      className={cn(
-        styles.key,
-        variant === "black" && styles.black,
-        glyph && styles.glyphKey,
-        isSelected && styles.selected,
-        className,
-      )}
+    <Button
+      variant="ghost"
+      tone="secondary"
+      aria-label={label}
+      aria-keyshortcuts={hotkey}
+      data-lit={lit || undefined}
+      className={cn(styles.key, styles[variant], className)}
       style={style}
+      onPointerDown={(event) => {
+        if (event.button !== 0) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        onPress?.();
+      }}
+      onPointerUp={release}
+      onPointerCancel={release}
+      onLostPointerCapture={release}
+      onKeyDown={(event) => {
+        if (!isActivation(event)) return;
+        event.preventDefault();
+        if (!event.repeat) onPress?.();
+      }}
+      onKeyUp={(event) => {
+        if (!isActivation(event)) return;
+        event.preventDefault();
+        release();
+      }}
+      onBlur={release}
     >
-      <Button
-        type="button"
-        variant="ghost"
-        tone="secondary"
-        aria-label={ariaLabel ?? `Play ${note.replace("#", " sharp ")}`}
-        aria-keyshortcuts={hotkey?.toLowerCase()}
-        aria-pressed={isPressed}
-        onPointerDown={(event) => {
-          if (event.button !== 0) return;
-          event.currentTarget.setPointerCapture(event.pointerId);
-          onPress?.(note);
-        }}
-        onPointerUp={() => onRelease?.(note)}
-        onPointerCancel={() => onRelease?.(note)}
-        onLostPointerCapture={() => onRelease?.(note)}
-        onKeyDown={(event) => {
-          if (event.key === " " || event.key === "Enter") {
-            event.preventDefault();
-            if (!event.repeat) onPress?.(note);
-          }
-        }}
-        onKeyUp={(event) => {
-          if (event.key === " " || event.key === "Enter") {
-            event.preventDefault();
-            onRelease?.(note);
-          }
-        }}
-        onBlur={() => onRelease?.(note)}
-      >
-        {glyph ? (
-          <span className={styles.glyph} aria-hidden="true">
-            {glyph}
-          </span>
-        ) : (
-          <span className={styles.labels} aria-hidden="true">
-            {hotkey && (
-              <kbd className={styles.hotkey}>{hotkey.toUpperCase()}</kbd>
-            )}
-            {variant === "white" && (
-              <span className={styles.note}>
-                {label ?? note.replace(/-?\d+$/, "")}
-              </span>
-            )}
-          </span>
-        )}
-      </Button>
-    </Card>
+      {(note || hotkey) && (
+        <span className={styles.labels} aria-hidden="true">
+          {hotkey && <kbd className={styles.hotkey}>{hotkey}</kbd>}
+          {note && <span className={styles.note}>{note}</span>}
+        </span>
+      )}
+    </Button>
   );
 }

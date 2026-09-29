@@ -34,7 +34,7 @@ const preview: Preview = {
     },
     options: {
       storySort: {
-        order: ["Design System", "Mixer", "Instrument"],
+        order: ["Design System V2", "Home"],
       },
     },
     a11y: {

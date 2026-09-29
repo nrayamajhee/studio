@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Piano } from "lucide-react";
+import { fn } from "storybook/test";
 import { Pad } from "./Pad";
 
 const meta = {
@@ -6,14 +8,17 @@ const meta = {
   component: Pad,
   tags: ["autodocs"],
   parameters: { layout: "centered" },
-  args: { note: "C2", hotkey: "1", isPressed: false },
-  decorators: [
-    (Story) => (
-      <div className="w-20">
-        <Story />
-      </div>
-    ),
-  ],
+  args: {
+    label: "Piano",
+    accent: "#f26b1d",
+    lit: false,
+    onPress: fn(),
+    children: <Piano />,
+  },
+  argTypes: {
+    accent: { control: "color" },
+    children: { control: false },
+  },
 } satisfies Meta<typeof Pad>;
 
 export default meta;
@@ -21,6 +26,10 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const Pressed: Story = {
-  args: { isPressed: true },
+export const Lit: Story = {
+  args: { lit: true },
+};
+
+export const TextLabel: Story = {
+  args: { label: "Major 7 chord", accent: "#2f7de1", children: "Maj7" },
 };

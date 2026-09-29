@@ -1,99 +1,86 @@
-.control {
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: 4px;
-  width: clamp(48px, 9vw, 72px);
-  height: 116px;
-}
-
-.knobTrack {
-  position: relative;
-  display: block;
-  width: 100%;
-  aspect-ratio: 1;
-  margin-bottom: 6px;
-  border-radius: 50%;
-}
-
-.ticks {
-  position: absolute;
-  inset: -7px;
-  pointer-events: none;
-}
-
-.tick {
-  position: absolute;
-  inset: 0;
-}
-
-.tick::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: calc(50% - 1px);
-  width: 2px;
-  height: 8px;
-  border-radius: 1px;
-  background: color-mix(in srgb, var(--color-font-dark) 65%, transparent);
-}
-
 .knob {
-  position: absolute;
-  inset: 0;
+  width: 68px;
+  height: 68px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: none;
+  translate: none;
+  filter: drop-shadow(
+      0 10px 7px
+        color-mix(
+          in srgb,
+          rgb(20 20 19 / 0.28),
+          rgb(0 0 0 / 0.55) var(--theme-mix)
+        )
+    )
+    drop-shadow(
+      0 3px 2px
+        color-mix(
+          in srgb,
+          rgb(20 20 19 / 0.35),
+          rgb(0 0 0 / 0.6) var(--theme-mix)
+        )
+    );
 }
 
-.indicator {
-  position: absolute;
-  top: 10%;
-  left: 45%;
-  width: 10%;
-  height: 56%;
-  background: var(--color-font-dark);
+.knob:focus-visible {
+  outline: 3px solid #2f7de1;
+  outline-offset: 3px;
 }
 
-.knobInput {
-  position: absolute;
-  inset: 0;
+.cap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: grab;
-  touch-action: none;
+  background:
+    radial-gradient(
+      circle,
+      rgb(0 0 0 / 0) 72%,
+      rgb(0 0 0 / 0.22) 88%,
+      rgb(0 0 0 / 0.34) 100%
+    ),
+    var(--knob-color);
+  transition: transform 200ms ease;
 }
 
-.knobInput:active {
-  cursor: grabbing;
+.top {
+  display: flex;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 38% 30%,
+      rgb(255 255 255 / 0.42),
+      rgb(255 255 255 / 0) 55%
+    ),
+    radial-gradient(circle, rgb(0 0 0 / 0) 70%, rgb(0 0 0 / 0.12)),
+    var(--knob-color);
+  box-shadow:
+    0 0 0 1.5px rgb(0 0 0 / 0.14),
+    0 1px 2px rgb(0 0 0 / 0.25);
 }
 
-.knobTrack:has(:focus-visible) {
-  outline: 2px solid currentColor;
-  outline-offset: 5px;
+.knob:active .top {
+  filter: brightness(0.95);
 }
 
-.controlLabel,
-.controlValue {
-  color: color-mix(in srgb, var(--color-font-dark) 70%, transparent);
+.mark {
+  width: 4px;
+  height: 14px;
+  margin-top: 5px;
+  border-radius: 2px;
+  background: var(--knob-mark);
 }
 
-.controlLabel {
-  min-height: 20px;
-  overflow: hidden;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.15em;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.controlValue {
-  overflow: hidden;
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  max-width: 100%;
+@media (prefers-reduced-motion: reduce) {
+  .cap {
+    transition: none;
+  }
 }

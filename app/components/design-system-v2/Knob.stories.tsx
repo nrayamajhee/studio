@@ -8,18 +8,25 @@ const meta = {
   component: Knob,
   tags: ["autodocs"],
   parameters: { layout: "centered" },
-  args: { label: "Volume", value: 65, onChange: fn() },
+  args: {
+    label: "Waveform",
+    step: 0,
+    steps: 4,
+    color: "#1d1d1f",
+    markColor: "#ffffff",
+    onChange: fn(),
+  },
   argTypes: {
-    value: { control: { type: "range", min: 0, max: 100, step: 1 } },
+    step: { control: { type: "range", min: 0, max: 3, step: 1 } },
   },
   render: function Render(args) {
     const [, updateArgs] = useArgs<KnobProps>();
     return (
       <Knob
         {...args}
-        onChange={(value) => {
-          updateArgs({ value });
-          args.onChange(value);
+        onChange={(step) => {
+          updateArgs({ step });
+          args.onChange?.(step);
         }}
       />
     );
@@ -30,3 +37,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+export const Light: Story = {
+  args: { label: "Volume", color: "#f4f3ef", markColor: "#141413" },
+};

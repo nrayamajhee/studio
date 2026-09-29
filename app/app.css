@@ -95,6 +95,24 @@
     0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
+/* 0 in light mode, 1 in dark mode, animated so colors mixed with
+   --theme-mix fade in step with the 400ms background cross-fade. */
+@property --theme-dark {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+:root {
+  --theme-mix: calc(var(--theme-dark) * 100%);
+
+  transition: --theme-dark 400ms ease-in-out;
+}
+
+.dark {
+  --theme-dark: 1;
+}
+
 html,
 body {
   @apply bg-surface text-font dark:bg-surface-dark dark:text-surface;
@@ -104,29 +122,19 @@ body {
   }
 }
 
+/* Sunset stops mixed with the blue-hour gradient sampled at the same
+   positions, so the sky fades with --theme-mix instead of snapping. */
 .home-background {
   background: linear-gradient(
     180deg,
-    #5a8fc6 0%,
-    #78a5d2 22%,
-    #93b6d9 45%,
-    #b4c3dd 65%,
-    #cfc2d4 82%,
-    #efbdb8 90%,
-    #f6c5a3 96%,
-    #f8ddb0 100%
-  );
-}
-
-.home-background:where(.dark, .dark *) {
-  background: linear-gradient(
-    180deg,
-    #080f1e 0%,
-    #111e35 23%,
-    #223653 46%,
-    #3a506d 68%,
-    #596781 86%,
-    #7c798c 100%
+    color-mix(in srgb, #5a8fc6, #080f1e var(--theme-mix)) 0%,
+    color-mix(in srgb, #78a5d2, #111d34 var(--theme-mix)) 22%,
+    color-mix(in srgb, #93b6d9, #213552 var(--theme-mix)) 45%,
+    color-mix(in srgb, #b4c3dd, #374d6a var(--theme-mix)) 65%,
+    color-mix(in srgb, #cfc2d4, #52627d var(--theme-mix)) 82%,
+    color-mix(in srgb, #efbdb8, #636c84 var(--theme-mix)) 90%,
+    color-mix(in srgb, #f6c5a3, #727489 var(--theme-mix)) 96%,
+    color-mix(in srgb, #f8ddb0, #7c798c var(--theme-mix)) 100%
   );
 }
 

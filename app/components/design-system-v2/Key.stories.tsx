@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { fn } from "storybook/test";
 import { Key } from "./Key";
 
 const meta = {
@@ -6,17 +7,18 @@ const meta = {
   component: Key,
   tags: ["autodocs"],
   parameters: { layout: "centered" },
-  args: { note: "C4", hotkey: "A", variant: "white", isPressed: false },
-  argTypes: {
-    variant: { control: "radio", options: ["white", "black"] },
+  args: {
+    label: "C 4",
+    variant: "white",
+    note: "C4",
+    hotkey: "F",
+    lit: false,
+    onPress: fn(),
+    onRelease: fn(),
   },
-  decorators: [
-    (Story) => (
-      <div className="h-60 w-14">
-        <Story />
-      </div>
-    ),
-  ],
+  argTypes: {
+    variant: { control: "inline-radio", options: ["white", "black"] },
+  },
 } satisfies Meta<typeof Key>;
 
 export default meta;
@@ -25,9 +27,9 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const Black: Story = {
-  args: { note: "C#4", hotkey: "W", variant: "black" },
+  args: { label: "C sharp 4", variant: "black", note: "C♯", hotkey: "T" },
 };
 
-export const Pressed: Story = {
-  args: { isPressed: true },
+export const Lit: Story = {
+  args: { lit: true },
 };
