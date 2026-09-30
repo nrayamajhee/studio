@@ -1,3 +1,5 @@
+import { Adsr } from "../dsp/Adsr";
+
 export const IDLE = 0;
 export const ACTIVE = 1;
 export const RELEASED = 2;
@@ -17,9 +19,12 @@ export abstract class Voice {
   protected fade = 1;
   protected fadeStep = 0;
   protected readonly fs: number;
+  // The master ADSR, applied on top of the model's own envelopes.
+  readonly shape: Adsr;
 
   constructor(fs: number) {
     this.fs = fs;
+    this.shape = new Adsr(fs);
   }
 
   get busy() {
@@ -63,6 +68,7 @@ export abstract class Voice {
     this.quietSamples = 0;
     this.fade = 1;
     this.fadeStep = 0;
+    this.shape.reset();
     this.reset();
   }
 

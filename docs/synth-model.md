@@ -1,0 +1,455 @@
+# How the synth engine works
+
+The Device doesn't play samples, and it doesn't use oscillators. Every note is a small physics simulation. An **exciter** (hammer, pick, finger, breath, bow or drum stick) drives a **resonator** (a string, a tube or a drum head), and the resonator's own feedback loop creates the pitch and tone. A **body** (soundboard, guitar top, bell) then colors the result.
+
+```text
+  +-----------+  energy   +-------------+  vibration  +--------+       +--------+
+  |  EXCITER  | --------> |  RESONATOR  | ----------> |  BODY  | ----> |  OUT   |
+  | hammer    |           | string loop |             | wood,  |       |        |
+  | pick      | <-------- | air column  |             | bell   |       |        |
+  | breath    |  (some    | membrane    |             |        |       |        |
+  | bow       |  push     |             |             |        |       |        |
+  | stick     |  back)    |             |             |        |       |        |
+  +-----------+           +-------------+             +--------+       +--------+
+```
+
+Struck and plucked sounds only excite the string once, at the start. For blown and bowed sounds the exciter stays coupled to the resonator: the air jet and the bow keep reacting to what comes back. That is why the flute, sax and violin can squeak, overblow and slide.
+
+All code lives in `app/lib/physical/`. The design goals come from `docs/new-synth-plan.md`.
+
+---
+
+## 1. Where it runs
+
+The audio is computed on the browser's audio thread, inside one `AudioWorkletProcessor`. The UI only sends small messages.
+
+```text
+   MAIN THREAD                                        AUDIO THREAD (AudioWorklet)
+  +-------------------------------+                 +-----------------------------------+
+  | SynthDevice (keys, pads,      |                 | PhysicalSynthProcessor            |
+  |   knobs)                      |                 |   process() every 128 frames      |
+  |        |                      |                 |     engine.frame = currentFrame   |
+  |        v                      |   postMessage   |     engine.render(left, right)    |
+  | deviceEngine                  |   [events...]   |                                   |
+  |   octave offset, kit mapping, | --------------> |   Engine                          |
+  |   param de-duplication        |                 |     EventQueue (sorted by frame)  |
+  |        |                      |                 |     9 instruments (one bus each)  |
+  |        v                      |                 |     FDN reverb, metronome         |
+  | physicalSynth (PhysicalSynth) |  stats/warnings |     master volume + safety clip   |
+  |   boots AudioContext lazily,  | <-------------- |                                   |
+  |   queues events until ready   |   every 0.25 s  +-----------------+-----------------+
+  +-------------------------------+                                   |
+                                                                      v
+                                        DynamicsCompressor (limiter: -3 dB, 20:1, 2 ms)
+                                                                      |
+                                                                      v
+                                                AnalyserNode (feeds the oscilloscope)
+                                                                      |
+                                                                      v
+                                                                  speakers
+```
+
+- **Lazy boot.** `physicalSynth.start()` runs on the first user gesture (browsers need that to allow audio). It creates the `AudioContext`, loads `processor.worklet.ts` and waits for a `ready` message. Nothing touches Web Audio at import time, so prerendering the page is safe.
+- **Nothing is lost while booting.** Events sent before `ready` are queued and replayed immediately, so the very first key press still sounds, just late. For `param` events only the latest value per target/id is kept.
+- **Timing.** Events carry an optional `time` in AudioContext seconds. With no time, they play at the start of the next block (at most ~2.7 ms at 48 kHz).
+
+## 2. The render loop
+
+`Engine.render()` never allocates memory: every buffer, voice and delay line is preallocated. Events are applied at their **exact sample**, because the block is cut into segments at each event:
+
+```text
+  one block (128 frames)
+  |<----------------------------------------------------------------------->|
+  [ voices render 0..37  ][ voices render 37..90         ][ voices 90..128  ]
+                          ^                               ^
+                          noteOn C4 @ frame 37            param cutoff @ frame 90
+
+  then, once per block:
+    each instrument.finish()   body -> drive -> gain  -> master L/R  (+ reverb send)
+    reverb.process(send)       -> wet L/R
+    out = safetyClip( volume * (master + return * wet) )
+```
+
+`EventQueue` is a preallocated array kept sorted by frame. Events at the same frame keep their arrival order, so a chord's notes and a param change sent together land in order.
+
+## 3. Signal flow
+
+Each instrument owns one **bus**. Its voices add their panned output into the bus buffers, and the bus stage then finishes the sound:
+
+```text
+    voice    voice    voice        each voice pans itself (equal-power)
+       \       |       /           piano pans by key, guitar/bass by string
+        v      v      v
+   +-------------------------+
+   |  bus L/R  (per          |     piano, guitar, bass, upright bass, violin,
+   |  instrument)            |     sax, flute, drums, 808
+   +-------------------------+
+                |                  (drum kits: optional lowpass filter here)
+                v
+   +-------------------------+
+   |  BODY                   |     modal soundboard / radiation filter / none,
+   |                         |     then a +/-6 dB tilt around 800 Hz
+   +-------------------------+
+                |
+                v
+   +-------------------------+
+   |  DRIVE (if > 0)         |     softClip(x * (1 + 9d)) / (1 + 2d) -> DC blocker
+   +-------------------------+
+                |
+                v
+   +-------------------------+
+   |  x outputGain x level   |---------------------------------+
+   +-------------------------+                                 |  mono x send
+                |                                              v
+                v                                   +---------------------+
+   master L/R  <----------------- x return -------- |  FDN REVERB         |
+   (+ metronome woodblock, dry)                     |  (shared by all)    |
+                |                                   +---------------------+
+                v
+         x master volume
+                |
+                v
+         safety clipper    unity below 0.7 (-3 dBFS), tanh knee above, never > 1.0
+                |
+                v
+         worklet output  -> browser limiter -> analyser -> speakers
+```
+
+- **Idle buses cost nothing.** After its last voice ends, a bus keeps running for 0.5 s so the body can ring out, then it is skipped entirely.
+- **Master ADSR.** Every voice is multiplied by one shared amplitude envelope (the `adsr.*` master params, set from the Device's ADSR mode) on top of its model's own envelopes. It triggers when a note or hit starts and releases when the key (or sustain pedal) lets go. The engine's defaults, instant attack, 100% sustain and a 4 s release, leave notes as modelled; the Device sends those when its ADSR is off, and its knob values (0, 200 ms, 50%, 200 ms to start) when it's on. Because it's a volume envelope, a short release can cut a tail, but a long one can't make a damped string ring longer.
+- **No zipper noise.** Gain, send, drive, volume and reverb return glide through `Smoother`s (~10 ms one-pole).
+- **Why a clipper _and_ a limiter?** A chord hitting many strings at once can produce sub-millisecond peaks that the browser's compressor is too slow to catch. The tanh knee catches those, and the compressor handles sustained loudness.
+
+## 4. Voices and their lifecycle
+
+A voice is one sounding note (or one string, or one drum piece). Every model shares the same state machine from `engine/Voice.ts`:
+
+```text
+                  noteOn
+       +------+ ---------> +--------+   noteOff / breath or bow ends   +----------+
+       | IDLE |            | ACTIVE | -------------------------------> | RELEASED |
+       +------+            +--------+                                  +----------+
+          ^                    |                                            |
+          |                    | voice stolen for a new note                | quiet for 50 ms
+          |                    v  (5 ms fade-out)                           | (< -90 dBFS)
+          |               +--------+       quiet for 50 ms                  |
+          |               | STOLEN | ------------------------------+        |
+          |               +--------+                               |        |
+          |                                                        v        v
+          +-------------------------------- free() <------------------------+
+
+   Also freed: any voice that stays silent for 1 s, even while ACTIVE.
+   Drum hits go straight to RELEASED (they are one-shots).
+```
+
+When all voices are busy, `pickVictim` chooses which one to reuse: the **quietest released** voice first, otherwise the **oldest active** one. Voice pools hold a few spares above the polyphony so a stolen voice can fade out while its replacement starts.
+
+## 5. The instruments
+
+### 5.1 Strings: piano, acoustic guitar, electric bass, upright bass
+
+`models/StringLoop.ts` is an extended **Karplus-Strong** loop. A wave travels around a delay line, and each trip through the loop filters it a little:
+
+```text
+        +---------------+   +---------------+   +---------------+   +---------------+
+  +---->| DELAY LINE    |-->| DISPERSION    |-->| LOSS          |-->| TUNING        |---+
+  |     | N_int samples |   | M allpasses   |   | one-pole LP   |   | allpass for   |   |
+  |     |               |   | (stiffness:   |   | (highs die    |   | the fraction  |   |
+  |     |               |   |  highs travel |   |  faster) x g  |   | of a sample   |   |
+  |     |               |   |  faster)      |   | (overall T60) |   | left over     |   |
+  |     +---------------+   +---------------+   +---------------+   +---------------+   |
+  |                                                                                      v
+  +------------------------------------------------------------------------------------(+)<-- excitation
+                                                                                         |
+                                                                                         +--> string output
+```
+
+**Exact tuning.** The pitch is whatever frequency makes the loop exactly one period long. Every filter adds a little delay, so the loop subtracts that delay at the fundamental ω0:
+
+```text
+   fs / f0  =  N_int  +  d  +  tau_loss(w0)  +  M * tau_dispersion(w0)
+               ^^^^^     ^
+               integer   fraction in [0.5, 1.5), realised by an allpass solved
+               delay     for exactly that delay at w0
+```
+
+**Exact decay.** The loop gain `g` is chosen so the note loses 60 dB after `f0 * T60` trips around the loop:
+
+```text
+   g = 10^(-3 / (f0 * T60)) / |H_loss(w0)|        (capped at 0.99999 so it can never grow)
+```
+
+For very high notes with long decays, the loss filter alone would already lose too much per trip. The loop then lightens the filter just enough to keep `g < 1` (`lightestLoss`).
+
+Everything that varies across the keyboard is a **key table**: piecewise-linear values per MIDI note for T60, loss (brightness), dispersion stages and coefficient, damper T60, unison detune and hammer mass. For example, the piano rings 18 s at A0 and 0.5 s at C8, with 8 dispersion stages in the bass and none above C6.
+
+#### Exciters (`models/exciters.ts`)
+
+The exciter writes a short burst into a buffer, and the loop adds it in sample by sample.
+
+```text
+  HAMMER (piano)                          PICK (guitar)            FINGER (basses)
+                                                /\
+     hammer: mass m, speed v0                  /  \                    .--.
+        |                                     /    \                  /    \
+        v    felt squashes by c              /      \____            /      \______
+   ====[felt]====   F = K * c^2.5          0  apex       period     0  width       period
+   ------+-------   string = two             (pluck point)          raised cosine
+                    half-strings (2Z)      + scrape noise,          + a little noise
+                                             lowpassed by hardness
+   simulated 4x oversampled until the
+   felt leaves the string (~1 ms at C4)    + a sharp "click" edge
+```
+
+- **Hammer.** A small physics simulation: a felt hammer (stiffness exponent 2.5) hits a string. Faster hammers and harder felt give a shorter contact, and a shorter contact means a brighter tone. Hammer mass follows the key: heavy in the bass, light in the treble.
+- **Pluck position.** Plucking or striking a string at 1/β of its length silences every β-th harmonic. A comb `e[n] - e[n - b]` removes those harmonics (the pick's triangle already has the notches built in).
+- **Velocity** blends between "ignore velocity" and `velocity^curve` through the Strength parameter.
+
+#### Voice chain and allocation
+
+```text
+  1-3 loops ---> sum ---> [pickup comb] ---> DC blocker ---> SVF lowpass ---> amp env ---> pan ---> bus
+  (unison or              (electric bass:                    cutoff glides,
+   2 polarizations)        e[n] - e[n-tap])                  filter env, keytrack
+```
+
+|                 | Piano                                                       | Guitar                             | Electric / upright bass                 |
+| --------------- | ----------------------------------------------------------- | ---------------------------------- | --------------------------------------- |
+| Allocation      | per **key**, 24 voices                                      | per **string**: 6 open strings     | per **string**: 4 open strings          |
+| Loops per voice | 1–3 unison strings (detuned, each decaying at its own rate) | 2 polarizations (+0.3 ¢, 0.6× T60) | 1                                       |
+| Exciter         | felt hammer                                                 | pick                               | finger                                  |
+| Body            | 20-mode soundboard                                          | modal top plate                    | none (pickup comb + drive) / modal body |
+
+- **Per-string allocation.** A note goes to the string that can play it at the lowest fret. If that string is already ringing, the voice damps it for 8 ms, retunes it and plucks it again (a **re-fret**).
+- **Re-striking** a key that is still sounding re-excites the same loops, so the old vibration keeps going underneath the new one, as it would on a real string.
+- **Dampers.** A note-off ramps the loop's T60 down to the damper T60 over 15 ms. With the sustain pedal down, the damping waits until the pedal lifts. Piano keys above F6 have no dampers, like a real piano.
+- **Strum.** Chord-macro notes arrive as a burst within 15 ms. If the Strum param is set, each note in the burst is delayed a few more milliseconds than the last.
+
+### 5.2 Blown: flute and alto sax (ported from STK)
+
+A wind instrument is a nonlinear "mouth" coupled to a tube. Pressure waves travel down the tube, reflect off the open end or bell, and come back to disturb the jet or reed. That disturbance is what keeps the note going.
+
+```text
+   breath pressure = maxPressure x ADSR x (1 + noise + vibrato)
+         |
+         v
+  +--------------+  pressure wave  +------------------------------+  +---------------------+
+  | MOUTH        | --------------> | TUBE                         |->| OPEN END / BELL     |
+  | nonlinearity |                 | delay line(s), fractional    |  | lowpass, inverted   |
+  |  flute: jet  | <-------------- | length (Lagrange-3 reads)    |<-| (reflects back in)  |
+  |  sax:   reed |   reflection    +------------------------------+  +---------------------+
+  +--------------+                                     |
+                                                       v
+                                                     output
+```
+
+|            | Flute (STK `Flute`)                                                       | Sax (STK `Saxofony`)                                             |
+| ---------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Mouth      | air jet: its own delay (Jet ratio × tube) then `x(x² − 1)`, clamped       | reed table `0.7 + slope·x`, slope = 0.1 + 0.4 × Reed stiffness   |
+| Tube       | tuned to 2/3 of the note, so the jet overblows it into the right register | split into reed-side and bell-side sections at the Blow position |
+| Reflection | one-pole lowpass, inverted, DC-blocked                                    | −0.95 × lowpass with cutoff **14 × f0** (min 500 Hz)             |
+
+STK fixes the sax's bell lowpass at about 740 Hz. That makes low notes overblow an octave up and high notes fail to speak. On a real sax the open tone holes move the reflection with the note, so here the cutoff tracks f0.
+
+Shared behavior:
+
+- **Monophonic, last-note priority.** Holding a note and pressing another retunes the tube without a new attack (**legato**), and the delay lengths glide (**portamento**). Releasing returns to the previous held note. In a chord burst, only the first note plays.
+- **Velocity → breath.** Velocity sets the steady pressure between the patch's `pressure: [low, high]`, scaled by the Breath knob.
+- **Watchdog.** If the loop ever blows up (|out| > 4, or NaN), it is cleared and a warning is posted once.
+- **Measured tuning.** A nonlinear loop settles slightly off the pitch its delay implies. Each patch carries a `tuningCents` table measured at 44.1 and 48 kHz, and the engine picks the closest rate.
+
+### 5.3 Bowed: violin (STK `Bowed`)
+
+The bow sits on the string, splitting it into a neck side and a bridge side. At every sample the bow compares its own velocity with the string's velocity under it. The friction curve decides whether the string **sticks** to the bow or **slips** free, and that stick-slip cycle is the sawtooth-like motion a bowed string makes.
+
+```text
+   nut                              bow                                bridge
+    |<------- neck delay ----------->|<------ bridge delay ------------>|
+    |       (1 - beta) x D           |          beta x D                |
+    |                                |                                  |
+   reflect x -1               dv = v_bow - v_string              reflect x -0.95 x lowpass
+                              f  = dv x bowTable(dv)                    |
+                              (injected both ways)                      v
+                                                          6-biquad violin body (Maestre)
+                                                                        |
+                                                                        v
+                                                                       out
+
+   bowTable(x) = (|slope x (x + 0.001)| + 0.75)^-4, clamped to [0.01, 0.98]
+   slope = 5 - 4 x Bow pressure            beta = Bow position
+   v_bow = (0.03 + 0.2 x velocity) x Bow speed x ADSR
+```
+
+- Up to 4 voices (double stops and chords). Vibrato modulates the neck length and fades in after 0.3 s, the way a player adds it late.
+- The body filter was designed at 44.1 kHz. Its pole/zero pairs are rescaled to the actual sample rate so the resonances stay put.
+
+### 5.4 Drums: Drum Kit and 808 Kit
+
+Drums use **modal synthesis**: the resonator is a bank of decaying sine waves, one per vibration mode. Each mode is a two-pole resonator:
+
+```text
+   y[n] = g x[n] + 2r cos(theta) y[n-1] - r^2 y[n-2]
+
+   theta = 2 pi f / fs              (mode frequency)
+   r     = exp(-ln(1000) / (T60 fs)) (mode decay)
+   g     = amp x sin(theta)          (impulse response peaks at ~amp)
+```
+
+```text
+  stick pulse: half-sine, soft..hard ms   (harder hit = shorter pulse = brighter)
+        |
+        v
+  +---------------------------------------+
+  | MODAL BANK  sum of decaying sines     |  membrane: pitch starts high and settles
+  |   mode i: f_i, T60_i, weight_i        |  (tension modulation), updated every 32 samples
+  +---------------------------------------+
+        |   + click   : highpassed noise, a few ms  (beater)
+        |   + wires   : highpassed noise x envelope of the drum itself (snare)
+        |   + sizzle  : highpassed decaying noise (hats, cymbals)
+        v
+   x level x velocity  ->  pan  ->  kit bus
+```
+
+| Piece model                      | How it's built                                                                                                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **membrane** (kick, snare, toms) | Ideal circular-membrane ratios 1, 1.593, 2.136, 2.295, 2.653, …. **Position** blends center hits (only the symmetric modes) toward edge hits (all modes). Optional shell mode. |
+| **metal** (hats, cowbell, crash) | Either a table of modes or a seeded log-spread set: `T60_i = T60 (f_lo / f_i)^0.3`, amplitude `1/sqrt(i+1)` ± 30 %. A closed hat **chokes** the open hat (30 ms).              |
+| **noise** (clap)                 | Several short noise bursts a few ms apart (slightly jittered), then a decaying tail, all through a bandpass.                                                                   |
+
+Each of the nine pieces is one voice: hitting it again restarts it. The two kits share this structure and differ only in their constants (`patches/drums.ts`). The Device plays kits from the keybed by pitch class (F kick, G snare, …).
+
+The **metronome** is a separate two-mode woodblock (1.9/2.9 kHz, higher when accented) that goes straight to the master, dry.
+
+## 6. Bodies (`models/Body.ts`)
+
+```text
+  modal      bus --> mono --> [ modal bank: N modes ] --x mix--> added to L and R
+             (piano soundboard: 20 modes, log-spaced 60 Hz - 3 kHz, T60 0.25 s -> 0.04 s)
+
+  radiation  bus --> [ highpass (+ presence peak) ] --crossfade by mix--> L, R
+             (flute, sax: the open end / bell radiates highs better than lows)
+
+  none       bus passes through (electric bass, violin: its body lives in the voice)
+
+  all        then an optional +/-6 dB tilt around 800 Hz (Tone)
+```
+
+A body is driven continuously, not by a single impulse, so each mode's resonant gain is normalized (`amp x 2(1 - r)`). Without that, long-ringing modes would boost the level by tens of dB. **Size** scales the mode frequencies (0.7–1.4×), and **Resonance** scales their decay (0.5–2×).
+
+## 7. Reverb (`dsp/Fdn.ts`)
+
+One shared 8-line **feedback delay network**. Each instrument feeds it through its own Reverb send.
+
+```text
+  send (mono) --> predelay 0-60 ms --> 4 Schroeder allpass diffusers (3.1, 5.3, 8.9, 12.7 ms)
+                                                   |
+                                    +/- 1/sqrt(8) into each line
+                                                   v
+   +--------------------------------------------------------------------------+
+   |   line 0   line 1   line 2   ...   line 7     29 ms .. 71 ms, prime      |
+   |     |        |        |               |       lengths, x Reverb size     |
+   |   damping lowpass on each line (Reverb damping)                          |
+   |     |        |        |               |                                  |
+   |   x g_i     x g_i     x g_i          x g_i    g_i = 10^(-3 L_i / (T60 fs))|
+   |     |        |        |               |                                  |
+   |   +------------------------------------------------+                     |
+   |   | Householder mix  I - (2/8) 1 1^T   (lossless)  | --> back into lines |
+   |   +------------------------------------------------+                     |
+   +--------------------------------------------------------------------------+
+         taps 0, 2, 4, 6 (+ - + -) --> wet L        taps 1, 3, 5, 7 --> wet R
+```
+
+- Every line loses exactly 60 dB in the Reverb decay time, whatever its length.
+- The Householder matrix mixes every line into every other one at O(N) cost, so echoes smear into a dense tail.
+- **Sleep.** After 0.5 s below −100 dBFS the reverb clears itself and stops computing, and it wakes on the next input.
+
+## 8. Parameters
+
+Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab builds its panel from that list, the Device's Synth screen displays it, and saved presets store it.
+
+```text
+  ParamSpec {
+    id:       "exciter.hardness"      section.name
+    label:    "Hardness"
+    section:  exciter | resonator | body | filter | envelope | space
+    min, max, default
+    unit:     Hz | s | % | cents | dB | st | x | ms       (display only)
+    scale:    linear | log                                (knob mapping)
+    primary:  shown without "Advanced"
+  }
+```
+
+- **Knob mapping.** `fromUnit(spec, t)` maps 0–1 across the range, geometrically for log params. The Device's knobs have 11 steps: step `k` means `t = k / 10`.
+- **When changes take effect.** On strings and winds, settings that shape the attack or tune the loop (hardness, position, decay, brightness, inharmonicity, breath) apply from the next note. Everything else changes notes that are already sounding: filter, body, drive, level, send, reverb, volume, vibrato, bow pressure and the drum controls. Values that would click if they jumped are smoothed.
+- **Presets.** `deviceEngine.loadPreset` resets _every_ param of the instrument to its default or the preset's override, so settings never leak between presets. It only sends values that actually changed. Saved presets are a full snapshot of those values.
+
+## 9. From key press to sound
+
+```text
+  press "Z"
+    |
+    v
+  SynthDevice.pressKey(semitone)        chord macro on? expand into chord intervals
+    |
+    v
+  deviceEngine.noteOn(midi)             + the preset's octave offset
+    |                                   kit? pitch class -> drum piece -> physicalSynth.hit()
+    v
+  physicalSynth.noteOn(target, note)    postMessage([event])   (queued until booted)
+    |
+    v  ------------------------------------------------ audio thread -----------
+  Engine.schedule(event)                no time -> start of the next block
+    |
+    v
+  StringInstrument.noteOn               fold into range, pick a voice,
+    |                                   tune the loops, write the excitation
+    v
+  voice renders into the bus -> body -> drive -> gain -> master -> clip -> speakers
+```
+
+## 10. Calibration and checks
+
+- **Pitch.** Strings are in tune by construction, because the loop filters' delay is compensated at the fundamental. The flute, sax and violin use measured `tuningCents` tables per sample rate. Re-measure those after changing their loops.
+- **Loudness.** Each patch's `outputGain` puts a mezzo-forte C4 at −18 dBFS RMS. Drum pieces peak at −3 dBFS on a hard hit.
+- **Offline rendering.** `offline/renderEngine.ts` runs the same `Engine` in plain TypeScript (Node or browser). `offline/renderOffline.ts` renders through the real worklet in an `OfflineAudioContext`.
+- **Diagnostics** (`offline/diagnostics.ts`, runnable from Storybook > Lab / Instrument Lab > Diagnostics):
+
+  | Sweep                 | Checks                                                                                               |
+  | --------------------- | ---------------------------------------------------------------------------------------------------- |
+  | tuning                | every note within tolerance of its target pitch                                                      |
+  | decay                 | string T60 matches the patch's table                                                                 |
+  | stability             | loops never blow up across velocities and params                                                     |
+  | loudness, drum levels | the calibration targets above                                                                        |
+  | stress                | how much faster than real time a dense passage renders (sustained piano cluster, fast guitar strums) |
+  | onset, lifecycle      | notes start on time; voices free themselves                                                          |
+
+- **Unit tests.** `npm run test:unit` runs the DSP building blocks (`dsp/dsp.test.ts`) and the engine (`physical.test.ts`) in Node.
+
+## 11. File map
+
+```text
+  app/lib/physical/
+  |-- index.ts               physicalSynth singleton (safe to import during prerender)
+  |-- PhysicalSynth.ts       main-thread facade: boot, queue, limiter, analyser
+  |-- processor.worklet.ts   the AudioWorkletProcessor (only file touching worklet globals)
+  |-- messages.ts            event / stats / warning types shared by both threads
+  |-- engine/
+  |   |-- Engine.ts          render loop, segmenting, master stage, safety clip
+  |   |-- EventQueue.ts      preallocated frame-sorted queue
+  |   |-- Instrument.ts      bus: body, drive, gain, reverb send, idle tail
+  |   |-- Voice.ts           voice state machine, pickVictim
+  |   `-- ParamSet.ts        clamped param values by id
+  |-- models/
+  |   |-- StringLoop.ts      single-delay-loop string
+  |   |-- exciters.ts        hammer, pluck, stick
+  |   |-- StringInstrument.ts piano, guitar, basses
+  |   |-- BoreInstrument.ts  flute, sax
+  |   |-- BowedInstrument.ts violin
+  |   |-- DrumKit.ts         drum kits + metronome woodblock
+  |   |-- Body.ts            modal / radiation bodies, tilt
+  |   `-- Waveguide.ts       fractional delay section (STK DelayL style)
+  |-- dsp/                   DelayLine, filters, Svf, modal banks, Fdn, Adsr, noise/LFO,
+  |                          jet/reed/bow tables, phase-delay math
+  |-- patches/               per-instrument constants, key tables, ParamSpecs, tuning tables
+  `-- offline/               renderers, analysis, diagnostics
+```

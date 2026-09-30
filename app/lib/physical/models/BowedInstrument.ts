@@ -2,7 +2,7 @@
 // Scavone, MIT-style license): src/Bowed.cpp, include/BowTable.h, with the
 // violin body filter by Esteban Maestre.
 
-import { Adsr } from "../dsp/Adsr";
+import { Adsr, type AdsrStages } from "../dsp/Adsr";
 import { Biquad, OnePoleLowpass, rescaleQuadratic } from "../dsp/filters";
 import { Lfo } from "../dsp/generators";
 import { foldNote, keyTable, midiToHz, panGains, TWO_PI } from "../dsp/math";
@@ -113,7 +113,7 @@ class BowedVoice extends Voice {
 
       if (this.ticks++ % FILTER_UPDATE === 0)
         this.svf.set(this.cutoff, this.q, this.fs);
-      let y = this.svf.process(x);
+      let y = this.svf.process(x) * this.shape.process();
       if (this.fadeStep > 0) {
         this.fade = Math.max(0, this.fade - this.fadeStep);
         y *= this.fade;
@@ -139,10 +139,12 @@ export class BowedInstrument extends Instrument {
   private speed = 1;
   private vibratoDepth = 0.006;
   private vibratoRate = 5.5;
-  private attack = 0.03;
-  private decay = 0.05;
-  private sustainLevel = 0.9;
-  private release = 0.15;
+  private envelope: AdsrStages = {
+    attack: 0.05,
+    decay: 0.1,
+    sustain: 0.9,
+    release: 0.1,
+  };
   private cutoff = 12000;
   private q = Math.SQRT1_2;
   private bodyMix = 1;
@@ -170,10 +172,7 @@ export class BowedInstrument extends Instrument {
     this.speed = p.get("exciter.speed");
     this.vibratoDepth = p.get("exciter.vibrato");
     this.vibratoRate = p.get("resonator.vibratoRate");
-    this.attack = p.get("envelope.attack");
-    this.decay = p.get("envelope.decay");
-    this.sustainLevel = p.get("envelope.sustain");
-    this.release = p.get("envelope.release");
+    this.envelope = p.envelope("envelope");
     this.cutoff = p.get("filter.cutoff");
     this.q = p.get("filter.resonance");
     this.bodyMix = p.get("body.violin");
@@ -187,8 +186,12 @@ export class BowedInstrument extends Instrument {
       voice.cutoff = this.cutoff;
       voice.q = this.q;
       voice.bodyMix = this.bodyMix;
-      voice.bow.setRelease(this.release);
+      voice.bow.setRelease(this.envelope.release);
     }
+  }
+
+  protected allVoices() {
+    return this.voices;
   }
 
   activeVoices() {
@@ -252,6 +255,7 @@ export class BowedInstrument extends Instrument {
     if (voice.holds > 0) return;
     voice.state = RELEASED;
     voice.bow.noteOff();
+    voice.shape.noteOff();
   }
 
   allNotesOff() {
@@ -261,6 +265,7 @@ export class BowedInstrument extends Instrument {
         voice.holds = 0;
         voice.state = RELEASED;
         voice.bow.noteOff();
+        voice.shape.noteOff();
       }
     }
   }
@@ -290,8 +295,9 @@ export class BowedInstrument extends Instrument {
   private bowOn(voice: BowedVoice, velocity: number) {
     // STK: maxVelocity = 0.03 + 0.2·amplitude.
     voice.maxVelocity = (0.03 + 0.2 * velocity) * this.speed;
-    voice.bow.set(this.attack, this.decay, this.sustainLevel, this.release);
+    voice.bow.setStages(this.envelope);
     voice.bow.noteOn();
+    voice.shape.noteOn();
   }
 
   // Round trip = neck + bridge + 2 ("lastOut" samples) + τ_string filter.

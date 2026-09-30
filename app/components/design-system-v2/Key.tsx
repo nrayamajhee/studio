@@ -1,4 +1,4 @@
-import type { CSSProperties, KeyboardEvent } from "react";
+import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
 import { Button } from "../design-system/Button";
 import { cn } from "../../lib/utils";
 import styles from "./Key.module.css";
@@ -6,7 +6,8 @@ import styles from "./Key.module.css";
 export interface KeyProps {
   label: string;
   variant?: "white" | "black";
-  note?: string;
+  // The engraved note name, or an icon (e.g. a drum piece).
+  note?: ReactNode;
   hotkey?: string;
   lit?: boolean;
   onPress?: () => void;

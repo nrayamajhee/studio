@@ -8,12 +8,12 @@
 
 .frame {
   /* tan(atan2(a, b)) divides two lengths into a plain number, so the
-     1348×540 device scales to fit its container without JavaScript. */
-  --scale: min(1, tan(atan2(100cqw, 1348px)), tan(atan2(100cqh, 540px)));
+     1470×463 device scales to fit its container without JavaScript. */
+  --scale: min(1, tan(atan2(100cqw, 1470px)), tan(atan2(100cqh, 463px)));
 
   position: relative;
-  width: calc(1348px * var(--scale));
-  height: calc(540px * var(--scale));
+  width: calc(1470px * var(--scale));
+  height: calc(463px * var(--scale));
 }
 
 /* Theme colors are color-mix(light, dark var(--theme-mix)) so they fade with
@@ -21,12 +21,16 @@
 .device {
   --synth-ink: color-mix(in srgb, #1d1d1f, #0e0e0f var(--theme-mix));
   --synth-chalk: #f4f3ef;
-  --synth-orange: #f26b1d;
-  --synth-green: #3aa655;
+  --synth-red: #cd5951;
+  --synth-green: #4ba078;
   --synth-blue: #2f7de1;
-  /* One spacing for the bezel and every gap between groups; the device size
-     is 2×222 pads + 776 keybed + 4 gaps wide and 2×222 rows + 3 gaps tall. */
+  /* Two spacings. --gap is the bezel and the gap between the top and bottom
+     rows; --inset separates groups within a row (pads, knobs, screen, key
+     well) and the screen from the top edge and the key well. The device is
+     2×299 banks + 776 keybed + 2 gaps + 2 insets wide, and a 145 top row + a
+     222 bottom row + 3 gaps tall. */
   --gap: 32px;
+  --inset: 16px;
 
   position: absolute;
   top: 0;
@@ -34,8 +38,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--gap);
-  width: 1348px;
-  height: 540px;
+  width: 1470px;
+  height: 463px;
   padding: var(--gap);
   border-radius: 88px;
   corner-shape: squircle;
@@ -69,26 +73,29 @@
 .row {
   display: flex;
   align-items: flex-start;
-  gap: var(--gap);
+  gap: var(--inset);
 }
 
+/* Two 56px knobs, each centred on one of the two pad rows beside it. */
 .knobColumn {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-  height: 222px;
+  --knob-size: 56px;
+
+  display: grid;
+  grid-template-rows: 68px 68px;
+  row-gap: 9px;
+  place-items: center;
 }
 
+/* Banks are 4 columns of 68px pads: 2 rows on top, 3 below. */
 .pads {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 9px;
 }
 
 .bank {
   flex-shrink: 0;
-  width: 222px;
-  height: 222px;
+  width: 299px;
 }
 
 .padRow {
@@ -97,61 +104,12 @@
   grid-template-columns: subgrid;
 }
 
-.screen {
+/* The screen reaches past the row into the padding, stopping --inset from the
+   top edge and from the key well. */
+.screenSlot {
   flex: 1;
-  height: 222px;
-  padding: 10px;
-  border-radius: 22px;
-  background: color-mix(in srgb, #141413, #0b0b0c var(--theme-mix));
-  box-shadow:
-    inset 0 0 0 1px
-      color-mix(
-        in srgb,
-        rgb(255 255 255 / 0.06),
-        rgb(255 255 255 / 0.05) var(--theme-mix)
-      ),
-    0 1px 0
-      color-mix(
-        in srgb,
-        rgb(255 255 255 / 0.8),
-        rgb(255 255 255 / 0.08) var(--theme-mix)
-      );
-}
-
-.glass {
-  position: relative;
-  display: flex;
-  align-items: center;
-  height: 100%;
-  padding: 18px 22px;
-  border-radius: 14px;
-  background: #050505;
-}
-
-.readout {
-  position: absolute;
-  top: 12px;
-  right: 22px;
-  left: 22px;
-  display: flex;
-  justify-content: space-between;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 16px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgb(244 243 239 / 0.6);
-}
-
-.readoutBottom {
-  top: auto;
-  bottom: 12px;
-}
-
-.scope {
-  width: 100%;
-  height: 150px;
+  min-width: 0;
+  margin-block: calc(var(--inset) - var(--gap));
 }
 
 .keybed {

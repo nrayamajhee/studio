@@ -1,7 +1,7 @@
 // Flute and saxophone loops ported from STK (The Synthesis ToolKit, Perry Cook
 // & Gary Scavone, MIT-style license): src/Flute.cpp and src/Saxofony.cpp.
 
-import { Adsr } from "../dsp/Adsr";
+import { Adsr, type AdsrStages } from "../dsp/Adsr";
 import { DcBlocker, OnePoleLowpass } from "../dsp/filters";
 import { Lfo, Noise } from "../dsp/generators";
 import {
@@ -135,7 +135,11 @@ class BoreVoice extends Voice {
 
       if (this.ticks++ % FILTER_UPDATE === 0)
         this.svf.set(this.cutoff, this.q, this.fs);
-      let y = this.svf.process(out) * this.outputGain * this.gate.process();
+      let y =
+        this.svf.process(out) *
+        this.outputGain *
+        this.gate.process() *
+        this.shape.process();
       if (this.fadeStep > 0) {
         this.fade = Math.max(0, this.fade - this.fadeStep);
         y *= this.fade;
@@ -169,10 +173,12 @@ export class BoreInstrument extends Instrument {
   private vibratoDepth = 0.04;
   private vibratoRate = 5;
   private portamento = 0.03;
-  private attack = 0.05;
-  private decay = 0.1;
-  private sustainLevel = 0.9;
-  private release = 0.1;
+  private envelope: AdsrStages = {
+    attack: 0.05,
+    decay: 0.1,
+    sustain: 0.9,
+    release: 0.1,
+  };
   private cutoff = 12000;
   private q = Math.SQRT1_2;
   private pitchDepth = 0;
@@ -204,10 +210,7 @@ export class BoreInstrument extends Instrument {
     this.vibratoRate = p.get("resonator.vibratoRate");
     this.portamento = p.get("resonator.portamento");
     this.pitchDepth = p.get("resonator.pitchVibrato");
-    this.attack = p.get("envelope.attack");
-    this.decay = p.get("envelope.decay");
-    this.sustainLevel = p.get("envelope.sustain");
-    this.release = p.get("envelope.release");
+    this.envelope = p.envelope("envelope");
     this.cutoff = p.get("filter.cutoff");
     this.q = p.get("filter.resonance");
     const voice = this.voice;
@@ -218,13 +221,17 @@ export class BoreInstrument extends Instrument {
     voice.reedSlope = 0.1 + 0.4 * p.get("exciter.reed");
     voice.cutoff = this.cutoff;
     voice.q = this.q;
-    voice.breath.setRelease(this.release);
+    voice.breath.setRelease(this.envelope.release);
     voice.glide =
       1 - Math.exp(-3 / (Math.max(0.001, this.portamento) * this.fs));
   }
 
   activeVoices() {
     return this.voice.busy ? 1 : 0;
+  }
+
+  protected allVoices() {
+    return [this.voice];
   }
 
   noteOn(note: number, velocity: number) {
@@ -252,6 +259,7 @@ export class BoreInstrument extends Instrument {
       this.current = -1;
       this.voice.breath.noteOff();
       this.voice.gate.noteOff();
+      this.voice.shape.noteOff();
     }
   }
 
@@ -260,6 +268,7 @@ export class BoreInstrument extends Instrument {
     this.current = -1;
     this.voice.breath.noteOff();
     this.voice.gate.noteOff();
+    this.voice.shape.noteOff();
   }
 
   panic() {
@@ -292,17 +301,13 @@ export class BoreInstrument extends Instrument {
       if (voice.state === IDLE) voice.reset();
       const [low, high] = this.patch.pressure;
       const steady = lerp(low, high, velocity) * this.pressure;
-      voice.maxPressure = steady / Math.max(0.05, this.sustainLevel);
+      voice.maxPressure = steady / Math.max(0.05, this.envelope.sustain);
       voice.outputGain = velocity + 0.001;
-      voice.breath.set(
-        this.attack,
-        this.decay,
-        this.sustainLevel,
-        this.release,
-      );
+      voice.breath.setStages(this.envelope);
       voice.breath.noteOn();
       voice.gate.set(0.005, 0, 1, 0.05, true);
       voice.gate.noteOn();
+      voice.shape.noteOn();
       voice.vibrato.set(
         this.vibratoRate,
         this.patch.id === "flute" ? 0.3 : 0.25,

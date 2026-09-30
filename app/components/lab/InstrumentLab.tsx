@@ -557,7 +557,7 @@ export function InstrumentLab({
                 <Pad
                   key={piece}
                   label={piece}
-                  accent="#f26b1d"
+                  accent="#cd5951"
                   onPress={() =>
                     physicalSynth.hit(instrument as KitId, piece, velocity)
                   }

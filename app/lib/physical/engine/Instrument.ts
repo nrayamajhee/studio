@@ -1,3 +1,4 @@
+import type { AdsrStages } from "../dsp/Adsr";
 import { DcBlocker } from "../dsp/filters";
 import { Smoother } from "../dsp/generators";
 import { softClip } from "../dsp/nonlinear";
@@ -5,6 +6,7 @@ import type { BusId, DrumPieceId } from "../messages";
 import { Body } from "../models/Body";
 import type { BasePatch } from "../patches/types";
 import { ParamSet } from "./ParamSet";
+import type { Voice } from "./Voice";
 
 export const MAX_BLOCK = 2048;
 
@@ -59,8 +61,15 @@ export abstract class Instrument {
   abstract activeVoices(): number;
   protected abstract renderVoices(start: number, end: number): void;
   protected abstract freeFinished(): void;
+  protected abstract allVoices(): readonly Voice[];
 
   sustain(_down: boolean) {}
+
+  // The master ADSR: one amplitude envelope over every voice.
+  setShape(stages: AdsrStages) {
+    const voices = this.allVoices();
+    for (let i = 0; i < voices.length; i++) voices[i].shape.setStages(stages);
+  }
 
   hit(_piece: DrumPieceId, _velocity: number) {}
 

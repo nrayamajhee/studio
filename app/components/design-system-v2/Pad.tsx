@@ -1,4 +1,11 @@
-import type { CSSProperties, MouseEvent, PointerEvent, ReactNode } from "react";
+import {
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 import { Button } from "../design-system/Button";
 import { cn } from "../../lib/utils";
 import styles from "./Pad.module.css";
@@ -8,6 +15,8 @@ export interface PadProps {
   accent?: string;
   lit?: boolean;
   pressed?: boolean;
+  // Held down from outside, e.g. while its keyboard hotkey is held.
+  held?: boolean;
   onPress?: () => void;
   children?: ReactNode;
   className?: string;
@@ -25,15 +34,23 @@ export function pressProps(onPress?: () => void) {
   };
 }
 
+const isActivation = (event: KeyboardEvent) =>
+  event.key === " " || event.key === "Enter";
+
 export function Pad({
   label,
-  accent = "#3aa655",
+  accent = "#4ba078",
   lit = false,
   pressed,
+  held = false,
   onPress,
   children,
   className,
 }: PadProps) {
+  const [down, setDown] = useState(false);
+  const press = pressProps(onPress);
+  const release = () => setDown(false);
+
   return (
     <Button
       variant="ghost"
@@ -41,9 +58,24 @@ export function Pad({
       aria-label={label}
       aria-pressed={pressed}
       data-lit={lit || pressed || undefined}
+      data-held={held || down || undefined}
       className={cn(styles.pad, className)}
       style={{ "--pad-accent": accent } as CSSProperties}
-      {...pressProps(onPress)}
+      onPointerDown={(event) => {
+        if (event.button === 0) setDown(true);
+        press.onPointerDown(event);
+      }}
+      onClick={press.onClick}
+      onPointerUp={release}
+      onPointerCancel={release}
+      onPointerLeave={release}
+      onKeyDown={(event) => {
+        if (isActivation(event) && !event.repeat) setDown(true);
+      }}
+      onKeyUp={(event) => {
+        if (isActivation(event)) release();
+      }}
+      onBlur={release}
     >
       {children && (
         <span className={styles.face} aria-hidden="true">

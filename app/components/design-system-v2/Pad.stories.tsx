@@ -10,7 +10,7 @@ const meta = {
   parameters: { layout: "centered" },
   args: {
     label: "Piano",
-    accent: "#f26b1d",
+    accent: "#cd5951",
     lit: false,
     onPress: fn(),
     children: <Piano />,

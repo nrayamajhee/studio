@@ -90,6 +90,12 @@
   letter-spacing: 0.01em;
 }
 
+.note svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
 .black .labels {
   bottom: 16px;
   gap: 5px;
@@ -103,4 +109,9 @@
 
 .black .note {
   font-size: 10px;
+}
+
+.black .note svg {
+  width: 16px;
+  height: 16px;
 }

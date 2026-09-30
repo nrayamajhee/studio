@@ -100,7 +100,7 @@ class StringVoice extends Voice {
       if (this.pickupTap > 0) y -= loops[0].delay.readInt(this.pickupTap);
       y = this.dc.process(y);
       if (this.ticks++ % FILTER_UPDATE === 0) this.updateFilter();
-      y = this.svf.process(y) * this.amp.process();
+      y = this.svf.process(y) * this.amp.process() * this.shape.process();
       if (this.fadeStep > 0) {
         this.fade = Math.max(0, this.fade - this.fadeStep);
         y *= this.fade;
@@ -228,6 +228,10 @@ export class StringInstrument extends Instrument {
       if (this.voices[i].busy) count++;
     }
     return count;
+  }
+
+  protected allVoices() {
+    return this.voices;
   }
 
   lastContactMs() {
@@ -501,6 +505,7 @@ export class StringInstrument extends Instrument {
     voice.filterEnv = 1;
     voice.amp.set(this.attack, 0, 1, 0.05, true);
     voice.amp.noteOn();
+    voice.shape.noteOn();
     voice.age = this.clock;
     voice.state = ACTIVE;
     voice.note = note;
@@ -524,6 +529,7 @@ export class StringInstrument extends Instrument {
     }
     this.excite(voice, note, velocity);
     voice.filterEnv = 1;
+    voice.shape.noteOn();
   }
 
   private excite(voice: StringVoice, note: number, velocity: number) {
@@ -555,6 +561,7 @@ export class StringInstrument extends Instrument {
   private damp(voice: StringVoice) {
     voice.state = RELEASED;
     voice.deferred = false;
+    voice.shape.noteOff();
     const limit = this.patch.noDamperAbove;
     if (limit !== undefined && voice.note > limit) return;
     const t60 = keyTable(this.patch.damperT60, voice.note) * this.release;

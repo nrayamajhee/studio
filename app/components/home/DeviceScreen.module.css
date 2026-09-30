@@ -1,0 +1,335 @@
+/* The two pad rows (145px) plus the 16px it reaches into the Device's padding
+   above and below. */
+.screen {
+  height: 177px;
+  padding: 8px;
+  border-radius: 22px;
+  background: color-mix(in srgb, #141413, #0b0b0c var(--theme-mix));
+  box-shadow:
+    inset 0 0 0 1px
+      color-mix(
+        in srgb,
+        rgb(255 255 255 / 0.06),
+        rgb(255 255 255 / 0.05) var(--theme-mix)
+      ),
+    0 1px 0
+      color-mix(
+        in srgb,
+        rgb(255 255 255 / 0.8),
+        rgb(255 255 255 / 0.08) var(--theme-mix)
+      );
+}
+
+.glass {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 20px;
+  border-radius: 14px;
+  color: #f4f3ef;
+  background: #050505;
+}
+
+.readout {
+  position: absolute;
+  top: 9px;
+  right: 20px;
+  left: 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgb(244 243 239 / 0.6);
+}
+
+.readoutBottom {
+  top: auto;
+  bottom: 9px;
+}
+
+.scope {
+  width: 100%;
+  height: 90px;
+}
+
+/* Views sit in the ~576 × 101 space between the two readouts. */
+.params,
+.tiles,
+.envelope {
+  position: absolute;
+  top: 30px;
+  right: 20px;
+  bottom: 30px;
+  left: 20px;
+  margin: 0;
+}
+
+.params {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 4px 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.param {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 14px;
+  color: #f4f3ef;
+  background: transparent;
+  translate: none;
+  transition: none;
+}
+
+.param:focus-visible {
+  outline: 2px solid var(--synth-blue, #2f7de1);
+  outline-offset: 2px;
+}
+
+.paramLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgb(244 243 239 / 0.55);
+}
+
+.paramValue {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.selectionLabel {
+  color: var(--synth-red, #cd5951);
+}
+
+.selectionValue {
+  color: var(--synth-blue, #2f7de1);
+}
+
+/* The red knob picks this param and the blue knob sets its value. */
+.selected .paramLabel {
+  color: var(--synth-red, #cd5951);
+}
+
+.selected .paramValue {
+  color: var(--synth-blue, #2f7de1);
+}
+
+/* The library is one row of 8 square tiles. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  align-content: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.tiles .tile {
+  aspect-ratio: 1;
+}
+
+/* Icons are one row of 16 squares (~32 px), so two pages hold all 32. */
+.iconTiles {
+  grid-template-columns: repeat(16, minmax(0, 1fr));
+  grid-template-rows: none;
+  align-content: center;
+  gap: 4px;
+}
+
+.iconTiles .tile {
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: 6px;
+}
+
+.iconTiles .tileIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0 4px;
+  border: 1px solid rgb(244 243 239 / 0.12);
+  border-radius: 8px;
+  color: rgb(244 243 239 / 0.75);
+  background: transparent;
+  translate: none;
+  transition: none;
+}
+
+/* Green marks whatever the green knob is moving through. */
+.seeking {
+  color: var(--synth-green, #4ba078);
+}
+
+.tile[aria-pressed="true"] {
+  border-color: var(--synth-green, #4ba078);
+  color: #ffffff;
+  background: var(--synth-green, #4ba078);
+}
+
+.tile[aria-pressed="true"] .badge {
+  color: #ffffff;
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--synth-blue, #2f7de1);
+  outline-offset: 2px;
+}
+
+.tileIcon {
+  display: grid;
+  place-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tileIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Up to two lines, so "Acoustic Guitar" reads in full on a narrow tile. */
+.tileName {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+  line-height: 10px;
+  letter-spacing: 0.02em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: rgb(5 5 5 / 0.55);
+  pointer-events: none;
+  animation: overlay-in 120ms ease-out;
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 62%;
+  padding: 14px 18px 16px;
+  border: 1px solid rgb(244 243 239 / 0.18);
+  border-radius: 10px;
+  background: rgb(5 5 5 / 0.92);
+}
+
+.meterLabel {
+  display: flex;
+  justify-content: space-between;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.meterTrack {
+  position: relative;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgb(244 243 239 / 0.12);
+}
+
+.meterFill {
+  height: 100%;
+  background: #f4f3ef;
+  transition: width 160ms ease-out;
+}
+
+.envelope {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.envelopeGraph {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+
+.stages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.stage {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.stage > span:first-child {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(244 243 239 / 0.55);
+}
+
+.stage > span:last-child {
+  font-weight: 600;
+}
+
+.badge {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 10px;
+  color: var(--synth-red, #cd5951);
+}

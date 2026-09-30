@@ -1,3 +1,4 @@
+import type { AdsrStages } from "../dsp/Adsr";
 import type { ParamSpec, SectionId } from "./types";
 
 const param = (
@@ -11,6 +12,70 @@ const param = (
 ): ParamSpec => ({ id, label, section, min, max, default: value, ...extra });
 
 const primary = { primary: true } as const;
+
+type AdsrRanges = {
+  readonly [Stage in keyof AdsrStages]: readonly [min: number, max: number];
+};
+
+// The winds' breath and the violin's bow.
+const INSTRUMENT_ADSR: AdsrRanges = {
+  attack: [0.005, 0.5],
+  decay: [0.01, 1],
+  sustain: [0.3, 1],
+  release: [0.02, 1],
+};
+
+// Log ranges whose 11-step knobs land on 200 ms for decay and release.
+const MASTER_ADSR: AdsrRanges = {
+  attack: [0.001, 4],
+  decay: [0.01, 4],
+  sustain: [0, 1],
+  release: [0.01, 4],
+};
+
+// Attack, decay, sustain and release under `prefix`: every ADSR in the engine
+// is described this way and read back with ParamSet.envelope(prefix).
+function adsrParams(
+  prefix: string,
+  stages: AdsrStages,
+  ranges: AdsrRanges,
+): ParamSpec[] {
+  const time = { unit: "s", scale: "log", primary: true } as const;
+  return [
+    param(
+      `${prefix}.attack`,
+      "Attack",
+      "envelope",
+      ...ranges.attack,
+      stages.attack,
+      time,
+    ),
+    param(
+      `${prefix}.decay`,
+      "Decay",
+      "envelope",
+      ...ranges.decay,
+      stages.decay,
+      time,
+    ),
+    param(
+      `${prefix}.sustain`,
+      "Sustain",
+      "envelope",
+      ...ranges.sustain,
+      stages.sustain,
+      primary,
+    ),
+    param(
+      `${prefix}.release`,
+      "Release",
+      "envelope",
+      ...ranges.release,
+      stages.release,
+      time,
+    ),
+  ];
+}
 
 function filterParams(cutoff: number, q: number): ParamSpec[] {
   return [
@@ -106,7 +171,7 @@ export function stringParams(d: StringDefaults): ParamSpec[] {
       scale: "log",
       primary: true,
     }),
-    param("envelope.release", "Release (damper)", "envelope", 0.25, 4, 1, {
+    param("envelope.release", "Damper", "envelope", 0.25, 4, 1, {
       unit: "×",
       scale: "log",
       primary: true,
@@ -212,30 +277,7 @@ export function boreParams(d: BoreDefaults): ParamSpec[] {
     param("body.tone", "Tone", "body", -1, 1, 0, primary),
     param("body.mix", "Mix", "body", 0, 1, 1, primary),
     ...filterParams(d.cutoff, Math.SQRT1_2),
-    param("envelope.attack", "Attack", "envelope", 0.005, 0.5, d.attack, {
-      unit: "s",
-      scale: "log",
-      primary: true,
-    }),
-    param("envelope.decay", "Decay", "envelope", 0.01, 1, d.decay, {
-      unit: "s",
-      scale: "log",
-      primary: true,
-    }),
-    param(
-      "envelope.sustain",
-      "Sustain",
-      "envelope",
-      0.3,
-      1,
-      d.sustain,
-      primary,
-    ),
-    param("envelope.release", "Release", "envelope", 0.02, 1, d.release, {
-      unit: "s",
-      scale: "log",
-      primary: true,
-    }),
+    ...adsrParams("envelope", d, INSTRUMENT_ADSR),
     ...shared(d.send),
   ];
 }
@@ -264,22 +306,11 @@ export function bowedParams(send: number): ParamSpec[] {
     param("body.violin", "Body", "body", 0, 1, 1, primary),
     param("body.tone", "Tone", "body", -1, 1, 0, primary),
     ...filterParams(12000, Math.SQRT1_2),
-    param("envelope.attack", "Attack", "envelope", 0.005, 0.5, 0.06, {
-      unit: "s",
-      scale: "log",
-      primary: true,
-    }),
-    param("envelope.decay", "Decay", "envelope", 0.01, 1, 0.05, {
-      unit: "s",
-      scale: "log",
-      primary: true,
-    }),
-    param("envelope.sustain", "Sustain", "envelope", 0.3, 1, 0.9, primary),
-    param("envelope.release", "Release", "envelope", 0.02, 1, 0.15, {
-      unit: "s",
-      scale: "log",
-      primary: true,
-    }),
+    ...adsrParams(
+      "envelope",
+      { attack: 0.06, decay: 0.05, sustain: 0.9, release: 0.15 },
+      INSTRUMENT_ADSR,
+    ),
     ...shared(send),
   ];
 }
@@ -347,4 +378,11 @@ export const MASTER_PARAMS: ParamSpec[] = [
   param("reverb.damping", "Reverb damping", "space", 0, 0.7, 0.35, primary),
   param("reverb.predelay", "Predelay", "space", 0, 0.06, 0.015, { unit: "s" }),
   param("reverb.return", "Reverb return", "space", 0, 1, 0.35, primary),
+  // The master ADSR over every voice. The defaults (instant attack, full
+  // sustain, a release far longer than any damper) leave notes as modelled.
+  ...adsrParams(
+    "adsr",
+    { attack: 0.001, decay: 0.3, sustain: 1, release: 4 },
+    MASTER_ADSR,
+  ),
 ];

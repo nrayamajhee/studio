@@ -4,101 +4,80 @@ import {
   type InstrumentId,
   type KitId,
 } from "../../lib/physical";
-import { PATCH_BY_ID } from "../../lib/physical/patches";
+import { MASTER_PARAMS, PATCH_BY_ID } from "../../lib/physical/patches";
 import type { ParamSpec } from "../../lib/physical/patches/types";
-
-export interface DeviceControl {
-  id: string;
-  label: string;
-}
 
 export interface DevicePreset {
   id: string;
   name: string;
+  // Key into PRESET_ICONS; anything else is shown on the pad as text.
+  icon: string;
+  // Saved from the Device rather than built in.
+  user?: boolean;
   target: InstrumentId | KitId;
   // Semitones added to keybed notes so each instrument plays in its register.
   octave: number;
   overrides?: Record<string, number>;
-  controls: readonly [primary: DeviceControl, secondary: DeviceControl];
 }
 
-const TUNE: DeviceControl = { id: "resonator.tune", label: "Tune" };
-const DRUM_DECAY: DeviceControl = { id: "resonator.decay", label: "Decay" };
-const SUSTAIN: DeviceControl = { id: "resonator.decay", label: "Sustain" };
-const VIBRATO: DeviceControl = { id: "exciter.vibrato", label: "Vibrato" };
-const BREATH: DeviceControl = { id: "exciter.pressure", label: "Breath" };
-
-// One entry per preset pad, in pad order.
+// One per preset pad, grouped by engine: hammer, pluck, bow, breath, reed,
+// strike.
 export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "piano",
+    icon: "piano",
     name: "Grand Piano",
     target: "piano",
     octave: 0,
-    controls: [{ id: "exciter.hardness", label: "Hardness" }, SUSTAIN],
   },
   {
     id: "guitar",
+    icon: "guitar",
     name: "Acoustic Guitar",
     target: "guitar",
     octave: 0,
-    controls: [{ id: "exciter.hardness", label: "Pick" }, SUSTAIN],
-  },
-  {
-    id: "bass",
-    name: "Electric Bass",
-    target: "bass",
-    octave: -24,
-    controls: [
-      { id: "filter.cutoff", label: "Tone" },
-      { id: "exciter.hardness", label: "Pluck" },
-    ],
-  },
-  {
-    id: "drums",
-    name: "Drum Kit",
-    target: "drums",
-    octave: 0,
-    controls: [TUNE, DRUM_DECAY],
-  },
-  {
-    id: "flute",
-    name: "Flute",
-    target: "flute",
-    octave: 12,
-    controls: [BREATH, VIBRATO],
-  },
-  {
-    id: "saxophone",
-    name: "Alto Sax",
-    target: "saxophone",
-    octave: 0,
-    controls: [BREATH, VIBRATO],
-  },
-  {
-    id: "violin",
-    name: "Violin",
-    target: "violin",
-    octave: 0,
-    controls: [{ id: "exciter.pressure", label: "Bow pressure" }, VIBRATO],
   },
   {
     id: "uprightBass",
+    icon: "upright",
     name: "Upright Bass",
     target: "uprightBass",
     octave: -24,
-    controls: [{ id: "exciter.hardness", label: "Pluck" }, SUSTAIN],
   },
+  { id: "violin", icon: "violin", name: "Violin", target: "violin", octave: 0 },
+  { id: "flute", icon: "wind", name: "Flute", target: "flute", octave: 12 },
+  {
+    id: "saxophone",
+    icon: "sax",
+    name: "Alto Sax",
+    target: "saxophone",
+    octave: 0,
+  },
+  { id: "drums", icon: "drum", name: "Drum Kit", target: "drums", octave: 0 },
   {
     id: "drums808",
+    icon: "keys",
     name: "808 Kit",
     target: "drums808",
     octave: 0,
-    controls: [TUNE, DRUM_DECAY],
   },
 ];
 
 export const KNOB_STEPS = 11;
+
+// The Device's ADSR knobs are the engine's master ADSR params, starting at 0,
+// 200 ms, 50% and 200 ms (all on a knob step). The params' own defaults, which
+// leave notes as modelled, are what switching it off sends.
+const ENVELOPE_START: Record<string, number> = {
+  "adsr.attack": 0.001,
+  "adsr.decay": 0.2,
+  "adsr.sustain": 0.5,
+  "adsr.release": 0.2,
+};
+
+export const ENVELOPE_PARAMS: readonly ParamSpec[] = MASTER_PARAMS.filter(
+  ({ id }) => id in ENVELOPE_START,
+).map((spec) => ({ ...spec, default: ENVELOPE_START[spec.id] }));
 
 // With a kit selected, keys play pieces by pitch class: white keys
 // F G A B C D E → kick, snare, low tom, high tom, clap, crash, cowbell; black
@@ -118,6 +97,9 @@ const KEY_PIECES: readonly DrumPieceId[] = [
   "highTom",
 ];
 
+// The drum piece a keybed note plays when a kit is selected.
+export const keyPiece = (midi: number) => KEY_PIECES[midi % 12];
+
 const NOTE_OFFSETS: Record<string, number> = {
   C: 0,
   D: 2,
@@ -136,23 +118,34 @@ export function noteNameToMidi(name: string) {
   return (Number(match[3]) + 1) * 12 + NOTE_OFFSETS[match[1]] + accidental;
 }
 
+// How the instrument's physical model is excited, shown on the screen.
+export function engineName(target: InstrumentId | KitId) {
+  const patch = PATCH_BY_ID[target];
+  switch (patch.family) {
+    case "string":
+      return patch.exciter === "hammer" ? "Hammer" : "Pluck";
+    case "bore":
+      return patch.model === "flute" ? "Breath" : "Reed";
+    case "bowed":
+      return "Bow";
+    case "drums":
+      return "Strike";
+  }
+}
+
 export const findPreset = (id: string) =>
   DEVICE_PRESETS.find((preset) => preset.id === id) ?? DEVICE_PRESETS[0];
 
-export function controlSpec(preset: DevicePreset, slot: 0 | 1): ParamSpec {
-  const { id } = preset.controls[slot];
-  const spec = PATCH_BY_ID[preset.target].params.find(
-    (param) => param.id === id,
-  );
-  if (!spec) throw new Error(`${preset.target} has no param ${id}`);
-  return spec;
+// Every param of the preset's instrument: its override, else the default.
+export function presetValues(preset: DevicePreset) {
+  const values: Record<string, number> = {};
+  for (const spec of PATCH_BY_ID[preset.target].params) {
+    values[spec.id] = preset.overrides?.[spec.id] ?? spec.default;
+  }
+  return values;
 }
 
-export const controlDefault = (preset: DevicePreset, slot: 0 | 1) =>
-  preset.overrides?.[preset.controls[slot].id] ??
-  controlSpec(preset, slot).default;
-
-const isKit = (target: InstrumentId | KitId): target is KitId =>
+export const isKit = (target: InstrumentId | KitId): target is KitId =>
   target === "drums" || target === "drums808";
 
 interface Held {
@@ -182,23 +175,15 @@ export const deviceEngine = {
     else void physicalSynth.start();
   },
 
-  loadPreset(id: string) {
-    current = findPreset(id);
-    for (const [param, value] of Object.entries(current.overrides ?? {})) {
-      setParam(current.target, param, value);
+  // Every param of the instrument goes back to its default unless the preset
+  // overrides it, so switching presets never leaks settings between them.
+  loadPreset(preset: DevicePreset) {
+    current = preset;
+    const values = presetValues(preset);
+    for (const [id, value] of Object.entries(values)) {
+      setParam(preset.target, id, value);
     }
-    // The knobs reset to these defaults, so the engine must too.
-    setParam(
-      current.target,
-      current.controls[0].id,
-      controlDefault(current, 0),
-    );
-    setParam(
-      current.target,
-      current.controls[1].id,
-      controlDefault(current, 1),
-    );
-    return current;
+    return values;
   },
 
   preview() {
@@ -235,8 +220,18 @@ export const deviceEngine = {
     setParam("master", "master.volume", value);
   },
 
-  setControl(slot: 0 | 1, value: number) {
-    setParam(current.target, current.controls[slot].id, value);
+  // Sends the ADSR's values, or with null switches it off by restoring the
+  // engine's defaults.
+  setEnvelope(values: Record<string, number> | null) {
+    for (const spec of MASTER_PARAMS) {
+      if (!spec.id.startsWith("adsr.")) continue;
+      setParam("master", spec.id, values?.[spec.id] ?? spec.default);
+    }
+  },
+
+  // Sets one param of the current instrument.
+  setValue(id: string, value: number) {
+    setParam(current.target, id, value);
   },
 
   metronomeTick(accent: boolean) {

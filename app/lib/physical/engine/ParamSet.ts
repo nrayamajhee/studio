@@ -1,3 +1,4 @@
+import type { AdsrStages } from "../dsp/Adsr";
 import type { ParamSpec } from "../patches/types";
 
 export class ParamSet {
@@ -25,6 +26,16 @@ export class ParamSet {
     if (!spec || !Number.isFinite(value)) return false;
     this.values[id] = Math.min(spec.max, Math.max(spec.min, value));
     return true;
+  }
+
+  // The four stages of an ADSR described under `prefix` (see adsrParams).
+  envelope(prefix: string): AdsrStages {
+    return {
+      attack: this.get(`${prefix}.attack`),
+      decay: this.get(`${prefix}.decay`),
+      sustain: this.get(`${prefix}.sustain`),
+      release: this.get(`${prefix}.release`),
+    };
   }
 
   snapshot() {

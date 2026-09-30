@@ -1,6 +1,9 @@
-import type { SVGProps } from "react";
+import type { ComponentType, SVGProps } from "react";
+import { Bell, Drum, Hand } from "lucide-react";
+import type { DrumPieceId } from "../../lib/physical";
 
-// Stroke icons in the lucide style for instruments lucide doesn't cover.
+// Stroke icons in the lucide style for instruments and drum pieces lucide
+// doesn't cover.
 const base = {
   xmlns: "http://www.w3.org/2000/svg",
   width: 24,
@@ -26,6 +29,15 @@ export function ViolinIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// An envelope: attack up, decay down, a sustain plateau, release to zero.
+export function AdsrIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M2 19 7.5 5l4 7H17l5 7" />
+    </svg>
+  );
+}
+
 // Taller body with sloped shoulders on an endpin, no bow.
 export function UprightBassIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -38,3 +50,84 @@ export function UprightBassIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+// Bass drum from the front: head, beater patch and two feet.
+export function KickIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="11" r="8" />
+      <circle cx="12" cy="11" r="2.5" />
+      <path d="m7 18-2 4" />
+      <path d="m17 18 2 4" />
+    </svg>
+  );
+}
+
+// A deep drum: head on top, shell below.
+export function LowTomIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <ellipse cx="12" cy="6.5" rx="8" ry="3" />
+      <path d="M4 6.5v10c0 1.7 3.6 3 8 3s8-1.3 8-3v-10" />
+    </svg>
+  );
+}
+
+// The same drum, smaller and shallower.
+export function HighTomIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <ellipse cx="12" cy="9" rx="5.5" ry="2.2" />
+      <path d="M6.5 9v5.5c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2V9" />
+    </svg>
+  );
+}
+
+// Two cymbals clamped shut into one lens, on a stand.
+export function ClosedHatIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 10c3-3.5 15-3.5 18 0-3 3.5-15 3.5-18 0z" />
+      <path d="M12 13v8" />
+      <path d="M8 21h8" />
+    </svg>
+  );
+}
+
+// Two cymbals held apart, on a stand.
+export function OpenHatIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 6.5c3-3 15-3 18 0" />
+      <path d="M3 12c3 3 15 3 18 0" />
+      <path d="M12 14.5V21" />
+      <path d="M8 21h8" />
+    </svg>
+  );
+}
+
+// One tilted cymbal on a stand.
+export function CrashIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <ellipse cx="12" cy="8" rx="9.5" ry="2.5" transform="rotate(-14 12 8)" />
+      <path d="M12 10.5V21" />
+      <path d="M8 21h8" />
+    </svg>
+  );
+}
+
+// What each key shows when a kit is selected.
+export const DRUM_PIECES: Readonly<
+  Record<DrumPieceId, { name: string; Icon: ComponentType }>
+> = {
+  kick: { name: "Kick", Icon: KickIcon },
+  snare: { name: "Snare", Icon: Drum },
+  lowTom: { name: "Low tom", Icon: LowTomIcon },
+  highTom: { name: "High tom", Icon: HighTomIcon },
+  clap: { name: "Clap", Icon: Hand },
+  crash: { name: "Crash", Icon: CrashIcon },
+  cowbell: { name: "Cowbell", Icon: Bell },
+  closedHat: { name: "Closed hat", Icon: ClosedHatIcon },
+  openHat: { name: "Open hat", Icon: OpenHatIcon },
+};

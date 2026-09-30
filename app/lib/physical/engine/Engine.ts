@@ -14,6 +14,7 @@ import { ParamSet } from "./ParamSet";
 // Unity below −3 dBFS; above it a tanh knee keeps coherent chord transients
 // (sub-millisecond, too fast for the browser's compressor) under full scale.
 const CLIP_KNEE = 0.7;
+const MIN_ATTACK = 0.001;
 function safetyClip(x: number) {
   const level = x < 0 ? -x : x;
   if (level <= CLIP_KNEE) return x;
@@ -217,6 +218,12 @@ export class Engine {
     this.reverb.setDecay(m.get("reverb.decay"));
     this.reverb.setDamping(m.get("reverb.damping"));
     this.reverb.setPredelay(m.get("reverb.predelay"));
+    // The shortest attack means none, so the default adds no fade-in.
+    const shape = m.envelope("adsr");
+    if (shape.attack <= MIN_ATTACK) shape.attack = 0;
+    for (let i = 0; i < this.instruments.length; i++) {
+      this.instruments[i].setShape(shape);
+    }
   }
 
   private warn(message: string) {

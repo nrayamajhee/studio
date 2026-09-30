@@ -182,6 +182,7 @@ class DrumVoice extends Voice {
     const fs = this.fs;
     this.begin(0, clock);
     this.state = RELEASED;
+    this.shape.noteOn();
     this.hitLevel = spec.level * velocityGain(velocity, strength);
     this.elapsed = 0;
     if (spec.model !== "noise") {
@@ -260,7 +261,7 @@ class DrumVoice extends Voice {
       if (clap && this.clapLevel > 0) y += this.clapSample();
 
       this.elapsed++;
-      y *= this.hitLevel;
+      y *= this.hitLevel * this.shape.process();
       left[i] += y * gains[0];
       right[i] += y * gains[1];
       const level = y < 0 ? -y : y;
@@ -343,6 +344,10 @@ export class DrumKit extends Instrument {
       if (this.voices[i].busy) count++;
     }
     return count;
+  }
+
+  protected allVoices() {
+    return this.voices;
   }
 
   noteOn() {}

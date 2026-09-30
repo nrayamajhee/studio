@@ -9,6 +9,15 @@ const RELEASE = 4;
 const approach = (time: number, fs: number) =>
   time > 0 ? 1 - Math.exp(-4.6 / (time * fs)) : 1;
 
+// The four stages every ADSR in the engine is set from: the winds' breath, the
+// violin's bow and the master envelope. Times in seconds, sustain 0–1.
+export interface AdsrStages {
+  attack: number;
+  decay: number;
+  sustain: number;
+  release: number;
+}
+
 export class Adsr {
   value = 0;
   private stage = IDLE;
@@ -46,6 +55,10 @@ export class Adsr {
     this.sustain = sustain;
     this.gate = gate;
     this.oneShot = oneShot;
+  }
+
+  setStages({ attack, decay, sustain, release }: AdsrStages) {
+    this.set(attack, decay, sustain, release);
   }
 
   setRelease(release: number) {
