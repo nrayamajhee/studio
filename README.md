@@ -68,7 +68,7 @@ The home page (`app/routes/home.tsx`) renders The Device, a digital desktop synt
 Design rules:
 
 - The Device has a fixed native size and is scaled uniformly by CSS (`--scale`) to fit. Never reflow or squeeze its parts.
-- Two spacing values: `--gap` for the bezel (and twice it for the page margin), `--inset` for everything else.
+- Two spacing values: `--gap` for the bezel (and the page margin, from twice it on wide screens down to half on phones), `--inset` for everything else.
 - Theme colours are `color-mix(in srgb, <light>, <dark> var(--theme-mix))` so they fade with the 400 ms theme cross-fade. Keep colour transitions off those elements; their own transitions snap mid-fade.
 - Keyboard hotkeys must never overlap between keys and pads.
 - A pad with no function stays blank; never give it an icon it can't act on.
@@ -84,7 +84,7 @@ The Device plays through a physical-modeling engine in `app/lib/physical/`, foll
 | Blown                       | flute, alto sax                                     | STK `Flute` / `Saxofony` with breath envelope on pressure, mono legato and portamento; the sax bell reflection tracks the note so the whole range speaks                                               |
 | Struck membranes and metals | drum kit, 808 kit                                   | modal membranes (pitch drop, beater click, snare wires), seeded metal tables, clap, hat choke                                                                                                          |
 
-Around the voices: per-instrument buses with a modal or radiation body and drive, a shared 8-line FDN reverb that sleeps when silent, master volume and a transparent safety clipper, then a browser limiter and analyser.
+Around the voices: per-instrument buses with a modal or radiation body and drive, a shared 8-line FDN reverb that sleeps when silent, a master ADSR on every voice, and over the whole mix an LFO (pitch, volume, filter or pan) and an FX chain (drive, chorus, ping-pong delay), each transparent at its defaults. Last come master volume and a transparent safety clipper, then a browser limiter and analyser.
 
 - **Layout** — `dsp/` building blocks, `models/` instruments, `engine/` (render loop, event queue, voice lifecycle, buses), `patches/` (per-instrument constants, `ParamSpec` macros and measured tuning tables), `offline/` (pure-TS renderer, OfflineAudioContext renderer, analysis and diagnostics). Only `processor.worklet.ts` touches worklet globals; nothing touches Web Audio at import time, so prerendering is safe.
 - **API** — `physicalSynth` (from `app/lib/physical`): `start()` from a user gesture, `noteOn`/`noteOff` (reference-counted per note), `hit`, `setSustain`, `metronomeTick`, `setParam`, `allNotesOff`, `getAnalyser`, `onStats`. Events sent before the worklet is ready are queued.

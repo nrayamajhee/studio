@@ -27,7 +27,7 @@ export function formatParam(spec: ParamSpec, value: number) {
     case "Hz":
       return value >= 1000
         ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)} kHz`
-        : `${Math.round(value)} Hz`;
+        : `${value < 10 ? value.toFixed(1) : Math.round(value)} Hz`;
     case "s":
       return value < 1
         ? `${Math.round(value * 1000)} ms`

@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
+  AudioLines,
   AudioWaveform,
   Circle,
   Grid3x3,
@@ -19,19 +20,18 @@ import {
   RotateCcw,
   Save,
   Square,
+  WavesHorizontal,
 } from "lucide-react";
 import { PATCH_BY_ID } from "../../lib/physical/patches";
 import {
   formatParam,
   stepToValue,
-  toUnit,
   valueToStep,
 } from "../../lib/physical/patches/format";
-import type { ParamSpec } from "../../lib/physical/patches/types";
 import { cn } from "../../lib/utils";
 import { Key, Knob, Pad } from "../design-system-v2";
 import {
-  ENVELOPE_PARAMS,
+  DEVICE_MODULES,
   KNOB_STEPS,
   deviceEngine,
   engineName,
@@ -40,6 +40,8 @@ import {
   keyPiece,
   presetValues,
   type DevicePreset,
+  type ModuleId,
+  type ModuleKnob,
 } from "./deviceEngine";
 import {
   DeviceScreen,
@@ -47,8 +49,8 @@ import {
   ScreenSeek,
   ScreenSelection,
   TILES_PER_PAGE,
-  type ScreenEnvelopeStage,
   type ScreenOverlay,
+  type ScreenReadout,
   type ScreenView,
 } from "./DeviceScreen";
 import { AdsrIcon, DRUM_PIECES } from "./instrumentIcons";
@@ -74,26 +76,47 @@ const INITIAL_PRESET = "piano";
 const INITIAL_VOLUME_STEP = 8;
 const NOTICE_MS = 1800;
 const OVERLAY_MS = 1200;
-const INITIAL_ENVELOPE_STEPS = ENVELOPE_PARAMS.map((spec) =>
-  valueToStep(spec, spec.default, KNOB_STEPS),
-);
+const MODULE_IDS: readonly ModuleId[] = ["adsr", "lfo", "fx"];
 
-const envelopeValues = (steps: readonly number[]) =>
-  Object.fromEntries(
-    ENVELOPE_PARAMS.map((spec, i) => [
-      spec.id,
-      stepToValue(spec, steps[i], KNOB_STEPS),
-    ]),
+type ModuleSteps = Readonly<Record<ModuleId, readonly number[]>>;
+
+const INITIAL_MODULE_STEPS = Object.fromEntries(
+  MODULE_IDS.map((id) => [
+    id,
+    DEVICE_MODULES[id].knobs.map(({ spec, steps }) =>
+      valueToStep(spec, spec.default, steps),
+    ),
+  ]),
+) as unknown as ModuleSteps;
+
+const MODULES_OFF: Readonly<Record<ModuleId, boolean>> = {
+  adsr: false,
+  lfo: false,
+  fx: false,
+};
+
+const knobValue = ({ spec, steps }: ModuleKnob, step: number) =>
+  stepToValue(spec, step, steps);
+
+const knobDisplay = (knob: ModuleKnob, step: number) =>
+  knob.options?.[step] ??
+  (knob.spec.id === "adsr.attack" && step === 0
+    ? "0 ms"
+    : formatParam(knob.spec, knobValue(knob, step)));
+
+// Off restores the engine's defaults for the module's params, which leave the
+// modelled sound untouched; the knob settings are kept for switching back on.
+function applyModule(id: ModuleId, on: boolean, steps: readonly number[]) {
+  const { knobs } = DEVICE_MODULES[id];
+  deviceEngine.setMasterParams(
+    knobs.map(({ spec }) => spec.id),
+    on
+      ? Object.fromEntries(
+          knobs.map((knob, i) => [knob.spec.id, knobValue(knob, steps[i])]),
+        )
+      : null,
   );
-
-// Off restores the engine's defaults, which leave the modelled sound
-// untouched; the knob settings are kept for when it's switched back on.
-function applyEnvelope(on: boolean, steps: readonly number[]) {
-  deviceEngine.setEnvelope(on ? envelopeValues(steps) : null);
 }
-
-const envelopeDisplay = (spec: ParamSpec, value: number, step: number) =>
-  spec.id === "adsr.attack" && step === 0 ? "0 ms" : formatParam(spec, value);
 
 // Most used first: triads, then sevenths, then colours.
 const CHORDS = [
@@ -103,9 +126,6 @@ const CHORDS = [
   { name: "Minor 7", label: "Min7", intervals: [0, 3, 7, 10] },
   { name: "Major 7", label: "Maj7", intervals: [0, 4, 7, 11] },
   { name: "Power", label: "Power", intervals: [0, 7, 12] },
-  { name: "Suspended 4", label: "Sus4", intervals: [0, 5, 7] },
-  { name: "Suspended 2", label: "Sus2", intervals: [0, 2, 7] },
-  { name: "Add 9", label: "Add9", intervals: [0, 4, 7, 14] },
 ];
 
 const NOTE_NAMES = [
@@ -245,8 +265,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const [preset, setPreset] = useState(() => findPreset(INITIAL_PRESET));
   const [paramIndex, setParamIndex] = useState(0);
   const [volumeStep, setVolumeStep] = useState(INITIAL_VOLUME_STEP);
-  const [envelopeSteps, setEnvelopeSteps] = useState(INITIAL_ENVELOPE_STEPS);
-  const [adsrOn, setAdsrOn] = useState(false);
+  const [moduleSteps, setModuleSteps] = useState(INITIAL_MODULE_STEPS);
+  const [moduleOn, setModuleOn] = useState(MODULES_OFF);
   const [idleSeek, setIdleSeek] = useState(0);
   const [view, setView] = useState<ScreenView>("scope");
   const [paramPage, setParamPage] = useState(0);
@@ -276,7 +296,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     const initial = findPreset(INITIAL_PRESET);
     deviceEngine.loadPreset(initial, presetEdits(initial.id));
     deviceEngine.setVolume(INITIAL_VOLUME_STEP / (KNOB_STEPS - 1));
-    deviceEngine.setEnvelope(null);
+    for (const id of MODULE_IDS)
+      applyModule(id, false, INITIAL_MODULE_STEPS[id]);
   }, []);
 
   useEffect(() => {
@@ -434,7 +455,12 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     }
   };
 
+  // Shift + Save resets the preset instead.
   const pressSave = () => {
+    if (shift) {
+      pressReset();
+      return;
+    }
     if (view === "synth") {
       setIconIndex(Math.max(0, ICON_CHOICES.indexOf(preset.icon)));
       setView("save");
@@ -501,22 +527,26 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     showNotice(`Reset ${preset.name}`);
   };
 
-  // Turning an ADSR knob switches the envelope on so the change is audible.
-  const setEnvelopeStep = (index: number, step: number) => {
-    const next = envelopeSteps.map((value, i) => (i === index ? step : value));
-    setEnvelopeSteps(next);
-    setAdsrOn(true);
-    applyEnvelope(true, next);
+  // Turning a module's knob switches the module on so the change is audible.
+  const setModuleStep = (id: ModuleId, index: number, step: number) => {
+    const next = moduleSteps[id].map((value, i) =>
+      i === index ? step : value,
+    );
+    setModuleSteps((current) => ({ ...current, [id]: next }));
+    setModuleOn((current) => ({ ...current, [id]: true }));
+    applyModule(id, true, next);
   };
 
-  // Shift + ADSR switches the envelope on or off without leaving the view.
-  const pressAdsr = () => {
+  // A module pad opens its view; with Shift it switches the module on or off
+  // without leaving the current view.
+  const pressModule = (id: ModuleId) => {
     if (shift) {
-      setAdsrOn(!adsrOn);
-      applyEnvelope(!adsrOn, envelopeSteps);
+      const on = !moduleOn[id];
+      setModuleOn((current) => ({ ...current, [id]: on }));
+      applyModule(id, on, moduleSteps[id]);
       return;
     }
-    setView((current) => (current === "adsr" ? "scope" : "adsr"));
+    setView((current) => (current === id ? "scope" : id));
   };
 
   const setVolume = (step: number) => {
@@ -529,40 +559,47 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     });
   };
 
-  // In ADSR mode the four knobs set A, D, S and R, in knob order.
-  const renderEnvelopeKnob = (
+  // In a module's view the four knobs set its params, in knob order.
+  const renderModuleKnob = (
+    id: ModuleId,
     index: number,
     color: string,
     markColor?: string,
   ) => {
-    const spec = ENVELOPE_PARAMS[index];
-    const step = envelopeSteps[index];
+    const knob = DEVICE_MODULES[id].knobs[index];
+    const step = moduleSteps[id][index];
     return (
       <Knob
-        label={spec.label}
-        valueLabel={envelopeDisplay(
-          spec,
-          stepToValue(spec, step, KNOB_STEPS),
-          step,
-        )}
+        label={knob.spec.label}
+        valueLabel={knobDisplay(knob, step)}
         step={step}
-        steps={KNOB_STEPS}
+        steps={knob.steps}
         color={color}
         markColor={markColor}
-        onChange={(next) => setEnvelopeStep(index, next)}
+        onChange={(next) => setModuleStep(id, index, next)}
       />
     );
   };
 
-  // With a kit selected, keys show the drum they play instead of a note name.
-  const renderBlankPads = (first: number, count: number) =>
-    Array.from({ length: count }, (_, index) => (
+  const renderModulePad = (id: ModuleId, icon: React.ReactNode) => {
+    const module = DEVICE_MODULES[id];
+    return (
       <Pad
-        key={`blank-${first + index}`}
-        label={`Unassigned pad ${first + index}`}
-      />
-    ));
+        label={
+          shift
+            ? `Turn ${module.label} ${moduleOn[id] ? "off" : "on"}`
+            : module.title
+        }
+        accent="var(--synth-red)"
+        lit={view === id}
+        onPress={() => pressModule(id)}
+      >
+        {icon}
+      </Pad>
+    );
+  };
 
+  // With a kit selected, keys show the drum they play instead of a note name.
   const renderKey = (semitone: number, slot: number, black: boolean) => {
     const midi = F3_MIDI + semitone + 12 * octave;
     const piece = isKit(preset.target) ? DRUM_PIECES[keyPiece(midi)] : null;
@@ -594,15 +631,20 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   }));
   const pages = Math.ceil(params.length / PARAMS_PER_PAGE);
   const paging = view === "synth" || view === "save" || view === "presets";
-  const adsr = view === "adsr";
-  const envelope: ScreenEnvelopeStage[] = ENVELOPE_PARAMS.map((spec, i) => {
-    const value = stepToValue(spec, envelopeSteps[i], KNOB_STEPS);
-    return {
-      label: spec.label,
-      display: envelopeDisplay(spec, value, envelopeSteps[i]),
-      amount: spec.id === "adsr.sustain" ? value : toUnit(spec, value),
-    };
-  });
+  const activeModule: ModuleId | null =
+    view === "adsr" || view === "lfo" || view === "fx" ? view : null;
+  const readouts: ScreenReadout[] = activeModule
+    ? DEVICE_MODULES[activeModule].knobs.map((knob, i) => {
+        const step = moduleSteps[activeModule][i];
+        const value = knobValue(knob, step);
+        return {
+          label: knob.spec.label,
+          display: knobDisplay(knob, step),
+          amount:
+            knob.spec.id === "adsr.sustain" ? value : step / (knob.steps - 1),
+        };
+      })
+    : [];
   // Synth opens (or, while it is up, closes) the library in this mode.
   const libraryMode = shift || view === "presets";
   const padPresets = library.buttons.map(
@@ -635,9 +677,13 @@ export function SynthDevice({ className }: SynthDeviceProps) {
             }
           : { step: idleSeek, steps: KNOB_STEPS, label: "", set: setIdleSeek };
 
-  const engine = adsrOn
-    ? `${engineName(preset.target)} · ADSR`
-    : engineName(preset.target);
+  // The engine name, then each module that's on.
+  const engine = [
+    engineName(preset.target),
+    ...MODULE_IDS.filter((id) => moduleOn[id]).map(
+      (id) => DEVICE_MODULES[id].label,
+    ),
+  ].join(" · ");
   const octaveLabel = `OCT ${octave > 0 ? "+" : octave < 0 ? "−" : "±"}${Math.abs(octave)}`;
   const paramPageLabel = (
     <ScreenSeek>
@@ -660,10 +706,9 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       ),
       footer: ["Pick an icon", "Press a pad to save"],
     },
-    adsr: {
-      status: adsrOn ? "On" : "Off",
-      footer: ["", ""],
-    },
+    adsr: { status: moduleOn.adsr ? "On" : "Off", footer: ["", ""] },
+    lfo: { status: moduleOn.lfo ? "On" : "Off", footer: ["", ""] },
+    fx: { status: moduleOn.fx ? "On" : "Off", footer: ["", ""] },
     presets: {
       status: (
         <ScreenSeek>
@@ -685,10 +730,14 @@ export function SynthDevice({ className }: SynthDeviceProps) {
           onPointerUp={() => deviceEngine.unlock()}
         >
           <div className={styles.topRow}>
-            <div className={styles.padStack}>{renderBlankPads(7, 3)}</div>
             <div className={styles.knobColumn}>
-              {adsr ? (
-                renderEnvelopeKnob(0, "var(--synth-chalk)", "#141413")
+              {activeModule ? (
+                renderModuleKnob(
+                  activeModule,
+                  0,
+                  "var(--synth-chalk)",
+                  "#141413",
+                )
               ) : (
                 <Knob
                   label="Volume"
@@ -700,8 +749,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   onChange={setVolume}
                 />
               )}
-              {adsr ? (
-                renderEnvelopeKnob(1, "var(--synth-green)")
+              {activeModule ? (
+                renderModuleKnob(activeModule, 1, "var(--synth-green)")
               ) : (
                 <Knob
                   label="Seek"
@@ -718,7 +767,13 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               className={styles.screenSlot}
               view={view}
               overlay={overlay ?? undefined}
-              title={adsr ? "ADSR" : edits ? `${preset.name} *` : preset.name}
+              title={
+                activeModule
+                  ? DEVICE_MODULES[activeModule].label
+                  : edits
+                    ? `${preset.name} *`
+                    : preset.name
+              }
               status={screen.status}
               footer={[notice ?? screen.footer[0], screen.footer[1]]}
               getAnalyser={deviceEngine.getAnalyser}
@@ -746,12 +801,17 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               selected={view === "save" ? iconIndex : presetIndex}
               onSelect={view === "save" ? setIconIndex : setPresetIndex}
               onSelectParam={selectParam}
-              envelope={envelope}
+              readouts={readouts}
+              lfoShape={moduleSteps.lfo[2]}
+              lfoRate={knobValue(
+                DEVICE_MODULES.lfo.knobs[0],
+                moduleSteps.lfo[0],
+              )}
             />
 
             <div className={styles.knobColumn}>
-              {adsr ? (
-                renderEnvelopeKnob(2, "var(--synth-red)")
+              {activeModule ? (
+                renderModuleKnob(activeModule, 2, "var(--synth-red)")
               ) : (
                 <Knob
                   label="Parameter"
@@ -764,8 +824,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   }
                 />
               )}
-              {adsr ? (
-                renderEnvelopeKnob(3, "var(--synth-blue)")
+              {activeModule ? (
+                renderModuleKnob(activeModule, 3, "var(--synth-blue)")
               ) : (
                 <Knob
                   label="Value"
@@ -777,51 +837,41 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                 />
               )}
             </div>
-            <div className={styles.padStack}>{renderBlankPads(10, 3)}</div>
           </div>
 
           <div className={styles.row}>
             <div className={styles.side}>
-              <div
-                className={styles.toolGroup}
-                role="group"
-                aria-label="Synth tools"
-              >
+              <div className={styles.toolGroup}>
                 <Pad
-                  label={libraryMode ? "Preset library" : "Synth parameters"}
+                  label={shift ? "Reset preset" : "Save preset"}
                   accent="var(--synth-red)"
-                  lit={view === "synth" || view === "presets"}
-                  onPress={pressSynth}
+                  onPress={pressSave}
                 >
-                  {libraryMode ? <LayoutGrid /> : <AudioWaveform />}
+                  {shift ? <RotateCcw /> : <Save />}
                 </Pad>
                 <Pad
-                  label={
-                    shift
-                      ? adsrOn
-                        ? "Turn ADSR off"
-                        : "Turn ADSR on"
-                      : "ADSR envelope"
-                  }
+                  label="Shift"
                   accent="var(--synth-red)"
-                  lit={adsr}
-                  onPress={pressAdsr}
+                  pressed={shift}
+                  held={shiftHeld}
+                  onPress={() => setShiftLatched((on) => !on)}
                 >
-                  <AdsrIcon />
-                </Pad>
-                <Pad
-                  label="Metronome"
-                  accent="var(--synth-green)"
-                  pressed={transport.metronome}
-                  onPress={() => {
-                    deviceEngine.unlock();
-                    transport.toggleMetronome();
-                  }}
-                >
-                  <Metronome />
+                  <ArrowUp />
                 </Pad>
               </div>
               <div className={styles.pads} role="group" aria-label="Controls">
+                <Pad
+                  label="Sequencer"
+                  accent="var(--synth-green)"
+                  pressed={transport.mode === "sequencer"}
+                  onPress={() =>
+                    transport.setMode(
+                      transport.mode === "sequencer" ? "tape" : "sequencer",
+                    )
+                  }
+                >
+                  <Grid3x3 />
+                </Pad>
                 <Pad
                   label="Record"
                   accent="var(--synth-red)"
@@ -853,19 +903,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   <Square fill="currentColor" />
                 </Pad>
                 <Pad
-                  label="Sequencer"
-                  accent="var(--synth-green)"
-                  pressed={transport.mode === "sequencer"}
-                  onPress={() =>
-                    transport.setMode(
-                      transport.mode === "sequencer" ? "tape" : "sequencer",
-                    )
-                  }
-                >
-                  <Grid3x3 />
-                </Pad>
-                {renderBlankPads(2, 2)}
-                <Pad
                   label={
                     paging
                       ? "Previous page"
@@ -887,20 +924,30 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                 >
                   <ArrowRight />
                 </Pad>
-                <Pad
-                  label="Shift"
-                  accent="var(--synth-red)"
-                  pressed={shift}
-                  held={shiftHeld}
-                  onPress={() => setShiftLatched((on) => !on)}
-                >
-                  <ArrowUp />
-                </Pad>
               </div>
             </div>
 
             <div className={styles.middle}>
               <div className={styles.toolbar}>
+                <Pad
+                  label={libraryMode ? "Preset library" : "Synth parameters"}
+                  accent="var(--synth-red)"
+                  lit={view === "synth" || view === "presets"}
+                  onPress={pressSynth}
+                >
+                  {libraryMode ? <LayoutGrid /> : <AudioWaveform />}
+                </Pad>
+                <Pad
+                  label="Metronome"
+                  accent="var(--synth-green)"
+                  pressed={transport.metronome}
+                  onPress={() => {
+                    deviceEngine.unlock();
+                    transport.toggleMetronome();
+                  }}
+                >
+                  <Metronome />
+                </Pad>
                 <div
                   className={styles.toolGroup}
                   role="group"
@@ -927,27 +974,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                     );
                   })}
                 </div>
-                <div
-                  className={styles.toolGroup}
-                  role="group"
-                  aria-label="Preset tools"
-                >
-                  <Pad
-                    label="Save preset"
-                    accent="var(--synth-red)"
-                    onPress={pressSave}
-                  >
-                    <Save />
-                  </Pad>
-                  <Pad
-                    label="Reset preset"
-                    accent="var(--synth-red)"
-                    onPress={pressReset}
-                  >
-                    <RotateCcw />
-                  </Pad>
-                </div>
-                {renderBlankPads(1, 1)}
+                {renderModulePad("adsr", <AdsrIcon />)}
               </div>
 
               <div className={styles.keybed}>
@@ -971,7 +998,10 @@ export function SynthDevice({ className }: SynthDeviceProps) {
             </div>
 
             <div className={styles.side}>
-              <div className={styles.toolGroup}>{renderBlankPads(4, 3)}</div>
+              <div className={styles.toolGroup}>
+                {renderModulePad("lfo", <WavesHorizontal />)}
+                {renderModulePad("fx", <AudioLines />)}
+              </div>
               <div
                 className={styles.pads}
                 role="group"

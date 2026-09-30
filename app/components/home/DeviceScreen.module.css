@@ -3,19 +3,21 @@
   height: 247px;
   padding: 8px;
   border-radius: 22px;
-  background: color-mix(in srgb, #141413, #0b0b0c var(--theme-mix));
+  /* The bezel matches the glass, so no ring shows at the sides; only a light
+     edge on top and a shadow beneath lift it off the surface. */
+  background: #050505;
   box-shadow:
-    inset 0 0 0 1px
+    inset 0 1px 0
       color-mix(
         in srgb,
-        rgb(255 255 255 / 0.06),
-        rgb(255 255 255 / 0.05) var(--theme-mix)
+        rgb(255 255 255 / 0.28),
+        rgb(255 255 255 / 0.12) var(--theme-mix)
       ),
-    0 1px 0
+    0 6px 10px -6px
       color-mix(
         in srgb,
-        rgb(255 255 255 / 0.8),
-        rgb(255 255 255 / 0.08) var(--theme-mix)
+        rgb(20 20 19 / 0.45),
+        rgb(0 0 0 / 0.7) var(--theme-mix)
       );
 }
 
@@ -61,7 +63,7 @@
 /* Views sit in the ~888 × 171 space between the two readouts. */
 .params,
 .tiles,
-.envelope {
+.module {
   position: absolute;
   top: 30px;
   right: 20px;
@@ -74,7 +76,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-rows: repeat(4, minmax(0, 1fr));
-  gap: 4px 10px;
+  gap: 4px 18px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -88,9 +90,9 @@
   border: 0;
   border-radius: 0;
   font-family: inherit;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 400;
-  line-height: 14px;
+  line-height: 16px;
   color: #f4f3ef;
   background: transparent;
   translate: none;
@@ -283,17 +285,78 @@
   transition: width 160ms ease-out;
 }
 
-.envelope {
+.module {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.envelopeGraph {
+.moduleGraph {
   flex: 1;
   width: 100%;
   min-height: 0;
-  overflow: visible;
+  overflow: hidden;
+}
+
+.lfoWave {
+  animation: lfo-scroll var(--lfo-period) linear infinite;
+}
+
+@keyframes lfo-scroll {
+  to {
+    transform: translateX(-50px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lfoWave {
+    animation: none;
+  }
+}
+
+/* Four columns in line with the readouts below. Arrows join drive, chorus and
+   delay, which run in series; the reverb is fed separately by each
+   instrument's send. */
+.fxMeters {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  min-height: 0;
+}
+
+.fxStage {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.fxStage:nth-child(-n + 2)::after {
+  position: absolute;
+  top: 50%;
+  right: -14px;
+  content: "→";
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: rgb(244 243 239 / 0.3);
+  translate: 0 -50%;
+}
+
+.fxTrack {
+  position: relative;
+  width: 44px;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgb(244 243 239 / 0.08);
+}
+
+.fxFill {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 6px;
 }
 
 .stages {

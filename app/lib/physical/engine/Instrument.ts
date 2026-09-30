@@ -1,7 +1,7 @@
 import type { AdsrStages } from "../dsp/Adsr";
 import { DcBlocker } from "../dsp/filters";
 import { Smoother } from "../dsp/generators";
-import { softClip } from "../dsp/nonlinear";
+import { drive as saturate } from "../dsp/nonlinear";
 import type { BusId, DrumPieceId } from "../messages";
 import { Body } from "../models/Body";
 import type { BasePatch } from "../patches/types";
@@ -116,11 +116,8 @@ export abstract class Instrument {
       let r = right[i];
       const d = drive.process();
       if (d > 0) {
-        // softClip(x·(1 + 9·drive))/(1 + 2·drive)
-        const pre = 1 + 9 * d;
-        const post = 1 / (1 + 2 * d);
-        l = this.driveDcL.process(softClip(l * pre) * post);
-        r = this.driveDcR.process(softClip(r * pre) * post);
+        l = this.driveDcL.process(saturate(l, d));
+        r = this.driveDcR.process(saturate(r, d));
       }
       const g = gain.process();
       const s = send.process();

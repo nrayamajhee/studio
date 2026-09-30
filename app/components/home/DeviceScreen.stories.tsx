@@ -34,7 +34,7 @@ const meta = {
     getAnalyser: { control: false },
     params: { control: false },
     tiles: { control: false },
-    envelope: { control: false },
+    readouts: { control: false },
   },
 } satisfies Meta<typeof DeviceScreen>;
 
@@ -57,11 +57,43 @@ export const Envelope: Story = {
     title: "ADSR",
     status: "On",
     footer: ["", ""],
-    envelope: [
+    readouts: [
       { label: "Attack", display: "0 ms", amount: 0 },
       { label: "Decay", display: "200 ms", amount: 0.5 },
       { label: "Sustain", display: "50%", amount: 0.5 },
       { label: "Release", display: "200 ms", amount: 0.5 },
+    ],
+  },
+};
+
+export const Lfo: Story = {
+  args: {
+    view: "lfo",
+    title: "LFO",
+    status: "On",
+    footer: ["", ""],
+    lfoShape: 0,
+    lfoRate: 5,
+    readouts: [
+      { label: "Rate", display: "5.0 Hz", amount: 0.7 },
+      { label: "Depth", display: "50%", amount: 0.5 },
+      { label: "Shape", display: "Sine", amount: 0 },
+      { label: "Target", display: "Pitch", amount: 0 },
+    ],
+  },
+};
+
+export const Effects: Story = {
+  args: {
+    view: "fx",
+    title: "FX",
+    status: "On",
+    footer: ["", ""],
+    readouts: [
+      { label: "Drive", display: "30%", amount: 0.3 },
+      { label: "Chorus", display: "50%", amount: 0.5 },
+      { label: "Delay", display: "20%", amount: 0.2 },
+      { label: "Reverb", display: "35%", amount: 0.5 },
     ],
   },
 };

@@ -1,6 +1,7 @@
-/* Two spacings. --gap is the bezel around the whole device, and twice it is
-   the page margin either side. --inset is everything else: between pads,
-   around the screen and the key well, and the key well's gutter. */
+/* Two spacings. --gap is the bezel around the whole device, and the page
+   margin either side is twice it on wide screens, narrowing with the viewport
+   to half of it on phones. --inset is everything else: between pads, around
+   the screen and the key well, and the key well's gutter. */
 .stage {
   --gap: 32px;
   --inset: 11px;
@@ -9,17 +10,17 @@
   place-items: center;
   width: 100%;
   height: 100%;
-  padding-inline: calc(2 * var(--gap));
+  padding-inline: clamp(calc(var(--gap) / 2), 4.5vw, calc(2 * var(--gap)));
   container-type: size;
 }
 
 .frame {
   /* tan(atan2(a, b)) divides two lengths into a plain number, so the
-     1396×606 device scales to fit its container without JavaScript. */
-  --scale: min(1, tan(atan2(100cqw, 1396px)), tan(atan2(100cqh, 606px)));
+     1238×606 device scales to fit its container without JavaScript. */
+  --scale: min(1, tan(atan2(100cqw, 1238px)), tan(atan2(100cqh, 606px)));
 
   position: relative;
-  width: calc(1396px * var(--scale));
+  width: calc(1238px * var(--scale));
   height: calc(606px * var(--scale));
 }
 
@@ -31,16 +32,16 @@
   --synth-red: #cd5951;
   --synth-green: #4ba078;
   --synth-blue: #2f7de1;
-  /* 2×226 sides + 858 middle + 2 insets + 2 gaps wide; a 226 top row (3 pad
+  /* 2×147 sides + 858 middle + 2 insets + 2 gaps wide; a 226 top row (3 pad
      rows) + an inset + a 305 bottom row (4) + 2 gaps tall. The key well runs
-     on through the bottom bezel to the edge. The screen above is 944px wide. */
+     on through the bottom bezel to the edge. The screen above is 974px wide. */
   position: absolute;
   top: 0;
   left: 0;
   display: flex;
   flex-direction: column;
   gap: var(--inset);
-  width: 1396px;
+  width: 1238px;
   height: 606px;
   padding: var(--gap);
   border-radius: 88px;
@@ -78,13 +79,13 @@
   gap: var(--inset);
 }
 
-/* The top row: three pads at each outer edge, then two 74px knobs, then the
-   screen, which is wider than the key well. The knobs sit 26px from the pads
-   and the screen, and are spread evenly over the full height from the
-   device's top edge to the preset row (about 40px above, between and below). */
+/* The top row: two 74px knobs at each outer edge, then the screen, which is
+   wider than the key well. The knobs sit 26px from the screen and are spread
+   evenly over the full height from the device's top edge to the preset row
+   (about 40px above, between and below). */
 .topRow {
   display: grid;
-  grid-template-columns: 68px 74px minmax(0, 1fr) 74px 68px;
+  grid-template-columns: 74px minmax(0, 1fr) 74px;
   column-gap: 26px;
   height: 226px;
 }
@@ -99,27 +100,21 @@
   margin-bottom: calc(-1 * var(--inset));
 }
 
-.padStack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--inset);
-}
-
-/* The side columns: a row level with the preset row (Synth, ADSR and the
-   metronome on the left, blank on the right) over a 3×3 bank of controls or
-   chords, 68px pads throughout. The row gaps match the pad gaps, so the whole
-   row reads as one line of pads. */
+/* The side columns: a row level with the preset row (Save and Shift on the
+   left; LFO and FX on the right) over a 2×3 bank of controls or chords, 68px
+   pads throughout. The row gaps match the pad gaps, so the whole row reads as
+   one line of pads. */
 .side {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   gap: var(--inset);
-  width: 226px;
+  width: 147px;
 }
 
 .pads {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--inset);
 }
 
@@ -132,7 +127,8 @@
   width: 858px;
 }
 
-/* The eight presets, Save, Reset and a blank fill the 858px middle column. */
+/* Synth, the metronome, the eight presets and ADSR fill the 858px middle
+   column. */
 .toolbar,
 .toolGroup {
   display: flex;
@@ -166,15 +162,27 @@
     rgb(20 20 19 / 0.07),
     rgb(0 0 0 / 0.28) var(--theme-mix)
   );
+  /* Pressed in: a soft, wide shadow falls from the top edge and both sides
+     into the gutter. */
   box-shadow:
-    inset 0 4px calc(8px + 2px * var(--theme-dark)) -2px
+    inset 0 14px 22px -14px
       color-mix(
         in srgb,
-        rgb(20 20 19 / 0.28),
-        rgb(0 0 0 / 0.7) var(--theme-mix)
+        rgb(20 20 19 / 0.22),
+        rgb(0 0 0 / 0.55) var(--theme-mix)
       ),
-    inset 0 1px 2px
-      color-mix(in srgb, rgb(20 20 19 / 0.2), rgb(0 0 0 / 0.5) var(--theme-mix));
+    inset 14px 0 20px -16px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.14),
+        rgb(0 0 0 / 0.4) var(--theme-mix)
+      ),
+    inset -14px 0 20px -16px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.14),
+        rgb(0 0 0 / 0.4) var(--theme-mix)
+      );
 }
 
 .keys {

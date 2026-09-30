@@ -66,6 +66,50 @@ export class Lfo {
   }
 }
 
+// A free-running modulator in [−1, 1]: sine, triangle, square, or random (a new
+// value each cycle). Square and random edges are eased over ~5 ms so they
+// don't click.
+export class ModLfo {
+  shape = 0;
+  private readonly fs: number;
+  private readonly ease: number;
+  private readonly noise = new Noise(9173);
+  private phase = 0;
+  private increment = 0;
+  private stepped = 0;
+  private random = 0;
+
+  constructor(fs: number) {
+    this.fs = fs;
+    this.ease = 1 - Math.exp(-1 / (0.005 * fs));
+  }
+
+  setRate(hz: number) {
+    this.increment = hz / this.fs;
+  }
+
+  process() {
+    this.phase += this.increment;
+    if (this.phase >= 1) {
+      this.phase -= 1;
+      this.random = this.noise.next();
+    }
+    switch (this.shape) {
+      case 0:
+        return Math.sin(TWO_PI * this.phase);
+      case 1:
+        return 1 - 4 * Math.abs(this.phase - 0.5);
+      case 2:
+        this.stepped +=
+          ((this.phase < 0.5 ? 1 : -1) - this.stepped) * this.ease;
+        return this.stepped;
+      default:
+        this.stepped += (this.random - this.stepped) * this.ease;
+        return this.stepped;
+    }
+  }
+}
+
 // One-pole approach toward a target with a ~10 ms time constant, for every
 // continuous parameter that touches a sounding voice or bus.
 export class Smoother {

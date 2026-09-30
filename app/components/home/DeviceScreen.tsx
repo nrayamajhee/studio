@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { cn } from "../../lib/utils";
 import { Button } from "../design-system/Button";
 import { Oscilloscope } from "./Oscilloscope";
 import styles from "./DeviceScreen.module.css";
 
-export type ScreenView = "scope" | "synth" | "save" | "presets" | "adsr";
+export type ScreenView =
+  "scope" | "synth" | "save" | "presets" | "adsr" | "lfo" | "fx";
 
 export interface ScreenParam {
   id: string;
@@ -22,16 +23,16 @@ export interface ScreenTile {
   badge?: string;
 }
 
-// One ADSR stage, in A, D, S, R order.
-export interface ScreenEnvelopeStage {
+// One module knob's reading, in knob order (white, green, red, blue).
+export interface ScreenReadout {
   label: string;
   display: string;
-  // 0–1: the knob position for times, the level for sustain.
+  // 0–1: the knob position (the level, for the ADSR's sustain).
   amount: number;
 }
 
-// A, D, S, R in the colours of the knobs that set them.
-const STAGE_COLORS = [
+// Module readouts in the colours of the knobs that set them.
+const KNOB_COLORS = [
   "#f4f3ef",
   "var(--synth-green, #4ba078)",
   "var(--synth-red, #cd5951)",
@@ -41,7 +42,7 @@ const STAGE_COLORS = [
 // Drawn across a fixed 100 × 40 box: attack, decay and release widen with their
 // knobs, sustain fills the rest at its level, and decay and release curve like
 // the engine's exponential segments.
-function EnvelopeGraph({ stages }: { stages: readonly ScreenEnvelopeStage[] }) {
+function EnvelopeGraph({ stages }: { stages: readonly ScreenReadout[] }) {
   const [attack, decay, sustain, release] = stages.map(({ amount }) => amount);
   const top = 2;
   const bottom = 38;
@@ -58,7 +59,7 @@ function EnvelopeGraph({ stages }: { stages: readonly ScreenEnvelopeStage[] }) {
   ];
   return (
     <svg
-      className={styles.envelopeGraph}
+      className={styles.moduleGraph}
       viewBox="0 0 100 40"
       preserveAspectRatio="none"
       aria-hidden="true"
@@ -72,13 +73,98 @@ function EnvelopeGraph({ stages }: { stages: readonly ScreenEnvelopeStage[] }) {
           key={i}
           d={d}
           fill="none"
-          stroke={STAGE_COLORS[i]}
+          stroke={KNOB_COLORS[i]}
           strokeWidth={2.5}
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
         />
       ))}
     </svg>
+  );
+}
+
+const LFO_CYCLE = 50;
+const RANDOM_STEPS = [0.6, -0.35, 0.9, -0.8, 0.15, -0.55];
+
+const lfoValue = (shape: number, x: number) => {
+  const phase = (x / LFO_CYCLE) % 1;
+  switch (shape) {
+    case 0:
+      return Math.sin(2 * Math.PI * phase);
+    case 1:
+      return 1 - 4 * Math.abs(phase - 0.5);
+    case 2:
+      return phase < 0.5 ? 1 : -1;
+    default:
+      return RANDOM_STEPS[Math.floor(x / LFO_CYCLE) % RANDOM_STEPS.length];
+  }
+};
+
+// Two cycles of the LFO's shape across a 100 × 40 box, as tall as its depth,
+// scrolling one cycle per LFO period (no faster than 10 Hz on screen).
+function LfoGraph({
+  shape,
+  depth,
+  rate,
+}: {
+  shape: number;
+  depth: number;
+  rate: number;
+}) {
+  const height = 17 * Math.max(0.08, depth);
+  const points: string[] = [];
+  for (let x = 0; x <= 3 * LFO_CYCLE; x += 0.5) {
+    points.push(`${x} ${(20 - height * lfoValue(shape, x)).toFixed(2)}`);
+  }
+  return (
+    <svg
+      className={styles.moduleGraph}
+      viewBox="0 0 100 40"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M0 20 H100"
+        stroke="rgb(244 243 239 / 0.12)"
+        strokeDasharray="2 3"
+        vectorEffect="non-scaling-stroke"
+      />
+      <path
+        className={styles.lfoWave}
+        style={
+          {
+            "--lfo-period": `${Math.max(1 / rate, 0.1)}s`,
+          } as CSSProperties
+        }
+        d={`M${points.join(" L")}`}
+        fill="none"
+        stroke={KNOB_COLORS[1]}
+        strokeWidth={2.5}
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
+// The FX stages left to right, each level as a bar in its knob colour.
+function FxMeters({ stages }: { stages: readonly ScreenReadout[] }) {
+  return (
+    <div className={styles.fxMeters} aria-hidden="true">
+      {stages.map((stage, i) => (
+        <div key={stage.label} className={styles.fxStage}>
+          <div className={styles.fxTrack}>
+            <div
+              className={styles.fxFill}
+              style={{
+                height: `${Math.round(stage.amount * 100)}%`,
+                background: KNOB_COLORS[i],
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -125,7 +211,11 @@ export interface DeviceScreenProps {
   onSelect?: (index: number) => void;
   // Tapping a param on the synth view selects it, like the red knob.
   onSelectParam?: (index: number) => void;
-  envelope?: readonly ScreenEnvelopeStage[];
+  // The four knob readings for the ADSR, LFO and FX views.
+  readouts?: readonly ScreenReadout[];
+  // The LFO view's shape (0–3) and rate in Hz.
+  lfoShape?: number;
+  lfoRate?: number;
   overlay?: ScreenOverlay;
   className?: string;
 }
@@ -152,7 +242,9 @@ export function DeviceScreen({
   selected = 0,
   onSelect,
   onSelectParam,
-  envelope = [],
+  readouts = [],
+  lfoShape = 0,
+  lfoRate = 1,
   overlay,
   className,
 }: DeviceScreenProps) {
@@ -171,21 +263,30 @@ export function DeviceScreen({
           <span>{status}</span>
         </div>
 
-        {view === "adsr" && envelope.length === 4 && (
-          <div className={styles.envelope}>
-            <EnvelopeGraph stages={envelope} />
-            <div className={styles.stages}>
-              {envelope.map((stage, i) => (
-                <span key={stage.label} className={styles.stage}>
-                  <span>{stage.label}</span>
-                  <span style={{ color: STAGE_COLORS[i] }}>
-                    {stage.display}
+        {(view === "adsr" || view === "lfo" || view === "fx") &&
+          readouts.length === 4 && (
+            <div className={styles.module}>
+              {view === "adsr" && <EnvelopeGraph stages={readouts} />}
+              {view === "lfo" && (
+                <LfoGraph
+                  shape={lfoShape}
+                  depth={readouts[1].amount}
+                  rate={lfoRate}
+                />
+              )}
+              {view === "fx" && <FxMeters stages={readouts} />}
+              <div className={styles.stages}>
+                {readouts.map((stage, i) => (
+                  <span key={stage.label} className={styles.stage}>
+                    <span>{stage.label}</span>
+                    <span style={{ color: KNOB_COLORS[i] }}>
+                      {stage.display}
+                    </span>
                   </span>
-                </span>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {view === "scope" && (
           <Oscilloscope className={styles.scope} getAnalyser={getAnalyser} />

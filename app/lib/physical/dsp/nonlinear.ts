@@ -25,3 +25,9 @@ export const softClip = (x: number) => {
   const x2 = x * x;
   return (x * (27 + x2)) / (27 + 9 * x2);
 };
+
+// Saturation for an amount in [0, 1]: softClip(x·(1 + 9·amount))/(1 + 2·amount),
+// so harder driving doesn't jump in level. Used by the instrument buses and
+// the master FX.
+export const drive = (x: number, amount: number) =>
+  softClip(x * (1 + 9 * amount)) / (1 + 2 * amount);

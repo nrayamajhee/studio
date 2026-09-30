@@ -67,7 +67,8 @@ The audio is computed on the browser's audio thread, inside one `AudioWorkletPro
   then, once per block:
     each instrument.finish()   body -> drive -> gain  -> master L/R  (+ reverb send)
     reverb.process(send)       -> wet L/R
-    out = safetyClip( volume * (master + return * wet) )
+    lfo, fx                    on master L/R
+    out = safetyClip( volume * (master + click + return * wet) )
 ```
 
 `EventQueue` is a preallocated array kept sorted by frame. Events at the same frame keep their arrival order, so a chord's notes and a param change sent together land in order.
@@ -102,9 +103,23 @@ Each instrument owns one **bus**. Its voices add their panned output into the bu
    +-------------------------+                                 |  mono x send
                 |                                              v
                 v                                   +---------------------+
-   master L/R  <----------------- x return -------- |  FDN REVERB         |
-   (+ metronome woodblock, dry)                     |  (shared by all)    |
-                |                                   +---------------------+
+   master L/R                                       |  FDN REVERB         |
+                |                                   |  (shared by all)    |
+                v                                   +---------------------+
+   +-------------------------+                                 |
+   |  LFO (if depth > 0)     |     pitch / volume / filter / pan |
+   +-------------------------+                                 |
+                |                                              |
+                v                                              |
+   +-------------------------+                                 |
+   |  FX: drive -> chorus    |     each stage skipped at zero  |
+   |      -> ping-pong delay |                                 |
+   +-------------------------+                                 |
+                |                                              |
+                v                                              |
+          (+) <------------------------------ x return --------+
+          (+) <----- metronome woodblock, dry
+                |
                 v
          x master volume
                 |
@@ -117,7 +132,31 @@ Each instrument owns one **bus**. Its voices add their panned output into the bu
 
 - **Idle buses cost nothing.** After its last voice ends, a bus keeps running for 0.5 s so the body can ring out, then it is skipped entirely.
 - **Master ADSR.** Every voice is multiplied by one shared amplitude envelope (the `adsr.*` master params, set from the Device's ADSR mode) on top of its model's own envelopes. It triggers when a note or hit starts and releases when the key (or sustain pedal) lets go. The engine's defaults, instant attack, 100% sustain and a 4 s release, leave notes as modelled; the Device sends those when its ADSR is off, and its knob values (0, 200 ms, 50%, 200 ms to start) when it's on. Because it's a volume envelope, a short release can cut a tail, but a long one can't make a damped string ring longer.
-- **No zipper noise.** Gain, send, drive, volume and reverb return glide through `Smoother`s (~10 ms one-pole).
+- **LFO** (`engine/MasterLfo.ts`, the `lfo.*` master params). One modulator over the whole dry mix, so every model responds the same way. Shapes: sine, triangle, square, random (a new value each cycle); square and random edges are eased over 5 ms so they don't click. Targets:
+
+  ```text
+    pitch    delay line swept around its centre: up to +/-3% (about +/-50 cents)
+             at full depth, crossfaded in over 20 ms when switched on
+    volume   gain = 1 - depth x (1 - lfo) / 2     (full depth dips to silence)
+    filter   lowpass swept 250 Hz .. 16 kHz, blended in by depth
+    pan      equal-power, centred at rest, hard left/right at full depth
+  ```
+
+- **FX** (`engine/MasterFx.ts`, the `fx.*` master params), in series:
+
+  ```text
+    drive    the bus drive curve, softClip(x * (1 + 9d)) / (1 + 2d), then a DC blocker
+    chorus   two taps swept in quadrature around 15 ms (+/-4 ms at 0.8 Hz):
+             left and right drift apart, widening the image
+    delay    ping-pong: the mono sum enters on the left, each repeat crosses
+             sides every 250 ms (an eighth note at 120 BPM), 0.45 feedback,
+             3.5 kHz damping so repeats darken
+  ```
+
+  A stage at zero is skipped, and the chorus and delay clear their lines when they switch off, so an old tail never replays. The Device's FX module also has a Reverb knob; it sets `reverb.return`, the level of the shared reverb above. The reverb is fed by the instruments' sends, not by the FX, so echoes don't pile into it.
+
+- **The metronome stays dry.** Its woodblock is added after the LFO and FX, so tremolo or echoes never blur the click.
+- **No zipper noise.** Gain, send, drive, volume, reverb return and the LFO and FX amounts glide through `Smoother`s (~10 ms one-pole).
 - **Why a clipper _and_ a limiter?** A chord hitting many strings at once can produce sub-millisecond peaks that the browser's compressor is too slow to catch. The tanh knee catches those, and the compressor handles sustained loudness.
 
 ## 4. Voices and their lifecycle
@@ -435,6 +474,8 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
   |-- messages.ts            event / stats / warning types shared by both threads
   |-- engine/
   |   |-- Engine.ts          render loop, segmenting, master stage, safety clip
+  |   |-- MasterLfo.ts       the LFO over the mix: pitch, volume, filter, pan
+  |   |-- MasterFx.ts        drive, chorus, ping-pong delay over the mix
   |   |-- EventQueue.ts      preallocated frame-sorted queue
   |   |-- Instrument.ts      bus: body, drive, gain, reverb send, idle tail
   |   |-- Voice.ts           voice state machine, pickVictim

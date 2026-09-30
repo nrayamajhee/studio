@@ -65,19 +65,93 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
 
 export const KNOB_STEPS = 11;
 
-// The Device's ADSR knobs are the engine's master ADSR params, starting at 0,
-// 200 ms, 50% and 200 ms (all on a knob step). The params' own defaults, which
-// leave notes as modelled, are what switching it off sends.
-const ENVELOPE_START: Record<string, number> = {
-  "adsr.attack": 0.001,
-  "adsr.decay": 0.2,
-  "adsr.sustain": 0.5,
-  "adsr.release": 0.2,
-};
+export type ModuleId = "adsr" | "lfo" | "fx";
 
-export const ENVELOPE_PARAMS: readonly ParamSpec[] = MASTER_PARAMS.filter(
-  ({ id }) => id in ENVELOPE_START,
-).map((spec) => ({ ...spec, default: ENVELOPE_START[spec.id] }));
+export interface ModuleKnob {
+  // A master param, with the Device's label and the knob's starting value as
+  // its default. The engine's own default (no effect) is what "off" sends.
+  spec: ParamSpec;
+  steps: number;
+  // Named steps, for knobs that pick rather than set (LFO shape and target).
+  options?: readonly string[];
+}
+
+export interface DeviceModule {
+  id: ModuleId;
+  label: string;
+  title: string;
+  // White, green, red and blue knob, in that order.
+  knobs: readonly ModuleKnob[];
+}
+
+function knob(
+  id: string,
+  label: string,
+  start: number,
+  {
+    steps = KNOB_STEPS,
+    options,
+    max,
+  }: {
+    steps?: number;
+    options?: readonly string[];
+    max?: number;
+  } = {},
+): ModuleKnob {
+  const spec = MASTER_PARAMS.find((param) => param.id === id);
+  if (!spec) throw new Error(`Missing master param ${id}`);
+  return {
+    spec: { ...spec, label, default: start, max: max ?? spec.max },
+    steps,
+    options,
+  };
+}
+
+// The three global modules the Device layers over every instrument. Each
+// knob's start sits on a knob step (0, 200 ms, 50%, 200 ms for the ADSR; 5 Hz
+// for the LFO).
+export const DEVICE_MODULES: Readonly<Record<ModuleId, DeviceModule>> = {
+  adsr: {
+    id: "adsr",
+    label: "ADSR",
+    title: "ADSR envelope",
+    knobs: [
+      knob("adsr.attack", "Attack", 0.001),
+      knob("adsr.decay", "Decay", 0.2),
+      knob("adsr.sustain", "Sustain", 0.5),
+      knob("adsr.release", "Release", 0.2),
+    ],
+  },
+  lfo: {
+    id: "lfo",
+    label: "LFO",
+    title: "LFO",
+    knobs: [
+      knob("lfo.rate", "Rate", 5),
+      knob("lfo.depth", "Depth", 0.5),
+      knob("lfo.shape", "Shape", 0, {
+        steps: 4,
+        options: ["Sine", "Triangle", "Square", "Random"],
+      }),
+      knob("lfo.target", "Target", 0, {
+        steps: 4,
+        options: ["Pitch", "Volume", "Filter", "Pan"],
+      }),
+    ],
+  },
+  fx: {
+    id: "fx",
+    label: "FX",
+    title: "Effects",
+    knobs: [
+      knob("fx.drive", "Drive", 0),
+      knob("fx.chorus", "Chorus", 0),
+      knob("fx.delay", "Delay", 0),
+      // Up to twice the engine's reverb, so the default sits mid-knob.
+      knob("reverb.return", "Reverb", 0.35, { max: 0.7 }),
+    ],
+  },
+};
 
 // With a kit selected, keys play pieces by pitch class: white keys
 // F G A B C D E → kick, snare, low tom, high tom, clap, crash, cowbell; black
@@ -221,12 +295,15 @@ export const deviceEngine = {
     setParam("master", "master.volume", value);
   },
 
-  // Sends the ADSR's values, or with null switches it off by restoring the
-  // engine's defaults.
-  setEnvelope(values: Record<string, number> | null) {
-    for (const spec of MASTER_PARAMS) {
-      if (!spec.id.startsWith("adsr.")) continue;
-      setParam("master", spec.id, values?.[spec.id] ?? spec.default);
+  // Sends a module's values, or with null switches it off by restoring the
+  // engine's defaults for those params.
+  setMasterParams(
+    ids: readonly string[],
+    values: Record<string, number> | null,
+  ) {
+    for (const id of ids) {
+      const spec = MASTER_PARAMS.find((param) => param.id === id);
+      if (spec) setParam("master", id, values?.[id] ?? spec.default);
     }
   },
 

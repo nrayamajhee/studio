@@ -9,6 +9,8 @@ import { MASTER_PARAMS, PATCHES } from "../patches";
 import type { Patch } from "../patches/types";
 import { EventQueue } from "./EventQueue";
 import { Instrument, MAX_BLOCK } from "./Instrument";
+import { MasterFx } from "./MasterFx";
+import { MasterLfo } from "./MasterLfo";
 import { ParamSet } from "./ParamSet";
 
 // Unity below −3 dBFS; above it a tanh knee keeps coherent chord transients
@@ -54,12 +56,17 @@ export class Engine {
   private readonly byId: Partial<Record<BusId, Instrument>> = {};
   private readonly queue = new EventQueue();
   private readonly reverb: Fdn;
+  private readonly lfo: MasterLfo;
+  private readonly fx: MasterFx;
   private readonly woodblock: Woodblock;
   private readonly reverbIn = new Float32Array(MAX_BLOCK);
   private readonly masterL = new Float32Array(MAX_BLOCK);
   private readonly masterR = new Float32Array(MAX_BLOCK);
   private readonly wetL = new Float32Array(MAX_BLOCK);
   private readonly wetR = new Float32Array(MAX_BLOCK);
+  // The metronome joins after the LFO and FX, so its click stays steady.
+  private readonly clickL = new Float32Array(MAX_BLOCK);
+  private readonly clickR = new Float32Array(MAX_BLOCK);
   private readonly volume: Smoother;
   private readonly reverbReturn: Smoother;
   private readonly warnings: string[] = [];
@@ -75,6 +82,8 @@ export class Engine {
     });
     this.master = new ParamSet(MASTER_PARAMS, overrides?.master);
     this.reverb = new Fdn(fs);
+    this.lfo = new MasterLfo(fs);
+    this.fx = new MasterFx(fs);
     this.woodblock = new Woodblock(fs);
     this.volume = new Smoother(this.master.get("master.volume"), fs);
     this.reverbReturn = new Smoother(this.master.get("reverb.return"), fs);
@@ -150,14 +159,24 @@ export class Engine {
     const wetL = this.wetL;
     const wetR = this.wetR;
     this.reverb.process(reverbIn, wetL, wetR, n);
+    this.lfo.process(masterL, masterR, n);
+    this.fx.process(masterL, masterR, n);
+    const clickL = this.clickL;
+    const clickR = this.clickR;
     for (let i = 0; i < n; i++) {
       const g = this.volume.process();
       const wet = this.reverbReturn.process();
-      left[offset + i] = safetyClip(g * (masterL[i] + wet * wetL[i]));
-      right[offset + i] = safetyClip(g * (masterR[i] + wet * wetR[i]));
+      left[offset + i] = safetyClip(
+        g * (masterL[i] + clickL[i] + wet * wetL[i]),
+      );
+      right[offset + i] = safetyClip(
+        g * (masterR[i] + clickR[i] + wet * wetR[i]),
+      );
     }
     masterL.fill(0, 0, n);
     masterR.fill(0, 0, n);
+    clickL.fill(0, 0, n);
+    clickR.fill(0, 0, n);
     reverbIn.fill(0, 0, n);
     wetL.fill(0, 0, n);
     wetR.fill(0, 0, n);
@@ -169,7 +188,7 @@ export class Engine {
     const instruments = this.instruments;
     for (let i = 0; i < instruments.length; i++)
       instruments[i].render(from, to);
-    this.woodblock.render(this.masterL, this.masterR, from, to);
+    this.woodblock.render(this.clickL, this.clickR, from, to);
   }
 
   private apply(event: EngineEvent, frame: number) {
@@ -218,6 +237,13 @@ export class Engine {
     this.reverb.setDecay(m.get("reverb.decay"));
     this.reverb.setDamping(m.get("reverb.damping"));
     this.reverb.setPredelay(m.get("reverb.predelay"));
+    this.lfo.set(
+      m.get("lfo.rate"),
+      m.get("lfo.depth"),
+      Math.round(m.get("lfo.shape")),
+      Math.round(m.get("lfo.target")),
+    );
+    this.fx.set(m.get("fx.drive"), m.get("fx.chorus"), m.get("fx.delay"));
     // The shortest attack means none, so the default adds no fade-in.
     const shape = m.envelope("adsr");
     if (shape.attack <= MIN_ATTACK) shape.attack = 0;

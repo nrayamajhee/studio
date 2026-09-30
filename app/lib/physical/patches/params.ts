@@ -378,6 +378,21 @@ export const MASTER_PARAMS: ParamSpec[] = [
   param("reverb.damping", "Reverb damping", "space", 0, 0.7, 0.35, primary),
   param("reverb.predelay", "Predelay", "space", 0, 0.06, 0.015, { unit: "s" }),
   param("reverb.return", "Reverb return", "space", 0, 1, 0.35, primary),
+  // One LFO over the whole mix; shape and target are indices (sine, triangle,
+  // square, random; pitch, volume, filter, pan). Zero depth leaves the mix as
+  // it is.
+  param("lfo.rate", "LFO rate", "space", 0.2, 20, 5, {
+    unit: "Hz",
+    scale: "log",
+    primary: true,
+  }),
+  param("lfo.depth", "LFO depth", "space", 0, 1, 0, primary),
+  param("lfo.shape", "LFO shape", "space", 0, 3, 0),
+  param("lfo.target", "LFO target", "space", 0, 3, 0),
+  // The FX chain; zero leaves the mix as it is.
+  param("fx.drive", "Drive", "space", 0, 1, 0, primary),
+  param("fx.chorus", "Chorus", "space", 0, 1, 0, primary),
+  param("fx.delay", "Delay", "space", 0, 1, 0, primary),
   // The master ADSR over every voice. The defaults (instant attack, full
   // sustain, a release far longer than any damper) leave notes as modelled.
   ...adsrParams(
