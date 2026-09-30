@@ -1,12 +1,20 @@
 import type { ComponentType } from "react";
 import {
+  Anchor,
+  Atom,
   AudioWaveform,
   Bell,
+  Bird,
   CassetteTape,
   Cloud,
+  Coffee,
+  Crown,
   Disc3,
+  Droplet,
   Drum,
+  Feather,
   Flame,
+  Flower2,
   Gem,
   Ghost,
   Guitar,
@@ -16,8 +24,10 @@ import {
   Leaf,
   Mic,
   Moon,
+  Mountain,
   Music,
   Music2,
+  Orbit,
   Piano,
   Radio,
   Rocket,
@@ -26,6 +36,8 @@ import {
   Speaker,
   Star,
   Sun,
+  TreePine,
+  Umbrella,
   Volume2,
   Waves,
   Wind,
@@ -66,10 +78,22 @@ export const PRESET_ICONS: Record<string, ComponentType> = {
   cloud: Cloud,
   leaf: Leaf,
   gem: Gem,
+  crown: Crown,
+  feather: Feather,
+  mountain: Mountain,
+  droplet: Droplet,
+  bird: Bird,
+  flower: Flower2,
+  tree: TreePine,
+  anchor: Anchor,
+  atom: Atom,
+  orbit: Orbit,
+  umbrella: Umbrella,
+  coffee: Coffee,
 };
 
-// Offered by the Save picker, two full pages of 16: instruments and sound on
-// the first, gear and moods on the second.
+// Offered by the Save picker, two full pages of 22: instruments, sound and
+// gear first, then moods and things.
 export const ICON_CHOICES = Object.keys(PRESET_ICONS);
 
 // A preset's icon, or the key itself as text when it isn't a known icon.

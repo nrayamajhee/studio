@@ -12,9 +12,11 @@
   outline-offset: 3px;
 }
 
+/* 50 × 210px white and 30 × 128px black keys unless a container sets the
+   sizes. */
 .white {
-  width: 50px;
-  height: 210px;
+  width: var(--white-key-width, 50px);
+  height: var(--white-key-height, 210px);
   border-radius: 0 0 8px 8px;
   color: #5f5d57;
   background: color-mix(in srgb, #f7f6f2, #e6e4de var(--theme-mix));
@@ -34,8 +36,8 @@
 
 .black {
   z-index: 2;
-  width: 30px;
-  height: 128px;
+  width: var(--black-key-width, 30px);
+  height: var(--black-key-height, 128px);
   border-radius: 0 0 6px 6px;
   color: rgb(255 255 255 / 0.72);
   background: color-mix(in srgb, #3d3d41, #232326 var(--theme-mix));

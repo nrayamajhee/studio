@@ -1,7 +1,6 @@
-/* The two pad rows (145px) plus the 16px it reaches into the Device's padding
-   above and below. */
+/* The Device's top row (226px) plus the 21px it reaches up into the bezel. */
 .screen {
-  height: 177px;
+  height: 247px;
   padding: 8px;
   border-radius: 22px;
   background: color-mix(in srgb, #141413, #0b0b0c var(--theme-mix));
@@ -56,10 +55,10 @@
 
 .scope {
   width: 100%;
-  height: 90px;
+  height: 150px;
 }
 
-/* Views sit in the ~576 × 101 space between the two readouts. */
+/* Views sit in the ~888 × 171 space between the two readouts. */
 .params,
 .tiles,
 .envelope {
@@ -74,7 +73,7 @@
 .params {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-template-rows: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
   gap: 4px 10px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
@@ -147,23 +146,23 @@
   aspect-ratio: 1;
 }
 
-/* Icons are one row of 16 squares (~32 px), so two pages hold all 32. */
+/* Icons are two rows of 11 squares as wide as the view allows (~66 px), 22 a
+   page, centred in its height. */
 .iconTiles {
-  grid-template-columns: repeat(16, minmax(0, 1fr));
+  grid-template-columns: repeat(11, minmax(0, 1fr));
   grid-template-rows: none;
   align-content: center;
-  gap: 4px;
 }
 
 .iconTiles .tile {
+  width: 100%;
   aspect-ratio: 1;
   padding: 0;
-  border-radius: 6px;
 }
 
 .iconTiles .tileIcon svg {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
 }
 
 .tile {

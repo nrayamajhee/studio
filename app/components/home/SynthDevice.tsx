@@ -16,6 +16,7 @@ import {
   LayoutGrid,
   Metronome,
   Play,
+  RotateCcw,
   Save,
   Square,
 } from "lucide-react";
@@ -55,6 +56,9 @@ import { ICON_CHOICES, PresetIcon } from "./presetIcons";
 import {
   allPresets,
   bindPad,
+  clearEdits,
+  presetEdits,
+  setEdit,
   savePreset,
   updatePreset,
   usePresetLibrary,
@@ -100,6 +104,7 @@ const CHORDS = [
   { name: "Major 7", label: "Maj7", intervals: [0, 4, 7, 11] },
   { name: "Power", label: "Power", intervals: [0, 7, 12] },
   { name: "Suspended 4", label: "Sus4", intervals: [0, 5, 7] },
+  { name: "Suspended 2", label: "Sus2", intervals: [0, 2, 7] },
   { name: "Add 9", label: "Add9", intervals: [0, 4, 7, 14] },
 ];
 
@@ -238,7 +243,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const library = usePresetLibrary();
   const presets = allPresets(library);
   const [preset, setPreset] = useState(() => findPreset(INITIAL_PRESET));
-  const [values, setValues] = useState(() => presetValues(preset));
   const [paramIndex, setParamIndex] = useState(0);
   const [volumeStep, setVolumeStep] = useState(INITIAL_VOLUME_STEP);
   const [envelopeSteps, setEnvelopeSteps] = useState(INITIAL_ENVELOPE_STEPS);
@@ -261,12 +265,16 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const held = useRef(new Map<number, HeldKey>());
   const transport = useTransport();
   const shift = shiftLatched || shiftHeld;
+  // The preset's own values plus any edits made since it was picked.
+  const edits = library.edits[preset.id];
+  const values = { ...presetValues(preset), ...edits };
   const specs = PATCH_BY_ID[preset.target].params;
   const selected = specs[Math.min(paramIndex, specs.length - 1)];
   const selectedValue = values[selected.id] ?? selected.default;
 
   useEffect(() => {
-    deviceEngine.loadPreset(findPreset(INITIAL_PRESET));
+    const initial = findPreset(INITIAL_PRESET);
+    deviceEngine.loadPreset(initial, presetEdits(initial.id));
     deviceEngine.setVolume(INITIAL_VOLUME_STEP / (KNOB_STEPS - 1));
     deviceEngine.setEnvelope(null);
   }, []);
@@ -363,7 +371,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   // Keeps the selected param when the next instrument has it too.
   const selectPreset = (next: DevicePreset) => {
     deviceEngine.unlock();
-    setValues(deviceEngine.loadPreset(next));
+    deviceEngine.loadPreset(next, library.edits[next.id]);
     deviceEngine.preview();
     setPreset(next);
     const index = Math.max(
@@ -405,9 +413,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       saveToPad(pad);
       return;
     }
-    selectPreset(
-      presets.find(({ id }) => id === library.buttons[pad]) ?? preset,
-    );
+    const bound = presets.find(({ id }) => id === library.buttons[pad]);
+    if (bound) selectPreset(bound);
   };
 
   const pressSynth = () => {
@@ -435,6 +442,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     }
     if (view !== "save") return;
     const saved = savePreset(preset, values, ICON_CHOICES[iconIndex]);
+    clearEdits(preset.id);
     finishSave(saved, `Saved ${saved.name}`);
   };
 
@@ -447,11 +455,14 @@ export function SynthDevice({ className }: SynthDeviceProps) {
         ? updatePreset(preset, values, icon)
         : savePreset(preset, values, icon);
     bindPad(pad, saved.id);
+    clearEdits(preset.id);
     finishSave(saved, `Saved ${saved.name} to pad ${pad + 1}`);
   };
 
+  // Saving bakes the edits into the saved preset, so the one it came from goes
+  // back to its own values.
   const finishSave = (saved: DevicePreset, message: string) => {
-    setValues(deviceEngine.loadPreset(saved));
+    deviceEngine.loadPreset(saved);
     setPreset(saved);
     setView("scope");
     showNotice(message);
@@ -470,10 +481,24 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     setParamIndex(page * PARAMS_PER_PAGE);
   };
 
+  // Turning back to the preset's own step restores its exact value and drops
+  // the edit.
   const setSelectedValue = (step: number) => {
-    const value = stepToValue(selected, step, KNOB_STEPS);
+    const own = presetValues(preset)[selected.id];
+    const original = step === valueToStep(selected, own, KNOB_STEPS);
+    const value = original ? own : stepToValue(selected, step, KNOB_STEPS);
     deviceEngine.setValue(selected.id, value);
-    setValues((current) => ({ ...current, [selected.id]: value }));
+    setEdit(preset.id, selected.id, original ? null : value);
+  };
+
+  const pressReset = () => {
+    if (!edits) {
+      showNotice("No changes to reset");
+      return;
+    }
+    clearEdits(preset.id);
+    deviceEngine.loadPreset(preset);
+    showNotice(`Reset ${preset.name}`);
   };
 
   // Turning an ADSR knob switches the envelope on so the change is audible.
@@ -530,6 +555,14 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   };
 
   // With a kit selected, keys show the drum they play instead of a note name.
+  const renderBlankPads = (first: number, count: number) =>
+    Array.from({ length: count }, (_, index) => (
+      <Pad
+        key={`blank-${first + index}`}
+        label={`Unassigned pad ${first + index}`}
+      />
+    ));
+
   const renderKey = (semitone: number, slot: number, black: boolean) => {
     const midi = F3_MIDI + semitone + 12 * octave;
     const piece = isKit(preset.target) ? DRUM_PIECES[keyPiece(midi)] : null;
@@ -548,11 +581,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       />
     );
   };
-
-  const renderSparePads = (first: number, count: number) =>
-    Array.from({ length: count }, (_, index) => (
-      <Pad key={index} label={`Unassigned pad ${first + index}`} />
-    ));
 
   const selectedDisplay = formatParam(selected, selectedValue);
   const selection = (
@@ -578,7 +606,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   // Synth opens (or, while it is up, closes) the library in this mode.
   const libraryMode = shift || view === "presets";
   const padPresets = library.buttons.map(
-    (id) => presets.find((candidate) => candidate.id === id) ?? preset,
+    (id) => presets.find((candidate) => candidate.id === id) ?? null,
   );
 
   // The green knob scrolls whatever the screen shows; on the scope it is idle.
@@ -656,30 +684,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
           aria-label="Synthesizer"
           onPointerUp={() => deviceEngine.unlock()}
         >
-          <div className={styles.row}>
-            <div
-              className={cn(styles.pads, styles.bank)}
-              role="group"
-              aria-label="Presets"
-            >
-              {padPresets.map((padPreset, pad) => (
-                <Pad
-                  key={pad}
-                  label={
-                    view === "presets"
-                      ? `Bind to pad ${pad + 1} (${padPreset.name})`
-                      : view === "save"
-                        ? `Save to pad ${pad + 1} (${padPreset.name})`
-                        : padPreset.name
-                  }
-                  accent="var(--synth-red)"
-                  onPress={() => pressPresetPad(pad)}
-                >
-                  <PresetIcon icon={padPreset.icon} />
-                </Pad>
-              ))}
-            </div>
-
+          <div className={styles.topRow}>
+            <div className={styles.padStack}>{renderBlankPads(7, 3)}</div>
             <div className={styles.knobColumn}>
               {adsr ? (
                 renderEnvelopeKnob(0, "var(--synth-chalk)", "#141413")
@@ -712,7 +718,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               className={styles.screenSlot}
               view={view}
               overlay={overlay ?? undefined}
-              title={adsr ? "ADSR" : preset.name}
+              title={adsr ? "ADSR" : edits ? `${preset.name} *` : preset.name}
               status={screen.status}
               footer={[notice ?? screen.footer[0], screen.footer[1]]}
               getAnalyser={deviceEngine.getAnalyser}
@@ -771,32 +777,13 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                 />
               )}
             </div>
-
-            <div
-              className={cn(styles.pads, styles.bank)}
-              role="group"
-              aria-label="Chord macros"
-            >
-              {CHORDS.map(({ name, label }, index) => (
-                <Pad
-                  key={name}
-                  label={`${name} chord`}
-                  accent="var(--synth-blue)"
-                  pressed={chord === index}
-                  onPress={() =>
-                    setChord((current) => (current === index ? null : index))
-                  }
-                >
-                  {label}
-                </Pad>
-              ))}
-            </div>
+            <div className={styles.padStack}>{renderBlankPads(10, 3)}</div>
           </div>
 
           <div className={styles.row}>
-            <div className={cn(styles.pads, styles.bank)}>
+            <div className={styles.side}>
               <div
-                className={styles.padRow}
+                className={styles.toolGroup}
                 role="group"
                 aria-label="Synth tools"
               >
@@ -822,20 +809,62 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                 >
                   <AdsrIcon />
                 </Pad>
-                {renderSparePads(11, 2)}
-              </div>
-              <div
-                className={styles.padRow}
-                role="group"
-                aria-label="Save and navigation"
-              >
                 <Pad
-                  label="Save preset"
-                  accent="var(--synth-red)"
-                  onPress={pressSave}
+                  label="Metronome"
+                  accent="var(--synth-green)"
+                  pressed={transport.metronome}
+                  onPress={() => {
+                    deviceEngine.unlock();
+                    transport.toggleMetronome();
+                  }}
                 >
-                  <Save />
+                  <Metronome />
                 </Pad>
+              </div>
+              <div className={styles.pads} role="group" aria-label="Controls">
+                <Pad
+                  label="Record"
+                  accent="var(--synth-red)"
+                  lit={transport.state === "recording"}
+                  onPress={transport.record}
+                >
+                  <Circle fill="currentColor" />
+                </Pad>
+                <Pad
+                  label="Play"
+                  accent="var(--synth-green)"
+                  lit={transport.state === "playing"}
+                  onPress={() => {
+                    deviceEngine.unlock();
+                    transport.play();
+                  }}
+                >
+                  <Play fill="currentColor" />
+                </Pad>
+                <Pad
+                  label="Stop"
+                  accent="var(--synth-green)"
+                  lit={stopLit}
+                  onPress={() => {
+                    transport.stop();
+                    flashStop();
+                  }}
+                >
+                  <Square fill="currentColor" />
+                </Pad>
+                <Pad
+                  label="Sequencer"
+                  accent="var(--synth-green)"
+                  pressed={transport.mode === "sequencer"}
+                  onPress={() =>
+                    transport.setMode(
+                      transport.mode === "sequencer" ? "tape" : "sequencer",
+                    )
+                  }
+                >
+                  <Grid3x3 />
+                </Pad>
+                {renderBlankPads(2, 2)}
                 <Pad
                   label={
                     paging
@@ -868,85 +897,100 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   <ArrowUp />
                 </Pad>
               </div>
+            </div>
+
+            <div className={styles.middle}>
+              <div className={styles.toolbar}>
+                <div
+                  className={styles.toolGroup}
+                  role="group"
+                  aria-label="Presets"
+                >
+                  {padPresets.map((padPreset, pad) => {
+                    const name = padPreset?.name ?? "empty";
+                    return (
+                      <Pad
+                        key={pad}
+                        label={
+                          view === "presets"
+                            ? `Bind to pad ${pad + 1} (${name})`
+                            : view === "save"
+                              ? `Save to pad ${pad + 1} (${name})`
+                              : (padPreset?.name ??
+                                `Empty preset pad ${pad + 1}`)
+                        }
+                        accent="var(--synth-red)"
+                        onPress={() => pressPresetPad(pad)}
+                      >
+                        {padPreset && <PresetIcon icon={padPreset.icon} />}
+                      </Pad>
+                    );
+                  })}
+                </div>
+                <div
+                  className={styles.toolGroup}
+                  role="group"
+                  aria-label="Preset tools"
+                >
+                  <Pad
+                    label="Save preset"
+                    accent="var(--synth-red)"
+                    onPress={pressSave}
+                  >
+                    <Save />
+                  </Pad>
+                  <Pad
+                    label="Reset preset"
+                    accent="var(--synth-red)"
+                    onPress={pressReset}
+                  >
+                    <RotateCcw />
+                  </Pad>
+                </div>
+                {renderBlankPads(1, 1)}
+              </div>
+
+              <div className={styles.keybed}>
+                <div
+                  className={styles.keys}
+                  role="group"
+                  aria-label="Piano keys"
+                >
+                  {WHITE_KEYS.map((semitone, slot) =>
+                    renderKey(semitone, slot, false),
+                  )}
+                  {BLACK_KEYS.map((semitone) =>
+                    renderKey(
+                      semitone,
+                      WHITE_KEYS.indexOf(semitone - 1) + 1,
+                      true,
+                    ),
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.side}>
+              <div className={styles.toolGroup}>{renderBlankPads(4, 3)}</div>
               <div
-                className={styles.padRow}
+                className={styles.pads}
                 role="group"
-                aria-label="Transport"
+                aria-label="Chord macros"
               >
-                <Pad
-                  label="Record"
-                  accent="var(--synth-red)"
-                  lit={transport.state === "recording"}
-                  onPress={transport.record}
-                >
-                  <Circle fill="currentColor" />
-                </Pad>
-                <Pad
-                  label="Play"
-                  accent="var(--synth-green)"
-                  lit={transport.state === "playing"}
-                  onPress={() => {
-                    deviceEngine.unlock();
-                    transport.play();
-                  }}
-                >
-                  <Play fill="currentColor" />
-                </Pad>
-                <Pad
-                  label="Stop"
-                  accent="var(--synth-green)"
-                  lit={stopLit}
-                  onPress={() => {
-                    transport.stop();
-                    flashStop();
-                  }}
-                >
-                  <Square fill="currentColor" />
-                </Pad>
-                {renderSparePads(13, 1)}
+                {CHORDS.map(({ name, label }, index) => (
+                  <Pad
+                    key={name}
+                    label={`${name} chord`}
+                    accent="var(--synth-blue)"
+                    pressed={chord === index}
+                    onPress={() =>
+                      setChord((current) => (current === index ? null : index))
+                    }
+                  >
+                    {label}
+                  </Pad>
+                ))}
               </div>
-            </div>
-
-            <div className={styles.keybed}>
-              <div className={styles.keys} role="group" aria-label="Piano keys">
-                {WHITE_KEYS.map((semitone, slot) =>
-                  renderKey(semitone, slot, false),
-                )}
-                {BLACK_KEYS.map((semitone) =>
-                  renderKey(
-                    semitone,
-                    WHITE_KEYS.indexOf(semitone - 1) + 1,
-                    true,
-                  ),
-                )}
-              </div>
-            </div>
-
-            <div className={cn(styles.pads, styles.bank)}>
-              {renderSparePads(1, 10)}
-              <Pad
-                label="Sequencer"
-                accent="var(--synth-green)"
-                pressed={transport.mode === "sequencer"}
-                onPress={() =>
-                  transport.setMode(
-                    transport.mode === "sequencer" ? "tape" : "sequencer",
-                  )
-                }
-              >
-                <Grid3x3 />
-              </Pad>
-              <Pad
-                label="Metronome"
-                accent="var(--synth-green)"
-                pressed={transport.metronome}
-                onPress={() => {
-                  deviceEngine.unlock();
-                  transport.toggleMetronome();
-                }}
-              >
-                <Metronome />
-              </Pad>
             </div>
           </div>
         </div>

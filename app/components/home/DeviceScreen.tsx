@@ -130,9 +130,9 @@ export interface DeviceScreenProps {
   className?: string;
 }
 
-export const PARAMS_PER_PAGE = 12;
+export const PARAMS_PER_PAGE = 16;
 export const TILES_PER_PAGE: Record<string, number> = {
-  save: 16,
+  save: 22,
   presets: 8,
 };
 

@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router";
 import type { Route } from "./+types/home";
 import { useTheme } from "../hooks/useTheme";
 import { Button } from "../components/design-system/Button";
@@ -54,9 +55,26 @@ export default function Home() {
         />
       </div>
 
-      <main className="absolute inset-0 z-10 px-4 py-20 sm:px-6">
+      <main className="absolute inset-0 z-10 py-20">
         <SynthDevice />
       </main>
+
+      <footer
+        className="absolute inset-x-0 bottom-6 z-10 text-center text-sm select-text"
+        style={{
+          color:
+            "color-mix(in srgb, rgb(20 20 19 / 0.6), rgb(244 243 239 / 0.7) var(--theme-mix))",
+        }}
+      >
+        <Link
+          to="https://nishan.rayamajhee.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
+        >
+          Nishan Rayamajhee
+        </Link>
+      </footer>
 
       <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50">
         <Button

@@ -176,10 +176,11 @@ export const deviceEngine = {
   },
 
   // Every param of the instrument goes back to its default unless the preset
-  // overrides it, so switching presets never leaks settings between them.
-  loadPreset(preset: DevicePreset) {
+  // overrides it or it has been edited since, so switching presets never leaks
+  // settings between them.
+  loadPreset(preset: DevicePreset, edits?: Readonly<Record<string, number>>) {
     current = preset;
-    const values = presetValues(preset);
+    const values = { ...presetValues(preset), ...edits };
     for (const [id, value] of Object.entries(values)) {
       setParam(preset.target, id, value);
     }
