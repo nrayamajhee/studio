@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { synth } from "../../lib/synth";
+import { deviceEngine, noteNameToMidi } from "./deviceEngine";
 
 export type TransportMode = "tape" | "sequencer";
 export type TransportState = "stopped" | "playing" | "recording";
@@ -60,7 +60,7 @@ export function useTransport() {
   useEffect(() => {
     if (!metronome) return;
     let beat = 0;
-    const tick = () => synth.playMetronomeTick(beat++ % 4 === 0);
+    const tick = () => deviceEngine.metronomeTick(beat++ % 4 === 0);
     tick();
     const id = setInterval(tick, BEAT_MS);
     return () => clearInterval(id);
@@ -69,7 +69,7 @@ export function useTransport() {
   useEffect(() => {
     if (state !== "playing" || !take) return;
     const timers = new Set<ReturnType<typeof setTimeout>>();
-    const voices = new Set<string>();
+    const voices = new Map<number, number>();
     const after = (ms: number, callback: () => void) => {
       const id = setTimeout(() => {
         timers.delete(id);
@@ -80,13 +80,14 @@ export function useTransport() {
     const run = () => {
       for (const { at, note, on } of take.events) {
         after(at, () => {
-          const voice = `take-${note}`;
+          const midi = noteNameToMidi(note);
+          if (midi < 0) return;
           if (on) {
-            synth.playNote(note, undefined, undefined, 0.8, undefined, voice);
-            voices.add(voice);
-          } else {
-            synth.stopNote(voice);
-            voices.delete(voice);
+            deviceEngine.noteOn(midi, 0.8);
+            voices.set(midi, (voices.get(midi) ?? 0) + 1);
+          } else if (voices.get(midi)) {
+            deviceEngine.noteOff(midi);
+            voices.set(midi, (voices.get(midi) ?? 1) - 1);
           }
         });
       }
@@ -95,7 +96,9 @@ export function useTransport() {
     run();
     return () => {
       timers.forEach(clearTimeout);
-      voices.forEach((voice) => synth.stopNote(voice));
+      voices.forEach((count, midi) => {
+        for (let i = 0; i < count; i++) deviceEngine.noteOff(midi);
+      });
     };
   }, [state, take]);
 

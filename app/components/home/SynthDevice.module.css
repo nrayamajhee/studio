@@ -144,6 +144,11 @@
   color: rgb(244 243 239 / 0.6);
 }
 
+.readoutBottom {
+  top: auto;
+  bottom: 12px;
+}
+
 .scope {
   width: 100%;
   height: 150px;

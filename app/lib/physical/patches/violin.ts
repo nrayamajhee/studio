@@ -1,0 +1,61 @@
+import { bowedParams } from "./params";
+import type { BowedPatch } from "./types";
+
+// Violin (STK Bowed with the Maestre body filter).
+export const violin: BowedPatch = {
+  id: "violin",
+  name: "Violin",
+  family: "bowed",
+  polyphony: 4,
+  range: [55, 100],
+  // Measured corrections (tuning sweep at velocity 0.7), per sample rate.
+  tuningCents: {
+    44100: [
+      [55, -0.6],
+      [62, -1.6],
+      [63, -3.2],
+      [66, -3.6],
+      [79, -10],
+      [81, -12.7],
+      [82, -13.2],
+      [85, -10.3],
+      [88, -10.8],
+      [90, -12.6],
+      [92, -15.9],
+      [93, -18.2],
+      [94, -18.8],
+      [95, -15.4],
+      [96, -11.1],
+      [97, -7.8],
+      [98, -5.8],
+      [100, -4.4],
+    ],
+    48000: [
+      [55, -0.4],
+      [63, -1.5],
+      [64, -3.2],
+      [67, -3.7],
+      [79, -9.3],
+      [81, -11.2],
+      [82, -12.7],
+      [83, -13.3],
+      [85, -11],
+      [87, -10.2],
+      [89, -10.8],
+      [91, -12.5],
+      [93, -16.1],
+      [94, -18.3],
+      [95, -18.8],
+      [96, -15.8],
+      [97, -11.5],
+      [98, -8.2],
+      [99, -5.9],
+      [100, -4.5],
+    ],
+  },
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
+  outputGain: 0.89,
+  pan: { center: 0.1, spread: 0.1 },
+  body: { type: "none" },
+  params: bowedParams(0.25),
+};

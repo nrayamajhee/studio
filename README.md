@@ -38,6 +38,8 @@ npm install
 ## Checks
 
 - **Typecheck**: `npm run typecheck`
+- **Unit tests** (DSP and synth engine, Node): `npm run test:unit`
+- **Story smoke tests** (headless Chromium): `npx vitest run --project storybook`
 - **Lint**: `npm run lint` (fix with `npm run lint:fix`)
 - **Format**: `npm run format` (check with `npm run format:check`)
 
@@ -60,12 +62,12 @@ The layout is two rows:
 | 3×3 pads |          keybed           | 3×3 pads |
 ```
 
-- **Knobs** — four gear-edged knobs, pad-sized (68 px), in two evenly spaced stacked pairs: Waveform and Volume left of the screen, Release and Filter cutoff right of it. They override the current preset's `osc1Wave`, `masterVol`, `release`, and `cutoff` in four detents (−135°, −45°, 45°, 135°). Drag horizontally (24 px per detent, right increases), scroll (one wheel notch per detent), or click to advance and wrap. A freshly loaded preset shows its nearest detent.
-- **Screen** — a black oscilloscope bezel that draws three cycles of the current waveform, with the preset name (top left) and octave shift (top right).
-- **Presets** (top-left 3×3) — Piano, Guitar, Bass, Drums, Flute, Sax (the `/studio` preset-panel icons), Synth, Strings, Organ. A pad also stays lit for related presets reached with Shift + arrows (e.g. Piano for Rhodes, Electronic Piano, Lo-Fi Keys).
+- **Knobs** — four gear-edged knobs, pad-sized (68 px), in two evenly spaced stacked pairs, each with 11 steps. Left of the screen: black is **Seek** (reserved for UI/seek, inert for now) and white is master **Volume**. Right of the screen: orange and blue are the current preset's **primary** and **secondary** controls (e.g. piano Hardness/Sustain, sax Breath/Vibrato, drums Tune/Decay; see `DEVICE_PRESETS`). Drag horizontally (24 px per step, right increases), scroll (one wheel notch per step), or click to advance and wrap. Loading a preset resets its two controls to their defaults.
+- **Screen** — a black bezel with a live oscilloscope of the engine output, the preset name and octave shift on top, and the primary/secondary control names and values underneath.
+- **Presets** (top-left 3×3) — Piano, Guitar, Bass (electric), Drums, Flute, Sax, Violin, Upright Bass, 808 Kit, all played by the physical-modeling engine (see [Synth engine](#synth-engine)). With a kit selected, keys play pieces by pitch class.
 - **Keybed** — two octaves, F3–E5 (14 white, 10 black keys), in a recessed well. Keys sustain while held and are engraved with their hotkey and note name (C keys show their octave).
 - **Chord macros** (top-right 3×3) — Maj, Min, Dom7, Maj7, Min7, Sus4, Power, Dim, Add9. Toggling one makes every key play that chord from its root; toggle it again for single notes.
-- **Bottom-left 3×3** — ← / → (octave down/up, −2…+2) and Shift, three unassigned pads, then the transport row: Play, Stop, Record. With Shift latched, ← / → step through every preset in `SYNTH_PRESETS`. Record captures what you play on the keys; Play plays the take back.
+- **Bottom-left 3×3** — ← / → (octave down/up, −2…+2) and Shift, three unassigned pads, then the transport row: Play, Stop, Record. With Shift latched, ← / → step through the nine `DEVICE_PRESETS`. Record captures what you play on the keys; Play plays the take back.
 - **Bottom-right 3×3** — six unassigned pads above the recorder row: Tape (free timing, plays once), Sequencer (quantized to 16th notes at 120 BPM, loops whole bars), and a 120 BPM Metronome toggle.
 - **Theme** — first visit follows the system preference; the top-right button then toggles only between light and dark with a 400 ms cross-fade.
 
@@ -88,8 +90,12 @@ Three zones, each with its white keys on one row and every black key on the row 
 | `app/routes/home.tsx` | Route shell: gradient background, theme toggle, hosts The Device |
 | `app/components/home/SynthDevice.tsx` | The Device itself: layout, preset/knob/octave/chord state, hotkeys, keybed, screen |
 | `app/components/home/useTransport.ts` | Play/stop/record, tape vs sequencer takes, metronome |
+| `app/components/home/deviceEngine.ts` | The only audio module the Device imports: `DEVICE_PRESETS` (instrument, octave offset, primary/secondary controls), held-note routing, keybed → drum-piece map, volume, metronome |
+| `app/components/home/Oscilloscope.tsx` | Live scope on the engine's analyser (flat until audio starts) |
 | `app/components/design-system-v2/` | Device primitives exported via `index.ts`: `Key` (piano key with hotkey/note labels, hold to play), `Knob` (gear-edged stepped knob: drag, scroll, click), `Pad` (square pad with an icon or text face; also exports `pressProps`) |
-| `app/lib/synth.ts` | Shared synth engine; The Device plays through `synth.loadPreset`, `playNote` / `stopNote`, `updateParam`, `playMetronomeTick` |
+| `app/lib/physical/` | Physical-modeling synth engine (see below) |
+| `app/components/lab/` | Instrument Lab: audition, tuning and diagnostics harness (Storybook only) |
+| `app/lib/synth.ts` | Legacy engine, `/studio` only |
 
 Design rules for The Device:
 
@@ -99,12 +105,33 @@ Design rules for The Device:
 - Pads trigger on press (pointerdown); keys sound while held; knobs step on drag, scroll, or click.
 - Keyboard hotkeys must never overlap between keys and any future pad shortcuts.
 
+## Synth engine
+
+The Device plays through a physical-modeling engine in `app/lib/physical/`, following `docs/new-synth-plan.md`. Every voice is an exciter → resonator chain rendered sample-accurately inside one TypeScript `AudioWorkletProcessor`:
+
+| Family | Instruments | Model |
+| --- | --- | --- |
+| Struck and plucked strings | piano, acoustic guitar, electric bass, upright bass | single-delay-loop string with dispersion, loss and exact fractional tuning; felt-hammer simulation or pick/finger plucks; unison strings, polarizations, dampers, sustain pedal, per-string allocation |
+| Bowed string | violin | STK `Bowed` with the Maestre body filter, delayed vibrato |
+| Blown | flute, alto sax | STK `Flute` / `Saxofony` with breath envelope on pressure, mono legato and portamento; the sax bell reflection tracks the note so the whole range speaks |
+| Struck membranes and metals | drum kit, 808 kit | modal membranes (pitch drop, beater click, snare wires), seeded metal tables, clap, hat choke |
+
+Around the voices: per-instrument buses with a modal or radiation body and drive, a shared 8-line FDN reverb that sleeps when silent, master volume and a transparent safety clipper, then a browser limiter and analyser.
+
+- **Layout** — `dsp/` building blocks, `models/` instruments, `engine/` (render loop, event queue, voice lifecycle, buses), `patches/` (per-instrument constants, `ParamSpec` macros and measured tuning tables), `offline/` (pure-TS renderer, OfflineAudioContext renderer, analysis and diagnostics). Only `processor.worklet.ts` touches worklet globals; nothing touches Web Audio at import time, so prerendering is safe.
+- **API** — `physicalSynth` (from `app/lib/physical`): `start()` from a user gesture, `noteOn`/`noteOff` (reference-counted per note), `hit`, `setSustain`, `metronomeTick`, `setParam`, `allNotesOff`, `getAnalyser`, `onStats`. Events sent before the worklet is ready are queued.
+- **Calibration** — string tuning is exact by construction (loop phase delays are compensated at the fundamental). Flute, sax and violin use measured `tuningCents` tables per sample rate (44.1 / 48 kHz); re-bake them after changing those loops. Output gains put a mezzo-forte C4 at −18 dBFS RMS; drum pieces peak at −3 dBFS.
+- **Audition and tune** — Storybook › `Lab/Instrument Lab`: press Start audio, pick an instrument, play with the mouse or `A W S E D F T G Y H U J K` (`Z`/`X` octave, hold Space for sustain), tweak the generated parameter panel, and use **Copy patch JSON** to move tuned values into `patches/*.ts`. The Diagnostics tab runs the tuning, decay, stability, level, onset/lifecycle and stress sweeps through the real worklet.
+- **Add a patch** — add a `patches/<name>.ts` (a `StringPatch`, `BorePatch`, `BowedPatch` or `DrumKitPatch` with a `ParamSpec` list from `patches/params.ts`), add its id to `messages.ts` and `PATCHES`, then calibrate with the Lab.
+- **Add a Device preset** — add an entry to `DEVICE_PRESETS` in `deviceEngine.ts` (target instrument, octave offset, optional param overrides, primary/secondary control ids) and a matching icon in `PRESET_ICONS`.
+
 ## Storybook
 
-Stories are colocated with their components (`Component.stories.tsx`) and organized under two top-level titles. Components used only by `/studio` have no stories.
+Stories are colocated with their components (`Component.stories.tsx`) and organized under three top-level titles. Components used only by `/studio` have no stories.
 
 - **`Design System V2/*`** — `Key`, `Knob`, `Pad`.
 - **`Home/*`** — `Device` (`SynthDevice`).
+- **`Lab/*`** — `Instrument Lab` (dev tool; not mounted in any route).
 
 Setup conventions:
 
@@ -115,7 +142,7 @@ Setup conventions:
 
 ## Ignore `/studio`
 
-The `/studio` route is the initial legacy project (multi-track mixer, piano roll, presets panel). It will be re-implemented around The Device. Do not extend, refactor, or reuse it as a reference for new work — build new functionality into the home page and `design-system-v2` instead. Shared, already-extracted pieces (`app/lib/synth.ts`, `SynthVisualizers`) may be imported.
+The `/studio` route is the initial legacy project (multi-track mixer, piano roll, presets panel). It will be re-implemented around The Device. Do not extend, refactor, or reuse it as a reference for new work — build new functionality into the home page and `design-system-v2` instead. Shared, already-extracted pieces (`SynthVisualizers`) may be imported; new audio work goes into `app/lib/physical/`, not `app/lib/synth.ts`.
 
 ## Agent Guidelines
 
