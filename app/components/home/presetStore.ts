@@ -2,29 +2,50 @@ import { useSyncExternalStore } from "react";
 import { PATCH_BY_ID } from "../../lib/physical/patches";
 import { DEVICE_PRESETS, type DevicePreset } from "./deviceEngine";
 
-// Saved presets (`instruments`) and which preset each of the eight preset
-// pads plays (`buttons`, "" for an empty pad), persisted in localStorage.
+// Saved presets (`instruments`) and which preset each of the six preset
+// pads plays (`buttons`) and plays with Shift held (`shiftButtons`), "" for
+// none, persisted in localStorage.
 export type PresetEdits = Readonly<Record<string, number>>;
 
 export interface PresetLibrary {
   instruments: readonly DevicePreset[];
   buttons: readonly string[];
+  shiftButtons: readonly string[];
   // Param changes made to each preset since it was picked, by preset id, kept
   // apart from the preset itself so Reset can drop them.
   edits: Readonly<Record<string, PresetEdits>>;
 }
 
 const STORAGE_KEY = "studio.instruments";
-const PRESET_PADS = 8;
+const PRESET_PADS = 6;
 
-// The built-in presets fill the first pads; the rest start empty.
+// What the pads play at first, and with Shift a relative from the same family.
+// Every built-in preset stays in the library to bind to any pad.
+const DEFAULT_PADS = [
+  "piano",
+  "guitar",
+  "uprightBass",
+  "flute",
+  "saxophone",
+  "drums",
+];
+const DEFAULT_SHIFT_PADS = [
+  "harp",
+  "electricGuitar",
+  "bass",
+  "violin",
+  "trumpet",
+  "drums808",
+];
+
+const padList = (ids: readonly string[]) =>
+  Array.from({ length: PRESET_PADS }, (_, pad) => ids[pad] ?? "");
+
 const DEFAULT_LIBRARY: PresetLibrary = {
   instruments: [],
   edits: {},
-  buttons: Array.from(
-    { length: PRESET_PADS },
-    (_, pad) => DEVICE_PRESETS[pad]?.id ?? "",
-  ),
+  buttons: padList(DEFAULT_PADS),
+  shiftButtons: padList(DEFAULT_SHIFT_PADS),
 };
 
 let library: PresetLibrary | null = null;
@@ -50,10 +71,11 @@ function read(): PresetLibrary {
       ...DEVICE_PRESETS.map((preset) => preset.id),
       ...instruments.map((preset) => preset.id),
     ]);
-    const buttons = DEFAULT_LIBRARY.buttons.map((fallback, i) => {
-      const id = stored?.buttons?.[i];
-      return typeof id === "string" && known.has(id) ? id : fallback;
-    });
+    const pads = (field: "buttons" | "shiftButtons") =>
+      DEFAULT_LIBRARY[field].map((fallback, i) => {
+        const id = stored?.[field]?.[i];
+        return typeof id === "string" && known.has(id) ? id : fallback;
+      });
     // Only finite values for params the preset's instrument has.
     const edits: Record<string, PresetEdits> = {};
     for (const preset of [...DEVICE_PRESETS, ...instruments]) {
@@ -72,7 +94,12 @@ function read(): PresetLibrary {
       );
       if (Object.keys(clean).length > 0) edits[preset.id] = clean;
     }
-    return { instruments, buttons, edits };
+    return {
+      instruments,
+      buttons: pads("buttons"),
+      shiftButtons: pads("shiftButtons"),
+      edits,
+    };
   } catch {
     return DEFAULT_LIBRARY;
   }
@@ -81,12 +108,20 @@ function read(): PresetLibrary {
 function update(change: (current: PresetLibrary) => PresetLibrary) {
   library = change(library ?? read());
   // Pads still on their default preset are stored as null, so they follow
-  // later changes to the default order.
-  const buttons = library.buttons.map((id, i) =>
-    id === DEFAULT_LIBRARY.buttons[i] ? null : id,
-  );
+  // later changes to the defaults.
+  const stored = (field: "buttons" | "shiftButtons") =>
+    library![field].map((id, i) =>
+      id === DEFAULT_LIBRARY[field][i] ? null : id,
+    );
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...library, buttons }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        ...library,
+        buttons: stored("buttons"),
+        shiftButtons: stored("shiftButtons"),
+      }),
+    );
   } catch {
     // Storage can be unavailable (private mode); the change still applies.
   }
@@ -182,9 +217,11 @@ export function clearEdits(presetId: string) {
   update((lib) => ({ ...lib, edits: without(lib.edits, presetId) }));
 }
 
-export function bindPad(pad: number, presetId: string) {
+// Binds a preset to a pad, or with shift to the pad's Shift alternate.
+export function bindPad(pad: number, presetId: string, shift = false) {
+  const field = shift ? "shiftButtons" : "buttons";
   update((lib) => ({
     ...lib,
-    buttons: lib.buttons.map((id, i) => (i === pad ? presetId : id)),
+    [field]: lib[field].map((id, i) => (i === pad ? presetId : id)),
   }));
 }

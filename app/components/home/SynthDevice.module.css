@@ -5,6 +5,9 @@
 .stage {
   --gap: 32px;
   --inset: 11px;
+  /* The screen's width over its height. It is always eight pads (621px) wide,
+     so this sets the height of the top row and of the whole device. */
+  --screen-aspect: 2.39;
 
   display: grid;
   place-items: center;
@@ -15,13 +18,20 @@
 }
 
 .frame {
-  /* tan(atan2(a, b)) divides two lengths into a plain number, so the
-     1238×606 device scales to fit its container without JavaScript. */
-  --scale: min(1, tan(atan2(100cqw, 1238px)), tan(atan2(100cqh, 606px)));
+  /* The screen's height plus 438px: 2 gaps, two pad rows, three insets and the
+     key well's 226, less the 21px the screen reaches up into the bezel. */
+  --device-height: calc(621px / var(--screen-aspect) + 438px);
+  /* tan(atan2(a, b)) divides two lengths into a plain number, so the 1001px
+     wide device scales to fit its container without JavaScript. */
+  --scale: min(
+    1,
+    tan(atan2(100cqw, 1001px)),
+    tan(atan2(100cqh, var(--device-height)))
+  );
 
   position: relative;
-  width: calc(1238px * var(--scale));
-  height: calc(606px * var(--scale));
+  width: calc(1001px * var(--scale));
+  height: calc(var(--device-height) * var(--scale));
 }
 
 /* Theme colors are color-mix(light, dark var(--theme-mix)) so they fade with
@@ -32,17 +42,16 @@
   --synth-red: #cd5951;
   --synth-green: #4ba078;
   --synth-blue: #2f7de1;
-  /* 2×147 sides + 858 middle + 2 insets + 2 gaps wide; a 226 top row (3 pad
-     rows) + an inset + a 305 bottom row (4) + 2 gaps tall. The key well runs
-     on through the bottom bezel to the edge. The screen above is 974px wide. */
+  /* Twelve 68px pads and their insets (937) + 2 gaps wide; --device-height
+     tall. The key well runs on through the bottom bezel to the edge. */
   position: absolute;
   top: 0;
   left: 0;
   display: flex;
   flex-direction: column;
   gap: var(--inset);
-  width: 1238px;
-  height: 606px;
+  width: 1001px;
+  height: var(--device-height);
   padding: var(--gap);
   border-radius: 88px;
   corner-shape: squircle;
@@ -68,70 +77,47 @@
       ),
     inset 0 -3px 0
       color-mix(in srgb, rgb(0 0 0 / 0.08), rgb(0 0 0 / 0.35) var(--theme-mix));
+  /* Clips the key well, which runs out through the bottom bezel, to the
+     rounded corners. */
+  overflow: clip;
   transform: scale(var(--scale));
   transform-origin: 0 0;
   user-select: none;
 }
 
-.row {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--inset);
-}
-
-/* The top row: two 74px knobs at each outer edge, then the screen, which is
-   wider than the key well. The knobs sit 26px from the screen and are spread
-   evenly over the full height from the device's top edge to the preset row
-   (about 40px above, between and below). */
+/* The top row is laid on the pad grid: the screen spans the middle eight
+   columns (621px wide at --screen-aspect, reaching up into the bezel) and
+   each knob pair is centred over the two columns either side. The knobs are
+   spread evenly over the full height from the device's top edge to the first
+   pad row. */
 .topRow {
   display: grid;
-  grid-template-columns: 74px minmax(0, 1fr) 74px;
-  column-gap: 26px;
-  height: 226px;
+  grid-template-columns: 147px 621px 147px;
+  column-gap: var(--inset);
+  height: calc(621px / var(--screen-aspect) - var(--gap) + var(--inset));
 }
 
 .knobColumn {
-  --knob-size: 74px;
+  --knob-size: 81.6px;
 
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: space-evenly;
   margin-top: calc(-1 * var(--gap));
   margin-bottom: calc(-1 * var(--inset));
 }
 
-/* The side columns: a row level with the preset row (Save and Shift on the
-   left; LFO and FX on the right) over a 2×3 bank of controls or chords, 68px
-   pads throughout. The row gaps match the pad gaps, so the whole row reads as
-   one line of pads. */
-.side {
+/* Two rows of twelve pads in four 3×2 banks: transport, tools, presets and
+   chords. Banks sit one inset apart, so the rows read as unbroken lines. */
+.banks {
   display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
   gap: var(--inset);
-  width: 147px;
 }
 
-.pads {
+.bank {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--inset);
-}
-
-/* The preset row over the key well, on the same grid as the side columns. */
-.middle {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  gap: var(--inset);
-  width: 858px;
-}
-
-/* Synth, the metronome, the eight presets and ADSR fill the 858px middle
-   column. */
-.toolbar,
-.toolGroup {
-  display: flex;
+  grid-template-columns: repeat(3, 68px);
   gap: var(--inset);
 }
 
@@ -143,12 +129,13 @@
 }
 
 /* A recess cut into the bottom edge, like a laptop's lid notch: rounded at the
-   top and running out through the bezel. 56px white keys on a 60px pitch fill
-   its 858px width with an --inset gutter, and the keys take the depth the well
-   gains from the bezel. */
+   top and running out through the bezel, as wide as the twelve pads above.
+   Fourteen white keys 4px apart fill its 915px inside an --inset gutter, and
+   the keys take the depth the well gains from the bezel. */
 .keybed {
-  --white-key-width: 56px;
-  --black-key-width: 34px;
+  --white-key-width: calc((915px - 13 * 4px) / 14);
+  --black-key-width: 37px;
+  --key-pitch: calc(var(--white-key-width) + 4px);
   --white-key-height: 247px;
   --black-key-height: 150px;
 
@@ -187,7 +174,7 @@
 
 .keys {
   position: relative;
-  width: 836px;
+  width: 915px;
   height: 247px;
 }
 
@@ -197,10 +184,10 @@
 }
 
 .whiteSlot {
-  left: calc(var(--slot) * 60px);
+  left: calc(var(--slot) * var(--key-pitch));
 }
 
-/* Centers each 34px black key on the 4px gap before white key --slot. */
+/* Centers each black key on the 4px gap before white key --slot. */
 .blackSlot {
-  left: calc(var(--slot) * 60px - 19px);
+  left: calc(var(--slot) * var(--key-pitch) - 2px - var(--black-key-width) / 2);
 }

@@ -5,11 +5,11 @@ export interface OscilloscopeProps {
   className?: string;
 }
 
-const TRACE = "#f4f3ef";
-const GRID = "#2a2a2a";
+const GRID_ALPHA = 0.16;
 
 // Live output waveform, triggered on a rising zero crossing so periodic tones
-// stand still. Draws a flat line until audio starts.
+// stand still. Draws a flat line until audio starts. The trace and its centre
+// line take the canvas's CSS color, so they follow the theme.
 export function Oscilloscope({ getAnalyser, className }: OscilloscopeProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
 
@@ -31,17 +31,18 @@ export function Oscilloscope({ getAnalyser, className }: OscilloscopeProps) {
       }
       context.clearRect(0, 0, width, height);
       const mid = height / 2;
+      const ink = getComputedStyle(element).color;
 
       context.setLineDash([3 * ratio, 5 * ratio]);
-      context.strokeStyle = GRID;
+      context.strokeStyle = ink;
+      context.globalAlpha = GRID_ALPHA;
       context.lineWidth = ratio;
       context.beginPath();
       context.moveTo(0, mid);
       context.lineTo(width, mid);
       context.stroke();
       context.setLineDash([]);
-
-      context.strokeStyle = TRACE;
+      context.globalAlpha = 1;
       context.lineWidth = 2.5 * ratio;
       context.lineJoin = "round";
       context.lineCap = "round";

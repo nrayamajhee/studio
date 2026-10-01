@@ -29,6 +29,115 @@ export function ViolinIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// A solid body with two pointed horns, a long neck and two pickups.
+export function ElectricGuitarIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 2v9.5" />
+      <path d="M9.6 12.2 7.4 9.8c-1.4.4-2.1 1.7-1.7 3.1.3 1 1 1.5 1 2.4 0 1.1-1.4 1.8-1.4 3.4 0 1.9 1.9 3.3 4.2 3.3h5c2.3 0 4.2-1.4 4.2-3.3 0-1.6-1.4-2.3-1.4-3.4 0-.9.7-1.4 1-2.4.4-1.4-.3-2.7-1.7-3.1l-2.2 2.4" />
+      <path d="M10 15.5h4" />
+      <path d="M10 18.5h4" />
+    </svg>
+  );
+}
+
+// A classical guitar standing upright: round soundhole and a tie-block bridge.
+export function NylonGuitarIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 2v7.5" />
+      <path d="M12 9.5c-2.2 0-3.5 1.2-3.5 2.8 0 1.2.8 1.7.8 2.4s-1.8 1.2-1.8 3.4c0 2.3 2 3.9 4.5 3.9s4.5-1.6 4.5-3.9c0-2.2-1.8-2.7-1.8-3.4s.8-1.2.8-2.4c0-1.6-1.3-2.8-3.5-2.8z" />
+      <circle cx="12" cy="15" r="1.3" />
+      <path d="M10.5 19h3" />
+    </svg>
+  );
+}
+
+// A cello: rounded shoulders, f-holes and an endpin, no bow.
+export function CelloIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 1.5v5" />
+      <path d="M12 6.5c-2.6 0-3.6 1.4-3.6 2.9 0 1.2 1.2 1.8 1.2 2.6s-2.4 1.4-2.4 4.1c0 2.6 2.1 4.4 4.8 4.4s4.8-1.8 4.8-4.4c0-2.7-2.4-3.3-2.4-4.1s1.2-1.4 1.2-2.6c0-1.5-1-2.9-3.6-2.9z" />
+      <path d="M10.4 14v2.4" />
+      <path d="M13.6 14v2.4" />
+      <path d="M12 20.5v2" />
+    </svg>
+  );
+}
+
+// A harp: the column, the curved neck and the slanted soundboard, strung.
+export function HarpIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 21V4.5" />
+      <path d="M5 4.5c2.5-1.8 4.5.8 7.5-.3s4-2 6.5-1.2" />
+      <path d="M6 21 19 3" />
+      <path d="M4 21h4" />
+      <path d="M8.5 5v11" />
+      <path d="M12 4.4v7.2" />
+      <path d="M15.5 3.6v3.6" />
+    </svg>
+  );
+}
+
+// A trumpet: mouthpiece, three valves over the leadpipe, a loop of tubing
+// below and the flared bell.
+export function TrumpetIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M2 8.5v3" />
+      <path d="M2 10h12.5" />
+      <path d="M14.5 9c3 0 4.8-1.9 7-3.5v9c-2.2-1.6-4-3.5-7-3.5" />
+      <path d="M6 10v3.5c0 .8.6 1.5 1.5 1.5h7v-3" />
+      <path d="M8 6.5V10" />
+      <path d="M10.5 6.5V10" />
+      <path d="M13 6.5V10" />
+    </svg>
+  );
+}
+
+// A bass trumpet: the trumpet's valves and loop, a longer wrap and a wider
+// bell turned up.
+export function BassTrumpetIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M2 11.5v3" />
+      <path d="M2 13h11" />
+      <path d="M13 12c2.6-.6 4-3 4.8-6.5L22 7.5c-1.4 3.4-3.7 6.6-8.4 7.4" />
+      <path d="M5 13v4c0 .8.6 1.5 1.5 1.5H14V15" />
+      <path d="M7 9.5V13" />
+      <path d="M9.5 9.5V13" />
+      <path d="M12 9.5V13" />
+    </svg>
+  );
+}
+
+// A tabla pair from the side: the bowl-shaped bayan and the taller dayan.
+export function TablaIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <ellipse cx="7.5" cy="10" rx="5" ry="1.6" />
+      <path d="M2.5 10c0 5.4 2.2 9.5 5 9.5s5-4.1 5-9.5" />
+      <ellipse cx="17.5" cy="7" rx="3.5" ry="1.2" />
+      <path d="M14 7v11c0 1 1.6 1.8 3.5 1.8S21 19 21 18V7" />
+    </svg>
+  );
+}
+
+// A madal lying on its side: a barrel with a head at each end, laced across.
+export function MadalIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <ellipse cx="4.5" cy="12" rx="1.8" ry="4.5" />
+      <ellipse cx="19.5" cy="12" rx="1.5" ry="3.8" />
+      <path d="M4.5 7.5c5-1.4 10-1.4 15 .7" />
+      <path d="M4.5 16.5c5 1.4 10 1.4 15-.7" />
+      <path d="m7.5 7.6 2.5 8.8 2.5-8.8 2.5 8.8 2.5-8.6" />
+    </svg>
+  );
+}
+
 // An envelope: attack up, decay down, a sustain plateau, release to zero.
 export function AdsrIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -117,9 +226,10 @@ export function CrashIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-// What each key shows when a kit is selected.
+// What each key shows when a kit is selected: an icon, or for hand-drum
+// strokes their syllable.
 export const DRUM_PIECES: Readonly<
-  Record<DrumPieceId, { name: string; Icon: ComponentType }>
+  Record<DrumPieceId, { name: string; Icon?: ComponentType }>
 > = {
   kick: { name: "Kick", Icon: KickIcon },
   snare: { name: "Snare", Icon: Drum },
@@ -130,4 +240,15 @@ export const DRUM_PIECES: Readonly<
   cowbell: { name: "Cowbell", Icon: Bell },
   closedHat: { name: "Closed hat", Icon: ClosedHatIcon },
   openHat: { name: "Open hat", Icon: OpenHatIcon },
+  na: { name: "Na" },
+  ta: { name: "Ta" },
+  tin: { name: "Tin" },
+  tun: { name: "Tun" },
+  te: { name: "Te" },
+  ti: { name: "Ti" },
+  ge: { name: "Ge" },
+  ke: { name: "Ke" },
+  ka: { name: "Ka" },
+  dha: { name: "Dha" },
+  dhin: { name: "Dhin" },
 };

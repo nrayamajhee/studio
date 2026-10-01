@@ -1,6 +1,7 @@
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
 import { Button } from "../design-system/Button";
 import { cn } from "../../lib/utils";
+import { keepFocus } from "./Pad";
 import styles from "./Key.module.css";
 
 export interface KeyProps {
@@ -16,8 +17,8 @@ export interface KeyProps {
   style?: CSSProperties;
 }
 
-const isActivation = (event: KeyboardEvent) =>
-  event.key === " " || event.key === "Enter";
+// Space is the Device's Play key, so only Return presses a focused control.
+const isActivation = (event: KeyboardEvent) => event.key === "Enter";
 
 export function Key({
   label,
@@ -41,6 +42,7 @@ export function Key({
       data-lit={lit || undefined}
       className={cn(styles.key, styles[variant], className)}
       style={style}
+      {...keepFocus}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         event.currentTarget.setPointerCapture(event.pointerId);

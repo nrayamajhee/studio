@@ -1,23 +1,37 @@
-/* The Device's top row (226px) plus the 21px it reaches up into the bezel. */
+/* 2.39:1 unless the Device sets --screen-aspect. */
 .screen {
-  height: 247px;
+  /* The glass stays black with chalk ink in either theme; only the bezel
+     around it follows the page. */
+  --screen-bg: #050505;
+  --screen-ink: #f4f3ef;
+  --screen-red: #cd5951;
+  --screen-green: #4ba078;
+  --screen-blue: #2f7de1;
+
+  aspect-ratio: var(--screen-aspect, 2.39);
   padding: 8px;
+  /* Pressed in: a darker top edge, a light lip along the bottom, and a soft
+     shadow falling inside from the top and sides. */
+  border-top: 1.5px solid
+    color-mix(in srgb, rgb(20 20 19 / 0.3), rgb(0 0 0 / 0.75) var(--theme-mix));
+  border-bottom: 1.5px solid
+    color-mix(in srgb, #ffffff, rgb(255 255 255 / 0.12) var(--theme-mix));
   border-radius: 22px;
-  /* The bezel matches the glass, so no ring shows at the sides; only a light
-     edge on top and a shadow beneath lift it off the surface. */
-  background: #050505;
+  background: var(--screen-bg);
   box-shadow:
-    inset 0 1px 0
+    inset 0 12px 20px -12px
+      color-mix(in srgb, rgb(20 20 19 / 0.3), rgb(0 0 0 / 0.8) var(--theme-mix)),
+    inset 12px 0 18px -14px
       color-mix(
         in srgb,
-        rgb(255 255 255 / 0.28),
-        rgb(255 255 255 / 0.12) var(--theme-mix)
+        rgb(20 20 19 / 0.18),
+        rgb(0 0 0 / 0.6) var(--theme-mix)
       ),
-    0 6px 10px -6px
+    inset -12px 0 18px -14px
       color-mix(
         in srgb,
-        rgb(20 20 19 / 0.45),
-        rgb(0 0 0 / 0.7) var(--theme-mix)
+        rgb(20 20 19 / 0.18),
+        rgb(0 0 0 / 0.6) var(--theme-mix)
       );
 }
 
@@ -28,8 +42,7 @@
   height: 100%;
   padding: 0 20px;
   border-radius: 14px;
-  color: #f4f3ef;
-  background: #050505;
+  color: var(--screen-ink);
 }
 
 .readout {
@@ -47,7 +60,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: rgb(244 243 239 / 0.6);
+  color: color-mix(in srgb, var(--screen-ink) 60%, transparent);
 }
 
 .readoutBottom {
@@ -57,10 +70,11 @@
 
 .scope {
   width: 100%;
-  height: 150px;
+  color: var(--screen-ink);
+  height: 160px;
 }
 
-/* Views sit in the ~888 × 171 space between the two readouts. */
+/* Views sit in the ~565 × 181 space between the two readouts. */
 .params,
 .tiles,
 .module {
@@ -74,9 +88,9 @@
 
 .params {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-template-rows: repeat(4, minmax(0, 1fr));
-  gap: 4px 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  gap: 0 18px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -86,22 +100,20 @@
   justify-content: space-between;
   gap: 6px;
   min-width: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
+  /* A hairline that turns blue on keyboard focus, like the tiles; the margin
+     keeps the text lined up with the readouts. */
+  margin: 0 -7px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
-  line-height: 16px;
-  color: #f4f3ef;
+  line-height: 18px;
+  color: var(--screen-ink);
   background: transparent;
   translate: none;
   transition: none;
-}
-
-.param:focus-visible {
-  outline: 2px solid var(--synth-blue, #2f7de1);
-  outline-offset: 2px;
 }
 
 .paramLabel {
@@ -110,7 +122,7 @@
   white-space: nowrap;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: rgb(244 243 239 / 0.55);
+  color: color-mix(in srgb, var(--screen-ink) 55%, transparent);
 }
 
 .paramValue {
@@ -119,39 +131,35 @@
 }
 
 .selectionLabel {
-  color: var(--synth-red, #cd5951);
+  color: var(--screen-red);
 }
 
 .selectionValue {
-  color: var(--synth-blue, #2f7de1);
+  color: var(--screen-blue);
 }
 
 /* The red knob picks this param and the blue knob sets its value. */
 .selected .paramLabel {
-  color: var(--synth-red, #cd5951);
+  color: var(--screen-red);
 }
 
 .selected .paramValue {
-  color: var(--synth-blue, #2f7de1);
+  color: var(--screen-blue);
 }
 
-/* The library is one row of 8 square tiles. */
+/* The library is two rows of 4 tiles filling the view. */
 .tiles {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  align-content: center;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: 6px;
   overflow: hidden;
 }
 
-.tiles .tile {
-  aspect-ratio: 1;
-}
-
-/* Icons are two rows of 11 squares as wide as the view allows (~66 px), 22 a
+/* Icons are two rows of 12 squares as wide as the view allows (~42 px), 24 a
    page, centred in its height. */
 .iconTiles {
-  grid-template-columns: repeat(11, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-rows: none;
   align-content: center;
 }
@@ -163,8 +171,8 @@
 }
 
 .iconTiles .tileIcon svg {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
 }
 
 .tile {
@@ -176,9 +184,9 @@
   gap: 4px;
   min-width: 0;
   padding: 0 4px;
-  border: 1px solid rgb(244 243 239 / 0.12);
+  border: 1px solid color-mix(in srgb, var(--screen-ink) 12%, transparent);
   border-radius: 8px;
-  color: rgb(244 243 239 / 0.75);
+  color: color-mix(in srgb, var(--screen-ink) 75%, transparent);
   background: transparent;
   translate: none;
   transition: none;
@@ -186,22 +194,27 @@
 
 /* Green marks whatever the green knob is moving through. */
 .seeking {
-  color: var(--synth-green, #4ba078);
+  color: var(--screen-green);
 }
 
 .tile[aria-pressed="true"] {
-  border-color: var(--synth-green, #4ba078);
+  border-color: var(--screen-green);
   color: #ffffff;
-  background: var(--synth-green, #4ba078);
+  background: var(--screen-green);
 }
 
 .tile[aria-pressed="true"] .badge {
   color: #ffffff;
 }
 
+/* Keyboard focus on the screen: the control's own hairline turns blue rather
+   than a ring around it, over the green of a selected tile too. */
+.param:focus-visible,
 .tile:focus-visible {
-  outline: 2px solid var(--synth-blue, #2f7de1);
-  outline-offset: 2px;
+  border-color: var(--screen-blue);
+  outline: none;
+  /* A second pixel inside the border, so it reads on a selected (green) tile. */
+  box-shadow: inset 0 0 0 1px var(--screen-blue);
 }
 
 .tileIcon {
@@ -213,8 +226,8 @@
 }
 
 .tileIcon svg {
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
 }
 
 /* Up to two lines, so "Acoustic Guitar" reads in full on a narrow tile. */
@@ -225,8 +238,8 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 8px;
-  line-height: 10px;
+  font-size: 12px;
+  line-height: 15px;
   letter-spacing: 0.02em;
   text-align: center;
   text-transform: uppercase;
@@ -238,7 +251,7 @@
   display: grid;
   place-items: center;
   border-radius: inherit;
-  background: rgb(5 5 5 / 0.55);
+  background: color-mix(in srgb, var(--screen-bg) 55%, transparent);
   pointer-events: none;
   animation: overlay-in 120ms ease-out;
 }
@@ -255,9 +268,9 @@
   gap: 10px;
   width: 62%;
   padding: 14px 18px 16px;
-  border: 1px solid rgb(244 243 239 / 0.18);
+  border: 1px solid color-mix(in srgb, var(--screen-ink) 18%, transparent);
   border-radius: 10px;
-  background: rgb(5 5 5 / 0.92);
+  background: color-mix(in srgb, var(--screen-bg) 92%, transparent);
 }
 
 .meterLabel {
@@ -276,12 +289,12 @@
   height: 12px;
   overflow: hidden;
   border-radius: 3px;
-  background: rgb(244 243 239 / 0.12);
+  background: color-mix(in srgb, var(--screen-ink) 12%, transparent);
 }
 
 .meterFill {
   height: 100%;
-  background: #f4f3ef;
+  background: var(--screen-ink);
   transition: width 160ms ease-out;
 }
 
@@ -314,7 +327,7 @@
   }
 }
 
-/* Four columns in line with the readouts below. Arrows join drive, chorus and
+/* Four columns over the readouts below. Arrows join drive, chorus and
    delay, which run in series; the reverb is fed separately by each
    instrument's send. */
 .fxMeters {
@@ -338,17 +351,17 @@
   content: "→";
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
-  color: rgb(244 243 239 / 0.3);
+  color: color-mix(in srgb, var(--screen-ink) 30%, transparent);
   translate: 0 -50%;
 }
 
 .fxTrack {
   position: relative;
-  width: 44px;
+  width: 56px;
   height: 100%;
   overflow: hidden;
   border-radius: 6px;
-  background: rgb(244 243 239 / 0.08);
+  background: color-mix(in srgb, var(--screen-ink) 8%, transparent);
 }
 
 .fxFill {
@@ -364,21 +377,22 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  line-height: 14px;
+  font-size: 13px;
+  line-height: 17px;
 }
 
+/* Label over value, centred in its column. */
 .stage {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  align-items: center;
   white-space: nowrap;
 }
 
 .stage > span:first-child {
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgb(244 243 239 / 0.55);
+  color: color-mix(in srgb, var(--screen-ink) 55%, transparent);
 }
 
 .stage > span:last-child {
@@ -393,5 +407,5 @@
   font-size: 8px;
   font-weight: 700;
   line-height: 10px;
-  color: var(--synth-red, #cd5951);
+  color: var(--screen-red);
 }

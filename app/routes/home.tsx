@@ -62,8 +62,7 @@ export default function Home() {
       <footer
         className="absolute inset-x-0 bottom-6 z-10 text-center text-sm select-text"
         style={{
-          color:
-            "color-mix(in srgb, rgb(20 20 19 / 0.6), rgb(244 243 239 / 0.7) var(--theme-mix))",
+          color: "color-mix(in srgb, #000000, #ffffff var(--theme-mix))",
         }}
       >
         <Link

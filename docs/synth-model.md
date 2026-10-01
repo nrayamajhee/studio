@@ -185,7 +185,7 @@ When all voices are busy, `pickVictim` chooses which one to reuse: the **quietes
 
 ## 5. The instruments
 
-### 5.1 Strings: piano, acoustic guitar, electric bass, upright bass
+### 5.1 Strings: piano, guitars, basses and harp
 
 `models/StringLoop.ts` is an extended **Karplus-Strong** loop. A wave travels around a delay line, and each trip through the loop filters it a little:
 
@@ -263,8 +263,10 @@ The exciter writes a short burst into a buffer, and the loop adds it in sample b
 - **Re-striking** a key that is still sounding re-excites the same loops, so the old vibration keeps going underneath the new one, as it would on a real string.
 - **Dampers.** A note-off ramps the loop's T60 down to the damper T60 over 15 ms. With the sustain pedal down, the damping waits until the pedal lifts. Piano keys above F6 have no dampers, like a real piano.
 - **Strum.** Chord-macro notes arrive as a burst within 15 ms. If the Strum param is set, each note in the burst is delayed a few more milliseconds than the last.
+- **Electric guitar and bass** have no acoustic body. A pickup tap subtracts the loop read a few samples away (the comb filter of a magnetic pickup), and the bus drive stands in for the amp. The **nylon guitar** uses the finger exciter, darker loss and less stiffness than steel.
+- **Harp.** A string per key, and no dampers anywhere in its range, so every note rings until it fades.
 
-### 5.2 Blown: flute and alto sax (ported from STK)
+### 5.2 Blown: flute, alto sax, trumpet and bass trumpet (ported from STK)
 
 A wind instrument is a nonlinear "mouth" coupled to a tube. Pressure waves travel down the tube, reflect off the open end or bell, and come back to disturb the jet or reed. That disturbance is what keeps the note going.
 
@@ -282,13 +284,21 @@ A wind instrument is a nonlinear "mouth" coupled to a tube. Pressure waves trave
                                                      output
 ```
 
-|            | Flute (STK `Flute`)                                                       | Sax (STK `Saxofony`)                                             |
-| ---------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Mouth      | air jet: its own delay (Jet ratio × tube) then `x(x² − 1)`, clamped       | reed table `0.7 + slope·x`, slope = 0.1 + 0.4 × Reed stiffness   |
-| Tube       | tuned to 2/3 of the note, so the jet overblows it into the right register | split into reed-side and bell-side sections at the Blow position |
-| Reflection | one-pole lowpass, inverted, DC-blocked                                    | −0.95 × lowpass with cutoff **14 × f0** (min 500 Hz)             |
+|            | Flute (STK `Flute`)                                                       | Sax (STK `Saxofony`)                                             | Brass (STK `Brass`)                                                          |
+| ---------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Mouth      | air jet: its own delay (Jet ratio × tube) then `x(x² − 1)`, clamped       | reed table `0.7 + slope·x`, slope = 0.1 + 0.4 × Reed stiffness   | lips: a resonance at the note; its output squared and clipped is the opening |
+| Tube       | tuned to 2/3 of the note, so the jet overblows it into the right register | split into reed-side and bell-side sections at the Blow position | two periods long, so the lips lock onto its second mode                      |
+| Reflection | one-pole lowpass, inverted, DC-blocked                                    | −0.95 × lowpass with cutoff **14 × f0** (min 500 Hz)             | 0.85 back at the lips, DC-blocked                                            |
 
 STK fixes the sax's bell lowpass at about 740 Hz. That makes low notes overblow an octave up and high notes fail to speak. On a real sax the open tone holes move the reflection with the note, so here the cutoff tracks f0.
+
+STK's lip resonance (radius 0.997, input gain 0.03) has a DC gain of about 0.03/ω², so low notes hold the lips wide open and never oscillate. Here its Q and gain are fixed relative to the note instead:
+
+```text
+   r = 1 - 0.026 w          gain = 2.26 w^2          (w = 2 pi f_lip / fs)
+```
+
+These match STK at 880 Hz, where it speaks well, and keep the lips behaving the same at every pitch, so both trumpets speak from E2 to C6. Lip tension moves the resonance ±0.05 octave, brightening and bending the note as tightening real lips does.
 
 Shared behavior:
 
@@ -297,7 +307,7 @@ Shared behavior:
 - **Watchdog.** If the loop ever blows up (|out| > 4, or NaN), it is cleared and a warning is posted once.
 - **Measured tuning.** A nonlinear loop settles slightly off the pitch its delay implies. Each patch carries a `tuningCents` table measured at 44.1 and 48 kHz, and the engine picks the closest rate.
 
-### 5.3 Bowed: violin (STK `Bowed`)
+### 5.3 Bowed: violin and cello (STK `Bowed`)
 
 The bow sits on the string, splitting it into a neck side and a bridge side. At every sample the bow compares its own velocity with the string's velocity under it. The friction curve decides whether the string **sticks** to the bow or **slips** free, and that stick-slip cycle is the sawtooth-like motion a bowed string makes.
 
@@ -321,8 +331,9 @@ The bow sits on the string, splitting it into a neck side and a bridge side. At 
 
 - Up to 4 voices (double stops and chords). Vibrato modulates the neck length and fades in after 0.3 s, the way a player adds it late.
 - The body filter was designed at 44.1 kHz. Its pole/zero pairs are rescaled to the actual sample rate so the resonances stay put.
+- The **cello** runs the same loop an octave and a fifth lower. The violin's filter would put its resonances in the wrong place, so the cello uses the bus's modal body instead (air and wood modes near 100 and 200 Hz); its Body knob is that body's mix.
 
-### 5.4 Drums: Drum Kit and 808 Kit
+### 5.4 Drums: Drum Kit, 808 Kit, Madal and Tabla
 
 Drums use **modal synthesis**: the resonator is a bank of decaying sine waves, one per vibration mode. Each mode is a two-pole resonator:
 
@@ -349,13 +360,15 @@ Drums use **modal synthesis**: the resonator is a bank of decaying sine waves, o
    x level x velocity  ->  pan  ->  kit bus
 ```
 
-| Piece model                      | How it's built                                                                                                                                                                 |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **membrane** (kick, snare, toms) | Ideal circular-membrane ratios 1, 1.593, 2.136, 2.295, 2.653, …. **Position** blends center hits (only the symmetric modes) toward edge hits (all modes). Optional shell mode. |
-| **metal** (hats, cowbell, crash) | Either a table of modes or a seeded log-spread set: `T60_i = T60 (f_lo / f_i)^0.3`, amplitude `1/sqrt(i+1)` ± 30 %. A closed hat **chokes** the open hat (30 ms).              |
-| **noise** (clap)                 | Several short noise bursts a few ms apart (slightly jittered), then a decaying tail, all through a bandpass.                                                                   |
+| Piece model                      | How it's built                                                                                                                                                                                                                                                                                          |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **membrane** (kick, snare, toms) | Ideal circular-membrane ratios 1, 1.593, 2.136, 2.295, 2.653, …. **Position** blends center hits (only the symmetric modes) toward edge hits (all modes). Optional shell mode.                                                                                                                          |
+| **metal** (hats, cowbell, crash) | Either a table of modes or a seeded log-spread set: `T60_i = T60 (f_lo / f_i)^0.3`, amplitude `1/sqrt(i+1)` ± 30 %. A closed hat **chokes** the open hat (30 ms).                                                                                                                                       |
+| **noise** (clap)                 | Several short noise bursts a few ms apart (slightly jittered), then a decaying tail, all through a bandpass.                                                                                                                                                                                            |
+| **loaded** (madal, tabla)        | A head loaded with paste (syahi, kharee) has near-harmonic modes, so each stroke lists its own partials (ratio, T60, amp). Open strokes ring (Tun, Ta), rim strokes damp the fundamental (Na, Tin), closed strokes are short slaps (Te, Ke, Ti, Ka), and Ge settles in pitch as the bayan head relaxes. |
+| **combo** (Dha, Dhin)            | Strokes played together (Dha = Na + Ge), scaled to peak like a single stroke.                                                                                                                                                                                                                           |
 
-Each of the nine pieces is one voice: hitting it again restarts it. The two kits share this structure and differ only in their constants (`patches/drums.ts`). The Device plays kits from the keybed by pitch class (F kick, G snare, …).
+Each piece is one voice: hitting it again restarts it. The kits differ only in their constants (`patches/drums.ts`, `patches/handDrums.ts`), and each maps the 12 pitch classes to its own pieces (`keys`), which the Device plays from the keybed (on the drum kits, F kick, G snare, …; on the hand drums, keys show the stroke's syllable).
 
 The **metronome** is a separate two-mode woodblock (1.9/2.9 kHz, higher when accented) that goes straight to the master, dry.
 
@@ -484,7 +497,7 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
   |   |-- StringLoop.ts      single-delay-loop string
   |   |-- exciters.ts        hammer, pluck, stick
   |   |-- StringInstrument.ts piano, guitar, basses
-  |   |-- BoreInstrument.ts  flute, sax
+  |   |-- BoreInstrument.ts  flute, sax, brass
   |   |-- BowedInstrument.ts violin
   |   |-- DrumKit.ts         drum kits + metronome woodblock
   |   |-- Body.ts            modal / radiation bodies, tilt

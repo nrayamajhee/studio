@@ -1,11 +1,10 @@
 import {
   physicalSynth,
-  type DrumPieceId,
   type InstrumentId,
   type KitId,
 } from "../../lib/physical";
 import { MASTER_PARAMS, PATCH_BY_ID } from "../../lib/physical/patches";
-import type { ParamSpec } from "../../lib/physical/patches/types";
+import type { DrumKitPatch, ParamSpec } from "../../lib/physical/patches/types";
 
 export interface DevicePreset {
   id: string;
@@ -20,14 +19,21 @@ export interface DevicePreset {
   overrides?: Record<string, number>;
 }
 
-// One per preset pad, grouped by engine: hammer, pluck, bow, breath, reed,
-// strike.
+// The built-in presets, in library order: keys, guitars and bass, bowed and
+// plucked strings, brass, winds, hand drums and kits.
 export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "piano",
     icon: "piano",
     name: "Grand Piano",
     target: "piano",
+    octave: 0,
+  },
+  {
+    id: "electricGuitar",
+    icon: "electric",
+    name: "Electric Guitar",
+    target: "electricGuitar",
     octave: 0,
   },
   {
@@ -38,14 +44,68 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     octave: 0,
   },
   {
+    id: "bass",
+    icon: "bass",
+    name: "Bass Guitar",
+    target: "bass",
+    octave: -24,
+  },
+  {
+    id: "nylonGuitar",
+    icon: "nylon",
+    name: "Nylon Guitar",
+    target: "nylonGuitar",
+    octave: 0,
+  },
+  {
+    id: "violin",
+    icon: "violin",
+    name: "Violin",
+    target: "violin",
+    octave: 0,
+  },
+  {
+    id: "cello",
+    icon: "cello",
+    name: "Cello",
+    target: "cello",
+    octave: -12,
+  },
+  {
     id: "uprightBass",
     icon: "upright",
     name: "Upright Bass",
     target: "uprightBass",
     octave: -24,
   },
-  { id: "violin", icon: "violin", name: "Violin", target: "violin", octave: 0 },
-  { id: "flute", icon: "wind", name: "Flute", target: "flute", octave: 12 },
+  {
+    id: "harp",
+    icon: "harp",
+    name: "Harp",
+    target: "harp",
+    octave: 0,
+  },
+  {
+    id: "trumpet",
+    icon: "trumpet",
+    name: "Trumpet",
+    target: "trumpet",
+    octave: 0,
+  },
+  {
+    id: "bassTrumpet",
+    icon: "bassTrumpet",
+    name: "Bass Trumpet",
+    target: "bassTrumpet",
+    octave: -12,
+  },
+  {
+    id: "flute",
+    icon: "wind",
+    name: "Flute",
+    target: "flute",
+    octave: 12,
+  },
   {
     id: "saxophone",
     icon: "sax",
@@ -53,7 +113,27 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     target: "saxophone",
     octave: 0,
   },
-  { id: "drums", icon: "drum", name: "Drum Kit", target: "drums", octave: 0 },
+  {
+    id: "madal",
+    icon: "madal",
+    name: "Madal",
+    target: "madal",
+    octave: 0,
+  },
+  {
+    id: "tabla",
+    icon: "tabla",
+    name: "Tabla",
+    target: "tabla",
+    octave: 0,
+  },
+  {
+    id: "drums",
+    icon: "drum",
+    name: "Drum Kit",
+    target: "drums",
+    octave: 0,
+  },
   {
     id: "drums808",
     icon: "keys",
@@ -72,6 +152,9 @@ export interface ModuleKnob {
   // its default. The engine's own default (no effect) is what "off" sends.
   spec: ParamSpec;
   steps: number;
+  // The lowest step's value when it isn't on the scale: a true 0 ms attack, or
+  // the shortest release that doesn't click.
+  floor?: number;
   // Named steps, for knobs that pick rather than set (LFO shape and target).
   options?: readonly string[];
 }
@@ -91,19 +174,30 @@ function knob(
   {
     steps = KNOB_STEPS,
     options,
+    min,
     max,
+    floor,
   }: {
     steps?: number;
     options?: readonly string[];
+    min?: number;
     max?: number;
+    floor?: number;
   } = {},
 ): ModuleKnob {
   const spec = MASTER_PARAMS.find((param) => param.id === id);
   if (!spec) throw new Error(`Missing master param ${id}`);
   return {
-    spec: { ...spec, label, default: start, max: max ?? spec.max },
+    spec: {
+      ...spec,
+      label,
+      default: start,
+      min: min ?? spec.min,
+      max: max ?? spec.max,
+    },
     steps,
     options,
+    floor,
   };
 }
 
@@ -116,10 +210,13 @@ export const DEVICE_MODULES: Readonly<Record<ModuleId, DeviceModule>> = {
     label: "ADSR",
     title: "ADSR envelope",
     knobs: [
-      knob("adsr.attack", "Attack", 0.001),
+      knob("adsr.attack", "Attack", 0.001, { floor: 0 }),
       knob("adsr.decay", "Decay", 0.2),
       knob("adsr.sustain", "Sustain", 0.5),
-      knob("adsr.release", "Release", 0.2),
+      // A release under ~3 ms cuts dark notes off with a click; 5 ms is the
+      // lowest step, with margin. The rest keep the 10 ms–4 s scale, with
+      // 200 ms on a step.
+      knob("adsr.release", "Release", 0.2, { min: 0.01, floor: 0.005 }),
     ],
   },
   lfo: {
@@ -153,26 +250,9 @@ export const DEVICE_MODULES: Readonly<Record<ModuleId, DeviceModule>> = {
   },
 };
 
-// With a kit selected, keys play pieces by pitch class: white keys
-// F G A B C D E → kick, snare, low tom, high tom, clap, crash, cowbell; black
-// keys F♯ G♯ A♯ C♯ D♯ → closed hat, open hat, closed hat, closed hat, open hat.
-const KEY_PIECES: readonly DrumPieceId[] = [
-  "clap",
-  "closedHat",
-  "crash",
-  "openHat",
-  "cowbell",
-  "kick",
-  "closedHat",
-  "snare",
-  "openHat",
-  "lowTom",
-  "closedHat",
-  "highTom",
-];
-
-// The drum piece a keybed note plays when a kit is selected.
-export const keyPiece = (midi: number) => KEY_PIECES[midi % 12];
+// With a kit selected, keys play pieces by pitch class, as the kit maps them.
+export const keyPiece = (kit: KitId, midi: number) =>
+  (PATCH_BY_ID[kit] as DrumKitPatch).keys[midi % 12];
 
 const NOTE_OFFSETS: Record<string, number> = {
   C: 0,
@@ -199,7 +279,11 @@ export function engineName(target: InstrumentId | KitId) {
     case "string":
       return patch.exciter === "hammer" ? "Hammer" : "Pluck";
     case "bore":
-      return patch.model === "flute" ? "Breath" : "Reed";
+      return patch.model === "flute"
+        ? "Breath"
+        : patch.model === "brass"
+          ? "Lips"
+          : "Reed";
     case "bowed":
       return "Bow";
     case "drums":
@@ -220,7 +304,7 @@ export function presetValues(preset: DevicePreset) {
 }
 
 export const isKit = (target: InstrumentId | KitId): target is KitId =>
-  target === "drums" || target === "drums808";
+  PATCH_BY_ID[target].family === "drums";
 
 interface Held {
   target: InstrumentId | KitId;
@@ -281,7 +365,7 @@ export const deviceEngine = {
     stack.push({ target, note });
     held.set(midi, stack);
     if (isKit(target))
-      physicalSynth.hit(target, KEY_PIECES[midi % 12], velocity);
+      physicalSynth.hit(target, keyPiece(target, midi), velocity);
     else physicalSynth.noteOn(target, note, velocity);
   },
 

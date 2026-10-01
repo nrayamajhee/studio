@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, type CSSProperties } from "react";
 import { Button } from "../design-system/Button";
 import { cn } from "../../lib/utils";
+import { keepFocus } from "./Pad";
 import styles from "./Knob.module.css";
 
 export interface KnobProps {
@@ -97,6 +98,7 @@ export function Knob({
       style={
         { "--knob-color": color, "--knob-mark": markColor } as CSSProperties
       }
+      {...keepFocus}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         event.currentTarget.setPointerCapture(event.pointerId);

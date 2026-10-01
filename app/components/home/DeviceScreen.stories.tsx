@@ -24,7 +24,7 @@ const meta = {
     status: "OCT ±0",
     footer: ["Hammer", "Hardness 50%"],
     onSelect: fn(),
-    className: "w-[944px]",
+    className: "w-[621px]",
   },
   argTypes: {
     view: {

@@ -1,13 +1,19 @@
 export type InstrumentId =
   | "piano"
   | "guitar"
+  | "electricGuitar"
+  | "nylonGuitar"
   | "bass"
   | "uprightBass"
+  | "harp"
   | "violin"
+  | "cello"
+  | "trumpet"
+  | "bassTrumpet"
   | "saxophone"
   | "flute";
 
-export type KitId = "drums" | "drums808";
+export type KitId = "drums" | "drums808" | "madal" | "tabla";
 
 export type DrumPieceId =
   | "kick"
@@ -18,7 +24,19 @@ export type DrumPieceId =
   | "lowTom"
   | "highTom"
   | "cowbell"
-  | "crash";
+  | "crash"
+  // Hand-drum strokes (bols), by syllable; each kit defines its own sounds.
+  | "na"
+  | "ta"
+  | "tin"
+  | "tun"
+  | "te"
+  | "ti"
+  | "ge"
+  | "ke"
+  | "ka"
+  | "dha"
+  | "dhin";
 
 export type BusId = InstrumentId | KitId;
 

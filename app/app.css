@@ -262,17 +262,20 @@ body {
   transform: none;
 }
 
+/* The glow is a circle centred on the left edge. It drifts right at a steady
+   pace from just past the left edge (its right rim touching the window) until
+   its left rim leaves on the right, then starts over from the left. */
 @keyframes sunset-traverse {
   0% {
-    transform: translate3d(5vw, 0, 0);
+    transform: translate3d(-50%, 0, 0);
   }
   100% {
-    transform: translate3d(95vw, 0, 0);
+    transform: translate3d(calc(100vw + 50%), 0, 0);
   }
 }
 
 .animate-sunset-traverse {
-  animation: sunset-traverse 16s ease-in-out infinite alternate;
+  animation: sunset-traverse 40s linear infinite;
   will-change: transform;
 }
 

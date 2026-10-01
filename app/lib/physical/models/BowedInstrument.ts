@@ -175,7 +175,7 @@ export class BowedInstrument extends Instrument {
     this.envelope = p.envelope("envelope");
     this.cutoff = p.get("filter.cutoff");
     this.q = p.get("filter.resonance");
-    this.bodyMix = p.get("body.violin");
+    this.bodyMix = p.has("body.violin") ? p.get("body.violin") : 0;
     for (let i = 0; i < this.voices.length; i++) {
       const voice = this.voices[i];
       // STK controlChange: bow pressure maps to the friction slope 5 → 1.

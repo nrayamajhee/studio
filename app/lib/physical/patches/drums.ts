@@ -11,6 +11,20 @@ export const drums: DrumKitPatch = {
   pan: { center: 0, spread: 0 },
   body: { type: "none" },
   params: drumParams(0.12),
+  keys: [
+    "clap",
+    "closedHat",
+    "crash",
+    "openHat",
+    "cowbell",
+    "kick",
+    "closedHat",
+    "snare",
+    "openHat",
+    "lowTom",
+    "closedHat",
+    "highTom",
+  ],
   pieces: {
     kick: {
       model: "membrane",
@@ -123,6 +137,20 @@ export const drums808: DrumKitPatch = {
   pan: { center: 0, spread: 0 },
   body: { type: "none" },
   params: drumParams(0.08),
+  keys: [
+    "clap",
+    "closedHat",
+    "crash",
+    "openHat",
+    "cowbell",
+    "kick",
+    "closedHat",
+    "snare",
+    "openHat",
+    "lowTom",
+    "closedHat",
+    "highTom",
+  ],
   pieces: {
     kick: {
       model: "membrane",

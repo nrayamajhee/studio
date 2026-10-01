@@ -33,3 +33,7 @@ export const Lit: Story = {
 export const TextLabel: Story = {
   args: { label: "Major 7 chord", accent: "#2f7de1", children: "Maj7" },
 };
+
+export const Hotkey: Story = {
+  args: { hotkey: "7" },
+};

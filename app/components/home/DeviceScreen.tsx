@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { cn } from "../../lib/utils";
 import { Button } from "../design-system/Button";
 import { Oscilloscope } from "./Oscilloscope";
+import { keepFocus } from "../design-system-v2";
 import styles from "./DeviceScreen.module.css";
 
 export type ScreenView =
@@ -33,29 +34,34 @@ export interface ScreenReadout {
 
 // Module readouts in the colours of the knobs that set them.
 const KNOB_COLORS = [
-  "#f4f3ef",
-  "var(--synth-green, #4ba078)",
-  "var(--synth-red, #cd5951)",
-  "var(--synth-blue, #2f7de1)",
+  "var(--screen-ink)",
+  "var(--screen-green)",
+  "var(--screen-red)",
+  "var(--screen-blue)",
 ];
 
 // Drawn across a fixed 100 × 40 box: attack, decay and release widen with their
 // knobs, sustain fills the rest at its level, and decay and release curve like
-// the engine's exponential segments.
+// the engine's exponential segments. A zero attack rises straight up; decay and
+// release never reach zero, so they always curve. Both ends sit inside the box
+// so their strokes aren't clipped.
 function EnvelopeGraph({ stages }: { stages: readonly ScreenReadout[] }) {
   const [attack, decay, sustain, release] = stages.map(({ amount }) => amount);
   const top = 2;
   const bottom = 38;
   const level = bottom - (bottom - top) * sustain;
-  const x1 = 2 + 23 * attack;
+  const x0 = 2;
+  const x1 = x0 + 23 * attack;
   const x2 = x1 + 2 + 23 * decay;
-  const x4 = 100;
+  const x4 = 98;
   const x3 = x4 - (2 + 28 * release);
+  const decayPath = `Q${x1} ${level} ${x2} ${level}`;
+  const releasePath = `Q${x3} ${bottom} ${x4} ${bottom}`;
   const segments = [
-    `M0 ${bottom} L${x1} ${top}`,
-    `M${x1} ${top} Q${x1} ${level} ${x2} ${level}`,
+    `M${x0} ${bottom} L${x1} ${top}`,
+    `M${x1} ${top} ${decayPath}`,
     `M${x2} ${level} L${x3} ${level}`,
-    `M${x3} ${level} Q${x3} ${bottom} ${x4} ${bottom}`,
+    `M${x3} ${level} ${releasePath}`,
   ];
   return (
     <svg
@@ -65,15 +71,17 @@ function EnvelopeGraph({ stages }: { stages: readonly ScreenReadout[] }) {
       aria-hidden="true"
     >
       <path
-        d={`M0 ${bottom} L${x1} ${top} Q${x1} ${level} ${x2} ${level} L${x3} ${level} Q${x3} ${bottom} ${x4} ${bottom} Z`}
-        fill="rgb(244 243 239 / 0.06)"
+        d={`M${x0} ${bottom} L${x1} ${top} ${decayPath} L${x3} ${level} ${releasePath} Z`}
+        style={{
+          fill: "color-mix(in srgb, var(--screen-ink) 8%, transparent)",
+        }}
       />
       {segments.map((d, i) => (
         <path
           key={i}
           d={d}
           fill="none"
-          stroke={KNOB_COLORS[i]}
+          style={{ stroke: KNOB_COLORS[i] }}
           strokeWidth={2.5}
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
@@ -125,7 +133,9 @@ function LfoGraph({
     >
       <path
         d="M0 20 H100"
-        stroke="rgb(244 243 239 / 0.12)"
+        style={{
+          stroke: "color-mix(in srgb, var(--screen-ink) 15%, transparent)",
+        }}
         strokeDasharray="2 3"
         vectorEffect="non-scaling-stroke"
       />
@@ -134,11 +144,11 @@ function LfoGraph({
         style={
           {
             "--lfo-period": `${Math.max(1 / rate, 0.1)}s`,
+            stroke: KNOB_COLORS[1],
           } as CSSProperties
         }
         d={`M${points.join(" L")}`}
         fill="none"
-        stroke={KNOB_COLORS[1]}
         strokeWidth={2.5}
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
@@ -220,9 +230,9 @@ export interface DeviceScreenProps {
   className?: string;
 }
 
-export const PARAMS_PER_PAGE = 16;
+export const PARAMS_PER_PAGE = 15;
 export const TILES_PER_PAGE: Record<string, number> = {
-  save: 22,
+  save: 24,
   presets: 8,
 };
 
@@ -307,6 +317,7 @@ export function DeviceScreen({
                     styles.param,
                     param.selected && styles.selected,
                   )}
+                  {...keepFocus}
                   onClick={() => onSelectParam?.(page * PARAMS_PER_PAGE + i)}
                 >
                   <span className={styles.paramLabel}>{param.label}</span>
@@ -332,6 +343,7 @@ export function DeviceScreen({
                   aria-label={tile.label}
                   aria-pressed={index === selected}
                   className={styles.tile}
+                  {...keepFocus}
                   onClick={() => onSelect?.(index)}
                 >
                   <span className={styles.tileIcon} aria-hidden="true">

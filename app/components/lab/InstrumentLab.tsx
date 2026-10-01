@@ -13,7 +13,7 @@ import {
   type InstrumentId,
   type KitId,
 } from "../../lib/physical";
-import { DRUM_PIECES } from "../../lib/physical/models/DrumKit";
+import { kitPieces } from "../../lib/physical/models/DrumKit";
 import {
   decaySweep,
   drumLevels,
@@ -27,13 +27,21 @@ import {
   type DiagnosticRow,
 } from "../../lib/physical/offline/diagnostics";
 import { workletRenderer } from "../../lib/physical/offline/renderOffline";
-import { MASTER_PARAMS, PATCHES } from "../../lib/physical/patches";
+import {
+  MASTER_PARAMS,
+  PATCH_BY_ID,
+  PATCHES,
+} from "../../lib/physical/patches";
 import {
   formatParam,
   fromUnit,
   toUnit,
 } from "../../lib/physical/patches/format";
-import type { ParamSpec, SectionId } from "../../lib/physical/patches/types";
+import type {
+  DrumKitPatch,
+  ParamSpec,
+  SectionId,
+} from "../../lib/physical/patches/types";
 import { cn } from "../../lib/utils";
 import { Button } from "../design-system/Button";
 import { Slider } from "../design-system/Slider";
@@ -52,8 +60,7 @@ const SECTIONS: SectionId[] = [
   "envelope",
   "space",
 ];
-const KITS: BusId[] = ["drums", "drums808"];
-const isKit = (id: BusId): id is KitId => KITS.includes(id);
+const isKit = (id: BusId): id is KitId => PATCH_BY_ID[id].family === "drums";
 
 // Two octaves from C; A W S E D F T G Y H U J K play the first octave and a C.
 const WHITE = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23];
@@ -238,7 +245,7 @@ const DIAGNOSTICS: {
       const rows: DiagnosticRow[] = [];
       for (const patch of PATCHES) {
         const subjects: (number | DrumPieceId)[] = isKit(patch.id)
-          ? [...DRUM_PIECES]
+          ? kitPieces(patch as DrumKitPatch)
           : notesInRange(patch.id as InstrumentId, 6);
         rows.push(
           ...(await stabilitySweep(workletRenderer, patch.id, 48000, subjects)),
@@ -553,18 +560,20 @@ export function InstrumentLab({
               role="group"
               aria-label="Drum pads"
             >
-              {DRUM_PIECES.map((piece) => (
-                <Pad
-                  key={piece}
-                  label={piece}
-                  accent="#cd5951"
-                  onPress={() =>
-                    physicalSynth.hit(instrument as KitId, piece, velocity)
-                  }
-                >
-                  <span className="text-[10px]">{piece}</span>
-                </Pad>
-              ))}
+              {kitPieces(PATCH_BY_ID[instrument] as DrumKitPatch).map(
+                (piece) => (
+                  <Pad
+                    key={piece}
+                    label={piece}
+                    accent="#cd5951"
+                    onPress={() =>
+                      physicalSynth.hit(instrument as KitId, piece, velocity)
+                    }
+                  >
+                    <span className="text-[10px]">{piece}</span>
+                  </Pad>
+                ),
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-2">

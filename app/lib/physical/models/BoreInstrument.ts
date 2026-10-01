@@ -1,5 +1,6 @@
-// Flute and saxophone loops ported from STK (The Synthesis ToolKit, Perry Cook
-// & Gary Scavone, MIT-style license): src/Flute.cpp and src/Saxofony.cpp.
+// Flute, saxophone and brass loops ported from STK (The Synthesis ToolKit,
+// Perry Cook & Gary Scavone, MIT-style license): src/Flute.cpp,
+// src/Saxofony.cpp and src/Brass.cpp.
 
 import { Adsr, type AdsrStages } from "../dsp/Adsr";
 import { DcBlocker, OnePoleLowpass } from "../dsp/filters";
@@ -36,8 +37,26 @@ const SAX_BELL_REFLECTION = -0.95;
 // cutoff follows f0 instead, which also makes it sample-rate independent.
 const SAX_REFLECTION_RATIO = 14;
 const SAX_REFLECTION_MIN = 500;
+// STK Brass: the bore holds two periods, so its modes sit at f0/2 multiples and
+// the lips, a resonance at f0, lock onto the second; +3 samples is STK's.
+const BRASS_BORE_PERIODS = 2;
+const BRASS_BORE_OFFSET = 3;
+// STK's lip resonance (radius 0.997, input gain 0.03) has a DC gain of ~0.03/ω²,
+// so low notes hold the lips wide open and never oscillate. Keeping its Q fixed
+// (r = 1 − k·ω) and its input gain at G·ω² makes the lips behave the same at
+// every pitch; k and G reproduce STK's values at 880 Hz, where it speaks well.
+const BRASS_LIP_K = 0.026;
+const BRASS_LIP_G = 2.26;
+const BRASS_MOUTH = 0.3;
+const BRASS_BORE_REFLECTION = 0.85;
+// Lip tension 0–1 moves the lip resonance ±0.05 octave around the note,
+// brightening and bending the pitch as tightening real lips does.
+const BRASS_LIP_RANGE = 0.1;
+
+export type BoreModel = BorePatch["model"];
 
 class BoreVoice extends Voice {
+  readonly model: BoreModel;
   readonly bore: Waveguide;
   readonly jet: Waveguide;
   readonly reflection = new OnePoleLowpass();
@@ -60,14 +79,23 @@ class BoreVoice extends Voice {
   pitchVibrato = 0;
   cutoff = 12000;
   q = Math.SQRT1_2;
-  saxophone = false;
   reedSlope = 0.3;
   watchdog = false;
+  // Lip resonance: input gain, a1, a2 and state.
+  private lipGain = 0;
+  private lipA1 = 0;
+  private lipA2 = 0;
+  private lipY1 = 0;
+  private lipY2 = 0;
   private ticks = 0;
 
-  constructor(fs: number, lowestHz: number) {
+  constructor(fs: number, lowestHz: number, model: BoreModel) {
     super(fs);
-    const longest = fs / (lowestHz * FLUTE_OVERBLOW) + 8;
+    this.model = model;
+    const longest =
+      model === "brass"
+        ? (BRASS_BORE_PERIODS * fs) / lowestHz + BRASS_BORE_OFFSET + 8
+        : fs / (lowestHz * FLUTE_OVERBLOW) + 8;
     this.bore = new Waveguide(longest);
     this.jet = new Waveguide(longest);
     this.dc = new DcBlocker(fs);
@@ -84,6 +112,23 @@ class BoreVoice extends Voice {
     this.svf.clear();
     this.breath.reset();
     this.gate.reset();
+    this.lipY1 = this.lipY2 = 0;
+  }
+
+  setLip(freq: number) {
+    const w = (TWO_PI * freq) / this.fs;
+    const r = 1 - BRASS_LIP_K * w;
+    this.lipGain = BRASS_LIP_G * w * w;
+    this.lipA2 = r * r;
+    this.lipA1 = -2 * r * Math.cos(w);
+  }
+
+  private lip(x: number) {
+    const y =
+      this.lipGain * x - this.lipA1 * this.lipY1 - this.lipA2 * this.lipY2;
+    this.lipY2 = this.lipY1;
+    this.lipY1 = y;
+    return y;
   }
 
   render(left: Float32Array, right: Float32Array, start: number, end: number) {
@@ -102,7 +147,19 @@ class BoreVoice extends Voice {
       const bend = 1 - this.pitchVibrato * vib;
 
       let out: number;
-      if (this.saxophone) {
+      if (this.model === "brass") {
+        // The lips open with the pressure across them (squared, saturating),
+        // mixing mouth and bore pressure into the bore.
+        const mouth = BRASS_MOUTH * pressure;
+        const back = BRASS_BORE_REFLECTION * bore.last;
+        let area = this.lip(mouth - back);
+        area *= area;
+        if (area > 1) area = 1;
+        out = bore.tick(
+          this.dc.process(area * mouth + (1 - area) * back),
+          this.boreLength * bend,
+        );
+      } else if (this.model === "saxophone") {
         // delayA ≡ bore (bell side), delayB ≡ jet (reed side).
         const t = SAX_BELL_REFLECTION * this.reflection.process(bore.last);
         out = t - jet.last;
@@ -129,6 +186,7 @@ class BoreVoice extends Voice {
         this.jet.clear();
         this.reflection.clear();
         this.dc.clear();
+        this.lipY1 = this.lipY2 = 0;
         this.watchdog = true;
         out = 0;
       }
@@ -158,7 +216,7 @@ class BoreVoice extends Voice {
   }
 }
 
-// Monophonic flute or saxophone with last-note priority and legato.
+// Monophonic flute, saxophone or brass with last-note priority and legato.
 export class BoreInstrument extends Instrument {
   readonly patch: BorePatch;
   // Replaced by calibration tools; otherwise fixed at construction.
@@ -167,6 +225,7 @@ export class BoreInstrument extends Instrument {
   private readonly held = new Int16Array(MAX_HELD);
   private heldCount = 0;
   private current = -1;
+  private currentHz = 0;
   private burstStart = -Infinity;
   private pressure = 1;
   private noiseLevel = 1;
@@ -182,6 +241,7 @@ export class BoreInstrument extends Instrument {
   private cutoff = 12000;
   private q = Math.SQRT1_2;
   private pitchDepth = 0;
+  private lipRatio = 1;
   private watchdogReported = false;
 
   constructor(
@@ -192,10 +252,9 @@ export class BoreInstrument extends Instrument {
     super(patch, fs, overrides);
     this.patch = patch;
     this.tuning = pickTuning(patch.tuningCents, fs);
-    this.voice = new BoreVoice(fs, midiToHz(patch.range[0]));
-    this.voice.saxophone = patch.model === "saxophone";
+    this.voice = new BoreVoice(fs, midiToHz(patch.range[0]), patch.model);
     this.voice.reflection.setPole(
-      this.voice.saxophone ? 0.9 : 0.7 - (0.1 * 22050) / fs,
+      patch.model === "saxophone" ? 0.9 : 0.7 - (0.1 * 22050) / fs,
     );
     panGains(patch.pan.center, this.voice.gains);
     this.applyParams();
@@ -214,11 +273,21 @@ export class BoreInstrument extends Instrument {
     this.cutoff = p.get("filter.cutoff");
     this.q = p.get("filter.resonance");
     const voice = this.voice;
-    voice.noiseGain = (voice.saxophone ? 0.2 : 0.15) * this.noiseLevel;
+    voice.noiseGain =
+      (voice.model === "saxophone"
+        ? 0.2
+        : voice.model === "brass"
+          ? 0.05
+          : 0.15) * this.noiseLevel;
     voice.vibratoGain = this.vibratoDepth;
     voice.pitchVibrato = this.pitchDepth;
     voice.vibrato.setRate(this.vibratoRate);
     voice.reedSlope = 0.1 + 0.4 * p.get("exciter.reed");
+    this.lipRatio = p.has("exciter.lip")
+      ? 2 ** ((p.get("exciter.lip") - 0.5) * BRASS_LIP_RANGE)
+      : 1;
+    if (voice.model === "brass" && this.current >= 0)
+      voice.setLip(this.currentHz * this.lipRatio);
     voice.cutoff = this.cutoff;
     voice.q = this.q;
     voice.breath.setRelease(this.envelope.release);
@@ -329,8 +398,14 @@ export class BoreInstrument extends Instrument {
     voice.state = ACTIVE;
     const f0 = midiToHz(n) * 2 ** (keyTable(this.tuning, n) / 1200);
     const fs = this.fs;
+    this.currentHz = f0;
     let delay: number;
-    if (voice.saxophone) {
+    if (voice.model === "brass") {
+      // DC blocker and lip phase are left to the measured tuning table.
+      delay = (BRASS_BORE_PERIODS * fs) / f0 + BRASS_BORE_OFFSET;
+      voice.boreTarget = delay;
+      voice.setLip(f0 * this.lipRatio);
+    } else if (voice.model === "saxophone") {
       const w = (TWO_PI * f0) / fs;
       const cutoff = Math.min(
         0.4 * fs,

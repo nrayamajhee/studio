@@ -7,9 +7,9 @@ import type {
   InstrumentId,
   KitId,
 } from "../messages";
-import { DRUM_PIECES } from "../models/DrumKit";
+import { kitPieces } from "../models/DrumKit";
 import { PATCH_BY_ID } from "../patches";
-import type { StringPatch } from "../patches/types";
+import type { DrumKitPatch, StringPatch } from "../patches/types";
 import {
   bandpass,
   energyT60,
@@ -285,7 +285,7 @@ export async function drumLevels(
   sampleRate: number,
 ): Promise<DiagnosticRow[]> {
   const rows: DiagnosticRow[] = [];
-  for (const piece of DRUM_PIECES) {
+  for (const piece of kitPieces(PATCH_BY_ID[kit] as DrumKitPatch)) {
     const events: EngineEvent[] = [
       { type: "hit", kit, piece, velocity: 1, time: 0 },
     ];
@@ -406,7 +406,7 @@ export async function lifecycleCheck(
       events.push({ type: "noteOff", instrument, note, time: i * 0.1 + 0.5 });
     }
   });
-  DRUM_PIECES.forEach((piece, i) => {
+  kitPieces(PATCH_BY_ID.drums as DrumKitPatch).forEach((piece, i) => {
     events.push({
       type: "hit",
       kit: "drums",

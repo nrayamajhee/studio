@@ -30,7 +30,7 @@ const MASTER_ADSR: AdsrRanges = {
   attack: [0.001, 4],
   decay: [0.01, 4],
   sustain: [0, 1],
-  release: [0.01, 4],
+  release: [0.001, 4],
 };
 
 // Attack, decay, sustain and release under `prefix`: every ADSR in the engine
@@ -187,6 +187,7 @@ export interface BoreDefaults {
   jetRatio?: number;
   reed?: number;
   blowPosition?: number;
+  lip?: number;
   attack: number;
   decay: number;
   sustain: number;
@@ -236,6 +237,12 @@ export function boreParams(d: BoreDefaults): ParamSpec[] {
             d.blowPosition ?? 0.2,
           ),
         ]),
+    ...(d.lip === undefined
+      ? []
+      : [
+          // STK Brass lip tension: the lip resonance relative to the note.
+          param("exciter.lip", "Lip tension", "exciter", 0, 1, d.lip, primary),
+        ]),
     param("exciter.noise", "Breath noise", "exciter", 0, 2, d.noise, {
       unit: "×",
       primary: true,
@@ -282,7 +289,12 @@ export function boreParams(d: BoreDefaults): ParamSpec[] {
   ];
 }
 
-export function bowedParams(send: number): ParamSpec[] {
+// The violin mixes in its measured body filter ("Body"); other bowed patches
+// use the bus's modal body instead.
+export function bowedParams(
+  send: number,
+  body: "violin" | "modal" = "violin",
+): ParamSpec[] {
   return [
     param("exciter.pressure", "Bow pressure", "exciter", 0, 1, 0.75, primary),
     param(
@@ -303,7 +315,9 @@ export function bowedParams(send: number): ParamSpec[] {
       unit: "Hz",
       primary: true,
     }),
-    param("body.violin", "Body", "body", 0, 1, 1, primary),
+    body === "violin"
+      ? param("body.violin", "Body", "body", 0, 1, 1, primary)
+      : param("body.mix", "Body", "body", 0, 1, 0.6, primary),
     param("body.tone", "Tone", "body", -1, 1, 0, primary),
     ...filterParams(12000, Math.SQRT1_2),
     ...adsrParams(

@@ -9,7 +9,9 @@ import type { DrumPieceId } from "../messages";
 import type { DrumKitPatch, DrumPieceSpec } from "../patches/types";
 import { stick, velocityGain } from "./exciters";
 
-export const DRUM_PIECES: readonly DrumPieceId[] = [
+// Every piece in a fixed order: it sets each voice's noise seed and the order
+// voices sum in, so a kit sounds the same whichever pieces it defines.
+const PIECE_ORDER: readonly DrumPieceId[] = [
   "kick",
   "snare",
   "closedHat",
@@ -19,7 +21,24 @@ export const DRUM_PIECES: readonly DrumPieceId[] = [
   "highTom",
   "cowbell",
   "crash",
+  "na",
+  "ta",
+  "tin",
+  "tun",
+  "te",
+  "ti",
+  "ge",
+  "ke",
+  "ka",
+  "dha",
+  "dhin",
 ];
+
+// The pieces a kit can play, in a stable order.
+export const kitPieces = (patch: DrumKitPatch) =>
+  PIECE_ORDER.filter((piece) => patch.pieces[piece]);
+
+type VoiceSpec = Exclude<DrumPieceSpec, { model: "combo" }>;
 
 // Ideal circular membrane: (m, n) modes (0,1) (1,1) (2,1) (0,2) (3,1) (1,2)
 // (4,1) (2,2) (0,3) (5,1) as ratios of the fundamental, with their m index.
@@ -32,7 +51,7 @@ const CHOKE_T60 = 0.03;
 const LN_1000 = 6.907755278982137;
 
 class DrumVoice extends Voice {
-  readonly spec: DrumPieceSpec;
+  readonly spec: VoiceSpec;
   readonly bank: ModalBank;
   readonly pulse: Float32Array;
   readonly noise: Noise;
@@ -66,7 +85,7 @@ class DrumVoice extends Voice {
   private tailStart = 0;
   private tailCoef = 0;
 
-  constructor(spec: DrumPieceSpec, fs: number, seed: number) {
+  constructor(spec: VoiceSpec, fs: number, seed: number) {
     super(fs);
     this.spec = spec;
     this.noise = new Noise(seed);
@@ -75,6 +94,7 @@ class DrumVoice extends Voice {
 
     let count = 0;
     if (spec.model === "membrane") count = spec.ratios + (spec.shell ? 1 : 0);
+    else if (spec.model === "loaded") count = spec.partials.length;
     else if (spec.model === "metal") {
       count =
         spec.modes.kind === "seeded"
@@ -100,6 +120,13 @@ class DrumVoice extends Voice {
       }
       if (spec.click) this.clickFilter.setCutoff(spec.click.highpass, fs);
       if (spec.wires) this.wiresFilter.setCutoff(spec.wires.highpass, fs);
+    } else if (spec.model === "loaded") {
+      spec.partials.forEach(([ratio, t60, amp], i) => {
+        this.baseFreq[i] = spec.f0 * ratio;
+        this.baseT60[i] = t60;
+        this.weights[i] = amp;
+      });
+      if (spec.click) this.clickFilter.setCutoff(spec.click.highpass, fs);
     } else if (spec.model === "metal") {
       const modes = spec.modes;
       if (modes.kind === "seeded") {
@@ -177,13 +204,14 @@ class DrumVoice extends Voice {
     click: number,
     wires: number,
     clock: number,
+    gain: number,
   ) {
     const spec = this.spec;
     const fs = this.fs;
     this.begin(0, clock);
     this.state = RELEASED;
     this.shape.noteOn();
-    this.hitLevel = spec.level * velocityGain(velocity, strength);
+    this.hitLevel = spec.level * velocityGain(velocity, strength) * gain;
     this.elapsed = 0;
     if (spec.model !== "noise") {
       const [soft, hard] = spec.stick;
@@ -201,6 +229,15 @@ class DrumVoice extends Voice {
         this.clickLevel = spec.click.level * click;
       }
       this.wiresLevel = spec.wires ? spec.wires.level * wires : 0;
+    } else if (spec.model === "loaded") {
+      this.drop = (spec.pitchDrop ?? 0) * velocity * dropScale;
+      this.dropTau = ((spec.pitchTau ?? 50) / 1000) * fs;
+      if (spec.click) {
+        this.clickLength = Math.max(1, (spec.click.length / 1000) * fs);
+        this.clickRemaining = this.clickLength;
+        this.clickLevel = spec.click.level * click;
+      }
+      this.wiresLevel = 0;
     } else if (spec.model === "metal" && spec.noise) {
       this.noiseEnv = 1;
       this.noiseLevel = spec.noise.level;
@@ -224,7 +261,8 @@ class DrumVoice extends Voice {
   render(left: Float32Array, right: Float32Array, start: number, end: number) {
     const bank = this.bank;
     const gains = this.gains;
-    const membrane = this.spec.model === "membrane";
+    const membrane =
+      this.spec.model === "membrane" || this.spec.model === "loaded";
     const clap = this.spec.model === "noise";
     let peak = 0;
     for (let i = start; i < end; i++) {
@@ -291,6 +329,7 @@ class DrumVoice extends Voice {
 export class DrumKit extends Instrument {
   readonly patch: DrumKitPatch;
   private readonly voices: DrumVoice[] = [];
+  private readonly byPiece = new Map<DrumPieceId, DrumVoice>();
   private readonly filterL = new Svf("lowpass");
   private readonly filterR = new Svf("lowpass");
   private hardness = 0.6;
@@ -307,9 +346,14 @@ export class DrumKit extends Instrument {
   ) {
     super(patch, fs, overrides);
     this.patch = patch;
-    DRUM_PIECES.forEach((piece, i) => {
-      this.voices.push(new DrumVoice(patch.pieces[piece], fs, 9000 + i * 101));
-    });
+    for (const piece of kitPieces(patch)) {
+      const spec = patch.pieces[piece];
+      if (!spec || spec.model === "combo") continue;
+      const seed = 9000 + PIECE_ORDER.indexOf(piece) * 101;
+      const voice = new DrumVoice(spec, fs, seed);
+      this.voices.push(voice);
+      this.byPiece.set(piece, voice);
+    }
     this.applyParams();
   }
 
@@ -355,9 +399,17 @@ export class DrumKit extends Instrument {
   noteOff() {}
 
   override hit(piece: DrumPieceId, velocity: number) {
-    const index = DRUM_PIECES.indexOf(piece);
-    if (index < 0) return;
-    const voice = this.voices[index];
+    const spec = this.patch.pieces[piece];
+    if (spec?.model === "combo") {
+      for (const part of spec.pieces) this.strike(part, velocity, spec.level);
+    } else {
+      this.strike(piece, velocity, 1);
+    }
+  }
+
+  private strike(piece: DrumPieceId, velocity: number, gain: number) {
+    const voice = this.byPiece.get(piece);
+    if (!voice) return;
     voice.strike(
       velocity,
       this.hardness,
@@ -366,12 +418,12 @@ export class DrumKit extends Instrument {
       this.click,
       this.wires,
       this.clock,
+      gain,
     );
     const spec = voice.spec;
     if (spec.model === "metal" && spec.chokes) {
       for (let c = 0; c < spec.chokes.length; c++) {
-        const choked = DRUM_PIECES.indexOf(spec.chokes[c]);
-        if (choked >= 0) this.voices[choked].choke();
+        this.byPiece.get(spec.chokes[c])?.choke();
       }
     }
   }

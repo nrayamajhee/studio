@@ -82,7 +82,7 @@ export interface StringPatch extends BasePatch {
 export interface BorePatch extends BasePatch {
   id: InstrumentId;
   family: "bore";
-  model: "flute" | "saxophone";
+  model: "flute" | "saxophone" | "brass";
   pressure: readonly [low: number, high: number];
   tuningCents: TuningTables;
 }
@@ -128,6 +128,26 @@ export type DrumPieceSpec =
       pan: number;
     }
   | {
+      // A membrane loaded with paste (tabla syahi, madal kharee), whose modes
+      // sit near whole-number ratios; each stroke sets its own partials.
+      model: "loaded";
+      f0: number;
+      partials: readonly (readonly [ratio: number, t60: number, amp: number])[];
+      pitchDrop?: number;
+      pitchTau?: number;
+      stick: readonly [soft: number, hard: number];
+      click?: { highpass: number; length: number; level: number };
+      level: number;
+      pan: number;
+    }
+  | {
+      // Two or more strokes played together, e.g. Dha = Na + Ge, each scaled
+      // by level so the sum peaks like a single stroke.
+      model: "combo";
+      pieces: readonly DrumPieceId[];
+      level: number;
+    }
+  | {
       model: "noise";
       bursts: readonly number[];
       burstLength: number;
@@ -141,7 +161,9 @@ export type DrumPieceSpec =
 export interface DrumKitPatch extends BasePatch {
   id: KitId;
   family: "drums";
-  pieces: Readonly<Record<DrumPieceId, DrumPieceSpec>>;
+  pieces: Readonly<Partial<Record<DrumPieceId, DrumPieceSpec>>>;
+  // The piece each keybed pitch class plays, from C.
+  keys: readonly DrumPieceId[];
 }
 
 export type Patch = StringPatch | BorePatch | BowedPatch | DrumKitPatch;

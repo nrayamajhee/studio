@@ -95,14 +95,11 @@ const MODULES_OFF: Readonly<Record<ModuleId, boolean>> = {
   fx: false,
 };
 
-const knobValue = ({ spec, steps }: ModuleKnob, step: number) =>
-  stepToValue(spec, step, steps);
+const knobValue = ({ spec, steps, floor }: ModuleKnob, step: number) =>
+  step === 0 && floor !== undefined ? floor : stepToValue(spec, step, steps);
 
 const knobDisplay = (knob: ModuleKnob, step: number) =>
-  knob.options?.[step] ??
-  (knob.spec.id === "adsr.attack" && step === 0
-    ? "0 ms"
-    : formatParam(knob.spec, knobValue(knob, step)));
+  knob.options?.[step] ?? formatParam(knob.spec, knobValue(knob, step));
 
 // Off restores the engine's defaults for the module's params, which leave the
 // modelled sound untouched; the knob settings are kept for switching back on.
@@ -146,35 +143,35 @@ const F3_MIDI = 53;
 const WHITE_KEYS = [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23];
 const BLACK_KEYS = [1, 3, 5, 8, 10, 13, 15, 17, 20, 22];
 
-// Indexed by keybed semitone (F3 = 0). White keys sit on one row and every black
-// key on the row above, between its neighbours: F3–B3 on Q W E R (black keys
-// 2 3 4), then C4–E5 along Z X C V B N M , . / (black keys S D G H J L ;). K is
-// left out because B|C has no black key.
-const HOTKEYS = [
+// Indexed by keybed semitone (F3 = 0). The piano takes the top two rows like
+// a real keyboard: white keys F3–E5 along Tab Q W E R T Y U I O P [ ] \, and
+// each black key on the number key between its neighbours (1 2 3 5 6 8 9 0 =
+// and Backspace).
+const HOTKEYS: readonly string[] = [
+  "Tab",
+  "1",
   "Q",
   "2",
   "W",
   "3",
   "E",
-  "4",
   "R",
-  "Z",
-  "S",
-  "X",
-  "D",
-  "C",
-  "V",
-  "G",
-  "B",
-  "H",
-  "N",
-  "J",
-  "M",
-  ",",
-  "L",
-  ".",
-  ";",
-  "/",
+  "5",
+  "T",
+  "6",
+  "Y",
+  "U",
+  "8",
+  "I",
+  "9",
+  "O",
+  "0",
+  "P",
+  "[",
+  "=",
+  "]",
+  "⌫",
+  "\\",
 ];
 
 const KEY_CODES: Record<string, string> = {
@@ -182,6 +179,17 @@ const KEY_CODES: Record<string, string> = {
   ".": "Period",
   "/": "Slash",
   ";": "Semicolon",
+  "'": "Quote",
+  "-": "Minus",
+  "=": "Equal",
+  "[": "BracketLeft",
+  "]": "BracketRight",
+  "\\": "Backslash",
+  "←": "ArrowLeft",
+  "→": "ArrowRight",
+  Tab: "Tab",
+  Space: "Space",
+  "⌫": "Backspace",
 };
 
 const keyCode = (hotkey: string) =>
@@ -191,6 +199,117 @@ const keyCode = (hotkey: string) =>
 const HOTKEY_SEMITONES = new Map(
   HOTKEYS.map((hotkey, semitone) => [keyCode(hotkey), semitone]),
 );
+
+// The pads' two rows sit on the home and bottom rows, lined up from the right
+// edge: chords on L ; ' / , . /, presets on H J K / B N M, Record, Stop,
+// Metronome, Synth, ADSR / Save, LFO, FX on A S D F G / X C V. Space plays,
+// and the arrows and Shift press their own pads.
+const PRESET_HOTKEYS = ["H", "J", "K", "B", "N", "M"];
+const CHORD_HOTKEYS = ["L", ";", "'", ",", ".", "/"];
+
+type ToolPad =
+  "record" | "play" | "stop" | "metronome" | "synth" | "save" | ModuleId;
+
+const TOOL_HOTKEYS: Readonly<Record<ToolPad, string>> = {
+  record: "A",
+  play: "Space",
+  stop: "S",
+  metronome: "D",
+  synth: "F",
+  adsr: "G",
+  save: "X",
+  lfo: "C",
+  fx: "V",
+};
+
+// Tab plays F3, so ` (and Shift + `) steps focus through the page's controls
+// in its place, and Return presses the focused one (Space always plays). Esc or
+// any press on the Device ends it.
+const FOCUSABLE =
+  "a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]";
+
+// Document order doesn't match the layout everywhere: the pads sit in 3×2
+// banks, and the keybed lists its white keys before its black ones. Controls inside a [data-focus-group] are visited together,
+// where the group's first one is, in reading order: "rows" goes row by row,
+// "columns" left to right (so each black key falls between its neighbours).
+function readingOrder(controls: HTMLElement[]) {
+  const groups = new Map<string, HTMLElement[]>();
+  const groupOf = (element: HTMLElement) =>
+    element.closest<HTMLElement>("[data-focus-group]");
+  for (const element of controls) {
+    const group = groupOf(element);
+    if (!group) continue;
+    const name = group.dataset.focusGroup ?? "";
+    groups.set(name, [...(groups.get(name) ?? []), element]);
+  }
+  for (const members of groups.values()) {
+    const columns = groupOf(members[0])?.dataset.focusOrder === "columns";
+    members.sort((a, b) => {
+      const ra = a.getBoundingClientRect();
+      const rb = b.getBoundingClientRect();
+      const dx = ra.left + ra.width / 2 - (rb.left + rb.width / 2);
+      const dy = ra.top - rb.top;
+      return columns || Math.abs(dy) <= 4 ? dx : dy;
+    });
+  }
+  const order: HTMLElement[] = [];
+  const placed = new Set<string>();
+  for (const element of controls) {
+    const name = groupOf(element)?.dataset.focusGroup;
+    if (name === undefined) order.push(element);
+    else if (!placed.has(name)) {
+      placed.add(name);
+      order.push(...(groups.get(name) ?? []));
+    }
+  }
+  return order;
+}
+
+function moveFocus(direction: 1 | -1) {
+  const controls = readingOrder(
+    [...document.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+      (element) => element.tabIndex >= 0 && element.getClientRects().length > 0,
+    ),
+  );
+  if (controls.length === 0) return;
+  const current = controls.indexOf(document.activeElement as HTMLElement);
+  const next =
+    current < 0
+      ? direction > 0
+        ? 0
+        : controls.length - 1
+      : (current + direction + controls.length) % controls.length;
+  // focusVisible isn't in TypeScript's DOM types yet.
+  controls[next].focus({ focusVisible: true } as FocusOptions);
+}
+
+const keyboardFocus = () =>
+  document.activeElement instanceof HTMLElement &&
+  document.activeElement !== document.body &&
+  document.activeElement.matches(FOCUSABLE);
+
+type PadAction =
+  | { kind: "preset"; index: number }
+  | { kind: "chord"; index: number }
+  | { kind: "step"; direction: -1 | 1 }
+  | { kind: "tool"; pad: ToolPad };
+
+const PAD_HOTKEYS = new Map<string, PadAction>([
+  ...PRESET_HOTKEYS.map(
+    (hotkey, index) =>
+      [keyCode(hotkey), { kind: "preset", index }] as [string, PadAction],
+  ),
+  ...CHORD_HOTKEYS.map(
+    (hotkey, index) =>
+      [keyCode(hotkey), { kind: "chord", index }] as [string, PadAction],
+  ),
+  [keyCode("←"), { kind: "step", direction: -1 }],
+  [keyCode("→"), { kind: "step", direction: 1 }],
+  ...(Object.entries(TOOL_HOTKEYS) as [ToolPad, string][]).map(
+    ([pad, hotkey]) =>
+      [keyCode(hotkey), { kind: "tool", pad }] as [string, PadAction],
+  ),
+]);
 
 const octaveOf = (midi: number) => Math.floor(midi / 12) - 1;
 
@@ -276,6 +395,11 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const [shiftLatched, setShiftLatched] = useState(false);
   const [shiftHeld, setShiftHeld] = useState(false);
   const [chord, setChord] = useState<number | null>(null);
+  // Like Shift: a click latches a chord, its hotkey plays it while held.
+  const [heldChord, setHeldChord] = useState<number | null>(null);
+  const activeChord = heldChord ?? chord;
+  // Pads whose keyboard hotkey is down, by key code.
+  const [heldPads, setHeldPads] = useState<ReadonlySet<string>>(new Set());
   const [litNotes, setLitNotes] = useState<ReadonlySet<number>>(
     () => new Set(),
   );
@@ -329,7 +453,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const pressKey = (root: number) => {
     if (held.current.has(root)) return;
     deviceEngine.unlock();
-    const intervals = chord === null ? [0] : CHORDS[chord].intervals;
+    const intervals =
+      activeChord === null ? [0] : CHORDS[activeChord].intervals;
     const semitones = intervals.map((interval) => root + interval);
     const midis = semitones.map((semitone) => {
       const midi = F3_MIDI + semitone + 12 * octave;
@@ -352,42 +477,33 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     syncLitNotes();
   };
 
-  const onHotkey = useEffectEvent((event: KeyboardEvent, down: boolean) => {
-    if (
-      event.target instanceof Element &&
-      event.target.closest("input, textarea, select, [contenteditable]")
-    ) {
-      return;
+  // When the chord changes under held keys (a chord hotkey lifted, a latched
+  // chord toggled), each key keeps its root sounding and swaps the notes
+  // around it: lifting a chord leaves just the held notes. Kits play one-shot
+  // hits, so they are left alone.
+  const onChordChange = useEffectEvent((next: number | null) => {
+    if (held.current.size === 0 || isKit(preset.target)) return;
+    const intervals = next === null ? [0] : CHORDS[next].intervals;
+    for (const [root, entry] of held.current) {
+      const rootMidi = entry.midis[0];
+      const semitones = intervals.map((interval) => root + interval);
+      const midis = intervals.map((interval) => rootMidi + interval);
+      for (const midi of entry.midis) {
+        if (midis.includes(midi)) continue;
+        deviceEngine.noteOff(midi);
+        transport.capture(noteName(midi), false);
+      }
+      for (const midi of midis) {
+        if (entry.midis.includes(midi)) continue;
+        deviceEngine.noteOn(midi, 0.8);
+        transport.capture(noteName(midi), true);
+      }
+      held.current.set(root, { semitones, midis });
     }
-    // Held Shift works while held; if a click latched it, the key unlatches it.
-    if (event.key === "Shift") {
-      if (!down) setShiftHeld(false);
-      else if (event.repeat) return;
-      else if (shiftLatched) setShiftLatched(false);
-      else setShiftHeld(true);
-      return;
-    }
-    const semitone = HOTKEY_SEMITONES.get(event.code);
-    if (semitone === undefined) return;
-    if (!down) {
-      releaseKey(semitone);
-      return;
-    }
-    if (event.metaKey || event.ctrlKey || event.altKey) return;
-    event.preventDefault();
-    if (!event.repeat) pressKey(semitone);
+    syncLitNotes();
   });
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => onHotkey(event, true);
-    const handleKeyUp = (event: KeyboardEvent) => onHotkey(event, false);
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, []);
+  useEffect(() => onChordChange(activeChord), [activeChord]);
 
   // Keeps the selected param when the next instrument has it too.
   const selectPreset = (next: DevicePreset) => {
@@ -423,18 +539,56 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     }
   };
 
+  const padBindings = shift ? library.shiftButtons : library.buttons;
+
+  const pressPlay = () => {
+    deviceEngine.unlock();
+    transport.play();
+  };
+
+  const pressStop = () => {
+    transport.stop();
+    flashStop();
+  };
+
+  const pressMetronome = () => {
+    deviceEngine.unlock();
+    transport.toggleMetronome();
+  };
+
+  const pressTool = (pad: ToolPad) => {
+    if (pad === "record") pressRecord();
+    else if (pad === "play") pressPlay();
+    else if (pad === "stop") pressStop();
+    else if (pad === "metronome") pressMetronome();
+    else if (pad === "synth") pressSynth();
+    else if (pad === "save") pressSave();
+    else pressModule(pad);
+  };
+
+  const toolHotkey = (pad: ToolPad) => ({
+    hotkey: TOOL_HOTKEYS[pad],
+    held: heldPads.has(keyCode(TOOL_HOTKEYS[pad])),
+  });
+
+  const toggleChord = (index: number) =>
+    setChord((current) => (current === index ? null : index));
+
+  // With Shift a pad plays, binds or saves to its alternate.
+  const padName = (pad: number) => `${shift ? "Shift pad" : "Pad"} ${pad + 1}`;
+
   const pressPresetPad = (pad: number) => {
     if (view === "presets") {
       const chosen = presets[presetIndex];
-      bindPad(pad, chosen.id);
-      showNotice(`Pad ${pad + 1} → ${chosen.name}`);
+      bindPad(pad, chosen.id, shift);
+      showNotice(`${padName(pad)} → ${chosen.name}`);
       return;
     }
     if (view === "save") {
       saveToPad(pad);
       return;
     }
-    const bound = presets.find(({ id }) => id === library.buttons[pad]);
+    const bound = presets.find(({ id }) => id === padBindings[pad]);
     if (bound) selectPreset(bound);
   };
 
@@ -442,6 +596,9 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     if (view === "presets") {
       setView("scope");
     } else if (shift) {
+      // Opening the library releases a latched Shift, so a pad press binds
+      // the pad itself unless Shift is pressed again for its alternate.
+      setShiftLatched(false);
       setPresetIndex(
         Math.max(
           0,
@@ -453,6 +610,15 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       setParamPage(Math.floor(paramIndex / PARAMS_PER_PAGE));
       setView((current) => (current === "synth" ? "scope" : "synth"));
     }
+  };
+
+  // Shift + Record switches between tape and sequencer takes instead.
+  const pressRecord = () => {
+    if (shift) {
+      transport.setMode(transport.mode === "sequencer" ? "tape" : "sequencer");
+      return;
+    }
+    transport.record();
   };
 
   // Shift + Save resets the preset instead.
@@ -477,12 +643,12 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const saveToPad = (pad: number) => {
     const icon = ICON_CHOICES[iconIndex];
     const saved =
-      preset.user && library.buttons[pad] === preset.id
+      preset.user && padBindings[pad] === preset.id
         ? updatePreset(preset, values, icon)
         : savePreset(preset, values, icon);
-    bindPad(pad, saved.id);
+    bindPad(pad, saved.id, shift);
     clearEdits(preset.id);
-    finishSave(saved, `Saved ${saved.name} to pad ${pad + 1}`);
+    finishSave(saved, `Saved ${saved.name} to ${padName(pad).toLowerCase()}`);
   };
 
   // Saving bakes the edits into the saved preset, so the one it came from goes
@@ -592,6 +758,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
         }
         accent="var(--synth-red)"
         lit={view === id}
+        {...toolHotkey(id)}
         onPress={() => pressModule(id)}
       >
         {icon}
@@ -602,13 +769,17 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   // With a kit selected, keys show the drum they play instead of a note name.
   const renderKey = (semitone: number, slot: number, black: boolean) => {
     const midi = F3_MIDI + semitone + 12 * octave;
-    const piece = isKit(preset.target) ? DRUM_PIECES[keyPiece(midi)] : null;
+    const piece = isKit(preset.target)
+      ? DRUM_PIECES[keyPiece(preset.target, midi)]
+      : null;
     return (
       <Key
         key={semitone}
         variant={black ? "black" : "white"}
         label={piece ? `${piece.name} (${spokenNote(midi)})` : spokenNote(midi)}
-        note={piece ? <piece.Icon /> : engravedNote(midi)}
+        note={
+          piece ? piece.Icon ? <piece.Icon /> : piece.name : engravedNote(midi)
+        }
         hotkey={HOTKEYS[semitone]}
         lit={litNotes.has(semitone)}
         className={cn(styles.slot, black ? styles.blackSlot : styles.whiteSlot)}
@@ -618,6 +789,80 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       />
     );
   };
+
+  const onHotkey = useEffectEvent((event: KeyboardEvent, down: boolean) => {
+    if (
+      event.target instanceof Element &&
+      event.target.closest("input, textarea, select, [contenteditable]")
+    ) {
+      return;
+    }
+    if (event.code === "Backquote") {
+      event.preventDefault();
+      if (down) moveFocus(event.shiftKey ? -1 : 1);
+      return;
+    }
+    if (event.key === "Escape") {
+      if (down && keyboardFocus())
+        (document.activeElement as HTMLElement).blur();
+      return;
+    }
+    if (event.code === "Enter" && keyboardFocus()) return;
+    // Held Shift works while held; if a click latched it, the key unlatches it.
+    if (event.key === "Shift") {
+      if (!down) setShiftHeld(false);
+      else if (event.repeat) return;
+      else if (shiftLatched) setShiftLatched(false);
+      else setShiftHeld(true);
+      return;
+    }
+    const action = PAD_HOTKEYS.get(event.code);
+    if (action) {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      event.preventDefault();
+      setHeldPads((current) => {
+        const next = new Set(current);
+        if (down) next.add(event.code);
+        else next.delete(event.code);
+        return next;
+      });
+      if (action.kind === "chord") {
+        // On a chord a click latched, the hotkey releases the latch instead.
+        if (!down) {
+          setHeldChord((held) => (held === action.index ? null : held));
+        } else if (!event.repeat) {
+          if (chord === action.index) setChord(null);
+          else setHeldChord(action.index);
+        }
+        return;
+      }
+      if (!down || event.repeat) return;
+      if (action.kind === "preset") pressPresetPad(action.index);
+      else if (action.kind === "step") step(action.direction);
+      else pressTool(action.pad);
+      return;
+    }
+    const semitone = HOTKEY_SEMITONES.get(event.code);
+    if (semitone === undefined) return;
+    if (!down) {
+      releaseKey(semitone);
+      return;
+    }
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    event.preventDefault();
+    if (!event.repeat) pressKey(semitone);
+  });
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => onHotkey(event, true);
+    const handleKeyUp = (event: KeyboardEvent) => onHotkey(event, false);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
 
   const selectedDisplay = formatParam(selected, selectedValue);
   const selection = (
@@ -647,7 +892,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     : [];
   // Synth opens (or, while it is up, closes) the library in this mode.
   const libraryMode = shift || view === "presets";
-  const padPresets = library.buttons.map(
+  const padPresets = padBindings.map(
     (id) => presets.find((candidate) => candidate.id === id) ?? null,
   );
 
@@ -787,9 +1032,14 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                       icon: <PresetIcon icon={icon} />,
                     }))
                   : presets.map((candidate) => {
-                      const bound = library.buttons
-                        .map((id, pad) => (id === candidate.id ? pad + 1 : 0))
-                        .filter(Boolean);
+                      const bound = [
+                        ...library.buttons.map((id, pad) =>
+                          id === candidate.id ? `${pad + 1}` : "",
+                        ),
+                        ...library.shiftButtons.map((id, pad) =>
+                          id === candidate.id ? `⇧${pad + 1}` : "",
+                        ),
+                      ].filter(Boolean);
                       return {
                         id: candidate.id,
                         label: candidate.name,
@@ -839,188 +1089,161 @@ export function SynthDevice({ className }: SynthDeviceProps) {
             </div>
           </div>
 
-          <div className={styles.row}>
-            <div className={styles.side}>
-              <div className={styles.toolGroup}>
-                <Pad
-                  label={shift ? "Reset preset" : "Save preset"}
-                  accent="var(--synth-red)"
-                  onPress={pressSave}
-                >
-                  {shift ? <RotateCcw /> : <Save />}
-                </Pad>
-                <Pad
-                  label="Shift"
-                  accent="var(--synth-red)"
-                  pressed={shift}
-                  held={shiftHeld}
-                  onPress={() => setShiftLatched((on) => !on)}
-                >
-                  <ArrowUp />
-                </Pad>
-              </div>
-              <div className={styles.pads} role="group" aria-label="Controls">
-                <Pad
-                  label="Sequencer"
-                  accent="var(--synth-green)"
-                  pressed={transport.mode === "sequencer"}
-                  onPress={() =>
-                    transport.setMode(
-                      transport.mode === "sequencer" ? "tape" : "sequencer",
-                    )
-                  }
-                >
-                  <Grid3x3 />
-                </Pad>
-                <Pad
-                  label="Record"
-                  accent="var(--synth-red)"
-                  lit={transport.state === "recording"}
-                  onPress={transport.record}
-                >
-                  <Circle fill="currentColor" />
-                </Pad>
-                <Pad
-                  label="Play"
-                  accent="var(--synth-green)"
-                  lit={transport.state === "playing"}
-                  onPress={() => {
-                    deviceEngine.unlock();
-                    transport.play();
-                  }}
-                >
-                  <Play fill="currentColor" />
-                </Pad>
-                <Pad
-                  label="Stop"
-                  accent="var(--synth-green)"
-                  lit={stopLit}
-                  onPress={() => {
-                    transport.stop();
-                    flashStop();
-                  }}
-                >
-                  <Square fill="currentColor" />
-                </Pad>
-                <Pad
-                  label={
-                    paging
-                      ? "Previous page"
-                      : shift
-                        ? "Previous preset"
-                        : "Octave down"
-                  }
-                  accent="var(--synth-red)"
-                  onPress={() => step(-1)}
-                >
-                  <ArrowLeft />
-                </Pad>
-                <Pad
-                  label={
-                    paging ? "Next page" : shift ? "Next preset" : "Octave up"
-                  }
-                  accent="var(--synth-red)"
-                  onPress={() => step(1)}
-                >
-                  <ArrowRight />
-                </Pad>
-              </div>
-            </div>
-
-            <div className={styles.middle}>
-              <div className={styles.toolbar}>
-                <Pad
-                  label={libraryMode ? "Preset library" : "Synth parameters"}
-                  accent="var(--synth-red)"
-                  lit={view === "synth" || view === "presets"}
-                  onPress={pressSynth}
-                >
-                  {libraryMode ? <LayoutGrid /> : <AudioWaveform />}
-                </Pad>
-                <Pad
-                  label="Metronome"
-                  accent="var(--synth-green)"
-                  pressed={transport.metronome}
-                  onPress={() => {
-                    deviceEngine.unlock();
-                    transport.toggleMetronome();
-                  }}
-                >
-                  <Metronome />
-                </Pad>
-                <div
-                  className={styles.toolGroup}
-                  role="group"
-                  aria-label="Presets"
-                >
-                  {padPresets.map((padPreset, pad) => {
-                    const name = padPreset?.name ?? "empty";
-                    return (
-                      <Pad
-                        key={pad}
-                        label={
-                          view === "presets"
-                            ? `Bind to pad ${pad + 1} (${name})`
-                            : view === "save"
-                              ? `Save to pad ${pad + 1} (${name})`
-                              : (padPreset?.name ??
-                                `Empty preset pad ${pad + 1}`)
-                        }
-                        accent="var(--synth-red)"
-                        onPress={() => pressPresetPad(pad)}
-                      >
-                        {padPreset && <PresetIcon icon={padPreset.icon} />}
-                      </Pad>
-                    );
-                  })}
-                </div>
-                {renderModulePad("adsr", <AdsrIcon />)}
-              </div>
-
-              <div className={styles.keybed}>
-                <div
-                  className={styles.keys}
-                  role="group"
-                  aria-label="Piano keys"
-                >
-                  {WHITE_KEYS.map((semitone, slot) =>
-                    renderKey(semitone, slot, false),
-                  )}
-                  {BLACK_KEYS.map((semitone) =>
-                    renderKey(
-                      semitone,
-                      WHITE_KEYS.indexOf(semitone - 1) + 1,
-                      true,
-                    ),
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.side}>
-              <div className={styles.toolGroup}>
-                {renderModulePad("lfo", <WavesHorizontal />)}
-                {renderModulePad("fx", <AudioLines />)}
-              </div>
-              <div
-                className={styles.pads}
-                role="group"
-                aria-label="Chord macros"
+          <div
+            className={styles.banks}
+            data-focus-group="pads"
+            data-focus-order="rows"
+          >
+            <div className={styles.bank} role="group" aria-label="Transport">
+              <Pad
+                label={shift ? "Sequencer" : "Record"}
+                accent={shift ? "var(--synth-green)" : "var(--synth-red)"}
+                pressed={shift ? transport.mode === "sequencer" : undefined}
+                lit={transport.state === "recording"}
+                {...toolHotkey("record")}
+                onPress={pressRecord}
               >
-                {CHORDS.map(({ name, label }, index) => (
+                {shift ? <Grid3x3 /> : <Circle fill="currentColor" />}
+              </Pad>
+              <Pad
+                label="Play"
+                accent="var(--synth-green)"
+                lit={transport.state === "playing"}
+                {...toolHotkey("play")}
+                onPress={pressPlay}
+              >
+                <Play fill="currentColor" />
+              </Pad>
+              <Pad
+                label="Stop"
+                accent="var(--synth-green)"
+                lit={stopLit}
+                {...toolHotkey("stop")}
+                onPress={pressStop}
+              >
+                <Square fill="currentColor" />
+              </Pad>
+              <Pad
+                label={
+                  paging
+                    ? "Previous page"
+                    : shift
+                      ? "Previous preset"
+                      : "Octave down"
+                }
+                accent="var(--synth-red)"
+                hotkey="←"
+                held={heldPads.has("ArrowLeft")}
+                onPress={() => step(-1)}
+              >
+                <ArrowLeft />
+              </Pad>
+              <Pad
+                label={
+                  paging ? "Next page" : shift ? "Next preset" : "Octave up"
+                }
+                accent="var(--synth-red)"
+                hotkey="→"
+                held={heldPads.has("ArrowRight")}
+                onPress={() => step(1)}
+              >
+                <ArrowRight />
+              </Pad>
+              <Pad
+                label="Shift"
+                accent="var(--synth-red)"
+                pressed={shift}
+                held={shiftHeld}
+                hotkey="⇧"
+                onPress={() => setShiftLatched((on) => !on)}
+              >
+                <ArrowUp />
+              </Pad>
+            </div>
+            <div className={styles.bank} role="group" aria-label="Tools">
+              <Pad
+                label="Metronome"
+                accent="var(--synth-green)"
+                pressed={transport.metronome}
+                {...toolHotkey("metronome")}
+                onPress={pressMetronome}
+              >
+                <Metronome />
+              </Pad>
+              <Pad
+                label={libraryMode ? "Preset library" : "Synth parameters"}
+                accent="var(--synth-red)"
+                lit={view === "synth" || view === "presets"}
+                {...toolHotkey("synth")}
+                onPress={pressSynth}
+              >
+                {libraryMode ? <LayoutGrid /> : <AudioWaveform />}
+              </Pad>
+              {renderModulePad("adsr", <AdsrIcon />)}
+              <Pad
+                label={shift ? "Reset preset" : "Save preset"}
+                accent="var(--synth-red)"
+                {...toolHotkey("save")}
+                onPress={pressSave}
+              >
+                {shift ? <RotateCcw /> : <Save />}
+              </Pad>
+              {renderModulePad("lfo", <WavesHorizontal />)}
+              {renderModulePad("fx", <AudioLines />)}
+            </div>
+            <div className={styles.bank} role="group" aria-label="Presets">
+              {padPresets.map((padPreset, pad) => {
+                const name = padPreset?.name ?? "empty";
+                return (
                   <Pad
-                    key={name}
-                    label={`${name} chord`}
-                    accent="var(--synth-blue)"
-                    pressed={chord === index}
-                    onPress={() =>
-                      setChord((current) => (current === index ? null : index))
+                    key={pad}
+                    label={
+                      view === "presets"
+                        ? `Bind to ${padName(pad).toLowerCase()} (${name})`
+                        : view === "save"
+                          ? `Save to ${padName(pad).toLowerCase()} (${name})`
+                          : (padPreset?.name ?? `Empty preset pad ${pad + 1}`)
                     }
+                    accent="var(--synth-red)"
+                    hotkey={PRESET_HOTKEYS[pad]}
+                    held={heldPads.has(keyCode(PRESET_HOTKEYS[pad]))}
+                    onPress={() => pressPresetPad(pad)}
                   >
-                    {label}
+                    {padPreset && <PresetIcon icon={padPreset.icon} />}
                   </Pad>
-                ))}
-              </div>
+                );
+              })}
+            </div>
+            <div className={styles.bank} role="group" aria-label="Chord macros">
+              {CHORDS.map(({ name, label }, index) => (
+                <Pad
+                  key={name}
+                  label={`${name} chord`}
+                  accent="var(--synth-blue)"
+                  pressed={activeChord === index}
+                  hotkey={CHORD_HOTKEYS[index]}
+                  held={heldChord === index}
+                  onPress={() => toggleChord(index)}
+                >
+                  {label}
+                </Pad>
+              ))}
+            </div>
+          </div>
+          <div className={styles.keybed}>
+            <div
+              className={styles.keys}
+              role="group"
+              aria-label="Piano keys"
+              data-focus-group="keys"
+              data-focus-order="columns"
+            >
+              {WHITE_KEYS.map((semitone, slot) =>
+                renderKey(semitone, slot, false),
+              )}
+              {BLACK_KEYS.map((semitone) =>
+                renderKey(semitone, WHITE_KEYS.indexOf(semitone - 1) + 1, true),
+              )}
             </div>
           </div>
         </div>

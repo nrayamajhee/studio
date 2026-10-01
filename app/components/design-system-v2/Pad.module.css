@@ -1,4 +1,5 @@
 .pad {
+  position: relative;
   width: 68px;
   height: 68px;
   padding: 0;
@@ -56,6 +57,26 @@
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.01em;
+}
+
+/* The piano keys' keycap badge, smaller, centred above the face so the faces
+   of pads with and without one stay level. */
+.hotkey {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  translate: -50% 0;
+  display: grid;
+  place-items: center;
+  min-width: 13px;
+  height: 13px;
+  padding: 0 3px;
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .face svg {

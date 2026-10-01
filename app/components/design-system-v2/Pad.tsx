@@ -17,6 +17,8 @@ export interface PadProps {
   pressed?: boolean;
   // Held down from outside, e.g. while its keyboard hotkey is held.
   held?: boolean;
+  // Keyboard shortcut, shown as a small keycap in the corner.
+  hotkey?: string;
   onPress?: () => void;
   children?: ReactNode;
   className?: string;
@@ -34,8 +36,20 @@ export function pressProps(onPress?: () => void) {
   };
 }
 
-const isActivation = (event: KeyboardEvent) =>
-  event.key === " " || event.key === "Enter";
+// The Device is played from the keyboard, so a pointer press must not leave a
+// control focused: Space or Return would then press it again natively. It also
+// ends keyboard navigation, handing Space and Return back to the hotkeys.
+export const keepFocus = {
+  onMouseDown: (event: MouseEvent) => {
+    event.preventDefault();
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  },
+};
+
+// Space is the Device's Play key, so only Return presses a focused control.
+const isActivation = (event: KeyboardEvent) => event.key === "Enter";
 
 export function Pad({
   label,
@@ -43,6 +57,7 @@ export function Pad({
   lit = false,
   pressed,
   held = false,
+  hotkey,
   onPress,
   children,
   className,
@@ -57,6 +72,7 @@ export function Pad({
       tone="secondary"
       aria-label={label}
       aria-pressed={pressed}
+      aria-keyshortcuts={hotkey}
       data-lit={lit || pressed || undefined}
       data-held={held || down || undefined}
       className={cn(styles.pad, className)}
@@ -66,6 +82,7 @@ export function Pad({
         press.onPointerDown(event);
       }}
       onClick={press.onClick}
+      {...keepFocus}
       onPointerUp={release}
       onPointerCancel={release}
       onPointerLeave={release}
@@ -77,6 +94,11 @@ export function Pad({
       }}
       onBlur={release}
     >
+      {hotkey && (
+        <kbd className={styles.hotkey} aria-hidden="true">
+          {hotkey}
+        </kbd>
+      )}
       {children && (
         <span className={styles.face} aria-hidden="true">
           {children}

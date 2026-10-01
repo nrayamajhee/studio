@@ -11,27 +11,25 @@
   cursor: ew-resize;
   touch-action: none;
   translate: none;
+  /* The pads' soft drop shadow, as a filter so it follows the gear edge (a
+     drop-shadow has no spread, so a shorter offset and blur stand in for the
+     pads' −4px). */
   filter: drop-shadow(
-      0 10px 7px
-        color-mix(
-          in srgb,
-          rgb(20 20 19 / 0.28),
-          rgb(0 0 0 / 0.55) var(--theme-mix)
-        )
-    )
-    drop-shadow(
-      0 3px 2px
-        color-mix(
-          in srgb,
-          rgb(20 20 19 / 0.35),
-          rgb(0 0 0 / 0.6) var(--theme-mix)
-        )
-    );
+    0 3px 3px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.25),
+        rgb(0 0 0 / 0.5) var(--theme-mix)
+      )
+  );
 }
 
+/* Just the outline: the shared Button's focus ring (a white offset ring)
+   would show here, since the knob has no box-shadow of its own to replace it. */
 .knob:focus-visible {
   outline: 3px solid #2f7de1;
   outline-offset: 3px;
+  box-shadow: none;
 }
 
 .cap {
