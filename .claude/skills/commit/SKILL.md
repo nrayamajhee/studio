@@ -4,8 +4,9 @@ description: commit code, create commit, commit change, commit, commit this, com
 ---
 
 - Summarize the changes in < 70 chars using conventional commit.
-- Use this summary to git commit code.
+- Use this summary to git commit code. Stage all uncommitted code, then run:
     `git commit -m "SUMMARY_MESSAGE"`.
+- Do not switch branch to commit code.
 - Do not add more message. Do not add co-authors.
 - Never commit code as anthropic or claude.
 - Before firing the commit message, check if the message you're about to use to commit code follows these instructions.

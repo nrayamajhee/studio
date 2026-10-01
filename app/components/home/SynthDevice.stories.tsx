@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { HotkeyProvider } from "./input/HotkeyProvider";
 import { SynthDevice } from "./SynthDevice";
 
 const meta = {
@@ -9,7 +10,9 @@ const meta = {
   decorators: [
     (Story) => (
       <div className="home-background h-[640px] rounded-xl p-8">
-        <Story />
+        <HotkeyProvider>
+          <Story />
+        </HotkeyProvider>
       </div>
     ),
   ],

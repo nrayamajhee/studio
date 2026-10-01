@@ -1,8 +1,8 @@
-import React from "react";
 import { Link } from "react-router";
 import type { Route } from "./+types/home";
 import { useTheme } from "../hooks/useTheme";
 import { Button } from "../components/design-system/Button";
+import { HotkeyProvider } from "../components/home/input/HotkeyProvider";
 import { SynthDevice } from "../components/home/SynthDevice";
 import { Sun, Moon } from "lucide-react";
 
@@ -56,11 +56,13 @@ export default function Home() {
       </div>
 
       <main className="absolute inset-0 z-10 py-20">
-        <SynthDevice />
+        <HotkeyProvider>
+          <SynthDevice />
+        </HotkeyProvider>
       </main>
 
       <footer
-        className="absolute inset-x-0 bottom-6 z-10 text-center text-sm select-text"
+        className="absolute inset-x-0 bottom-6 z-10 text-center text-sm select-text flex items-center gap-2 justify-center"
         style={{
           color: "color-mix(in srgb, #000000, #ffffff var(--theme-mix))",
         }}
@@ -72,6 +74,14 @@ export default function Home() {
           className="font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
         >
           Nishan Rayamajhee
+        </Link>
+        <Link
+          to="https://buymeacoffee.com/nrayamajhee"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
+        >
+          Buy me a coffee!
         </Link>
       </footer>
 
