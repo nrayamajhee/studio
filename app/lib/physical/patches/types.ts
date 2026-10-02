@@ -33,6 +33,8 @@ export interface ParamSpec {
   unit?: "Hz" | "s" | "%" | "cents" | "dB" | "st" | "×" | "ms";
   scale?: "linear" | "log";
   primary?: boolean;
+  // Named choices for an index param, e.g. the oscillator's wave.
+  options?: readonly string[];
 }
 
 export type BodySpec =
@@ -166,4 +168,12 @@ export interface DrumKitPatch extends BasePatch {
   keys: readonly DrumPieceId[];
 }
 
-export type Patch = StringPatch | BorePatch | BowedPatch | DrumKitPatch;
+// Not a physical model: band-limited oscillators through a lowpass and a gate.
+export interface OscillatorPatch extends BasePatch {
+  id: InstrumentId;
+  family: "oscillator";
+  polyphony: number;
+}
+
+export type Patch =
+  StringPatch | BorePatch | BowedPatch | DrumKitPatch | OscillatorPatch;

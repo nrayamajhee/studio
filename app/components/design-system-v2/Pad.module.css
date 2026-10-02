@@ -59,13 +59,11 @@
   letter-spacing: 0.01em;
 }
 
-/* The piano keys' keycap badge, smaller, centred above the face so the faces
-   of pads with and without one stay level. */
+/* The piano keys' keycap badge, smaller, tucked in the top-right corner. */
 .hotkey {
   position: absolute;
   top: 6px;
-  left: 50%;
-  translate: -50% 0;
+  right: 6px;
   display: grid;
   place-items: center;
   min-width: 13px;
@@ -77,6 +75,29 @@
   font-size: 8px;
   font-weight: 600;
   line-height: 1;
+}
+
+/* Mirrors the keycap: its centre sits as far from the top-left corner as the
+   keycap's does from the top-right. */
+.indicator {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 25%, transparent);
+}
+
+.indicator[data-on] {
+  background: var(--pad-accent);
+  box-shadow: 0 0 6px var(--pad-accent);
+}
+
+/* On a lit pad the accent is the pad itself, so the LED glows white. */
+.pad[data-lit] .indicator[data-on] {
+  background: #ffffff;
+  box-shadow: 0 0 6px rgb(255 255 255 / 0.7);
 }
 
 .face svg {

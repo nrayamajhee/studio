@@ -9,6 +9,7 @@ import { guitar } from "./guitar";
 import { madal, tabla } from "./handDrums";
 import { harp } from "./harp";
 import { nylonGuitar } from "./nylonGuitar";
+import { oscillator } from "./oscillator";
 import { piano } from "./piano";
 import { saxophone } from "./saxophone";
 import { trumpet } from "./trumpet";
@@ -36,6 +37,7 @@ export const PATCHES: readonly Patch[] = [
   drums808,
   madal,
   tabla,
+  oscillator,
 ];
 
 export const PATCH_BY_ID = Object.fromEntries(

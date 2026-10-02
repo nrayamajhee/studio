@@ -106,7 +106,7 @@ function ParamSlider({
       valueDisplay={formatParam(spec, value)}
       min={log ? 0 : spec.min}
       max={log ? 1 : spec.max}
-      step={log ? 0.001 : (spec.max - spec.min) / 200}
+      step={log ? 0.001 : spec.options ? 1 : (spec.max - spec.min) / 200}
       value={log ? toUnit(spec, value) : value}
       onChange={(next) => onChange(log ? fromUnit(spec, next) : next)}
     />

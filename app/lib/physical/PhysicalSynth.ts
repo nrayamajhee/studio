@@ -5,8 +5,12 @@ import type {
   InstrumentId,
   KitId,
   ParamTarget,
+  ProcessorOptions,
   WorkletMessage,
 } from "./messages";
+import { renderWorklet } from "./offline/renderOffline";
+import { Scrubber } from "./Scrubber";
+import { TrackMixer } from "./TrackMixer";
 
 type Listener<T> = (value: T) => void;
 
@@ -14,6 +18,8 @@ export class PhysicalSynth {
   private ctx: AudioContext | null = null;
   private node: AudioWorkletNode | null = null;
   private analyser: AnalyserNode | null = null;
+  // Where the worklet joins the output, ahead of the limiter and analyser.
+  private output: AudioNode | null = null;
   private booting: Promise<void> | null = null;
   private pending: EngineEvent[] = [];
   private statsListeners = new Set<Listener<EngineStats>>();
@@ -86,6 +92,37 @@ export class PhysicalSynth {
 
   panic() {
     this.send({ type: "panic" });
+  }
+
+  // Renders events offline through the worklet at the live sample rate, e.g.
+  // a take to scrub. Null until the engine has started.
+  async render(
+    events: EngineEvent[],
+    duration: number,
+    overrides?: ProcessorOptions["overrides"],
+  ) {
+    if (!this.ctx) return null;
+    const { buffer } = await renderWorklet(
+      events,
+      this.ctx.sampleRate,
+      duration,
+      overrides,
+    );
+    return buffer;
+  }
+
+  // Plays a rendered buffer at a drag's speed into the live output.
+  scrubber(buffer: AudioBuffer) {
+    return this.ctx && this.output
+      ? new Scrubber(this.ctx, this.output, buffer)
+      : null;
+  }
+
+  // Plays rendered tracks together into the live output.
+  mixer() {
+    return this.ctx && this.output
+      ? new TrackMixer(this.ctx, this.output)
+      : null;
   }
 
   onStats(listener: Listener<EngineStats>) {
@@ -163,6 +200,7 @@ export class PhysicalSynth {
 
     this.node = node;
     this.analyser = analyser;
+    this.output = limiter;
     this.isReady = true;
     if (this.pending.length > 0) {
       node.port.postMessage(this.pending);

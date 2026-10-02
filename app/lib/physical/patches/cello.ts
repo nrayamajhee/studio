@@ -61,5 +61,5 @@ export const cello: BowedPatch = {
       [2200, 0.02, 0.08],
     ],
   },
-  params: bowedParams(0.3, "modal"),
+  params: bowedParams(0.3, 0.1, "modal"),
 };

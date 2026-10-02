@@ -37,3 +37,7 @@ export const TextLabel: Story = {
 export const Hotkey: Story = {
   args: { hotkey: "7" },
 };
+
+export const Indicator: Story = {
+  args: { indicator: true },
+};

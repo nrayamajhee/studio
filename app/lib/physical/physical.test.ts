@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { midiToHz } from "./dsp/math";
+import { gainToDb, midiToHz } from "./dsp/math";
 import type { EngineEvent, InstrumentId } from "./messages";
 import { StringLoop } from "./models/StringLoop";
 import {
@@ -7,6 +7,7 @@ import {
   measurePitch,
   measureT60,
   signalStats,
+  windowRms,
 } from "./offline/analysis";
 import {
   decaySweep,
@@ -145,7 +146,7 @@ describe("Engine", () => {
 
 describe("instruments", () => {
   const strings: InstrumentId[] = ["piano", "guitar", "bass", "uprightBass"];
-  const others: InstrumentId[] = ["violin", "saxophone", "flute"];
+  const others: InstrumentId[] = ["violin", "saxophone", "flute", "oscillator"];
 
   it.each(RATES)("stay in tune across their ranges (%i Hz)", async (fs) => {
     for (const id of strings) {
@@ -188,6 +189,35 @@ describe("instruments", () => {
   it("play mezzo-forte C4 near −18 dBFS RMS", async () => {
     for (const id of [...strings, ...others]) {
       expect((await loudness(engineRenderer, id, 48000)).pass).toBe(true);
+    }
+  });
+
+  it("play every oscillator wave in tune near −18 dBFS RMS", () => {
+    for (let wave = 0; wave < 4; wave++) {
+      const { left } = renderEngine(
+        [
+          {
+            type: "noteOn",
+            instrument: "oscillator",
+            note: 60,
+            velocity: 0.7,
+            time: 0,
+          },
+        ],
+        {
+          sampleRate: 48000,
+          duration: 1.2,
+          overrides: {
+            oscillator: { "exciter.wave": wave, "space.send": 0 },
+            master: { "reverb.return": 0, "master.volume": 1 },
+          },
+        },
+      );
+      expect(
+        Math.abs(measurePitch(left, 48000, midiToHz(60)).cents),
+      ).toBeLessThan(1);
+      const db = gainToDb(windowRms(left, 48000, 0, 0, 1));
+      expect(Math.abs(db + 18)).toBeLessThan(1);
     }
   });
 });

@@ -23,6 +23,7 @@ export const valueToStep = (spec: ParamSpec, value: number, steps: number) =>
   Math.round(toUnit(spec, value) * (steps - 1));
 
 export function formatParam(spec: ParamSpec, value: number) {
+  if (spec.options) return spec.options[Math.round(value)] ?? "";
   switch (spec.unit) {
     case "Hz":
       return value >= 1000

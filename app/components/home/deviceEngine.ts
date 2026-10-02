@@ -1,10 +1,23 @@
 import {
   physicalSynth,
+  type EngineEvent,
   type InstrumentId,
   type KitId,
 } from "../../lib/physical";
 import { MASTER_PARAMS, PATCH_BY_ID } from "../../lib/physical/patches";
 import type { DrumKitPatch, ParamSpec } from "../../lib/physical/patches/types";
+import type { PlayedNote } from "./noteRecorder";
+
+// Rendered past a take's end, so its last notes and the reverb ring out (s).
+const RENDER_TAIL = 2.5;
+
+// An instrument as it was set up to play: which, at what octave, with which
+// params (its own and the master's).
+export interface DeviceSound {
+  target: InstrumentId | KitId;
+  octave: number;
+  overrides: Record<string, Record<string, number>>;
+}
 
 export interface DevicePreset {
   id: string;
@@ -17,10 +30,14 @@ export interface DevicePreset {
   // Semitones added to keybed notes so each instrument plays in its register.
   octave: number;
   overrides?: Record<string, number>;
+  // The preset pad (0–5) a built-in starts on, and the one it starts on as a
+  // Shift alternate. A pad goes back to it when its saved preset is deleted.
+  pad?: number;
+  shiftPad?: number;
 }
 
 // The built-in presets, in library order: keys, guitars and bass, bowed and
-// plucked strings, brass, winds, hand drums and kits.
+// plucked strings, brass, winds, hand drums and kits, then the oscillator.
 export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "piano",
@@ -28,6 +45,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Grand Piano",
     target: "piano",
     octave: 0,
+    pad: 0,
   },
   {
     id: "electricGuitar",
@@ -35,6 +53,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Electric Guitar",
     target: "electricGuitar",
     octave: 0,
+    shiftPad: 1,
   },
   {
     id: "guitar",
@@ -42,6 +61,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Acoustic Guitar",
     target: "guitar",
     octave: 0,
+    pad: 1,
   },
   {
     id: "bass",
@@ -49,6 +69,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Bass Guitar",
     target: "bass",
     octave: -24,
+    shiftPad: 2,
   },
   {
     id: "nylonGuitar",
@@ -63,6 +84,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Violin",
     target: "violin",
     octave: 0,
+    shiftPad: 3,
   },
   {
     id: "cello",
@@ -77,6 +99,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Upright Bass",
     target: "uprightBass",
     octave: -24,
+    pad: 2,
   },
   {
     id: "harp",
@@ -84,6 +107,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Harp",
     target: "harp",
     octave: 0,
+    shiftPad: 0,
   },
   {
     id: "trumpet",
@@ -91,6 +115,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Trumpet",
     target: "trumpet",
     octave: 0,
+    shiftPad: 4,
   },
   {
     id: "bassTrumpet",
@@ -105,6 +130,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Flute",
     target: "flute",
     octave: 12,
+    pad: 3,
   },
   {
     id: "saxophone",
@@ -112,6 +138,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Alto Sax",
     target: "saxophone",
     octave: 0,
+    pad: 4,
   },
   {
     id: "madal",
@@ -133,12 +160,21 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Drum Kit",
     target: "drums",
     octave: 0,
+    pad: 5,
   },
   {
     id: "drums808",
     icon: "keys",
     name: "808 Kit",
     target: "drums808",
+    octave: 0,
+    shiftPad: 5,
+  },
+  {
+    id: "oscillator",
+    icon: "waveform",
+    name: "Oscillator",
+    target: "oscillator",
     octave: 0,
   },
 ];
@@ -254,24 +290,6 @@ export const DEVICE_MODULES: Readonly<Record<ModuleId, DeviceModule>> = {
 export const keyPiece = (kit: KitId, midi: number) =>
   (PATCH_BY_ID[kit] as DrumKitPatch).keys[midi % 12];
 
-const NOTE_OFFSETS: Record<string, number> = {
-  C: 0,
-  D: 2,
-  E: 4,
-  F: 5,
-  G: 7,
-  A: 9,
-  B: 11,
-};
-
-// "C#4" → 61.
-export function noteNameToMidi(name: string) {
-  const match = /^([A-G])(#|b)?(-?\d+)$/.exec(name);
-  if (!match) return -1;
-  const accidental = match[2] === "#" ? 1 : match[2] === "b" ? -1 : 0;
-  return (Number(match[3]) + 1) * 12 + NOTE_OFFSETS[match[1]] + accidental;
-}
-
 // How the instrument's physical model is excited, shown on the screen.
 export function engineName(target: InstrumentId | KitId) {
   const patch = PATCH_BY_ID[target];
@@ -288,6 +306,8 @@ export function engineName(target: InstrumentId | KitId) {
       return "Bow";
     case "drums":
       return "Strike";
+    case "oscillator":
+      return "Oscillator";
   }
 }
 
@@ -345,17 +365,6 @@ export const deviceEngine = {
     return values;
   },
 
-  preview() {
-    if (isKit(current.target)) {
-      physicalSynth.hit(current.target, "kick", 0.8);
-      return;
-    }
-    const target = current.target;
-    const note = 60 + current.octave;
-    physicalSynth.noteOn(target, note, 0.8);
-    setTimeout(() => physicalSynth.noteOff(target, note), 350);
-  },
-
   // `midi` is the keybed note; the preset's octave offset is applied here and
   // remembered so the note-off reaches the same instrument and note.
   noteOn(midi: number, velocity: number) {
@@ -407,5 +416,66 @@ export const deviceEngine = {
 
   getAnalyser() {
     return physicalSynth.getAnalyser();
+  },
+
+  // The current instrument, its octave and every param sent to it and the
+  // master: what an offline render needs to sound like the Device does now.
+  sound(): DeviceSound {
+    const { target, octave } = current;
+    const overrides: Record<string, Record<string, number>> = {};
+    for (const [key, value] of applied) {
+      const split = key.indexOf(":");
+      const owner = key.slice(0, split);
+      if (owner !== target && owner !== "master") continue;
+      (overrides[owner] ??= {})[key.slice(split + 1)] = value;
+    }
+    return { target, octave, overrides };
+  },
+
+  // Keybed notes (ms) rendered offline with `sound`, for scrubbing a take or
+  // mixing tracks. Null until the engine starts.
+  render(
+    notes: readonly PlayedNote[],
+    length: number,
+    sound: DeviceSound = deviceEngine.sound(),
+  ) {
+    const { target, octave, overrides } = sound;
+    const events: EngineEvent[] = notes.flatMap(
+      ({ note, start, duration, velocity }): EngineEvent[] =>
+        isKit(target)
+          ? [
+              {
+                type: "hit",
+                kit: target,
+                piece: keyPiece(target, note),
+                velocity,
+                time: start / 1000,
+              },
+            ]
+          : [
+              {
+                type: "noteOn",
+                instrument: target,
+                note: note + octave,
+                velocity,
+                time: start / 1000,
+              },
+              {
+                type: "noteOff",
+                instrument: target,
+                note: note + octave,
+                time: (start + duration) / 1000,
+              },
+            ],
+    );
+    return physicalSynth.render(events, length / 1000 + RENDER_TAIL, overrides);
+  },
+
+  scrubber(buffer: AudioBuffer) {
+    return physicalSynth.scrubber(buffer);
+  },
+
+  mixer() {
+    return physicalSynth.mixer();
   },
 };

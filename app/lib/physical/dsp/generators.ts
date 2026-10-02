@@ -110,6 +110,93 @@ export class ModLfo {
   }
 }
 
+// PolyBLEP (Välimäki & Huovilainen): the two-sample residual that rounds off
+// an upward step of 2 at phase 0, for phase t and increment dt.
+function blep(t: number, dt: number) {
+  if (t < dt) {
+    const x = t / dt;
+    return x + x - x * x - 1;
+  }
+  if (t > 1 - dt) {
+    const x = (t - 1) / dt;
+    return x * x + x + x + 1;
+  }
+  return 0;
+}
+
+// Its integral (polyBLAMP), which rounds off a corner at phase 0.
+function blamp(t: number, dt: number) {
+  if (t < dt) {
+    const x = 1 - t / dt;
+    return (x * x * x) / 3;
+  }
+  if (t > 1 - dt) {
+    const x = (t - 1) / dt + 1;
+    return (x * x * x) / 3;
+  }
+  return 0;
+}
+
+// Scales each wave to a sine's RMS: triangle and saw are 1/√3, square 1.
+const WAVE_GAINS = [1, Math.sqrt(1.5), Math.SQRT1_2, Math.sqrt(1.5)];
+
+// An audio-rate oscillator: sine, triangle, square or saw (wave 0–3). Steps
+// and corners are band-limited with polyBLEP and polyBLAMP, so high notes
+// don't alias the way the LFO's raw shapes would.
+export class Oscillator {
+  wave = 0;
+  // Per-sample approach toward the set frequency; 1 jumps.
+  glide = 1;
+  private readonly fs: number;
+  private phase = 0;
+  private increment = 0;
+  private target = 0;
+
+  constructor(fs: number) {
+    this.fs = fs;
+  }
+
+  // Starts at `from` and glides to `hz`.
+  setFrequency(hz: number, from = hz) {
+    this.increment = from / this.fs;
+    this.target = hz / this.fs;
+  }
+
+  reset() {
+    this.phase = 0;
+  }
+
+  process() {
+    if (this.increment !== this.target) {
+      this.increment += (this.target - this.increment) * this.glide;
+      if (Math.abs(this.target - this.increment) < 1e-9)
+        this.increment = this.target;
+    }
+    const t = this.phase;
+    const dt = this.increment;
+    this.phase += dt;
+    if (this.phase >= 1) this.phase -= 1;
+    const half = t < 0.5 ? t + 0.5 : t - 0.5;
+    let y: number;
+    switch (this.wave) {
+      case 0:
+        return Math.sin(TWO_PI * t);
+      case 1:
+        // Corners at the trough (phase 0) and the peak (phase ½), where the
+        // slope turns by ±8 per cycle.
+        y =
+          1 - 4 * Math.abs(t - 0.5) + 4 * dt * (blamp(t, dt) - blamp(half, dt));
+        break;
+      case 2:
+        y = (t < 0.5 ? 1 : -1) + blep(t, dt) - blep(half, dt);
+        break;
+      default:
+        y = 2 * t - 1 - blep(t, dt);
+    }
+    return y * WAVE_GAINS[this.wave];
+  }
+}
+
 // One-pole approach toward a target with a ~10 ms time constant, for every
 // continuous parameter that touches a sounding voice or bus.
 export class Smoother {

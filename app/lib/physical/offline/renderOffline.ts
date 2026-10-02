@@ -1,4 +1,5 @@
 import type {
+  EngineEvent,
   EngineStats,
   ProcessorOptions,
   WorkletMessage,
@@ -6,13 +7,13 @@ import type {
 import type { Renderer } from "./diagnostics";
 
 // Renders an event list through an OfflineAudioContext with the real worklet,
-// so diagnostics exercise exactly what ships. Browser only.
-export const workletRenderer: Renderer = async (
-  events,
-  sampleRate,
-  duration,
-  overrides,
-) => {
+// so offline audio is exactly what ships. Browser only.
+export async function renderWorklet(
+  events: EngineEvent[],
+  sampleRate: number,
+  duration: number,
+  overrides?: ProcessorOptions["overrides"],
+) {
   const length = Math.round(duration * sampleRate);
   const ctx = new OfflineAudioContext({
     numberOfChannels: 2,
@@ -37,6 +38,22 @@ export const workletRenderer: Renderer = async (
   // Let the last stats message posted during rendering arrive.
   await new Promise((resolve) => setTimeout(resolve, 20));
   node.port.close();
+  return { buffer, stats };
+}
+
+// The diagnostics' renderer for the real worklet.
+export const workletRenderer: Renderer = async (
+  events,
+  sampleRate,
+  duration,
+  overrides,
+) => {
+  const { buffer, stats } = await renderWorklet(
+    events,
+    sampleRate,
+    duration,
+    overrides,
+  );
   return {
     left: buffer.getChannelData(0),
     right: buffer.getChannelData(1),

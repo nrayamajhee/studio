@@ -4,6 +4,7 @@ import { Adsr } from "./Adsr";
 import { DelayLine } from "./DelayLine";
 import { Fdn } from "./Fdn";
 import { Allpass1, OnePoleLowpass } from "./filters";
+import { Oscillator } from "./generators";
 import { ModalBank, Resonator2 } from "./modal";
 import {
   allpass1ForDelay,
@@ -190,6 +191,54 @@ describe("Adsr", () => {
     const before = env.value;
     env.noteOn();
     expect(Math.abs(env.process() - before)).toBeLessThan(1e-3);
+  });
+});
+
+describe("Oscillator", () => {
+  const render = (wave: number, hz: number, n: number) => {
+    const osc = new Oscillator(FS);
+    osc.wave = wave;
+    osc.setFrequency(hz);
+    return Float64Array.from({ length: n }, () => osc.process());
+  };
+
+  // Power more than 40 Hz from any harmonic of f0, relative to the total.
+  const aliasDb = (signal: ArrayLike<number>, f0: number) => {
+    const { magnitudeDb, binHz } = spectrum(signal, FS, 0, signal.length);
+    let total = 0;
+    let alias = 0;
+    for (let i = 1; i < magnitudeDb.length; i++) {
+      const power = 10 ** (magnitudeDb[i] / 10);
+      const harmonic = (i * binHz) / f0;
+      total += power;
+      if (Math.abs(harmonic - Math.round(harmonic)) * f0 > 40) alias += power;
+    }
+    return 10 * Math.log10(alias / total);
+  };
+
+  it("plays every wave at a sine's RMS without DC", () => {
+    for (let wave = 0; wave < 4; wave++) {
+      // 250 Hz fits a whole number of cycles in a second.
+      const out = render(wave, 250, FS);
+      const mean = out.reduce((sum, y) => sum + y, 0) / FS;
+      const rms = Math.sqrt(out.reduce((sum, y) => sum + y * y, 0) / FS);
+      expect(Math.abs(mean)).toBeLessThan(1e-3);
+      // polyBLEP rounds off a little of each step (under 0.1 dB at 250 Hz).
+      expect(Math.abs(rms - Math.SQRT1_2)).toBeLessThan(0.01);
+    }
+  });
+
+  it("aliases far less than the raw square and saw", () => {
+    const f0 = 2793.83;
+    const naive = [(t: number) => (t < 0.5 ? 1 : -1), (t: number) => 2 * t - 1];
+    [2, 3].forEach((wave, i) => {
+      const raw = Float64Array.from({ length: 8192 }, (_, k) =>
+        naive[i](((k * f0) / FS) % 1),
+      );
+      expect(aliasDb(render(wave, f0, 8192), f0)).toBeLessThan(
+        aliasDb(raw, f0) - 10,
+      );
+    });
   });
 });
 

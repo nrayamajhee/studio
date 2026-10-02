@@ -17,8 +17,11 @@ export interface PadProps {
   pressed?: boolean;
   // Held down from outside, e.g. while its keyboard hotkey is held.
   held?: boolean;
-  // Keyboard shortcut, shown as a small keycap in the corner.
+  // Keyboard shortcut, shown as a small keycap in the top-right corner.
   hotkey?: string;
+  // An LED in the top-left corner for a state the pad shows without being
+  // pressed, e.g. a module switched on. Undefined leaves the pad without one.
+  indicator?: boolean;
   onPress?: () => void;
   children?: ReactNode;
   className?: string;
@@ -58,6 +61,7 @@ export function Pad({
   pressed,
   held = false,
   hotkey,
+  indicator,
   onPress,
   children,
   className,
@@ -94,6 +98,13 @@ export function Pad({
       }}
       onBlur={release}
     >
+      {indicator !== undefined && (
+        <span
+          className={styles.indicator}
+          data-on={indicator || undefined}
+          aria-hidden="true"
+        />
+      )}
       {hotkey && (
         <kbd className={styles.hotkey} aria-hidden="true">
           {hotkey}

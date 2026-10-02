@@ -77,7 +77,9 @@
 /* Views sit in the ~565 × 181 space between the two readouts. */
 .params,
 .tiles,
-.module {
+.module,
+.tempo,
+.tracks {
   position: absolute;
   top: 30px;
   right: 20px;
@@ -156,16 +158,17 @@
   overflow: hidden;
 }
 
-/* Icons are two rows of 12 squares as wide as the view allows (~42 px), 24 a
-   page, centred in its height. */
+/* Icons are four rows of 12, 48 a page: squares as tall as a row (~41 px),
+   centred in their columns. */
 .iconTiles {
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: none;
-  align-content: center;
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  justify-items: center;
 }
 
 .iconTiles .tile {
-  width: 100%;
+  width: auto;
+  height: 100%;
   aspect-ratio: 1;
   padding: 0;
 }
@@ -408,4 +411,294 @@
   font-weight: 700;
   line-height: 10px;
   color: var(--screen-red);
+}
+
+/* Centred on the footer's line, in its type: the 17px pills sit 1px lower
+   than its 15px text. */
+.badges {
+  position: absolute;
+  right: 20px;
+  bottom: 8px;
+  left: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--screen-ink) 60%, transparent);
+}
+
+.switchLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Wide enough for "Off", so switching doesn't shift the label. */
+.switch {
+  min-width: 40px;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--screen-ink) 30%, transparent);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 13px;
+  text-align: center;
+  color: color-mix(in srgb, var(--screen-ink) 55%, transparent);
+}
+
+.switch[data-on] {
+  border-color: var(--screen-ink);
+  color: var(--screen-bg);
+  background: var(--screen-ink);
+}
+
+/* The tempo in green, as the green knob sets it, over a light per beat. */
+.tempo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.bpm {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 72px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.bpmUnit {
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--screen-ink) 55%, transparent);
+}
+
+.beats {
+  display: flex;
+  gap: 16px;
+}
+
+.beat {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--screen-ink) 18%, transparent);
+}
+
+.beat[data-on] {
+  background: var(--screen-ink);
+}
+
+/* From under the title down to the footer's line, which holds its labels. */
+.roll {
+  position: absolute;
+  top: 30px;
+  right: 20px;
+  bottom: 9px;
+  left: 20px;
+  width: calc(100% - 40px);
+  height: calc(100% - 39px);
+  color: var(--screen-ink);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* An outlined pill like Off; the negative margin keeps the readout's 15px
+   line. */
+.unsaved {
+  margin: -1px 0;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--screen-ink) 30%, transparent);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 13px;
+  color: color-mix(in srgb, var(--screen-ink) 55%, transparent);
+}
+
+/* Four rows a page, like the studio's track list: a label column, then the
+   lane. */
+.tracks {
+  display: grid;
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.tracksEmpty {
+  grid-row: 1 / -1;
+  align-self: center;
+  justify-self: center;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--screen-ink) 55%, transparent);
+}
+
+/* The lane fills the row's height (Button centres its children). */
+.track {
+  display: grid;
+  align-items: stretch;
+  grid-template-columns: 112px 5px minmax(0, 1fr);
+  gap: 8px;
+  min-height: 0;
+  padding: 3px 4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--screen-ink);
+  background: transparent;
+  translate: none;
+  transition: none;
+}
+
+/* Green marks the track the green knob picked. */
+.track[aria-pressed="true"] {
+  border-color: var(--screen-green);
+}
+
+.track:focus-visible {
+  border-color: var(--screen-blue);
+  outline: none;
+}
+
+.trackLabel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-content: center;
+  column-gap: 6px;
+  min-width: 0;
+  text-align: left;
+}
+
+.trackName,
+.trackDetail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.trackName {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 15px;
+  letter-spacing: 0.06em;
+}
+
+.trackDetail {
+  grid-column: 1;
+  font-size: 10px;
+  line-height: 13px;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--screen-ink) 55%, transparent);
+}
+
+/* The studio's mute and solo buttons as pills: filled when on. */
+.trackFlags {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1 / -1;
+  align-self: center;
+  gap: 3px;
+}
+
+.trackFlags > span {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid color-mix(in srgb, var(--screen-ink) 30%, transparent);
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--screen-ink) 55%, transparent);
+}
+
+.trackFlags > span[data-on] {
+  border-color: var(--screen-ink);
+  color: var(--screen-bg);
+  background: var(--screen-ink);
+}
+
+/* A line at the start of each bar. */
+.lane {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--screen-ink) 12%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: calc(100% / var(--bars)) 100%;
+}
+
+/* Each pass of the take is a clip, with a dark seam before the next. */
+.pass {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-right: 2px solid var(--screen-bg);
+  border-radius: 4px;
+}
+
+.clipNote {
+  position: absolute;
+  min-width: 2px;
+  height: 3px;
+  border-radius: 1.5px;
+  opacity: 0.95;
+}
+
+.clipNote[data-repeat] {
+  opacity: 0.55;
+}
+
+/* Muted, or left out of a solo. */
+.track[data-quiet] .lane {
+  opacity: 0.3;
+}
+
+/* The track's volume, filling from the bottom in the red of its knob. */
+.trackVolume {
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--screen-ink) 12%, transparent);
+}
+
+.trackVolume > span {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 3px;
+  background: var(--screen-red);
+}
+
+/* Where the mix is, across every lane; hidden while it is stopped. */
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  left: calc(var(--playhead, -1) * 100%);
+  width: 2px;
+  background: var(--screen-green);
+  opacity: clamp(0, calc((var(--playhead, -1) + 1) * 1000), 1);
 }

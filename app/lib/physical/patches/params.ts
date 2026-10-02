@@ -94,6 +94,14 @@ function filterParams(cutoff: number, q: number): ParamSpec[] {
   ];
 }
 
+// Legato glide time; the lowest is a jump.
+const portamentoParam = (value: number) =>
+  param("resonator.portamento", "Portamento", "resonator", 0.001, 0.3, value, {
+    unit: "s",
+    scale: "log",
+    primary: true,
+  });
+
 const shared = (send: number): ParamSpec[] => [
   param("space.send", "Reverb send", "space", 0, 1, send, primary),
   param("output.level", "Level", "space", 0, 2, 1),
@@ -184,6 +192,8 @@ export interface BoreDefaults {
   noise: number;
   vibrato: number;
   vibratoRate: number;
+  // Legato glide time; the winds slide, brass a little less.
+  portamento: number;
   jetRatio?: number;
   reed?: number;
   blowPosition?: number;
@@ -260,11 +270,7 @@ export function boreParams(d: BoreDefaults): ParamSpec[] {
         primary: true,
       },
     ),
-    param("resonator.portamento", "Portamento", "resonator", 0.001, 0.3, 0.03, {
-      unit: "s",
-      scale: "log",
-      primary: true,
-    }),
+    portamentoParam(d.portamento),
     param(
       "resonator.pitchVibrato",
       "Pitch vibrato",
@@ -293,6 +299,7 @@ export function boreParams(d: BoreDefaults): ParamSpec[] {
 // use the bus's modal body instead.
 export function bowedParams(
   send: number,
+  portamento: number,
   body: "violin" | "modal" = "violin",
 ): ParamSpec[] {
   return [
@@ -315,6 +322,7 @@ export function bowedParams(
       unit: "Hz",
       primary: true,
     }),
+    portamentoParam(portamento),
     body === "violin"
       ? param("body.violin", "Body", "body", 0, 1, 1, primary)
       : param("body.mix", "Body", "body", 0, 1, 0.6, primary),
@@ -325,6 +333,47 @@ export function bowedParams(
       { attack: 0.06, decay: 0.05, sustain: 0.9, release: 0.15 },
       INSTRUMENT_ADSR,
     ),
+    ...shared(send),
+  ];
+}
+
+// In the order of the Oscillator's waves.
+export const OSCILLATOR_WAVES = ["Sine", "Triangle", "Square", "Saw"] as const;
+
+// Shaping beyond the gate's attack and release comes from the master ADSR.
+export function oscillatorParams(send: number, glide: number): ParamSpec[] {
+  const time = { unit: "s", scale: "log", primary: true } as const;
+  return [
+    param(
+      "exciter.wave",
+      "Wave",
+      "exciter",
+      0,
+      OSCILLATOR_WAVES.length - 1,
+      0,
+      {
+        options: OSCILLATOR_WAVES,
+        primary: true,
+      },
+    ),
+    // Legato glide, the synth's portamento; the lowest is a jump.
+    param("exciter.glide", "Glide", "exciter", 0.001, 0.5, glide, time),
+    param("filter.cutoff", "Cutoff", "filter", 200, 16000, 16000, {
+      unit: "Hz",
+      scale: "log",
+      primary: true,
+    }),
+    param(
+      "filter.resonance",
+      "Resonance",
+      "filter",
+      0.5,
+      8,
+      Math.SQRT1_2,
+      primary,
+    ),
+    param("envelope.attack", "Attack", "envelope", 0.005, 0.5, 0.005, time),
+    param("envelope.release", "Release", "envelope", 0.02, 2, 0.1, time),
     ...shared(send),
   ];
 }

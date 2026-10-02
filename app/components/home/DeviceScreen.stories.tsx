@@ -29,12 +29,24 @@ const meta = {
   argTypes: {
     view: {
       control: "inline-radio",
-      options: ["scope", "synth", "save", "presets", "adsr"],
+      options: [
+        "scope",
+        "synth",
+        "save",
+        "presets",
+        "adsr",
+        "tempo",
+        "roll",
+        "tracks",
+      ],
     },
     getAnalyser: { control: false },
     params: { control: false },
     tiles: { control: false },
     readouts: { control: false },
+    badges: { control: false },
+    getRoll: { control: false },
+    tracks: { control: false },
   },
 } satisfies Meta<typeof DeviceScreen>;
 
@@ -55,8 +67,9 @@ export const Envelope: Story = {
   args: {
     view: "adsr",
     title: "ADSR",
-    status: "On",
+    status: "",
     footer: ["", ""],
+    badges: [{ label: "ADSR", on: true }],
     readouts: [
       { label: "Attack", display: "0 ms", amount: 0 },
       { label: "Decay", display: "200 ms", amount: 0.5 },
@@ -70,8 +83,9 @@ export const Lfo: Story = {
   args: {
     view: "lfo",
     title: "LFO",
-    status: "On",
+    status: "",
     footer: ["", ""],
+    badges: [{ label: "LFO", on: true }],
     lfoShape: 0,
     lfoRate: 5,
     readouts: [
@@ -87,13 +101,104 @@ export const Effects: Story = {
   args: {
     view: "fx",
     title: "FX",
-    status: "On",
+    status: "",
     footer: ["", ""],
+    badges: [{ label: "FX", on: false }],
     readouts: [
       { label: "Drive", display: "30%", amount: 0.3 },
       { label: "Chorus", display: "50%", amount: 0.5 },
       { label: "Delay", display: "20%", amount: 0.2 },
       { label: "Reverb", display: "35%", amount: 0.5 },
+    ],
+  },
+};
+
+export const Tempo: Story = {
+  args: {
+    view: "tempo",
+    title: "Tempo",
+    status: "",
+    footer: ["", ""],
+    beat: 0,
+    badges: [{ label: "Metronome", on: true }],
+  },
+};
+
+// A C major arpeggio and its chord, two bars at 120 BPM.
+const rollNotes = [60, 64, 67, 72].map((note, i) => ({
+  note,
+  start: i * 500,
+  duration: 400,
+  velocity: 0.8,
+}));
+
+export const Roll: Story = {
+  args: {
+    view: "roll",
+    status: "Take · Tape",
+    footer: ["", ""],
+    getRoll: () => ({
+      now: 3500,
+      notes: [
+        ...rollNotes,
+        ...[60, 64, 67].map((note) => ({
+          note,
+          start: 2000,
+          duration: 1000,
+          velocity: 0.8,
+        })),
+      ],
+      state: "stopped",
+    }),
+  },
+};
+
+// An arpeggio looping every two bars, and a held chord played once, muted.
+export const Tracks: Story = {
+  args: {
+    view: "tracks",
+    title: "Tracks",
+    status: "Track 1/2",
+    footer: ["Starts bar 1", "←→ slide · X mute · ⇧X solo"],
+    selected: 0,
+    trackSpan: 16,
+    tracks: [
+      {
+        id: "arpeggio",
+        name: "Track 1",
+        detail: "Grand Piano",
+        color: "#f2884b",
+        start: 0,
+        clip: {
+          length: 8,
+          loops: true,
+          notes: [60, 64, 67, 72, 67, 64, 60, 55].map((note, i) => ({
+            note,
+            start: i,
+            length: 0.5,
+          })),
+        },
+        volume: 0.8,
+        muted: false,
+        soloed: false,
+        audible: true,
+      },
+      {
+        id: "chord",
+        name: "Track 2",
+        detail: "Violin",
+        color: "#2f7de1",
+        start: 4,
+        clip: {
+          length: 6,
+          loops: false,
+          notes: [53, 57, 60].map((note) => ({ note, start: 0, length: 6 })),
+        },
+        volume: 0.5,
+        muted: true,
+        soloed: false,
+        audible: false,
+      },
     ],
   },
 };

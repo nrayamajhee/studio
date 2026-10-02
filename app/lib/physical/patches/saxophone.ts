@@ -40,6 +40,7 @@ export const saxophone: BorePatch = {
     noise: 1,
     vibrato: 0.03,
     vibratoRate: 5.2,
+    portamento: 0.06,
     attack: 0.04,
     decay: 0.1,
     sustain: 0.85,

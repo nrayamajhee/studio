@@ -57,5 +57,6 @@ export const violin: BowedPatch = {
   outputGain: 0.89,
   pan: { center: 0.1, spread: 0.1 },
   body: { type: "none" },
-  params: bowedParams(0.25),
+  // A finger sliding along the string between legato notes.
+  params: bowedParams(0.25, 0.08),
 };

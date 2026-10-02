@@ -6,6 +6,8 @@ export const RELEASED = 2;
 export const STOLEN = 3;
 
 const SILENCE = 3.1623e-5; // −90 dBFS
+// Notes starting this close together are a chord, and don't glide.
+const CHORD_SECONDS = 0.03;
 
 // Shared lifecycle: idle → active → released → idle, plus stolen (a 5 ms
 // fade-out). Voices report each rendered segment's peak through track() and
@@ -99,4 +101,20 @@ export function pickVictim<V extends Voice>(voices: readonly V[]) {
     }
   }
   return victim;
+}
+
+// The note a new one glides from when played legato: the latest one still
+// held, unless it started with this one as part of a chord. −1 for none.
+export function legatoNote(
+  voices: readonly Voice[],
+  clock: number,
+  fs: number,
+) {
+  let latest: Voice | null = null;
+  for (let i = 0; i < voices.length; i++) {
+    const voice = voices[i];
+    if (voice.state === ACTIVE && (!latest || voice.age > latest.age))
+      latest = voice;
+  }
+  return latest && clock - latest.age >= CHORD_SECONDS * fs ? latest.note : -1;
 }

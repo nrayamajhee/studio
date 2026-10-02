@@ -1,6 +1,6 @@
 # How the synth engine works
 
-The Device doesn't play samples, and it doesn't use oscillators. Every note is a small physics simulation. An **exciter** (hammer, pick, finger, breath, bow or drum stick) drives a **resonator** (a string, a tube or a drum head), and the resonator's own feedback loop creates the pitch and tone. A **body** (soundboard, guitar top, bell) then colors the result.
+The Device doesn't play samples, and apart from one plain Oscillator source (§5.5) it doesn't use oscillators. Every other note is a small physics simulation. An **exciter** (hammer, pick, finger, breath, bow or drum stick) drives a **resonator** (a string, a tube or a drum head), and the resonator's own feedback loop creates the pitch and tone. A **body** (soundboard, guitar top, bell) then colors the result.
 
 ```text
   +-----------+  energy   +-------------+  vibration  +--------+       +--------+
@@ -330,6 +330,7 @@ The bow sits on the string, splitting it into a neck side and a bridge side. At 
 ```
 
 - Up to 4 voices (double stops and chords). Vibrato modulates the neck length and fades in after 0.3 s, the way a player adds it late.
+- **Portamento**: a note played while another is still held starts at that note's loop length and glides to its own (80 ms on the violin, 100 ms on the cello), like a finger sliding along the string. Notes starting within 30 ms of each other are a chord and don't glide. The plucked and struck strings have no portamento: a fret or hammer jumps.
 - The body filter was designed at 44.1 kHz. Its pole/zero pairs are rescaled to the actual sample rate so the resonances stay put.
 - The **cello** runs the same loop an octave and a fifth lower. The violin's filter would put its resonances in the wrong place, so the cello uses the bus's modal body instead (air and wood modes near 100 and 200 Hz); its Body knob is that body's mix.
 
@@ -371,6 +372,22 @@ Drums use **modal synthesis**: the resonator is a bank of decaying sine waves, o
 Each piece is one voice: hitting it again restarts it. The kits differ only in their constants (`patches/drums.ts`, `patches/handDrums.ts`), and each maps the 12 pitch classes to its own pieces (`keys`), which the Device plays from the keybed (on the drum kits, F kick, G snare, …; on the hand drums, keys show the stroke's syllable).
 
 The **metronome** is a separate two-mode woodblock (1.9/2.9 kHz, higher when accented) that goes straight to the master, dry.
+
+### 5.5 Oscillator (not a physical model)
+
+The one source with nothing to simulate: a sine, triangle, square or saw (the **Wave** param, in the LFO's shape order with a saw in place of random) through a lowpass, for the master ADSR, LFO and FX to shape. It runs on its own bus like any instrument, so it reaches them the same way.
+
+```text
+  oscillator (sine | triangle | square | saw)  x velocity
+        |
+        v
+  SVF lowpass (Cutoff, Resonance)  ->  gate (Attack, Release)  ->  master ADSR  ->  bus
+```
+
+- Raw square and saw edges alias at high notes, so the square and saw steps are rounded off with **polyBLEP** and the triangle's corners with **polyBLAMP** (`dsp/generators.ts`), about 15 dB less aliasing at F7.
+- Each wave is scaled to a sine's RMS, so switching waves keeps the level; one output gain puts a mezzo-forte C4 at −18 dBFS RMS for all four.
+- The gate holds full level while the key is down; decay and sustain come from the master ADSR. Up to 8 voices.
+- **Glide**: played legato, a new note's frequency slides from the held note's (50 ms by default), under the same chord rule as the bowed strings.
 
 ## 6. Bodies (`models/Body.ts`)
 
@@ -482,7 +499,8 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
 ```text
   app/lib/physical/
   |-- index.ts               physicalSynth singleton (safe to import during prerender)
-  |-- PhysicalSynth.ts       main-thread facade: boot, queue, limiter, analyser
+  |-- PhysicalSynth.ts       main-thread facade: boot, queue, limiter, analyser, offline render
+  |-- Scrubber.ts            plays a rendered take at a drag's speed (tape / vinyl scrub)
   |-- processor.worklet.ts   the AudioWorkletProcessor (only file touching worklet globals)
   |-- messages.ts            event / stats / warning types shared by both threads
   |-- engine/
@@ -500,6 +518,7 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
   |   |-- BoreInstrument.ts  flute, sax, brass
   |   |-- BowedInstrument.ts violin
   |   |-- DrumKit.ts         drum kits + metronome woodblock
+  |   |-- OscillatorInstrument.ts  band-limited oscillator source
   |   |-- Body.ts            modal / radiation bodies, tilt
   |   `-- Waveguide.ts       fractional delay section (STK DelayL style)
   |-- dsp/                   DelayLine, filters, Svf, modal banks, Fdn, Adsr, noise/LFO,

@@ -4,6 +4,7 @@ import type { BusId, EngineEvent, EngineStats, ParamTarget } from "../messages";
 import { BoreInstrument } from "../models/BoreInstrument";
 import { BowedInstrument } from "../models/BowedInstrument";
 import { DrumKit, Woodblock } from "../models/DrumKit";
+import { OscillatorInstrument } from "../models/OscillatorInstrument";
 import { StringInstrument } from "../models/StringInstrument";
 import { MASTER_PARAMS, PATCHES } from "../patches";
 import type { Patch } from "../patches/types";
@@ -42,6 +43,8 @@ function createInstrument(
       return new BowedInstrument(patch, fs, overrides);
     case "drums":
       return new DrumKit(patch, fs, overrides);
+    case "oscillator":
+      return new OscillatorInstrument(patch, fs, overrides);
   }
 }
 

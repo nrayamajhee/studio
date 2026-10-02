@@ -1,4 +1,10 @@
-import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
+import {
+  useRef,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 import { Button } from "../design-system/Button";
 import { cn } from "../../lib/utils";
 import { keepFocus } from "./Pad";
@@ -32,6 +38,18 @@ export function Key({
   style,
 }: KeyProps) {
   const release = () => onRelease?.();
+  // Whether the pointer is what holds this key, so hovering off a key held
+  // from the keyboard leaves it sounding.
+  const pointerHeld = useRef(false);
+  const pointerPress = () => {
+    pointerHeld.current = true;
+    onPress?.();
+  };
+  const pointerRelease = () => {
+    if (!pointerHeld.current) return;
+    pointerHeld.current = false;
+    release();
+  };
 
   return (
     <Button
@@ -43,14 +61,21 @@ export function Key({
       className={cn(styles.key, styles[variant], className)}
       style={style}
       {...keepFocus}
-      onPointerDown={(event) => {
+      // Held down, the pointer slides from key to key, playing each one it
+      // enters, even after leaving the keybed and coming back. Touch captures
+      // its pointer by default, so it lets go to slide too.
+      onPointerDown={(event: PointerEvent<HTMLButtonElement>) => {
         if (event.button !== 0) return;
-        event.currentTarget.setPointerCapture(event.pointerId);
-        onPress?.();
+        if (event.currentTarget.hasPointerCapture(event.pointerId))
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        pointerPress();
       }}
-      onPointerUp={release}
-      onPointerCancel={release}
-      onLostPointerCapture={release}
+      onPointerEnter={(event) => {
+        if (event.buttons & 1) pointerPress();
+      }}
+      onPointerLeave={pointerRelease}
+      onPointerUp={pointerRelease}
+      onPointerCancel={pointerRelease}
       onKeyDown={(event) => {
         if (!isActivation(event)) return;
         event.preventDefault();

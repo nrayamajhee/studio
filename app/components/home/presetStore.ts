@@ -19,33 +19,21 @@ export interface PresetLibrary {
 const STORAGE_KEY = "studio.instruments";
 const PRESET_PADS = 6;
 
-// What the pads play at first, and with Shift a relative from the same family.
-// Every built-in preset stays in the library to bind to any pad.
-const DEFAULT_PADS = [
-  "piano",
-  "guitar",
-  "uprightBass",
-  "flute",
-  "saxophone",
-  "drums",
-];
-const DEFAULT_SHIFT_PADS = [
-  "harp",
-  "electricGuitar",
-  "bass",
-  "violin",
-  "trumpet",
-  "drums808",
-];
-
-const padList = (ids: readonly string[]) =>
-  Array.from({ length: PRESET_PADS }, (_, pad) => ids[pad] ?? "");
+// What the pads play at first, and with Shift a relative from the same family,
+// as the built-in presets place themselves. Every built-in preset stays in the
+// library to bind to any pad.
+const padList = (field: "pad" | "shiftPad") =>
+  Array.from(
+    { length: PRESET_PADS },
+    (_, pad) =>
+      DEVICE_PRESETS.find((preset) => preset[field] === pad)?.id ?? "",
+  );
 
 const DEFAULT_LIBRARY: PresetLibrary = {
   instruments: [],
   edits: {},
-  buttons: padList(DEFAULT_PADS),
-  shiftButtons: padList(DEFAULT_SHIFT_PADS),
+  buttons: padList("pad"),
+  shiftButtons: padList("shiftPad"),
 };
 
 let library: PresetLibrary | null = null;
@@ -147,23 +135,31 @@ export const allPresets = (current: PresetLibrary): readonly DevicePreset[] => [
   ...current.instruments,
 ];
 
-// Saves the base preset's instrument with the given param values under the
-// next free "<instrument> <n>" name.
+// `name`, or with a number when another preset already has it.
+function freeName(name: string, except?: string) {
+  const taken = new Set(
+    allPresets(library ?? read())
+      .filter((preset) => preset.id !== except)
+      .map((preset) => preset.name),
+  );
+  if (!taken.has(name)) return name;
+  let n = 2;
+  while (taken.has(`${name} ${n}`)) n++;
+  return `${name} ${n}`;
+}
+
+// Saves the base preset's instrument with the given param values, named
+// `name` (how it sounds, e.g. "Pluck · LFO") or the next free numbered name.
 export function savePreset(
   base: DevicePreset,
   values: Record<string, number>,
   icon: string,
+  name: string,
 ) {
-  const current = library ?? read();
-  const family = DEVICE_PRESETS.find((preset) => preset.target === base.target);
-  const root = family?.name ?? base.name;
-  const taken = allPresets(current).filter(
-    (preset) => preset.target === base.target,
-  );
   const preset: DevicePreset = {
     ...base,
     id: `user-${Date.now().toString(36)}`,
-    name: `${root} ${taken.length + 1}`,
+    name: freeName(name),
     icon,
     user: true,
     overrides: values,
@@ -176,8 +172,14 @@ export function updatePreset(
   preset: DevicePreset,
   values: Record<string, number>,
   icon: string,
+  name: string,
 ) {
-  const next: DevicePreset = { ...preset, icon, overrides: values };
+  const next: DevicePreset = {
+    ...preset,
+    name: freeName(name, preset.id),
+    icon,
+    overrides: values,
+  };
   update((lib) => ({
     ...lib,
     instruments: lib.instruments.map((saved) =>
@@ -224,4 +226,34 @@ export function bindPad(pad: number, presetId: string, shift = false) {
     ...lib,
     [field]: lib[field].map((id, i) => (i === pad ? presetId : id)),
   }));
+}
+
+// Swaps a pad's preset with its Shift alternate.
+export function swapPad(pad: number) {
+  update((lib) => ({
+    ...lib,
+    buttons: lib.buttons.map((id, i) => (i === pad ? lib.shiftButtons[i] : id)),
+    shiftButtons: lib.shiftButtons.map((id, i) =>
+      i === pad ? lib.buttons[i] : id,
+    ),
+  }));
+}
+
+// Removes a saved preset with its edits; pads bound to it go back to their
+// defaults. Built-in presets are never removed.
+export function deletePreset(presetId: string) {
+  update((lib) => {
+    if (!lib.instruments.some((preset) => preset.id === presetId)) return lib;
+    const unbind = (field: "buttons" | "shiftButtons") =>
+      lib[field].map((id, i) =>
+        id === presetId ? DEFAULT_LIBRARY[field][i] : id,
+      );
+    return {
+      ...lib,
+      instruments: lib.instruments.filter((preset) => preset.id !== presetId),
+      buttons: unbind("buttons"),
+      shiftButtons: unbind("shiftButtons"),
+      edits: without(lib.edits, presetId),
+    };
+  });
 }

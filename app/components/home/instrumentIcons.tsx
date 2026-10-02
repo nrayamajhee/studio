@@ -147,6 +147,15 @@ export function AdsrIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// One cycle of a sine running into one of a square.
+export function OscillatorIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M2 12C3.5 5 6.5 5 8 12s4.5 7 6 0V6h4v12h4v-6" />
+    </svg>
+  );
+}
+
 // Taller body with sloped shoulders on an endpin, no bow.
 export function UprightBassIcon(props: SVGProps<SVGSVGElement>) {
   return (

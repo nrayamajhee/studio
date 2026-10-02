@@ -3,7 +3,6 @@ import {
   Anchor,
   Apple,
   Atom,
-  AudioWaveform,
   Bell,
   Bird,
   CassetteTape,
@@ -70,6 +69,7 @@ import {
   HarpIcon,
   MadalIcon,
   NylonGuitarIcon,
+  OscillatorIcon,
   TablaIcon,
   TrumpetIcon,
   UprightBassIcon,
@@ -94,7 +94,8 @@ export const PRESET_ICONS: Record<string, ComponentType> = {
   bassTrumpet: BassTrumpetIcon,
   madal: MadalIcon,
   tabla: TablaIcon,
-  waveform: AudioWaveform,
+  // The Synth pad shows lucide's AudioWaveform, so presets get their own.
+  waveform: OscillatorIcon,
   waves: Waves,
   music: Music,
   notes: Music2,
@@ -151,8 +152,8 @@ export const PRESET_ICONS: Record<string, ComponentType> = {
   game: Gamepad2,
 };
 
-// Offered by the Save picker, three full pages of 24: instruments, sound and
-// gear first, then moods and things.
+// Offered by the Save picker, 48 a page: instruments, sound and gear first,
+// then moods and things.
 export const ICON_CHOICES = Object.keys(PRESET_ICONS);
 
 // A preset's icon, or the key itself as text when it isn't a known icon.

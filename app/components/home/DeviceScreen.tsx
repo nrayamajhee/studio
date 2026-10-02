@@ -1,12 +1,25 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { cn } from "../../lib/utils";
 import { Button } from "../design-system/Button";
+import { NoteRoll } from "./NoteRoll";
 import { Oscilloscope } from "./Oscilloscope";
+import { DEFAULT_TIMING, type Timing } from "./noteRecorder";
+import type { TrackClip } from "./tracks";
+import type { RollFrame } from "./useTransport";
 import { keepFocus } from "../design-system-v2";
 import styles from "./DeviceScreen.module.css";
 
 export type ScreenView =
-  "scope" | "synth" | "save" | "presets" | "adsr" | "lfo" | "fx";
+  | "scope"
+  | "synth"
+  | "save"
+  | "presets"
+  | "adsr"
+  | "lfo"
+  | "fx"
+  | "tempo"
+  | "roll"
+  | "tracks";
 
 export interface ScreenParam {
   id: string;
@@ -178,6 +191,138 @@ function FxMeters({ stages }: { stages: readonly ScreenReadout[] }) {
   );
 }
 
+// A caption along the bottom of the screen; with `on`, a switch's name and
+// then On or Off in a pill.
+export interface ScreenBadge {
+  label: string;
+  on?: boolean;
+}
+
+// A row of the tracks view: its take's clip, where it starts on the timeline
+// (beats), and whether it's muted, soloed and heard.
+export interface ScreenTrack {
+  id: string;
+  name: string;
+  // The preset that plays it.
+  detail: string;
+  color: string;
+  start: number;
+  clip: TrackClip;
+  // 0–1, drawn as a red bar beside the lane.
+  volume: number;
+  muted: boolean;
+  soloed: boolean;
+  audible: boolean;
+}
+
+const TRACKS_PER_PAGE = 4;
+
+// The tracks' rows, with the mix's playhead: each frame sets --playhead (0–1
+// across the timeline, or -1 while stopped) for the lanes' playhead lines.
+function TrackList({
+  className,
+  getPosition,
+  span,
+  children,
+}: {
+  className: string;
+  getPosition: () => number | null;
+  span: number;
+  children: ReactNode;
+}) {
+  const list = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = list.current;
+    if (!element) return;
+    let frame = 0;
+    const draw = () => {
+      frame = requestAnimationFrame(draw);
+      const at = getPosition();
+      element.style.setProperty(
+        "--playhead",
+        String(at === null ? -1 : at / span),
+      );
+    };
+    draw();
+    return () => cancelAnimationFrame(frame);
+  }, [getPosition, span]);
+  return (
+    <div ref={list} className={className} role="group" aria-label="Tracks">
+      {children}
+    </div>
+  );
+}
+
+// A track's lane, like a clip on the studio's timeline: bar lines, the take's
+// notes as short bars at their pitch within the take's range (at least an
+// octave), and when it loops, fainter repeats out to the end.
+function TrackLane({
+  track,
+  span,
+  barBeats,
+}: {
+  track: ScreenTrack;
+  span: number;
+  barBeats: number;
+}) {
+  const { clip, start, color } = track;
+  const passes: number[] = [];
+  for (
+    let at = start;
+    clip.length > 0 && at < span && (passes.length === 0 || clip.loops);
+    at += clip.length
+  )
+    passes.push(at);
+  const pitches = clip.notes.map(({ note }) => note);
+  let low = Math.min(...pitches);
+  let high = Math.max(...pitches);
+  if (high - low < 12) {
+    const middle = (high + low) / 2;
+    low = middle - 6;
+    high = middle + 6;
+  }
+  const percent = (beats: number) => `${(beats / span) * 100}%`;
+  return (
+    <span
+      className={styles.lane}
+      style={{ "--bars": span / barBeats } as CSSProperties}
+      aria-hidden="true"
+    >
+      {passes.map((at, pass) => (
+        <span
+          key={`pass-${pass}`}
+          className={styles.pass}
+          style={{
+            left: percent(at),
+            width: percent(Math.min(clip.length, span - at)),
+            background: `color-mix(in srgb, ${color} 12%, transparent)`,
+          }}
+        />
+      ))}
+      <span className={styles.playhead} />
+      {passes.flatMap((at, pass) =>
+        clip.notes
+          .filter((note) => at + note.start < span)
+          .map((note, i) => (
+            <span
+              key={`${pass}-${i}`}
+              className={styles.clipNote}
+              data-repeat={pass > 0 || undefined}
+              style={{
+                left: percent(at + note.start),
+                width: percent(
+                  Math.min(note.length, clip.length - note.start, span - at),
+                ),
+                top: `${12 + (1 - (note.note - low) / (high - low)) * 70}%`,
+                background: color,
+              }}
+            />
+          )),
+      )}
+    </span>
+  );
+}
+
 // A level shown over the current view, e.g. the volume while it changes.
 export interface ScreenOverlay {
   label: string;
@@ -208,11 +353,20 @@ export function ScreenSeek({ children }: { children: ReactNode }) {
   return <span className={styles.seeking}>{children}</span>;
 }
 
+// A level the red knob sets, in red.
+export function ScreenLevel({ children }: { children: ReactNode }) {
+  return <span className={styles.selectionLabel}>{children}</span>;
+}
+
 export interface DeviceScreenProps {
   view?: ScreenView;
   title: string;
+  // The preset in the title has edits that aren't saved.
+  unsaved?: boolean;
   status: ReactNode;
   footer: readonly [left: ReactNode, right: ReactNode];
+  // Centred along the bottom in place of the footer.
+  badges?: readonly ScreenBadge[];
   getAnalyser?: () => AnalyserNode | null;
   params?: readonly ScreenParam[];
   page?: number;
@@ -226,25 +380,46 @@ export interface DeviceScreenProps {
   // The LFO view's shape (0–3) and rate in Hz.
   lfoShape?: number;
   lfoRate?: number;
+  // Tempo, meter and grid, for the tempo view (a light per beat of the bar)
+  // and the roll's lines; and the beat the metronome is on, or null while it
+  // is stopped.
+  timing?: Timing;
+  beat?: number | null;
+  // The tracks view's rows, and its timeline's length and bar, in beats; and
+  // where the mix is playing (beats, or null), read every frame.
+  tracks?: readonly ScreenTrack[];
+  getTrackPosition?: () => number | null;
+  trackSpan?: number;
+  barBeats?: number;
+  // The take for the roll view, read every frame, where it is scrolled to and
+  // wheel scrolling over it (see NoteRoll).
+  getRoll?: () => RollFrame;
+  rollPosition?: number | null;
+  onRollScroll?: (ms: number) => void;
   overlay?: ScreenOverlay;
   className?: string;
 }
 
 export const PARAMS_PER_PAGE = 15;
 export const TILES_PER_PAGE: Record<string, number> = {
-  save: 24,
+  save: 48,
   presets: 8,
 };
 
 const noAnalyser = () => null;
+const EMPTY_ROLL: RollFrame = { now: 0, notes: [], state: "stopped" };
+const noRoll = () => EMPTY_ROLL;
+const noPosition = () => null;
 
 // The Device's display: a live scope by default, or the synth parameters, the
 // Save icon picker or the preset grid.
 export function DeviceScreen({
   view = "scope",
   title,
+  unsaved = false,
   status,
   footer,
+  badges,
   getAnalyser = noAnalyser,
   params = [],
   page = 0,
@@ -255,6 +430,15 @@ export function DeviceScreen({
   readouts = [],
   lfoShape = 0,
   lfoRate = 1,
+  timing = DEFAULT_TIMING,
+  beat = null,
+  tracks = [],
+  getTrackPosition = noPosition,
+  trackSpan = 16,
+  barBeats = 4,
+  getRoll = noRoll,
+  rollPosition = null,
+  onRollScroll,
   overlay,
   className,
 }: DeviceScreenProps) {
@@ -269,7 +453,10 @@ export function DeviceScreen({
     <div className={cn(styles.screen, className)}>
       <div className={styles.glass}>
         <div className={styles.readout}>
-          <span aria-live="polite">{title}</span>
+          <span className={styles.title}>
+            <span aria-live="polite">{title}</span>
+            {unsaved && <span className={styles.unsaved}>Unsaved</span>}
+          </span>
           <span>{status}</span>
         </div>
 
@@ -297,6 +484,96 @@ export function DeviceScreen({
               </div>
             </div>
           )}
+
+        {view === "tempo" && (
+          <div className={styles.tempo}>
+            <span className={styles.bpm}>
+              <span className={styles.seeking}>{timing.bpm}</span>
+              <span className={styles.bpmUnit}>BPM</span>
+            </span>
+            <span className={styles.beats} aria-hidden="true">
+              {Array.from({ length: timing.meter.beats }, (_, i) => (
+                <span
+                  key={i}
+                  className={styles.beat}
+                  data-on={beat === i || undefined}
+                />
+              ))}
+            </span>
+          </div>
+        )}
+
+        {view === "tracks" && (
+          <TrackList
+            className={styles.tracks}
+            getPosition={getTrackPosition}
+            span={trackSpan}
+          >
+            {tracks.length === 0 ? (
+              <span className={styles.tracksEmpty}>
+                Save a take in record mode to add a track
+              </span>
+            ) : (
+              tracks
+                .slice(
+                  Math.floor(selected / TRACKS_PER_PAGE) * TRACKS_PER_PAGE,
+                  (Math.floor(selected / TRACKS_PER_PAGE) + 1) *
+                    TRACKS_PER_PAGE,
+                )
+                .map((track, i) => {
+                  const index =
+                    Math.floor(selected / TRACKS_PER_PAGE) * TRACKS_PER_PAGE +
+                    i;
+                  return (
+                    <Button
+                      key={track.id}
+                      variant="ghost"
+                      tone="secondary"
+                      aria-label={`${track.name}, ${track.detail}, volume ${Math.round(
+                        track.volume * 100,
+                      )}%${track.muted ? ", muted" : ""}${
+                        track.soloed ? ", solo" : ""
+                      }`}
+                      aria-pressed={index === selected}
+                      className={styles.track}
+                      data-quiet={!track.audible || undefined}
+                      {...keepFocus}
+                      onClick={() => onSelect?.(index)}
+                    >
+                      <span className={styles.trackLabel} aria-hidden="true">
+                        <span className={styles.trackName}>{track.name}</span>
+                        <span className={styles.trackDetail}>
+                          {track.detail}
+                        </span>
+                        <span className={styles.trackFlags}>
+                          <span data-on={track.muted || undefined}>M</span>
+                          <span data-on={track.soloed || undefined}>S</span>
+                        </span>
+                      </span>
+                      <span className={styles.trackVolume} aria-hidden="true">
+                        <span style={{ height: `${track.volume * 100}%` }} />
+                      </span>
+                      <TrackLane
+                        track={track}
+                        span={trackSpan}
+                        barBeats={barBeats}
+                      />
+                    </Button>
+                  );
+                })
+            )}
+          </TrackList>
+        )}
+
+        {view === "roll" && (
+          <NoteRoll
+            className={styles.roll}
+            getFrame={getRoll}
+            timing={timing}
+            position={rollPosition}
+            onScroll={onRollScroll}
+          />
+        )}
 
         {view === "scope" && (
           <Oscilloscope className={styles.scope} getAnalyser={getAnalyser} />
@@ -365,10 +642,28 @@ export function DeviceScreen({
           </div>
         )}
 
-        <div className={cn(styles.readout, styles.readoutBottom)}>
-          <span>{footer[0]}</span>
-          <span>{footer[1]}</span>
-        </div>
+        {badges ? (
+          <div className={styles.badges} aria-live="polite">
+            {badges.map(({ label, on }) => (
+              <span key={label} className={styles.switchLabel}>
+                {label}
+                {on !== undefined && (
+                  <span className={styles.switch} data-on={on || undefined}>
+                    {on ? "On" : "Off"}
+                  </span>
+                )}
+              </span>
+            ))}
+          </div>
+        ) : (
+          // The roll's C labels take the footer's line.
+          view !== "roll" && (
+            <div className={cn(styles.readout, styles.readoutBottom)}>
+              <span>{footer[0]}</span>
+              <span>{footer[1]}</span>
+            </div>
+          )
+        )}
 
         {overlay && (
           <div className={styles.overlay} aria-hidden="true">

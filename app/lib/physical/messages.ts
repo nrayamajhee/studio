@@ -11,7 +11,8 @@ export type InstrumentId =
   | "trumpet"
   | "bassTrumpet"
   | "saxophone"
-  | "flute";
+  | "flute"
+  | "oscillator";
 
 export type KitId = "drums" | "drums808" | "madal" | "tabla";
 

@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useEffectEvent,
   useRef,
   useState,
   type CSSProperties,
@@ -12,14 +11,19 @@ import {
   ArrowUp,
   AudioLines,
   AudioWaveform,
+  Headphones,
+  CassetteTape,
+  ChartNoAxesGantt,
   Circle,
-  Grid3x3,
   LayoutGrid,
   Metronome,
+  Pause,
   Play,
+  Pointer,
   RotateCcw,
   Save,
-  Square,
+  Trash2,
+  VolumeX,
   WavesHorizontal,
 } from "lucide-react";
 import { PATCH_BY_ID } from "../../lib/physical/patches";
@@ -32,6 +36,7 @@ import { cn } from "../../lib/utils";
 import { Key, Knob, Pad } from "../design-system-v2";
 import {
   DEVICE_MODULES,
+  DEVICE_PRESETS,
   KNOB_STEPS,
   deviceEngine,
   engineName,
@@ -46,6 +51,7 @@ import {
 import {
   DeviceScreen,
   PARAMS_PER_PAGE,
+  ScreenLevel,
   ScreenSeek,
   ScreenSelection,
   TILES_PER_PAGE,
@@ -54,20 +60,34 @@ import {
   type ScreenView,
 } from "./DeviceScreen";
 import { AdsrIcon, DRUM_PIECES } from "./instrumentIcons";
+import {
+  METERS,
+  SUBDIVISIONS,
+  barMs,
+  beatMs,
+  gridLabel,
+  meterLabel,
+} from "./noteRecorder";
 import { ICON_CHOICES, PresetIcon } from "./presetIcons";
 import {
   allPresets,
   bindPad,
   clearEdits,
+  deletePreset,
   presetEdits,
   setEdit,
   savePreset,
+  swapPad,
   updatePreset,
   usePresetLibrary,
 } from "./presetStore";
 import { useHotkeyListener, useHotkeys } from "./input/HotkeyProvider";
 import { hotkeyLabel, type Control, type Tool } from "./input/keymap";
-import { useTransport } from "./useTransport";
+import { audible, clipOf, makeTrack, type Track } from "./tracks";
+import { useTrackMix } from "./useTrackMix";
+import { setTracks, useSession } from "./sessionStore";
+import { useScrub } from "./useScrub";
+import { MAX_BPM, MIN_BPM, useTransport } from "./useTransport";
 import styles from "./SynthDevice.module.css";
 
 export interface SynthDeviceProps {
@@ -79,6 +99,8 @@ const INITIAL_VOLUME_STEP = 8;
 const NOTICE_MS = 1800;
 const OVERLAY_MS = 1200;
 const MODULE_IDS: readonly ModuleId[] = ["adsr", "lfo", "fx"];
+// The green knob moves the tempo in 5 BPM steps; the arrows by 1.
+const BPM_KNOB_STEP = 5;
 
 type ModuleSteps = Readonly<Record<ModuleId, readonly number[]>>;
 
@@ -142,12 +164,12 @@ const NOTE_NAMES = [
   "B",
 ];
 const F3_MIDI = 53;
+// The keybed has no velocity; every press plays mezzo-forte.
+const KEY_VELOCITY = 0.8;
 const WHITE_KEYS = [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23];
 const BLACK_KEYS = [1, 3, 5, 8, 10, 13, 15, 17, 20, 22];
 
 const octaveOf = (midi: number) => Math.floor(midi / 12) - 1;
-
-const noteName = (midi: number) => `${NOTE_NAMES[midi % 12]}${octaveOf(midi)}`;
 
 const spokenNote = (midi: number) =>
   `${NOTE_NAMES[midi % 12].replace("#", " sharp")} ${octaveOf(midi)}`;
@@ -171,21 +193,6 @@ const turnPage = (
   const page = (Math.floor(index / perPage) + direction + pages) % pages;
   return Math.min(page * perPage + (index % perPage), count - 1);
 };
-
-function useFlash(ms: number) {
-  const [on, setOn] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  useEffect(() => () => clearTimeout(timer.current), []);
-
-  const flash = useCallback(() => {
-    clearTimeout(timer.current);
-    setOn(true);
-    timer.current = setTimeout(() => setOn(false), ms);
-  }, [ms]);
-
-  return [on, flash] as const;
-}
 
 // A value that shows for `ms` after the last show(), e.g. a footer notice or
 // the level overlay while a knob turns.
@@ -225,6 +232,12 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const [paramPage, setParamPage] = useState(0);
   const [iconIndex, setIconIndex] = useState(0);
   const [presetIndex, setPresetIndex] = useState(0);
+  // Where the stopped roll is scrolled to (the time on its keys line); null
+  // is the end of the take.
+  const [rollPosition, setRollPosition] = useState<number | null>(null);
+  // Takes kept from record mode, and the one the green knob picked.
+  const { tracks } = useSession();
+  const [trackIndex, setTrackIndex] = useState(0);
   const [octave, setOctave] = useState(0);
   // Shift and chords latch on a click; their hotkeys hold them while down.
   const [shiftLatched, setShiftLatched] = useState(false);
@@ -234,18 +247,48 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const [litNotes, setLitNotes] = useState<ReadonlySet<number>>(
     () => new Set(),
   );
-  const [stopLit, flashStop] = useFlash(140);
   const [overlay, showOverlay] = useMomentary<ScreenOverlay>(OVERLAY_MS);
   const [notice, showNotice] = useMomentary<string>(NOTICE_MS);
+  // A saved preset Stop deletes on a second press, while its warning shows.
+  const [pendingDelete, armDelete] = useMomentary<string>(NOTICE_MS);
   const held = useRef(new Map<number, HeldKey>());
   const transport = useTransport();
   const shift = shiftLatched || keys.shift;
+  const tapMode = transport.tapping && view === "tempo";
+  const barBeats = transport.timing.meter.beats;
+  const track = view === "tracks" ? tracks[trackIndex] : undefined;
+  // Each track's clip at the tempo, on a timeline at least four bars long
+  // that ends on the bar after the last track's first pass.
+  const clips = tracks.map((candidate) => clipOf(candidate, transport.bpm));
+  const trackSpan =
+    barBeats *
+    Math.max(
+      4,
+      ...tracks.map((candidate, i) =>
+        Math.ceil((candidate.start + clips[i].length) / barBeats),
+      ),
+    );
+  const mix = useTrackMix(tracks, transport.bpm, trackSpan);
+  // What the Play pad shows: the mix on the tracks view, else the tape.
+  const playing =
+    view === "tracks" ? mix.playing : transport.state === "playing";
+  const pauseMix = mix.pause;
+  // The mix plays on the tracks view, and under a take while it records.
+  const recording = transport.state === "recording";
+  useEffect(() => {
+    if (view !== "tracks" && !recording) pauseMix();
+  }, [view, recording, pauseMix]);
+  const recordMode = view === "roll";
+  // With Shift the tracks pad is the tape's.
+  const tapeMode = shift;
   // The preset's own values plus any edits made since it was picked.
   const edits = library.edits[preset.id];
   const values = { ...presetValues(preset), ...edits };
   const specs = PATCH_BY_ID[preset.target].params;
   const selected = specs[Math.min(paramIndex, specs.length - 1)];
   const selectedValue = values[selected.id] ?? selected.default;
+  // A param with named choices (the oscillator's wave) steps through them.
+  const valueSteps = selected.options?.length ?? KNOB_STEPS;
 
   useEffect(() => {
     const initial = findPreset(INITIAL_PRESET);
@@ -283,12 +326,13 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const pressKey = (root: number, chordIndex = activeChord) => {
     if (held.current.has(root)) return;
     deviceEngine.unlock();
+    if (tapMode) transport.tapNote();
     const intervals = chordIndex === null ? [0] : CHORDS[chordIndex].intervals;
     const semitones = intervals.map((interval) => root + interval);
     const midis = semitones.map((semitone) => {
       const midi = F3_MIDI + semitone + 12 * octave;
-      deviceEngine.noteOn(midi, 0.8);
-      transport.capture(noteName(midi), true);
+      deviceEngine.noteOn(midi, KEY_VELOCITY);
+      transport.capture(midi, true, KEY_VELOCITY);
       return midi;
     });
     held.current.set(root, { semitones, midis });
@@ -301,44 +345,15 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     held.current.delete(root);
     for (const midi of entry.midis) {
       deviceEngine.noteOff(midi);
-      transport.capture(noteName(midi), false);
+      transport.capture(midi, false);
     }
     syncLitNotes();
   };
-
-  // When the chord changes under held keys (a chord hotkey lifted, a latched
-  // chord toggled), each key keeps its root sounding and swaps the notes
-  // around it: lifting a chord leaves just the held notes. Kits play one-shot
-  // hits, so they are left alone.
-  const onChordChange = useEffectEvent((next: number | null) => {
-    if (held.current.size === 0 || isKit(preset.target)) return;
-    const intervals = next === null ? [0] : CHORDS[next].intervals;
-    for (const [root, entry] of held.current) {
-      const rootMidi = entry.midis[0];
-      const semitones = intervals.map((interval) => root + interval);
-      const midis = intervals.map((interval) => rootMidi + interval);
-      for (const midi of entry.midis) {
-        if (midis.includes(midi)) continue;
-        deviceEngine.noteOff(midi);
-        transport.capture(noteName(midi), false);
-      }
-      for (const midi of midis) {
-        if (entry.midis.includes(midi)) continue;
-        deviceEngine.noteOn(midi, 0.8);
-        transport.capture(noteName(midi), true);
-      }
-      held.current.set(root, { semitones, midis });
-    }
-    syncLitNotes();
-  });
-
-  useEffect(() => onChordChange(activeChord), [activeChord]);
 
   // Keeps the selected param when the next instrument has it too.
   const selectPreset = (next: DevicePreset) => {
     deviceEngine.unlock();
     deviceEngine.loadPreset(next, library.edits[next.id]);
-    deviceEngine.preview();
     setPreset(next);
     const index = Math.max(
       0,
@@ -360,6 +375,10 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       setPresetIndex((index) =>
         turnPage(index, direction, TILES_PER_PAGE.presets, presets.length),
       );
+    } else if (view === "tempo") {
+      transport.setBpm(transport.bpm + direction);
+    } else if (view === "tracks") {
+      slideTrack(direction * (shift ? 1 : barBeats));
     } else if (shift) {
       const index = presets.findIndex(({ id }) => id === preset.id) + direction;
       selectPreset(presets[(index + presets.length) % presets.length]);
@@ -370,25 +389,90 @@ export function SynthDevice({ className }: SynthDeviceProps) {
 
   const padBindings = shift ? library.shiftButtons : library.buttons;
 
-  const pressPlay = () => {
-    deviceEngine.unlock();
-    transport.play();
-  };
-
-  const pressStop = () => {
+  // Holds the take where it is, so Play resumes there.
+  const pause = () => {
+    setRollPosition(transport.roll().now);
     transport.stop();
-    flashStop();
   };
 
-  const pressMetronome = () => {
+  // Play and pause in one: plays the take from where the stopped roll is
+  // scrolled to (from the top when it rests at the end), and pauses it while
+  // it plays. While recording, throws the new take away and plays the one
+  // before it from the top.
+  const pressPlay = () => {
+    if (view === "tracks") {
+      if (mix.playing) mix.pause();
+      else mix.play();
+      return;
+    }
+    if (transport.state === "playing") {
+      pause();
+      return;
+    }
     deviceEngine.unlock();
-    transport.toggleMetronome();
+    const from =
+      rollPosition !== null && rollPosition < transport.takeLength
+        ? rollPosition
+        : 0;
+    setRollPosition(null);
+    transport.play(from);
+  };
+
+  // In the library Stop is Trash while a saved preset is highlighted; built-in
+  // ones can't be deleted, so it stays Stop for them. Deleting the preset
+  // playing falls back to its built-in.
+  const pressDelete = (chosen: DevicePreset) => {
+    if (pendingDelete !== chosen.id) {
+      armDelete(chosen.id);
+      showNotice(`Press again to delete ${chosen.name}`);
+      return;
+    }
+    deletePreset(chosen.id);
+    showNotice(`Deleted ${chosen.name}`);
+    setPresetIndex((index) => Math.max(0, Math.min(index, presets.length - 2)));
+    if (preset.id === chosen.id)
+      selectPreset(
+        DEVICE_PRESETS.find(({ target }) => target === chosen.target) ??
+          DEVICE_PRESETS[0],
+      );
+  };
+
+  // Starts a take, showing it on the roll, or ends it where it stops. In the
+  // library it is Trash while a saved preset is highlighted.
+  const pressRecord = () => {
+    const chosen = view === "presets" ? presets[presetIndex] : undefined;
+    if (chosen?.user) {
+      pressDelete(chosen);
+      return;
+    }
+    deviceEngine.unlock();
+    setRollPosition(null);
+    if (transport.state === "recording") {
+      transport.record();
+      return;
+    }
+    setView("roll");
+    // The tracks play along from the top, lined up with the new take.
+    const origin = transport.record();
+    if (origin !== null && tracks.length > 0) mix.follow(origin);
+  };
+
+  // Like a module pad: it opens the tempo view, and with Shift starts or
+  // stops the click without leaving the current view.
+  const pressMetronome = () => {
+    if (shift) {
+      deviceEngine.unlock();
+      transport.toggleMetronome();
+      return;
+    }
+    transport.stopTapping();
+    setView((current) => (current === "tempo" ? "scope" : "tempo"));
   };
 
   const pressTool = (pad: Tool) => {
     if (pad === "record") pressRecord();
+    else if (pad === "tracks") pressTracks();
     else if (pad === "play") pressPlay();
-    else if (pad === "stop") pressStop();
     else if (pad === "metronome") pressMetronome();
     else if (pad === "synth") pressSynth();
     else if (pad === "save") pressSave();
@@ -421,7 +505,14 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       return;
     }
     const bound = presets.find(({ id }) => id === padBindings[pad]);
-    if (bound) selectPreset(bound);
+    if (!bound) return;
+    selectPreset(bound);
+    // A Shift preset trades places with the pad's own and Shift lets go, so
+    // the pad's light keeps showing what plays.
+    if (shift) {
+      swapPad(pad);
+      setShiftLatched(false);
+    }
   };
 
   const pressSynth = () => {
@@ -444,17 +535,93 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     }
   };
 
-  // Shift + Record switches between tape and sequencer takes instead.
-  const pressRecord = () => {
-    if (shift) {
-      transport.setMode(transport.mode === "sequencer" ? "tape" : "sequencer");
+  // Opens the tracks, from the tape too; with Shift it opens (or closes) the
+  // tape, record mode, which Record also opens. While recording it ends the
+  // take, like Record.
+  const pressTracks = () => {
+    setRollPosition(null);
+    if (transport.state === "recording") {
+      transport.record();
       return;
     }
-    transport.record();
+    if (shift) {
+      setShiftLatched(false);
+      setView((current) => (current === "roll" ? "scope" : "roll"));
+    } else {
+      setView((current) => (current === "tracks" ? "scope" : "tracks"));
+    }
   };
 
-  // Shift + Save resets the preset instead.
+  // Save in record mode keeps the take as a new track, with the preset and
+  // timing it plays with now, and shows it on the tracks.
+  const saveTrack = () => {
+    const take = transport.keepTake();
+    if (!take) {
+      showNotice("Record a take first");
+      return;
+    }
+    const kept = makeTrack(
+      tracks.length,
+      take,
+      preset.id,
+      deviceEngine.sound(),
+      { ...transport.timing, bpm: take.bpm },
+    );
+    setTracks((current) => [...current, kept]);
+    setTrackIndex(tracks.length);
+    setView("tracks");
+    showNotice(`Saved ${kept.name}`);
+  };
+
+  const updateTrack = (index: number, change: Partial<Track>) =>
+    setTracks((current) =>
+      current.map((candidate, i) =>
+        i === index ? { ...candidate, ...change } : candidate,
+      ),
+    );
+
+  // The arrows slide the picked track along the timeline, by bars, or with
+  // Shift by beats.
+  const slideTrack = (beats: number) => {
+    if (!track) return;
+    updateTrack(trackIndex, { start: Math.max(0, track.start + beats) });
+  };
+
+  // On the tracks Save is the picked track's mute, and with Shift its solo.
+  const pressTrackSwitch = () => {
+    if (!track) return;
+    if (shift) updateTrack(trackIndex, { soloed: !track.soloed });
+    else updateTrack(trackIndex, { muted: !track.muted });
+  };
+
+  // How the sound is made: the model's exciter, then each module layered over
+  // it that's on. Saved presets are named after it.
+  const soundName = () =>
+    [
+      engineName(preset.target),
+      ...MODULE_IDS.filter((id) => moduleOn[id]).map(
+        (id) => DEVICE_MODULES[id].label,
+      ),
+    ].join(" · ");
+
+  // Shift + Save resets the preset instead. Neither applies to the tempo, so
+  // in its view Save switches tap mode, where played notes tap the tempo.
   const pressSave = () => {
+    if (view === "roll") {
+      saveTrack();
+      return;
+    }
+    // Without tracks yet, Save keeps the tape's take as the first one.
+    if (view === "tracks") {
+      if (track) pressTrackSwitch();
+      else saveTrack();
+      return;
+    }
+    if (view === "tempo") {
+      if (transport.tapping) transport.stopTapping();
+      else transport.startTapping();
+      return;
+    }
     if (shift) {
       pressReset();
       return;
@@ -465,7 +632,12 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       return;
     }
     if (view !== "save") return;
-    const saved = savePreset(preset, values, ICON_CHOICES[iconIndex]);
+    const saved = savePreset(
+      preset,
+      values,
+      ICON_CHOICES[iconIndex],
+      soundName(),
+    );
     clearEdits(preset.id);
     finishSave(saved, `Saved ${saved.name}`);
   };
@@ -476,8 +648,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     const icon = ICON_CHOICES[iconIndex];
     const saved =
       preset.user && padBindings[pad] === preset.id
-        ? updatePreset(preset, values, icon)
-        : savePreset(preset, values, icon);
+        ? updatePreset(preset, values, icon, soundName())
+        : savePreset(preset, values, icon, soundName());
     bindPad(pad, saved.id, shift);
     clearEdits(preset.id);
     finishSave(saved, `Saved ${saved.name} to ${padName(pad).toLowerCase()}`);
@@ -509,8 +681,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   // the edit.
   const setSelectedValue = (step: number) => {
     const own = presetValues(preset)[selected.id];
-    const original = step === valueToStep(selected, own, KNOB_STEPS);
-    const value = original ? own : stepToValue(selected, step, KNOB_STEPS);
+    const original = step === valueToStep(selected, own, valueSteps);
+    const value = original ? own : stepToValue(selected, step, valueSteps);
     deviceEngine.setValue(selected.id, value);
     setEdit(preset.id, selected.id, original ? null : value);
   };
@@ -586,10 +758,11 @@ export function SynthDevice({ className }: SynthDeviceProps) {
         label={
           shift
             ? `Turn ${module.label} ${moduleOn[id] ? "off" : "on"}`
-            : module.title
+            : `${module.title} (${moduleOn[id] ? "on" : "off"})`
         }
         accent="var(--synth-red)"
         lit={view === id}
+        indicator={moduleOn[id]}
         {...toolHotkey(id)}
         onPress={() => pressModule(id)}
       >
@@ -676,11 +849,54 @@ export function SynthDevice({ className }: SynthDeviceProps) {
         };
       })
     : [];
+  // The saved preset Stop deletes, in the library.
+  const trash =
+    view === "presets" && presets[presetIndex]?.user
+      ? presets[presetIndex]
+      : null;
   // Synth opens (or, while it is up, closes) the library in this mode.
   const libraryMode = shift || view === "presets";
   const padPresets = padBindings.map(
     (id) => presets.find((candidate) => candidate.id === id) ?? null,
   );
+
+  // Stopped, the roll shows the whole take and scrolls by beats from its start
+  // to its end. The keys line is the tape head: what crosses it plays.
+  const beatLength = beatMs(transport.timing);
+  const barLength = barMs(transport.timing);
+  const rollEnd = transport.takeLength;
+  const rollFirst = 0;
+  const rollScrolls =
+    view === "roll" && transport.state === "stopped" && rollEnd > 0;
+  const rollAt = Math.min(rollEnd, rollPosition ?? rollEnd);
+  const rollSteps = Math.max(
+    2,
+    Math.ceil((rollEnd - rollFirst) / beatLength) + 1,
+  );
+  const barOf = (ms: number) => Math.max(1, Math.ceil(ms / barLength));
+  // Scrolling scrubs the take: it plays at the speed it is scrolled.
+  const scrub = useScrub(
+    [
+      transport.takeId,
+      JSON.stringify(transport.timing),
+      preset.id,
+      JSON.stringify(values),
+      JSON.stringify(moduleOn),
+      JSON.stringify(moduleSteps),
+      volumeStep,
+    ].join("|"),
+    () => {
+      const { now, notes } = transport.roll();
+      return { notes, length: now };
+    },
+  );
+  const stopScrub = scrub.stop;
+  useEffect(() => {
+    if (!rollScrolls) stopScrub();
+  }, [rollScrolls, stopScrub]);
+
+  const scrollRoll = (ms: number) =>
+    setRollPosition(scrub.scrollBy(ms, rollAt, rollFirst, rollEnd));
 
   // The green knob scrolls whatever the screen shows; on the scope it is idle.
   const seek =
@@ -706,15 +922,43 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               set: (index: number) =>
                 setPresetIndex(Math.min(index, presets.length - 1)),
             }
-          : { step: idleSeek, steps: KNOB_STEPS, label: "", set: setIdleSeek };
+          : rollScrolls
+            ? {
+                step: Math.round((rollAt - rollFirst) / beatLength),
+                steps: rollSteps,
+                label: `Bar ${barOf(rollAt)} of ${barOf(rollEnd)}`,
+                // The last step is the end, which stays put as the take grows.
+                set: (step: number) => {
+                  const end = step >= rollSteps - 1;
+                  const to = end ? rollEnd : rollFirst + step * beatLength;
+                  scrub.scrollTo(to, rollAt);
+                  setRollPosition(end ? null : to);
+                },
+              }
+            : view === "tracks"
+              ? {
+                  step: trackIndex,
+                  steps: Math.max(2, tracks.length),
+                  label: track?.name ?? "",
+                  set: (index: number) =>
+                    setTrackIndex(Math.min(index, tracks.length - 1)),
+                }
+              : view === "tempo"
+                ? {
+                    step: Math.round((transport.bpm - MIN_BPM) / BPM_KNOB_STEP),
+                    steps: (MAX_BPM - MIN_BPM) / BPM_KNOB_STEP + 1,
+                    label: `${transport.bpm} BPM`,
+                    set: (step: number) =>
+                      transport.setBpm(MIN_BPM + step * BPM_KNOB_STEP),
+                  }
+                : {
+                    step: idleSeek,
+                    steps: KNOB_STEPS,
+                    label: "",
+                    set: setIdleSeek,
+                  };
 
-  // The engine name, then each module that's on.
-  const engine = [
-    engineName(preset.target),
-    ...MODULE_IDS.filter((id) => moduleOn[id]).map(
-      (id) => DEVICE_MODULES[id].label,
-    ),
-  ].join(" · ");
+  const engine = soundName();
   const octaveLabel = `OCT ${octave > 0 ? "+" : octave < 0 ? "−" : "±"}${Math.abs(octave)}`;
   const paramPageLabel = (
     <ScreenSeek>
@@ -737,9 +981,59 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       ),
       footer: ["Pick an icon", "Press a pad to save"],
     },
-    adsr: { status: moduleOn.adsr ? "On" : "Off", footer: ["", ""] },
-    lfo: { status: moduleOn.lfo ? "On" : "Off", footer: ["", ""] },
-    fx: { status: moduleOn.fx ? "On" : "Off", footer: ["", ""] },
+    adsr: { status: "", footer: ["", ""] },
+    lfo: { status: "", footer: ["", ""] },
+    fx: { status: "", footer: ["", ""] },
+    tempo: { status: meterLabel(transport.timing.meter), footer: ["", ""] },
+    // The picked track in green, as the green knob picks it, and where it
+    // starts.
+    tracks: {
+      status: track ? (
+        <ScreenSeek>
+          Track {trackIndex + 1}/{tracks.length}
+        </ScreenSeek>
+      ) : (
+        ""
+      ),
+      footer: track
+        ? [
+            <>
+              Starts bar {Math.floor(track.start / barBeats) + 1}
+              {track.start % barBeats
+                ? ` beat ${(track.start % barBeats) + 1}`
+                : ""}
+              {" · "}
+              <ScreenLevel>Vol {Math.round(track.volume * 100)}%</ScreenLevel>
+            </>,
+            "←→ slide · X mute · ⇧X solo",
+          ]
+        : ["", ""],
+    },
+    // The meter and grid in the red and blue of the knobs that set them; when
+    // stopped, the bar the green knob scrolled to, in green.
+    roll: {
+      status: (
+        <>
+          {rollScrolls ? (
+            <ScreenSeek>
+              Bar {barOf(rollAt)}/{barOf(rollEnd)}
+            </ScreenSeek>
+          ) : transport.state === "recording" ? (
+            "Rec"
+          ) : transport.state === "playing" ? (
+            "Play"
+          ) : (
+            "Take"
+          )}
+          {" · "}
+          <ScreenSelection
+            label={meterLabel(transport.timing.meter)}
+            value={gridLabel(transport.timing)}
+          />
+        </>
+      ),
+      footer: ["", ""],
+    },
     presets: {
       status: (
         <ScreenSeek>
@@ -750,6 +1044,30 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       footer: [presets[presetIndex]?.name ?? "", "Press a pad to bind"],
     },
   }[view];
+  const screenTracks =
+    view === "tracks"
+      ? tracks.map((candidate, i) => ({
+          id: candidate.id,
+          name: candidate.name,
+          detail:
+            presets.find(({ id }) => id === candidate.presetId)?.name ?? "",
+          color: candidate.color,
+          start: candidate.start,
+          clip: clips[i],
+          volume: candidate.volume,
+          muted: candidate.muted,
+          soloed: candidate.soloed,
+          audible: audible(candidate, tracks),
+        }))
+      : [];
+  // On/off, centred along the bottom of the module and tempo views.
+  const badge = activeModule
+    ? { label: DEVICE_MODULES[activeModule].label, on: moduleOn[activeModule] }
+    : view === "tempo"
+      ? tapMode
+        ? { label: "Tap a note" }
+        : { label: "Metronome", on: transport.metronome }
+      : null;
 
   return (
     <div className={cn(styles.stage, className)}>
@@ -801,12 +1119,36 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               title={
                 activeModule
                   ? DEVICE_MODULES[activeModule].label
-                  : edits
-                    ? `${preset.name} *`
-                    : preset.name
+                  : view === "tempo"
+                    ? "Tempo"
+                    : view === "tracks"
+                      ? "Tracks"
+                      : preset.name
+              }
+              unsaved={
+                Boolean(edits) &&
+                !activeModule &&
+                view !== "tempo" &&
+                view !== "tracks"
               }
               status={screen.status}
               footer={[notice ?? screen.footer[0], screen.footer[1]]}
+              badges={badge && !notice ? [badge] : undefined}
+              timing={transport.timing}
+              tracks={screenTracks}
+              getTrackPosition={mix.position}
+              trackSpan={trackSpan}
+              barBeats={barBeats}
+              getRoll={transport.roll}
+              rollPosition={rollScrolls ? rollAt : null}
+              onRollScroll={rollScrolls ? scrollRoll : undefined}
+              beat={
+                tapMode
+                  ? transport.tapCount > 0
+                    ? (transport.tapCount - 1) % barBeats
+                    : null
+                  : transport.beat
+              }
               getAnalyser={deviceEngine.getAnalyser}
               params={params}
               page={paramPage}
@@ -834,8 +1176,20 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                       };
                     })
               }
-              selected={view === "save" ? iconIndex : presetIndex}
-              onSelect={view === "save" ? setIconIndex : setPresetIndex}
+              selected={
+                view === "save"
+                  ? iconIndex
+                  : view === "tracks"
+                    ? trackIndex
+                    : presetIndex
+              }
+              onSelect={
+                view === "save"
+                  ? setIconIndex
+                  : view === "tracks"
+                    ? setTrackIndex
+                    : setPresetIndex
+              }
               onSelectParam={selectParam}
               readouts={readouts}
               lfoShape={moduleSteps.lfo[2]}
@@ -848,6 +1202,30 @@ export function SynthDevice({ className }: SynthDeviceProps) {
             <div className={styles.knobColumn}>
               {activeModule ? (
                 renderModuleKnob(activeModule, 2, "var(--synth-red)")
+              ) : view === "tracks" ? (
+                <Knob
+                  label="Track volume"
+                  valueLabel={
+                    track ? `${Math.round(track.volume * 100)}%` : undefined
+                  }
+                  step={Math.round((track?.volume ?? 1) * (KNOB_STEPS - 1))}
+                  steps={KNOB_STEPS}
+                  color="var(--synth-red)"
+                  onChange={(step) =>
+                    updateTrack(trackIndex, {
+                      volume: step / (KNOB_STEPS - 1),
+                    })
+                  }
+                />
+              ) : view === "roll" ? (
+                <Knob
+                  label="Time signature"
+                  valueLabel={meterLabel(transport.timing.meter)}
+                  step={transport.meterIndex}
+                  steps={METERS.length}
+                  color="var(--synth-red)"
+                  onChange={transport.setMeter}
+                />
               ) : (
                 <Knob
                   label="Parameter"
@@ -862,12 +1240,21 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               )}
               {activeModule ? (
                 renderModuleKnob(activeModule, 3, "var(--synth-blue)")
+              ) : view === "roll" ? (
+                <Knob
+                  label="Grid"
+                  valueLabel={gridLabel(transport.timing)}
+                  step={transport.gridIndex}
+                  steps={SUBDIVISIONS.length}
+                  color="var(--synth-blue)"
+                  onChange={transport.setGrid}
+                />
               ) : (
                 <Knob
                   label="Value"
                   valueLabel={`${selected.label} ${selectedDisplay}`}
-                  step={valueToStep(selected, selectedValue, KNOB_STEPS)}
-                  steps={KNOB_STEPS}
+                  step={valueToStep(selected, selectedValue, valueSteps)}
+                  steps={valueSteps}
                   color="var(--synth-blue)"
                   onChange={setSelectedValue}
                 />
@@ -882,38 +1269,59 @@ export function SynthDevice({ className }: SynthDeviceProps) {
           >
             <div className={styles.bank} role="group" aria-label="Transport">
               <Pad
-                label="Play"
-                accent="var(--synth-green)"
-                lit={transport.state === "playing"}
+                label={
+                  view === "tracks"
+                    ? mix.playing
+                      ? "Pause tracks"
+                      : "Play tracks"
+                    : playing
+                      ? "Pause"
+                      : "Play"
+                }
                 {...toolHotkey("play")}
                 onPress={pressPlay}
               >
-                <Play fill="currentColor" />
+                {playing ? (
+                  <Pause fill="currentColor" />
+                ) : (
+                  <Play fill="currentColor" />
+                )}
               </Pad>
               <Pad
-                label={shift ? "Sequencer" : "Record"}
-                accent={shift ? "var(--synth-green)" : "var(--synth-red)"}
-                pressed={shift ? transport.mode === "sequencer" : undefined}
-                lit={transport.state === "recording"}
+                label={
+                  trash
+                    ? `Delete ${trash.name}`
+                    : transport.state === "recording"
+                      ? "Stop recording"
+                      : "Record"
+                }
+                accent="var(--synth-red)"
+                lit={
+                  trash
+                    ? pendingDelete === trash.id
+                    : transport.state === "recording"
+                }
                 {...toolHotkey("record")}
                 onPress={pressRecord}
               >
-                {shift ? <Grid3x3 /> : <Circle fill="currentColor" />}
+                {trash ? <Trash2 /> : <Circle fill="currentColor" />}
               </Pad>
               <Pad
-                label="Stop"
-                accent="var(--synth-green)"
-                lit={stopLit}
-                {...toolHotkey("stop")}
-                onPress={pressStop}
-              >
-                <Square fill="currentColor" />
-              </Pad>
-              <Pad
-                label="Shift"
+                label={tapeMode ? "Record mode" : "Tracks"}
                 accent="var(--synth-red)"
-                pressed={shift}
+                lit={recordMode || view === "tracks"}
+                indicator={transport.state === "recording"}
+                {...toolHotkey("tracks")}
+                onPress={pressTracks}
+              >
+                {tapeMode ? <CassetteTape /> : <ChartNoAxesGantt />}
+              </Pad>
+              <Pad
+                label={shiftLatched ? "Shift (latched)" : "Shift"}
                 {...hotkeyProps({ kind: "shift" })}
+                // No colour: a modifier, not a state. Latched, it stays
+                // pressed in, as it looks while its key is held.
+                held={shift}
                 onPress={() => setShiftLatched((on) => !on)}
               >
                 <ArrowUp />
@@ -922,9 +1330,13 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                 label={
                   paging
                     ? "Previous page"
-                    : shift
-                      ? "Previous preset"
-                      : "Octave down"
+                    : view === "tempo"
+                      ? "Slower"
+                      : view === "tracks"
+                        ? "Slide track earlier"
+                        : shift
+                          ? "Previous preset"
+                          : "Octave down"
                 }
                 accent="var(--synth-red)"
                 {...hotkeyProps({ kind: "step", direction: -1 })}
@@ -934,7 +1346,15 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               </Pad>
               <Pad
                 label={
-                  paging ? "Next page" : shift ? "Next preset" : "Octave up"
+                  paging
+                    ? "Next page"
+                    : view === "tempo"
+                      ? "Faster"
+                      : view === "tracks"
+                        ? "Slide track later"
+                        : shift
+                          ? "Next preset"
+                          : "Octave up"
                 }
                 accent="var(--synth-red)"
                 {...hotkeyProps({ kind: "step", direction: 1 })}
@@ -945,15 +1365,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
             </div>
             <div className={styles.bank} role="group" aria-label="Tools">
               <Pad
-                label="Metronome"
-                accent="var(--synth-green)"
-                pressed={transport.metronome}
-                {...toolHotkey("metronome")}
-                onPress={pressMetronome}
-              >
-                <Metronome />
-              </Pad>
-              <Pad
                 label={libraryMode ? "Preset library" : "Synth parameters"}
                 accent="var(--synth-red)"
                 lit={view === "synth" || view === "presets"}
@@ -962,14 +1373,69 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               >
                 {libraryMode ? <LayoutGrid /> : <AudioWaveform />}
               </Pad>
+              <Pad
+                label={
+                  shift
+                    ? `Turn metronome ${transport.metronome ? "off" : "on"}`
+                    : `Tempo (metronome ${transport.metronome ? "on" : "off"})`
+                }
+                accent="var(--synth-green)"
+                lit={view === "tempo"}
+                indicator={transport.metronome}
+                {...toolHotkey("metronome")}
+                onPress={pressMetronome}
+              >
+                <Metronome />
+              </Pad>
               {renderModulePad("adsr", <AdsrIcon />)}
               <Pad
-                label={shift ? "Reset preset" : "Save preset"}
+                label={
+                  view === "tracks"
+                    ? track
+                      ? `${
+                          shift
+                            ? track.soloed
+                              ? "Unsolo"
+                              : "Solo"
+                            : track.muted
+                              ? "Unmute"
+                              : "Mute"
+                        } ${track.name}`
+                      : "Save take as a track"
+                    : view === "roll"
+                      ? "Save take as a track"
+                      : view === "tempo"
+                        ? tapMode
+                          ? "Stop tap tempo"
+                          : "Tap tempo"
+                        : shift
+                          ? "Reset preset"
+                          : "Save preset"
+                }
                 accent="var(--synth-red)"
+                lit={
+                  view === "tracks"
+                    ? Boolean(shift ? track?.soloed : track?.muted)
+                    : tapMode
+                }
                 {...toolHotkey("save")}
                 onPress={pressSave}
               >
-                {shift ? <RotateCcw /> : <Save />}
+                {view === "tracks" ? (
+                  !track ? (
+                    <Save />
+                  ) : shift ? (
+                    <Headphones />
+                  ) : (
+                    <VolumeX />
+                  )
+                ) : view === "tempo" ? (
+                  <Pointer />
+                ) : shift ? (
+                  <RotateCcw />
+                ) : (
+                  <Save />
+                )}
               </Pad>
               {renderModulePad("lfo", <WavesHorizontal />)}
               {renderModulePad("fx", <AudioLines />)}
@@ -977,6 +1443,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
             <div className={styles.bank} role="group" aria-label="Presets">
               {padPresets.map((padPreset, pad) => {
                 const name = padPreset?.name ?? "empty";
+                const current = padPreset?.id === preset.id;
                 return (
                   <Pad
                     key={pad}
@@ -985,9 +1452,12 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                         ? `Bind to ${padName(pad).toLowerCase()} (${name})`
                         : view === "save"
                           ? `Save to ${padName(pad).toLowerCase()} (${name})`
-                          : (padPreset?.name ?? `Empty preset pad ${pad + 1}`)
+                          : padPreset
+                            ? `${padPreset.name}${current ? " (current)" : ""}`
+                            : `Empty preset pad ${pad + 1}`
                     }
                     accent="var(--synth-red)"
+                    indicator={padPreset ? current : undefined}
                     {...hotkeyProps({ kind: "preset", index: pad })}
                     onPress={() => pressPresetPad(pad)}
                   >

@@ -38,6 +38,7 @@ export const bassTrumpet: BorePatch = {
     noise: 0.3,
     vibrato: 0.015,
     vibratoRate: 5,
+    portamento: 0.05,
     attack: 0.04,
     decay: 0.1,
     sustain: 0.9,

@@ -1,7 +1,7 @@
 import type { ModuleId } from "../deviceEngine";
 
 export type Tool =
-  "record" | "play" | "stop" | "metronome" | "synth" | "save" | ModuleId;
+  "record" | "play" | "tracks" | "metronome" | "synth" | "save" | ModuleId;
 
 // Everything the keyboard can press on the Device.
 export type Control =
@@ -44,17 +44,17 @@ const NOTE_KEYS = [
 ];
 
 // The pads' two rows sit on the home and bottom rows, lined up from the right
-// edge: chords on L ; ' / , . /, presets on H J K / B N M, Record, Stop,
-// Metronome, Synth, ADSR / Save, LFO, FX on A S D F G / X C V. Space plays,
+// edge: chords on L ; ' / , . /, presets on H J K / B N M, Record, Tracks,
+// Synth, Metronome, ADSR / Save, LFO, FX on A S D F G / X C V. Space plays,
 // and the arrows and Shift press their own pads.
 const PRESET_KEYS = ["H", "J", "K", "B", "N", "M"];
 const CHORD_KEYS = ["L", ";", "'", ",", ".", "/"];
 const TOOL_KEYS: Readonly<Record<Tool, string>> = {
   record: "A",
   play: "Space",
-  stop: "S",
-  metronome: "D",
-  synth: "F",
+  tracks: "S",
+  synth: "D",
+  metronome: "F",
   adsr: "G",
   save: "X",
   lfo: "C",

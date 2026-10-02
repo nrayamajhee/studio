@@ -16,6 +16,7 @@ import {
   RELEASED,
   STOLEN,
   Voice,
+  legatoNote,
   pickVictim,
 } from "../engine/Voice";
 import { pickTuning, type KeyTable, type BowedPatch } from "../patches/types";
@@ -46,6 +47,9 @@ class BowedVoice extends Voice {
   readonly svf = new Svf("lowpass");
   readonly gains = new Float64Array(2);
   baseDelay = 100;
+  // The loop length a legato note glides to, at `glide` per sample.
+  delayTarget = 100;
+  glide = 1;
   beta = 0.127236;
   maxVelocity = 0.2;
   slope = 3;
@@ -92,6 +96,11 @@ class BowedVoice extends Voice {
     const gains = this.gains;
     let peak = 0;
     for (let i = start; i < end; i++) {
+      if (this.baseDelay !== this.delayTarget) {
+        this.baseDelay += (this.delayTarget - this.baseDelay) * this.glide;
+        if (Math.abs(this.delayTarget - this.baseDelay) < 1e-6)
+          this.baseDelay = this.delayTarget;
+      }
       const bowVelocity = this.maxVelocity * this.bow.process();
       const bridgeReflection =
         -STRING_FILTER_GAIN * this.stringFilter.process(bridge.last);
@@ -139,6 +148,7 @@ export class BowedInstrument extends Instrument {
   private speed = 1;
   private vibratoDepth = 0.006;
   private vibratoRate = 5.5;
+  private glide = 1;
   private envelope: AdsrStages = {
     attack: 0.05,
     decay: 0.1,
@@ -172,6 +182,7 @@ export class BowedInstrument extends Instrument {
     this.speed = p.get("exciter.speed");
     this.vibratoDepth = p.get("exciter.vibrato");
     this.vibratoRate = p.get("resonator.vibratoRate");
+    this.glide = 1 - Math.exp(-3 / (p.get("resonator.portamento") * this.fs));
     this.envelope = p.envelope("envelope");
     this.cutoff = p.get("filter.cutoff");
     this.q = p.get("filter.resonance");
@@ -182,6 +193,7 @@ export class BowedInstrument extends Instrument {
       voice.slope = 5 - 4 * this.pressure;
       voice.beta = this.position;
       voice.vibratoGain = this.vibratoDepth;
+      voice.glide = this.glide;
       voice.vibrato.setRate(this.vibratoRate);
       voice.cutoff = this.cutoff;
       voice.q = this.q;
@@ -212,6 +224,7 @@ export class BowedInstrument extends Instrument {
       this.bowOn(voice, velocity);
       return;
     }
+    const from = legatoNote(this.voices, this.clock, this.fs);
     let sounding = 0;
     let idle = -1;
     for (let i = 0; i < this.voices.length; i++) {
@@ -239,7 +252,7 @@ export class BowedInstrument extends Instrument {
     voice.reset();
     voice.start(n, this.clock);
     this.byNote[n] = idle;
-    this.tune(voice, n);
+    this.tune(voice, n, from);
     this.bowOn(voice, velocity);
     voice.vibrato.set(this.vibratoRate, 0.3, 0.4);
     voice.vibrato.restart();
@@ -301,13 +314,20 @@ export class BowedInstrument extends Instrument {
   }
 
   // Round trip = neck + bridge + 2 ("lastOut" samples) + τ_string filter.
-  private tune(voice: BowedVoice, n: number) {
+  private loopDelay(voice: BowedVoice, n: number) {
     const f0 = midiToHz(n) * 2 ** (keyTable(this.tuning, n) / 1200);
     const w = (TWO_PI * f0) / this.fs;
-    voice.baseDelay = Math.max(
+    return Math.max(
       2,
       this.fs / f0 - 2 - onePolePhaseDelay(voice.stringFilter.p, w),
     );
+  }
+
+  // A legato note starts at the length of the one it follows and glides.
+  private tune(voice: BowedVoice, n: number, from: number) {
+    voice.delayTarget = this.loopDelay(voice, n);
+    voice.baseDelay =
+      from >= 0 ? this.loopDelay(voice, from) : voice.delayTarget;
     const [low, high] = this.patch.range;
     const pan =
       this.patch.pan.center +
