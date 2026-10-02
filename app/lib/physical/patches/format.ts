@@ -35,6 +35,8 @@ export function formatParam(spec: ParamSpec, value: number) {
         : `${value.toFixed(2)} s`;
     case "ms":
       return `${Math.round(value)} ms`;
+    case "°":
+      return `${Math.round(value)}°`;
     case "×":
       return `${value.toFixed(2)}×`;
     case "st":

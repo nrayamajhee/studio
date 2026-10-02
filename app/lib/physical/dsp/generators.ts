@@ -147,6 +147,9 @@ export class Oscillator {
   wave = 0;
   // Per-sample approach toward the set frequency; 1 jumps.
   glide = 1;
+  // Where in the cycle the wave starts (0–1), so two oscillators can be
+  // aligned or offset relative to each other.
+  phaseOffset = 0;
   private readonly fs: number;
   private phase = 0;
   private increment = 0;
@@ -172,7 +175,8 @@ export class Oscillator {
       if (Math.abs(this.target - this.increment) < 1e-9)
         this.increment = this.target;
     }
-    const t = this.phase;
+    let t = this.phase + this.phaseOffset;
+    if (t >= 1) t -= 1;
     const dt = this.increment;
     this.phase += dt;
     if (this.phase >= 1) this.phase -= 1;

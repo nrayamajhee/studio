@@ -30,7 +30,7 @@ export interface ParamSpec {
   min: number;
   max: number;
   default: number;
-  unit?: "Hz" | "s" | "%" | "cents" | "dB" | "st" | "×" | "ms";
+  unit?: "Hz" | "s" | "%" | "cents" | "dB" | "st" | "×" | "ms" | "°";
   scale?: "linear" | "log";
   primary?: boolean;
   // Named choices for an index param, e.g. the oscillator's wave.
@@ -168,7 +168,8 @@ export interface DrumKitPatch extends BasePatch {
   keys: readonly DrumPieceId[];
 }
 
-// Not a physical model: band-limited oscillators through a lowpass and a gate.
+// Not a physical model: one or two band-limited oscillators summed through a
+// lowpass and a gate.
 export interface OscillatorPatch extends BasePatch {
   id: InstrumentId;
   family: "oscillator";

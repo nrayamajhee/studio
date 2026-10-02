@@ -340,13 +340,16 @@ export function bowedParams(
 // In the order of the Oscillator's waves.
 export const OSCILLATOR_WAVES = ["Sine", "Triangle", "Square", "Saw"] as const;
 
+// The second oscillator can be switched off, leaving a single-oscillator patch.
+export const OSCILLATOR_WAVES_2 = ["Off", ...OSCILLATOR_WAVES] as const;
+
 // Shaping beyond the gate's attack and release comes from the master ADSR.
 export function oscillatorParams(send: number, glide: number): ParamSpec[] {
   const time = { unit: "s", scale: "log", primary: true } as const;
   return [
     param(
       "exciter.wave",
-      "Wave",
+      "Wave 1",
       "exciter",
       0,
       OSCILLATOR_WAVES.length - 1,
@@ -356,6 +359,26 @@ export function oscillatorParams(send: number, glide: number): ParamSpec[] {
         primary: true,
       },
     ),
+    param(
+      "exciter.wave2",
+      "Wave 2",
+      "exciter",
+      0,
+      OSCILLATOR_WAVES_2.length - 1,
+      0,
+      {
+        options: OSCILLATOR_WAVES_2,
+        primary: true,
+      },
+    ),
+    // How much of the second oscillator is summed in; silent while Wave 2 is Off.
+    param("exciter.level2", "Osc 2 level", "exciter", 0, 1, 0.5, primary),
+    // Where the second oscillator sits in its cycle relative to the first:
+    // 0° reinforces, 180° cancels a matching wave.
+    param("exciter.phase", "Phase", "exciter", 0, 360, 0, {
+      unit: "°",
+      primary: true,
+    }),
     // Legato glide, the synth's portamento; the lowest is a jump.
     param("exciter.glide", "Glide", "exciter", 0.001, 0.5, glide, time),
     param("filter.cutoff", "Cutoff", "filter", 200, 16000, 16000, {

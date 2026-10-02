@@ -220,4 +220,34 @@ describe("instruments", () => {
       expect(Math.abs(db + 18)).toBeLessThan(1);
     }
   });
+
+  it("cancel a matching second oscillator at 180° phase", () => {
+    const { left } = renderEngine(
+      [
+        {
+          type: "noteOn",
+          instrument: "oscillator",
+          note: 60,
+          velocity: 0.7,
+          time: 0,
+        },
+      ],
+      {
+        sampleRate: 48000,
+        duration: 0.5,
+        overrides: {
+          oscillator: {
+            "exciter.wave": 0,
+            "exciter.wave2": 1,
+            "exciter.level2": 1,
+            "exciter.phase": 180,
+            "space.send": 0,
+          },
+          master: { "reverb.return": 0, "master.volume": 1 },
+        },
+      },
+    );
+    const db = gainToDb(windowRms(left, 48000, 0, 0.1, 0.4));
+    expect(db).toBeLessThan(-60);
+  });
 });

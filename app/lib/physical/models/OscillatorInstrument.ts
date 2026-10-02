@@ -16,21 +16,25 @@ import type { OscillatorPatch } from "../patches/types";
 
 class OscillatorVoice extends Voice {
   readonly oscillator: Oscillator;
+  readonly osc2: Oscillator;
   // Opens at full while the key is down; decay and sustain come from the
   // master ADSR.
   readonly gate: Adsr;
   readonly filter = new Svf("lowpass");
   readonly gains = new Float64Array(2);
   level = 0;
+  level2 = 0;
 
   constructor(fs: number) {
     super(fs);
     this.oscillator = new Oscillator(fs);
+    this.osc2 = new Oscillator(fs);
     this.gate = new Adsr(fs);
   }
 
   reset() {
     this.oscillator.reset();
+    this.osc2.reset();
     this.gate.reset();
     this.filter.clear();
   }
@@ -44,7 +48,10 @@ class OscillatorVoice extends Voice {
     let peak = 0;
     for (let i = start; i < end; i++) {
       let y =
-        this.filter.process(this.level * this.oscillator.process()) *
+        this.filter.process(
+          this.level *
+            (this.oscillator.process() + this.level2 * this.osc2.process()),
+        ) *
         this.gate.process() *
         this.shape.process();
       if (this.fadeStep > 0) {
@@ -60,8 +67,8 @@ class OscillatorVoice extends Voice {
   }
 }
 
-// A polyphonic sine, triangle, square or saw through a lowpass: a plain
-// source for the master ADSR, LFO and FX to shape.
+// One or two polyphonic oscillators (sine, triangle, square or saw) summed
+// through a lowpass: a plain source for the master ADSR, LFO and FX to shape.
 export class OscillatorInstrument extends Instrument {
   readonly patch: OscillatorPatch;
   private readonly voices: OscillatorVoice[] = [];
@@ -84,6 +91,9 @@ export class OscillatorInstrument extends Instrument {
     super.applyParams();
     const p = this.params;
     const wave = Math.round(p.get("exciter.wave"));
+    const wave2 = Math.round(p.get("exciter.wave2"));
+    const level2 = wave2 > 0 ? p.get("exciter.level2") : 0;
+    const phase = p.get("exciter.phase") / 360;
     const attack = p.get("envelope.attack");
     const release = p.get("envelope.release");
     const cutoff = p.get("filter.cutoff");
@@ -93,6 +103,10 @@ export class OscillatorInstrument extends Instrument {
       const voice = this.voices[i];
       voice.oscillator.wave = wave;
       voice.oscillator.glide = glide;
+      voice.osc2.wave = Math.max(0, wave2 - 1);
+      voice.osc2.glide = glide;
+      voice.osc2.phaseOffset = phase;
+      voice.level2 = level2;
       voice.gate.set(attack, 0, 1, release, true);
       voice.filter.set(cutoff, q, this.fs);
     }
@@ -149,6 +163,10 @@ export class OscillatorInstrument extends Instrument {
     voice.start(n, this.clock);
     this.byNote[n] = idle;
     voice.oscillator.setFrequency(
+      midiToHz(n),
+      from >= 0 ? midiToHz(from) : undefined,
+    );
+    voice.osc2.setFrequency(
       midiToHz(n),
       from >= 0 ? midiToHz(from) : undefined,
     );
