@@ -44,21 +44,22 @@ const NOTE_KEYS = [
 ];
 
 // The pads' two rows sit on the home and bottom rows, lined up from the right
-// edge: chords on L ; ' / , . /, presets on H J K / B N M, Record, Tracks,
-// Synth, Metronome, ADSR / Save, LFO, FX on A S D F G / X C V. Space plays,
-// and the arrows and Shift press their own pads.
-const PRESET_KEYS = ["H", "J", "K", "B", "N", "M"];
-const CHORD_KEYS = ["L", ";", "'", ",", ".", "/"];
+// edge. Top: Tracks, Synth, ADSR, LFO and FX on A S D F G, presets on
+// H J K L ; ', Metronome on Z (no home-row key left of A). Bottom: chords on
+// B N M , . /, Record and Save on C V. Space plays, and the arrows and Shift
+// press their own pads.
+const PRESET_KEYS = ["H", "J", "K", "L", ";", "'"];
+const CHORD_KEYS = ["B", "N", "M", ",", ".", "/"];
 const TOOL_KEYS: Readonly<Record<Tool, string>> = {
-  record: "A",
+  metronome: "Z",
+  tracks: "A",
+  synth: "S",
+  adsr: "D",
+  lfo: "F",
+  fx: "G",
   play: "Space",
-  tracks: "S",
-  synth: "D",
-  metronome: "F",
-  adsr: "G",
-  save: "X",
-  lfo: "C",
-  fx: "V",
+  record: "C",
+  save: "V",
 };
 
 // KeyboardEvent.code for each label that isn't Key<letter> or Digit<n>.

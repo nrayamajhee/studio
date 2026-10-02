@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { HotkeyProvider } from "./input/HotkeyProvider";
+import { HotkeyProvider } from "../../providers/HotkeyProvider";
 import { SynthDevice } from "./SynthDevice";
 
 const meta = {

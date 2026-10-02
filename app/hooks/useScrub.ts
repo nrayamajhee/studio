@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
-import { deviceEngine } from "./deviceEngine";
-import type { PlayedNote } from "./noteRecorder";
+import { deviceEngine } from "../components/home/deviceEngine";
+import type { PlayedNote } from "../components/home/noteRecorder";
 
 type Scrubber = NonNullable<ReturnType<typeof deviceEngine.scrubber>>;
 

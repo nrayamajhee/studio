@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { barMs, beatMs, type Timing } from "./noteRecorder";
-import type { RollFrame } from "./useTransport";
+import type { RollFrame } from "../../hooks/useTransport";
 
 export interface NoteRollProps {
   getFrame: () => RollFrame;

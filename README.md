@@ -66,13 +66,13 @@ The home page (`app/routes/home.tsx`) renders The Device, a digital desktop synt
 | `app/components/home/DeviceScreen.tsx` | The screen and its views                                                     |
 | `app/components/home/deviceEngine.ts`  | The only audio module the Device imports; built-in presets                   |
 | `app/components/home/presetStore.ts`   | Saved presets, pad bindings and edits (`localStorage`)                       |
-| `app/components/home/useTransport.ts`  | Recording, playback, metronome, tempo and tap tempo                          |
+| `app/hooks/useTransport.ts`            | Recording, playback, metronome, tempo and tap tempo                          |
 | `app/components/home/noteRecorder.ts`  | Takes as played (start, held length, velocity); 16th-step quantizing         |
 | `app/components/home/NoteRoll.tsx`     | The screen's piano roll: C0–C10 keys, notes rising from them                 |
-| `app/components/home/useScrub.ts`      | Scrubbing the stopped roll: renders the take, plays it at the scroll's speed |
+| `app/hooks/useScrub.ts`                | Scrubbing the stopped roll: renders the take, plays it at the scroll's speed |
 | `app/components/home/tracks.ts`        | Takes kept as tracks: clip, start, mute and solo                             |
 | `app/components/home/sessionStore.ts`  | The tape's take and the tracks (`localStorage`)                              |
-| `app/components/design-system-v2/`     | Device primitives: `Key`, `Knob`, `Pad`                                      |
+| `app/components/design-system/`        | Device primitives `Key`, `Knob`, `Pad` and base controls                    |
 | `app/components/lab/`                  | Instrument Lab (Storybook only)                                              |
 
 Design rules:
@@ -106,9 +106,9 @@ Around the voices: per-instrument buses with a modal or radiation body and drive
 
 ## Storybook
 
-Stories are colocated with their components (`Component.stories.tsx`) and organized under three top-level titles. Components used only by `/studio` have no stories.
+Stories are colocated with their components (`Component.stories.tsx`) and organized under three top-level titles.
 
-- **`Design System V2/*`** — `Key`, `Knob`, `Pad`.
+- **`Design System/*`** — `Key`, `Knob`, `Pad`.
 - **`Home/*`** — `Device` (`SynthDevice`), `Screen` (`DeviceScreen`).
 - **`Lab/*`** — `Instrument Lab` (dev tool; not mounted in any route).
 
@@ -118,10 +118,6 @@ Setup conventions:
 - Components use the `autodocs` tag and `layout: "centered"` (or `"padded"` for surfaces).
 - The Device story renders over the `.home-background` gradient via a decorator.
 - Light/dark coverage comes from the theme addon (`@storybook/addon-themes`); components must be correct in both modes.
-
-## Ignore `/studio`
-
-The `/studio` route is the initial legacy project (multi-track mixer, piano roll, presets panel). It will be re-implemented around The Device. Do not extend, refactor, or reuse it as a reference for new work — build new functionality into the home page and `design-system-v2` instead. Shared, already-extracted pieces (`SynthVisualizers`) may be imported; new audio work goes into `app/lib/physical/`, not `app/lib/synth.ts`.
 
 ## Agent Guidelines
 

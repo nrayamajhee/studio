@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { deviceEngine } from "./deviceEngine";
-import { setTake, useSession } from "./sessionStore";
+import { deviceEngine } from "../components/home/deviceEngine";
+import { setTake, useSession } from "../components/home/sessionStore";
 import {
   DEFAULT_TIMING,
   METERS,
@@ -11,7 +11,7 @@ import {
   type PlayedNote,
   type Take,
   type Timing,
-} from "./noteRecorder";
+} from "../components/home/noteRecorder";
 
 export type TransportState = "stopped" | "playing" | "recording";
 

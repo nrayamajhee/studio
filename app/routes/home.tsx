@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import type { Route } from "./+types/home";
 import { useTheme } from "../hooks/useTheme";
 import { Button } from "../components/design-system/Button";
-import { HotkeyProvider } from "../components/home/input/HotkeyProvider";
+import { HotkeyProvider } from "../providers/HotkeyProvider";
 import { SynthDevice } from "../components/home/SynthDevice";
 import { Sun, Moon } from "lucide-react";
 

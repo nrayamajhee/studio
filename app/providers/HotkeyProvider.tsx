@@ -9,8 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { keyboardFocus, moveFocus } from "./focus";
-import { KEYMAP, controlId, type Control } from "./keymap";
+import { keyboardFocus, moveFocus } from "../components/home/input/focus";
+import { KEYMAP, controlId, type Control } from "../components/home/input/keymap";
 
 export interface HeldKeys {
   // Controls whose keys are down, in the order they went down.

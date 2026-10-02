@@ -4,7 +4,7 @@ import { fn } from "storybook/test";
 import { Pad } from "./Pad";
 
 const meta = {
-  title: "Design System V2/Pad",
+  title: "Design System/Pad",
   component: Pad,
   tags: ["autodocs"],
   parameters: { layout: "centered" },

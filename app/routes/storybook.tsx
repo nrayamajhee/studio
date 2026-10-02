@@ -22,7 +22,7 @@ export default function StorybookRoute() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-white dark:bg-surface-dark text-stone-900 dark:text-stone-100 flex flex-col font-sans transition-colors duration-200">
       <header className="h-12 border-b border-stone-200 dark:border-stone-800/80 bg-stone-100/90 dark:bg-stone-900/90 backdrop-blur-md px-3 sm:px-4 flex items-center z-20 flex-shrink-0">
-        <Link to="/studio">
+        <Link to="/">
           <Button
             variant="solid"
             tone="secondary"

@@ -6,7 +6,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
-import { Button } from "../design-system/Button";
+import { Button } from "./Button";
 import { cn } from "../../lib/utils";
 import styles from "./Pad.module.css";
 

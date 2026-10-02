@@ -3,7 +3,7 @@ import { fn } from "storybook/test";
 import { Key } from "./Key";
 
 const meta = {
-  title: "Design System V2/Key",
+  title: "Design System/Key",
   component: Key,
   tags: ["autodocs"],
   parameters: { layout: "centered" },

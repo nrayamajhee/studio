@@ -108,21 +108,28 @@
   margin-bottom: calc(-1 * var(--inset));
 }
 
-/* Two rows of twelve pads in four 3×2 banks: transport, tools, presets and
-   chords. Banks sit one inset apart, so the rows read as unbroken lines. */
+/* Two rows of twelve. Controls fill the left six; presets the top right and
+   chords the bottom right. Groups sit one inset apart, so each row is one
+   line. */
 .banks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--inset);
+}
+
+.padRow {
   display: flex;
   gap: var(--inset);
 }
 
 .bank {
   display: grid;
-  grid-template-columns: repeat(3, 68px);
+  grid-template-columns: repeat(6, 68px);
   gap: var(--inset);
 }
 
 /* The screen reaches up into the bezel, leaving --inset to the top edge; the
-   row gap below leaves the same to the preset row. */
+   row gap below leaves the same to the pad row. */
 .screenSlot {
   min-width: 0;
   margin-top: calc(var(--inset) - var(--gap));

@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent, useRef, type CSSProperties } from "react";
-import { Button } from "../design-system/Button";
+import { Button } from "./Button";
 import { cn } from "../../lib/utils";
 import { keepFocus } from "./Pad";
 import styles from "./Knob.module.css";

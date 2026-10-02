@@ -45,7 +45,7 @@ import type {
 import { cn } from "../../lib/utils";
 import { Button } from "../design-system/Button";
 import { Slider } from "../design-system/Slider";
-import { Key, Pad } from "../design-system-v2";
+import { Key, Pad } from "../design-system";
 import { Oscilloscope } from "../home/Oscilloscope";
 
 export interface InstrumentLabProps {

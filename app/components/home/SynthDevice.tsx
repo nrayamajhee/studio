@@ -33,7 +33,7 @@ import {
   valueToStep,
 } from "../../lib/physical/patches/format";
 import { cn } from "../../lib/utils";
-import { Key, Knob, Pad } from "../design-system-v2";
+import { Key, Knob, Pad } from "../design-system";
 import {
   DEVICE_MODULES,
   DEVICE_PRESETS,
@@ -81,13 +81,13 @@ import {
   updatePreset,
   usePresetLibrary,
 } from "./presetStore";
-import { useHotkeyListener, useHotkeys } from "./input/HotkeyProvider";
+import { useHotkeyListener, useHotkeys } from "../../providers/HotkeyProvider";
 import { hotkeyLabel, type Control, type Tool } from "./input/keymap";
 import { audible, clipOf, makeTrack, type Track } from "./tracks";
-import { useTrackMix } from "./useTrackMix";
+import { useTrackMix } from "../../hooks/useTrackMix";
 import { setTracks, useSession } from "./sessionStore";
-import { useScrub } from "./useScrub";
-import { MAX_BPM, MIN_BPM, useTransport } from "./useTransport";
+import { useScrub } from "../../hooks/useScrub";
+import { MAX_BPM, MIN_BPM, useTransport } from "../../hooks/useTransport";
 import styles from "./SynthDevice.module.css";
 
 export interface SynthDeviceProps {
@@ -1267,218 +1267,226 @@ export function SynthDevice({ className }: SynthDeviceProps) {
             data-focus-group="pads"
             data-focus-order="rows"
           >
-            <div className={styles.bank} role="group" aria-label="Transport">
-              <Pad
-                label={
-                  view === "tracks"
-                    ? mix.playing
-                      ? "Pause tracks"
-                      : "Play tracks"
-                    : playing
-                      ? "Pause"
-                      : "Play"
-                }
-                {...toolHotkey("play")}
-                onPress={pressPlay}
-              >
-                {playing ? (
-                  <Pause fill="currentColor" />
-                ) : (
-                  <Play fill="currentColor" />
-                )}
-              </Pad>
-              <Pad
-                label={
-                  trash
-                    ? `Delete ${trash.name}`
-                    : transport.state === "recording"
-                      ? "Stop recording"
-                      : "Record"
-                }
-                accent="var(--synth-red)"
-                lit={
-                  trash
-                    ? pendingDelete === trash.id
-                    : transport.state === "recording"
-                }
-                {...toolHotkey("record")}
-                onPress={pressRecord}
-              >
-                {trash ? <Trash2 /> : <Circle fill="currentColor" />}
-              </Pad>
-              <Pad
-                label={tapeMode ? "Record mode" : "Tracks"}
-                accent="var(--synth-red)"
-                lit={recordMode || view === "tracks"}
-                indicator={transport.state === "recording"}
-                {...toolHotkey("tracks")}
-                onPress={pressTracks}
-              >
-                {tapeMode ? <CassetteTape /> : <ChartNoAxesGantt />}
-              </Pad>
-              <Pad
-                label={shiftLatched ? "Shift (latched)" : "Shift"}
-                {...hotkeyProps({ kind: "shift" })}
-                // No colour: a modifier, not a state. Latched, it stays
-                // pressed in, as it looks while its key is held.
-                held={shift}
-                onPress={() => setShiftLatched((on) => !on)}
-              >
-                <ArrowUp />
-              </Pad>
-              <Pad
-                label={
-                  paging
-                    ? "Previous page"
-                    : view === "tempo"
-                      ? "Slower"
-                      : view === "tracks"
-                        ? "Slide track earlier"
-                        : shift
-                          ? "Previous preset"
-                          : "Octave down"
-                }
-                accent="var(--synth-red)"
-                {...hotkeyProps({ kind: "step", direction: -1 })}
-                onPress={() => step(-1)}
-              >
-                <ArrowLeft />
-              </Pad>
-              <Pad
-                label={
-                  paging
-                    ? "Next page"
-                    : view === "tempo"
-                      ? "Faster"
-                      : view === "tracks"
-                        ? "Slide track later"
-                        : shift
-                          ? "Next preset"
-                          : "Octave up"
-                }
-                accent="var(--synth-red)"
-                {...hotkeyProps({ kind: "step", direction: 1 })}
-                onPress={() => step(1)}
-              >
-                <ArrowRight />
-              </Pad>
-            </div>
-            <div className={styles.bank} role="group" aria-label="Tools">
-              <Pad
-                label={libraryMode ? "Preset library" : "Synth parameters"}
-                accent="var(--synth-red)"
-                lit={view === "synth" || view === "presets"}
-                {...toolHotkey("synth")}
-                onPress={pressSynth}
-              >
-                {libraryMode ? <LayoutGrid /> : <AudioWaveform />}
-              </Pad>
-              <Pad
-                label={
-                  shift
-                    ? `Turn metronome ${transport.metronome ? "off" : "on"}`
-                    : `Tempo (metronome ${transport.metronome ? "on" : "off"})`
-                }
-                accent="var(--synth-green)"
-                lit={view === "tempo"}
-                indicator={transport.metronome}
-                {...toolHotkey("metronome")}
-                onPress={pressMetronome}
-              >
-                <Metronome />
-              </Pad>
-              {renderModulePad("adsr", <AdsrIcon />)}
-              <Pad
-                label={
-                  view === "tracks"
-                    ? track
-                      ? `${
-                          shift
-                            ? track.soloed
-                              ? "Unsolo"
-                              : "Solo"
-                            : track.muted
-                              ? "Unmute"
-                              : "Mute"
-                        } ${track.name}`
-                      : "Save take as a track"
-                    : view === "roll"
-                      ? "Save take as a track"
-                      : view === "tempo"
-                        ? tapMode
-                          ? "Stop tap tempo"
-                          : "Tap tempo"
-                        : shift
-                          ? "Reset preset"
-                          : "Save preset"
-                }
-                accent="var(--synth-red)"
-                lit={
-                  view === "tracks"
-                    ? Boolean(shift ? track?.soloed : track?.muted)
-                    : tapMode
-                }
-                {...toolHotkey("save")}
-                onPress={pressSave}
-              >
-                {view === "tracks" ? (
-                  !track ? (
-                    <Save />
-                  ) : shift ? (
-                    <Headphones />
-                  ) : (
-                    <VolumeX />
-                  )
-                ) : view === "tempo" ? (
-                  <Pointer />
-                ) : shift ? (
-                  <RotateCcw />
-                ) : (
-                  <Save />
-                )}
-              </Pad>
-              {renderModulePad("lfo", <WavesHorizontal />)}
-              {renderModulePad("fx", <AudioLines />)}
-            </div>
-            <div className={styles.bank} role="group" aria-label="Presets">
-              {padPresets.map((padPreset, pad) => {
-                const name = padPreset?.name ?? "empty";
-                const current = padPreset?.id === preset.id;
-                return (
-                  <Pad
-                    key={pad}
-                    label={
-                      view === "presets"
-                        ? `Bind to ${padName(pad).toLowerCase()} (${name})`
-                        : view === "save"
-                          ? `Save to ${padName(pad).toLowerCase()} (${name})`
-                          : padPreset
-                            ? `${padPreset.name}${current ? " (current)" : ""}`
-                            : `Empty preset pad ${pad + 1}`
-                    }
-                    accent="var(--synth-red)"
-                    indicator={padPreset ? current : undefined}
-                    {...hotkeyProps({ kind: "preset", index: pad })}
-                    onPress={() => pressPresetPad(pad)}
-                  >
-                    {padPreset && <PresetIcon icon={padPreset.icon} />}
-                  </Pad>
-                );
-              })}
-            </div>
-            <div className={styles.bank} role="group" aria-label="Chord macros">
-              {CHORDS.map(({ name, label }, index) => (
+            <div className={styles.padRow}>
+              <div className={styles.bank} role="group" aria-label="Tools">
                 <Pad
-                  key={name}
-                  label={`${name} chord`}
-                  accent="var(--synth-blue)"
-                  pressed={activeChord === index}
-                  {...hotkeyProps({ kind: "chord", index })}
-                  onPress={() => toggleChord(index)}
+                  label={
+                    shift
+                      ? `Turn metronome ${transport.metronome ? "off" : "on"}`
+                      : `Tempo (metronome ${transport.metronome ? "on" : "off"})`
+                  }
+                  accent="var(--synth-green)"
+                  lit={view === "tempo"}
+                  indicator={transport.metronome}
+                  {...toolHotkey("metronome")}
+                  onPress={pressMetronome}
                 >
-                  {label}
+                  <Metronome />
                 </Pad>
-              ))}
+                <Pad
+                  label={tapeMode ? "Record mode" : "Tracks"}
+                  accent="var(--synth-red)"
+                  lit={recordMode || view === "tracks"}
+                  indicator={transport.state === "recording"}
+                  {...toolHotkey("tracks")}
+                  onPress={pressTracks}
+                >
+                  {tapeMode ? <CassetteTape /> : <ChartNoAxesGantt />}
+                </Pad>
+                <Pad
+                  label={libraryMode ? "Preset library" : "Synth parameters"}
+                  accent="var(--synth-red)"
+                  lit={view === "synth" || view === "presets"}
+                  {...toolHotkey("synth")}
+                  onPress={pressSynth}
+                >
+                  {libraryMode ? <LayoutGrid /> : <AudioWaveform />}
+                </Pad>
+                {renderModulePad("adsr", <AdsrIcon />)}
+                {renderModulePad("lfo", <WavesHorizontal />)}
+                {renderModulePad("fx", <AudioLines />)}
+              </div>
+              <div className={styles.bank} role="group" aria-label="Presets">
+                {padPresets.map((padPreset, pad) => {
+                  const name = padPreset?.name ?? "empty";
+                  const current = padPreset?.id === preset.id;
+                  return (
+                    <Pad
+                      key={pad}
+                      label={
+                        view === "presets"
+                          ? `Bind to ${padName(pad).toLowerCase()} (${name})`
+                          : view === "save"
+                            ? `Save to ${padName(pad).toLowerCase()} (${name})`
+                            : padPreset
+                              ? `${padPreset.name}${current ? " (current)" : ""}`
+                              : `Empty preset pad ${pad + 1}`
+                      }
+                      accent="var(--synth-red)"
+                      indicator={padPreset ? current : undefined}
+                      {...hotkeyProps({ kind: "preset", index: pad })}
+                      onPress={() => pressPresetPad(pad)}
+                    >
+                      {padPreset && <PresetIcon icon={padPreset.icon} />}
+                    </Pad>
+                  );
+                })}
+              </div>
+            </div>
+            <div className={styles.padRow}>
+              <div className={styles.bank} role="group" aria-label="Transport">
+                <Pad
+                  label={shiftLatched ? "Shift (latched)" : "Shift"}
+                  {...hotkeyProps({ kind: "shift" })}
+                  // No colour: a modifier, not a state. Latched, it stays
+                  // pressed in, as it looks while its key is held.
+                  held={shift}
+                  onPress={() => setShiftLatched((on) => !on)}
+                >
+                  <ArrowUp />
+                </Pad>
+                <Pad
+                  label={
+                    paging
+                      ? "Previous page"
+                      : view === "tempo"
+                        ? "Slower"
+                        : view === "tracks"
+                          ? "Slide track earlier"
+                          : shift
+                            ? "Previous preset"
+                            : "Octave down"
+                  }
+                  accent="var(--synth-red)"
+                  {...hotkeyProps({ kind: "step", direction: -1 })}
+                  onPress={() => step(-1)}
+                >
+                  <ArrowLeft />
+                </Pad>
+                <Pad
+                  label={
+                    paging
+                      ? "Next page"
+                      : view === "tempo"
+                        ? "Faster"
+                        : view === "tracks"
+                          ? "Slide track later"
+                          : shift
+                            ? "Next preset"
+                            : "Octave up"
+                  }
+                  accent="var(--synth-red)"
+                  {...hotkeyProps({ kind: "step", direction: 1 })}
+                  onPress={() => step(1)}
+                >
+                  <ArrowRight />
+                </Pad>
+                <Pad
+                  label={
+                    view === "tracks"
+                      ? mix.playing
+                        ? "Pause tracks"
+                        : "Play tracks"
+                      : playing
+                        ? "Pause"
+                        : "Play"
+                  }
+                  {...toolHotkey("play")}
+                  onPress={pressPlay}
+                >
+                  {playing ? (
+                    <Pause fill="currentColor" />
+                  ) : (
+                    <Play fill="currentColor" />
+                  )}
+                </Pad>
+                <Pad
+                  label={
+                    trash
+                      ? `Delete ${trash.name}`
+                      : transport.state === "recording"
+                        ? "Stop recording"
+                        : "Record"
+                  }
+                  accent="var(--synth-red)"
+                  lit={
+                    trash
+                      ? pendingDelete === trash.id
+                      : transport.state === "recording"
+                  }
+                  {...toolHotkey("record")}
+                  onPress={pressRecord}
+                >
+                  {trash ? <Trash2 /> : <Circle fill="currentColor" />}
+                </Pad>
+                <Pad
+                  label={
+                    view === "tracks"
+                      ? track
+                        ? `${
+                            shift
+                              ? track.soloed
+                                ? "Unsolo"
+                                : "Solo"
+                              : track.muted
+                                ? "Unmute"
+                                : "Mute"
+                          } ${track.name}`
+                        : "Save take as a track"
+                      : view === "roll"
+                        ? "Save take as a track"
+                        : view === "tempo"
+                          ? tapMode
+                            ? "Stop tap tempo"
+                            : "Tap tempo"
+                          : shift
+                            ? "Reset preset"
+                            : "Save preset"
+                  }
+                  accent="var(--synth-red)"
+                  lit={
+                    view === "tracks"
+                      ? Boolean(shift ? track?.soloed : track?.muted)
+                      : tapMode
+                  }
+                  {...toolHotkey("save")}
+                  onPress={pressSave}
+                >
+                  {view === "tracks" ? (
+                    !track ? (
+                      <Save />
+                    ) : shift ? (
+                      <Headphones />
+                    ) : (
+                      <VolumeX />
+                    )
+                  ) : view === "tempo" ? (
+                    <Pointer />
+                  ) : shift ? (
+                    <RotateCcw />
+                  ) : (
+                    <Save />
+                  )}
+                </Pad>
+              </div>
+              <div
+                className={styles.bank}
+                role="group"
+                aria-label="Chord macros"
+              >
+                {CHORDS.map(({ name, label }, index) => (
+                  <Pad
+                    key={name}
+                    label={`${name} chord`}
+                    accent="var(--synth-blue)"
+                    pressed={activeChord === index}
+                    {...hotkeyProps({ kind: "chord", index })}
+                    onPress={() => toggleChord(index)}
+                  >
+                    {label}
+                  </Pad>
+                ))}
+              </div>
             </div>
           </div>
           <div className={styles.keybed}>

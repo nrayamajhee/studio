@@ -5,6 +5,5 @@ const isDev =
 
 export default [
   index("routes/home.tsx"),
-  route("studio/:trackId?", "routes/studio.tsx"),
   ...(!isDev ? [route("storybook", "routes/storybook.tsx")] : []),
 ] satisfies RouteConfig;

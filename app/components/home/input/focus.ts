@@ -4,8 +4,8 @@
 const FOCUSABLE =
   "a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]";
 
-// Document order doesn't match the layout everywhere: the pads sit in 3×2
-// banks, and the keybed lists its white keys before its black ones. Controls
+// Document order doesn't match the layout everywhere: the keybed lists its
+// white keys before its black ones. Controls
 // inside a [data-focus-group] are visited together, where the group's first
 // one is, in reading order: "rows" goes row by row, "columns" left to right
 // (so each black key falls between its neighbours).

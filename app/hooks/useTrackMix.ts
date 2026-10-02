@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MIX_LEAD } from "../../lib/physical/TrackMixer";
-import { deviceEngine } from "./deviceEngine";
-import { audible, passOf, startsOf, type Track } from "./tracks";
+import { MIX_LEAD } from "../lib/physical/TrackMixer";
+import { deviceEngine } from "../components/home/deviceEngine";
+import { audible, passOf, startsOf, type Track } from "../components/home/tracks";
 
 type Mixer = NonNullable<ReturnType<typeof deviceEngine.mixer>>;
 

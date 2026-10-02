@@ -4,7 +4,7 @@ import { fn } from "storybook/test";
 import { Knob, type KnobProps } from "./Knob";
 
 const meta = {
-  title: "Design System V2/Knob",
+  title: "Design System/Knob",
   component: Knob,
   tags: ["autodocs"],
   parameters: { layout: "centered" },

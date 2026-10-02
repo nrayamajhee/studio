@@ -5,8 +5,8 @@ import { NoteRoll } from "./NoteRoll";
 import { Oscilloscope } from "./Oscilloscope";
 import { DEFAULT_TIMING, type Timing } from "./noteRecorder";
 import type { TrackClip } from "./tracks";
-import type { RollFrame } from "./useTransport";
-import { keepFocus } from "../design-system-v2";
+import type { RollFrame } from "../../hooks/useTransport";
+import { keepFocus } from "../design-system";
 import styles from "./DeviceScreen.module.css";
 
 export type ScreenView =
