@@ -16,7 +16,8 @@
     color-mix(in srgb, rgb(20 20 19 / 0.3), rgb(0 0 0 / 0.75) var(--theme-mix));
   border-bottom: 1.5px solid
     color-mix(in srgb, #ffffff, rgb(255 255 255 / 0.12) var(--theme-mix));
-  border-radius: 22px;
+  /* As round as the pads, so it sits square between the grilles. */
+  border-radius: 12px;
   background: var(--screen-bg);
   box-shadow:
     inset 0 12px 20px -12px
@@ -41,7 +42,7 @@
   align-items: center;
   height: 100%;
   padding: 0 20px;
-  border-radius: 14px;
+  border-radius: 4px;
   color: var(--screen-ink);
 }
 
@@ -251,6 +252,7 @@
 .overlay {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: grid;
   place-items: center;
   border-radius: inherit;
@@ -565,13 +567,14 @@
   transition: none;
 }
 
-/* Green marks the track the green knob picked. */
+/* Blue marks the track the blue knob picked. */
 .track[aria-pressed="true"] {
-  border-color: var(--screen-green);
+  border-color: var(--screen-blue);
 }
 
+/* Keyboard focus in chalk, apart from the blue of the picked track. */
 .track:focus-visible {
-  border-color: var(--screen-blue);
+  border-color: var(--screen-ink);
   outline: none;
 }
 
@@ -648,6 +651,11 @@
   border-radius: 4px;
 }
 
+/* The track's loop, in the red of the knobs that move its edges. */
+.pass[data-loop] {
+  box-shadow: inset 0 0 0 1.5px var(--screen-red);
+}
+
 .clipNote {
   position: absolute;
   min-width: 2px;
@@ -658,6 +666,20 @@
 
 .clipNote[data-repeat] {
   opacity: 0.55;
+}
+
+/* Which time through the take a repeat is, centred over its notes in the
+   track's colour, on a chip of the screen's black so it reads across them. */
+.passCount {
+  position: absolute;
+  top: 50%;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 13px;
+  background: color-mix(in srgb, var(--screen-bg) 70%, transparent);
+  translate: -50% -50%;
 }
 
 /* Muted, or left out of a solo. */
@@ -687,9 +709,9 @@
   background: transparent;
 }
 
-/* Where the mix is, across every lane; hidden while it is stopped. It starts
-   at the lane's left edge (past the 112px label and 5px volume strip) and
-   spans the lane's width. */
+/* Where the mix is, across every lane, in the green of the knob that seeks
+   it; hidden while it is stopped. It starts at the lane's left edge (past the
+   112px label and 5px volume strip) and spans the lane's width. */
 .playhead {
   position: absolute;
   top: 0;
@@ -697,6 +719,6 @@
   z-index: 1;
   left: calc(137px + var(--playhead, -1) * (100% - 141px));
   width: 2px;
-  background: var(--screen-red);
+  background: var(--screen-green);
   opacity: clamp(0, calc((var(--playhead, -1) + 1) * 1000), 1);
 }

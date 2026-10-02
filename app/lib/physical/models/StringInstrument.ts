@@ -147,6 +147,7 @@ export class StringInstrument extends Instrument {
   private attack = 0.001;
   private release = 1;
   private strum = 0;
+  private jawari = 0;
   private readonly pluckOptions: PluckOptions = {
     period: 100,
     velocity: 0.8,
@@ -216,6 +217,7 @@ export class StringInstrument extends Instrument {
     this.attack = p.get("envelope.attack");
     this.release = p.get("envelope.release");
     this.strum = p.has("exciter.strum") ? p.get("exciter.strum") : 0;
+    this.jawari = p.has("resonator.jawari") ? p.get("resonator.jawari") : 0;
     for (let i = 0; i < this.voices.length; i++) {
       const voice = this.voices[i];
       if (voice.busy) this.configureFilter(voice, voice.note);
@@ -471,6 +473,11 @@ export class StringInstrument extends Instrument {
         decayScale = patch.unisonDecay[s] ?? 1;
         voice.split[s] = 1 / count;
       }
+      if (patch.jawari)
+        voice.loops[s].setJawari(
+          patch.jawari.contact * this.jawari,
+          patch.jawari.gap,
+        );
       voice.loops[s].tune(
         f0 * 2 ** (cents / 1200),
         t60 * decayScale,

@@ -1,6 +1,6 @@
-// Flute, saxophone and brass loops ported from STK (The Synthesis ToolKit,
-// Perry Cook & Gary Scavone, MIT-style license): src/Flute.cpp,
-// src/Saxofony.cpp and src/Brass.cpp.
+// Flute, saxophone, brass and clarinet loops ported from STK (The Synthesis
+// ToolKit, Perry Cook & Gary Scavone, MIT-style license): src/Flute.cpp,
+// src/Saxofony.cpp, src/Brass.cpp and src/Clarinet.cpp.
 
 import { Adsr, type AdsrStages } from "../dsp/Adsr";
 import { DcBlocker, OnePoleLowpass } from "../dsp/filters";
@@ -37,6 +37,11 @@ const SAX_BELL_REFLECTION = -0.95;
 // cutoff follows f0 instead, which also makes it sample-rate independent.
 const SAX_REFLECTION_RATIO = 14;
 const SAX_REFLECTION_MIN = 500;
+// STK Clarinet: the reed table and the cylinder's inverting end reflection,
+// whose loss is a two-point average (half a sample of delay).
+const CLARINET_REED_OFFSET = 0.7;
+const CLARINET_REFLECTION = 0.95;
+const CLARINET_FILTER_DELAY = 0.5;
 // STK Brass: the bore holds two periods, so its modes sit at f0/2 multiples and
 // the lips, a resonance at f0, lock onto the second; +3 samples is STK's.
 const BRASS_BORE_PERIODS = 2;
@@ -87,6 +92,7 @@ class BoreVoice extends Voice {
   private lipA2 = 0;
   private lipY1 = 0;
   private lipY2 = 0;
+  private zero1 = 0;
   private ticks = 0;
 
   constructor(fs: number, lowestHz: number, model: BoreModel) {
@@ -113,6 +119,7 @@ class BoreVoice extends Voice {
     this.breath.reset();
     this.gate.reset();
     this.lipY1 = this.lipY2 = 0;
+    this.zero1 = 0;
   }
 
   setLip(freq: number) {
@@ -159,6 +166,15 @@ class BoreVoice extends Voice {
           this.dc.process(area * mouth + (1 - area) * back),
           this.boreLength * bend,
         );
+      } else if (this.model === "clarinet") {
+        const reflected = -CLARINET_REFLECTION * 0.5 * (bore.last + this.zero1);
+        this.zero1 = bore.last;
+        const diff = reflected - pressure;
+        out = bore.tick(
+          pressure +
+            diff * reedTable(diff, CLARINET_REED_OFFSET, -this.reedSlope),
+          this.boreLength * bend,
+        );
       } else if (this.model === "saxophone") {
         // delayA ≡ bore (bell side), delayB ≡ jet (reed side).
         const t = SAX_BELL_REFLECTION * this.reflection.process(bore.last);
@@ -187,6 +203,7 @@ class BoreVoice extends Voice {
         this.reflection.clear();
         this.dc.clear();
         this.lipY1 = this.lipY2 = 0;
+        this.zero1 = 0;
         this.watchdog = true;
         out = 0;
       }
@@ -216,7 +233,8 @@ class BoreVoice extends Voice {
   }
 }
 
-// Monophonic flute, saxophone or brass with last-note priority and legato.
+// Monophonic flute, saxophone, brass or clarinet with last-note priority and
+// legato.
 export class BoreInstrument extends Instrument {
   readonly patch: BorePatch;
   // Replaced by calibration tools; otherwise fixed at construction.
@@ -274,7 +292,7 @@ export class BoreInstrument extends Instrument {
     this.q = p.get("filter.resonance");
     const voice = this.voice;
     voice.noiseGain =
-      (voice.model === "saxophone"
+      (voice.model === "saxophone" || voice.model === "clarinet"
         ? 0.2
         : voice.model === "brass"
           ? 0.05
@@ -405,6 +423,10 @@ export class BoreInstrument extends Instrument {
       delay = (BRASS_BORE_PERIODS * fs) / f0 + BRASS_BORE_OFFSET;
       voice.boreTarget = delay;
       voice.setLip(f0 * this.lipRatio);
+    } else if (voice.model === "clarinet") {
+      // The inverting reflection makes the loop two passes of the bore.
+      delay = (0.5 * fs) / f0 - CLARINET_FILTER_DELAY - 1;
+      voice.boreTarget = delay;
     } else if (voice.model === "saxophone") {
       const w = (TWO_PI * f0) / fs;
       const cutoff = Math.min(

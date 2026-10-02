@@ -1,4 +1,5 @@
 import { foldNote, gainToDb, keyTable, midiToHz } from "../dsp/math";
+import { limiterLatency } from "../dsp/PeakLimiter";
 import type { Overrides } from "../engine/Engine";
 import type {
   BusId,
@@ -235,8 +236,8 @@ export async function stabilitySweep(
       const stats = signalStats(out, sampleRate, 0, period);
       const peakDb = gainToDb(stats.peak);
       const speaks = stats.peak > 1e-3;
-      // Output is after the master safety clipper (unity below −3 dBFS), so a
-      // peak above −1 dBFS means the note drove it hard.
+      // Output is after the master limiter (−3 dBFS) and safety clipper, so a
+      // peak above −1 dBFS means the note got past them.
       const ok =
         stats.finite &&
         speaks &&
@@ -367,7 +368,8 @@ export async function onsetCheck(
   ];
   const out = mono(await render(events, sampleRate, 0.4, dry("drums")));
   const onset = findOnset(out, 1e-6);
-  const expected = Math.round(time * sampleRate);
+  // Everything leaves the master limiter its look-ahead late.
+  const expected = Math.round(time * sampleRate) + limiterLatency(sampleRate);
   return {
     check: "Onset",
     subject: "hit @ 0.25 s + 37 samples",
@@ -387,9 +389,19 @@ export async function lifecycleCheck(
     "guitar",
     "bass",
     "uprightBass",
+    "sitar",
+    "ukulele",
+    "banjo",
     "violin",
     "saxophone",
+    "clarinet",
+    "trombone",
     "flute",
+    "harmonium",
+    "harmonica",
+    "xylophone",
+    "steelPan",
+    "kalimba",
   ];
   instruments.forEach((instrument, i) => {
     const [low, high] = PATCH_BY_ID[instrument].range;

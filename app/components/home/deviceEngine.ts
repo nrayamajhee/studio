@@ -37,7 +37,8 @@ export interface DevicePreset {
 }
 
 // The built-in presets, in library order: keys, guitars and bass, bowed and
-// plucked strings, brass, winds, hand drums and kits, then the oscillator.
+// plucked strings, brass, winds, tuned percussion, hand drums and kits, then
+// the oscillator.
 export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "piano",
@@ -46,6 +47,13 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     target: "piano",
     octave: 0,
     pad: 0,
+  },
+  {
+    id: "harmonium",
+    icon: "harmonium",
+    name: "Harmonium",
+    target: "harmonium",
+    octave: 0,
   },
   {
     id: "electricGuitar",
@@ -74,6 +82,20 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     icon: "nylon",
     name: "Nylon Guitar",
     target: "nylonGuitar",
+    octave: 0,
+  },
+  {
+    id: "ukulele",
+    icon: "ukulele",
+    name: "Ukulele",
+    target: "ukulele",
+    octave: 0,
+  },
+  {
+    id: "banjo",
+    icon: "banjo",
+    name: "Banjo",
+    target: "banjo",
     octave: 0,
   },
   {
@@ -107,6 +129,13 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     octave: 0,
   },
   {
+    id: "sitar",
+    icon: "sitar",
+    name: "Sitar",
+    target: "sitar",
+    octave: 0,
+  },
+  {
     id: "trumpet",
     icon: "trumpet",
     name: "Trumpet",
@@ -121,12 +150,54 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     octave: -12,
   },
   {
+    id: "trombone",
+    icon: "trombone",
+    name: "Trombone",
+    target: "trombone",
+    octave: -12,
+  },
+  {
     id: "flute",
     icon: "wind",
     name: "Flute",
     target: "flute",
     octave: 12,
     pad: 2,
+  },
+  {
+    id: "clarinet",
+    icon: "clarinet",
+    name: "Clarinet",
+    target: "clarinet",
+    octave: 0,
+  },
+  {
+    id: "harmonica",
+    icon: "harmonica",
+    name: "Harmonica",
+    target: "harmonica",
+    octave: 12,
+  },
+  {
+    id: "xylophone",
+    icon: "xylophone",
+    name: "Xylophone",
+    target: "xylophone",
+    octave: 12,
+  },
+  {
+    id: "steelPan",
+    icon: "steelPan",
+    name: "Steel Pan",
+    target: "steelPan",
+    octave: 0,
+  },
+  {
+    id: "kalimba",
+    icon: "kalimba",
+    name: "Kalimba",
+    target: "kalimba",
+    octave: 0,
   },
   {
     id: "saxophone",
@@ -304,6 +375,10 @@ export function engineName(target: InstrumentId | KitId) {
       return "Strike";
     case "oscillator":
       return "Oscillator";
+    case "reed":
+      return "Free reed";
+    case "bar":
+      return patch.strike === "thumb" ? "Thumb" : "Mallet";
   }
 }
 
@@ -380,7 +455,14 @@ export const deviceEngine = {
     if (!isKit(entry.target)) physicalSynth.noteOff(entry.target, entry.note);
   },
 
+  // The system volume, after the clipper: louder never clips.
   setVolume(value: number) {
+    physicalSynth.setVolume(value);
+  },
+
+  // The synth's level into the clipper, before the system volume: turning it
+  // down gives chords headroom.
+  setLevel(value: number) {
     setParam("master", "master.volume", value);
   },
 

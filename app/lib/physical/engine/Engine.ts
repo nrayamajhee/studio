@@ -1,10 +1,13 @@
 import { Fdn } from "../dsp/Fdn";
 import { Smoother } from "../dsp/generators";
+import { PeakLimiter } from "../dsp/PeakLimiter";
 import type { BusId, EngineEvent, EngineStats, ParamTarget } from "../messages";
+import { BarInstrument } from "../models/BarInstrument";
 import { BoreInstrument } from "../models/BoreInstrument";
 import { BowedInstrument } from "../models/BowedInstrument";
 import { DrumKit, Woodblock } from "../models/DrumKit";
 import { OscillatorInstrument } from "../models/OscillatorInstrument";
+import { ReedInstrument } from "../models/ReedInstrument";
 import { StringInstrument } from "../models/StringInstrument";
 import { MASTER_PARAMS, PATCHES } from "../patches";
 import type { Patch } from "../patches/types";
@@ -14,8 +17,9 @@ import { MasterFx } from "./MasterFx";
 import { MasterLfo } from "./MasterLfo";
 import { ParamSet } from "./ParamSet";
 
-// Unity below −3 dBFS; above it a tanh knee keeps coherent chord transients
-// (sub-millisecond, too fast for the browser's compressor) under full scale.
+// The master limiter turns coherent chord transients (sub-millisecond, too
+// fast for the browser's compressor) down to −3 dBFS. The tanh knee above it
+// is a last resort, unity below −3 dBFS.
 const CLIP_KNEE = 0.7;
 const MIN_ATTACK = 0.001;
 function safetyClip(x: number) {
@@ -45,6 +49,10 @@ function createInstrument(
       return new DrumKit(patch, fs, overrides);
     case "oscillator":
       return new OscillatorInstrument(patch, fs, overrides);
+    case "reed":
+      return new ReedInstrument(patch, fs, overrides);
+    case "bar":
+      return new BarInstrument(patch, fs, overrides);
   }
 }
 
@@ -72,6 +80,7 @@ export class Engine {
   private readonly clickR = new Float32Array(MAX_BLOCK);
   private readonly volume: Smoother;
   private readonly reverbReturn: Smoother;
+  private readonly limiter: PeakLimiter;
   private readonly warnings: string[] = [];
 
   constructor(fs: number, overrides?: Overrides) {
@@ -90,6 +99,7 @@ export class Engine {
     this.woodblock = new Woodblock(fs);
     this.volume = new Smoother(this.master.get("master.volume"), fs);
     this.reverbReturn = new Smoother(this.master.get("reverb.return"), fs);
+    this.limiter = new PeakLimiter(fs, CLIP_KNEE);
     this.applyMaster();
   }
 
@@ -166,15 +176,16 @@ export class Engine {
     this.fx.process(masterL, masterR, n);
     const clickL = this.clickL;
     const clickR = this.clickR;
+    const limiter = this.limiter;
     for (let i = 0; i < n; i++) {
       const g = this.volume.process();
       const wet = this.reverbReturn.process();
-      left[offset + i] = safetyClip(
+      limiter.process(
         g * (masterL[i] + clickL[i] + wet * wetL[i]),
-      );
-      right[offset + i] = safetyClip(
         g * (masterR[i] + clickR[i] + wet * wetR[i]),
       );
+      left[offset + i] = safetyClip(limiter.left);
+      right[offset + i] = safetyClip(limiter.right);
     }
     masterL.fill(0, 0, n);
     masterR.fill(0, 0, n);

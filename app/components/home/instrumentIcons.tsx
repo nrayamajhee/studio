@@ -113,6 +113,157 @@ export function BassTrumpetIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// A trombone: the slide's long U in front, the bell section over it.
+export function TromboneIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 9.5h11" />
+      <path d="M14.5 8.5c3 0 4.8-1.8 7-3.3v8.6c-2.2-1.5-4-3.3-7-3.3" />
+      <path d="M4 9.5c-1.4 0-2 .8-2 2s.6 2 2 2h10" />
+      <path d="M7 9.5v4" />
+      <path d="M14 12.5v2" />
+    </svg>
+  );
+}
+
+// A clarinet standing up: mouthpiece and ligature, the straight body with a
+// few keys, and the flared bell.
+export function ClarinetIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M11 2h2" />
+      <path d="M12 2v15" />
+      <path d="M10.8 5h2.4" />
+      <path d="M14 9h1" />
+      <path d="M14 12.5h1" />
+      <path d="M9 10.5h1" />
+      <path d="M12 17c0 2-2 3.5-3 4.5h6c-1-1-3-2.5-3-4.5" />
+    </svg>
+  );
+}
+
+// A sitar: the gourd at the foot of a long fretted neck, the small upper
+// gourd behind its head.
+export function SitarIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 2v12.5" />
+      <circle cx="12" cy="18.5" r="4" />
+      <circle cx="14.6" cy="4.2" r="1.7" />
+      <path d="M10.5 7h3" />
+      <path d="M10.5 10h3" />
+      <path d="M10.5 13h3" />
+    </svg>
+  );
+}
+
+// A harmonium: the folded bellows behind a keyboard on its case.
+export function HarmoniumIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 9 6 5l2 4 2-4 2 4 2-4 2 4 2-4 2 4" />
+      <rect x="3" y="9" width="18" height="11" rx="1.5" />
+      <path d="M3 14h18" />
+      <path d="M7.5 9v2.5" />
+      <path d="M11 9v2.5" />
+      <path d="M16.5 9v2.5" />
+    </svg>
+  );
+}
+
+// A harmonica: the covers over a comb, its holes in a row.
+export function HarmonicaIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="2" y="8" width="20" height="8" rx="2" />
+      <path d="M2 11h20" />
+      <path d="M6 13v1" />
+      <path d="M10 13v1" />
+      <path d="M14 13v1" />
+      <path d="M18 13v1" />
+    </svg>
+  );
+}
+
+// A ukulele: a small waisted body with a round soundhole on a short neck.
+export function UkuleleIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3v8" />
+      <path d="M12 11c-1.8 0-2.8 1-2.8 2.2 0 .9.6 1.3.6 1.9s-1.4 1-1.4 2.6c0 1.8 1.6 3.1 3.6 3.1s3.6-1.3 3.6-3.1c0-1.6-1.4-2-1.4-2.6s.6-1 .6-1.9c0-1.2-1-2.2-2.8-2.2z" />
+      <circle cx="12" cy="15.8" r="1" />
+      <path d="M11 3h2" />
+    </svg>
+  );
+}
+
+// A banjo: a round drumhead body with its bridge, a long neck and the short
+// fifth string's peg partway up.
+export function BanjoIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 2v8.5" />
+      <circle cx="12" cy="16" r="5.5" />
+      <path d="M10.5 17.5h3" />
+      <path d="M12.5 6.5h2" />
+    </svg>
+  );
+}
+
+// A xylophone: bars shortening up the scale, and a mallet.
+export function XylophoneIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 4v13" />
+      <path d="M8 5.5v10" />
+      <path d="M12 7v7" />
+      <path d="M16 8.5v4" />
+      <path d="m13 21 6-6" />
+      <circle cx="20.5" cy="13.5" r="1.5" />
+    </svg>
+  );
+}
+
+// A steel pan from above: the round face with its hammered note domes.
+export function SteelPanIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <ellipse cx="12" cy="7.2" rx="2.2" ry="1.6" />
+      <ellipse cx="7.6" cy="12.6" rx="1.6" ry="2.2" />
+      <ellipse cx="16.4" cy="12.6" rx="1.6" ry="2.2" />
+      <circle cx="12" cy="15.8" r="1.4" />
+    </svg>
+  );
+}
+
+// A kalimba: a box with a row of tines over the bridge, longest in the middle.
+export function KalimbaIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="4" width="18" height="17" rx="3" />
+      <path d="M6 8h12" />
+      <path d="M8 8v5" />
+      <path d="M10 8v7" />
+      <path d="M12 8v8.5" />
+      <path d="M14 8v7" />
+      <path d="M16 8v5" />
+    </svg>
+  );
+}
+
+// The take: notes falling down the piano roll out of step, the tracks icon's
+// staggered bars stood on end.
+export function RollIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 6v12" />
+      <path d="M12 4v10" />
+      <path d="M19 12v8" />
+    </svg>
+  );
+}
+
 // A tabla pair from the side: the bowl-shaped bayan and the taller dayan.
 export function TablaIcon(props: SVGProps<SVGSVGElement>) {
   return (

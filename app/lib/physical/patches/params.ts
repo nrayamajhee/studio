@@ -94,6 +94,11 @@ function filterParams(cutoff: number, q: number): ParamSpec[] {
   ];
 }
 
+// Just the voice's lowpass, for models without a filter envelope.
+function lowpassParams(cutoff: number): ParamSpec[] {
+  return filterParams(cutoff, Math.SQRT1_2).slice(0, 2);
+}
+
 // Legato glide time; the lowest is a jump.
 const portamentoParam = (value: number) =>
   param("resonator.portamento", "Portamento", "resonator", 0.001, 0.3, value, {
@@ -116,6 +121,8 @@ export interface StringDefaults {
   send: number;
   drive?: number;
   strum?: number;
+  // A sitar's jawari: how hard the string buzzes against the bridge.
+  jawari?: number;
 }
 
 export function stringParams(d: StringDefaults): ParamSpec[] {
@@ -160,6 +167,19 @@ export function stringParams(d: StringDefaults): ParamSpec[] {
       unit: "×",
       primary: true,
     }),
+    ...(d.jawari === undefined
+      ? []
+      : [
+          param(
+            "resonator.jawari",
+            "Jawari",
+            "resonator",
+            0,
+            1,
+            d.jawari,
+            primary,
+          ),
+        ]),
     param("body.size", "Size", "body", 0.7, 1.4, 1, {
       unit: "×",
       primary: true,
@@ -238,13 +258,17 @@ export function boreParams(d: BoreDefaults): ParamSpec[] {
             d.reed,
             primary,
           ),
+        ]),
+    ...(d.blowPosition === undefined
+      ? []
+      : [
           param(
             "exciter.blowPosition",
             "Blow position",
             "exciter",
             0.1,
             0.5,
-            d.blowPosition ?? 0.2,
+            d.blowPosition,
           ),
         ]),
     ...(d.lip === undefined
@@ -334,6 +358,111 @@ export function bowedParams(
       INSTRUMENT_ADSR,
     ),
     ...shared(send),
+  ];
+}
+
+export interface ReedDefaults {
+  noise: number;
+  // The shared swell: a harmonium's bellows, a harmonica player's hand.
+  swell: number;
+  swellRate: number;
+  brightness: number;
+  bodyMix: number;
+  attack: number;
+  decay: number;
+  sustain: number;
+  release: number;
+  cutoff: number;
+  send: number;
+}
+
+export function reedParams(d: ReedDefaults): ParamSpec[] {
+  return [
+    param("exciter.pressure", "Pressure", "exciter", 0.7, 1.4, 1, {
+      unit: "×",
+      primary: true,
+    }),
+    param("exciter.noise", "Air noise", "exciter", 0, 2, d.noise, {
+      unit: "×",
+      primary: true,
+    }),
+    param("exciter.vibrato", "Swell", "exciter", 0, 0.3, d.swell, primary),
+    param(
+      "resonator.vibratoRate",
+      "Swell rate",
+      "resonator",
+      0.2,
+      8,
+      d.swellRate,
+      { unit: "Hz", scale: "log", primary: true },
+    ),
+    // How far the reed swings before air rushes past it: narrower, brighter
+    // pulses.
+    param(
+      "resonator.brightness",
+      "Brightness",
+      "resonator",
+      -1,
+      1,
+      d.brightness,
+      primary,
+    ),
+    // Scales how sharp a second reed sits, and so how fast it beats.
+    param("resonator.detune", "Celeste", "resonator", 0, 3, 1, {
+      unit: "×",
+      primary: true,
+    }),
+    param("body.size", "Size", "body", 0.7, 1.4, 1, {
+      unit: "×",
+      primary: true,
+    }),
+    param("body.resonance", "Resonance", "body", 0.5, 2, 1, {
+      unit: "×",
+      primary: true,
+    }),
+    param("body.tone", "Tone", "body", -1, 1, 0, primary),
+    param("body.mix", "Mix", "body", 0, 1, d.bodyMix, primary),
+    ...lowpassParams(d.cutoff),
+    ...adsrParams("envelope", d, INSTRUMENT_ADSR),
+    ...shared(d.send),
+  ];
+}
+
+export interface BarDefaults {
+  hardness: number;
+  // Only for a patch with a modal body (the kalimba's box).
+  bodyMix?: number;
+  cutoff: number;
+  send: number;
+}
+
+export function barParams(d: BarDefaults): ParamSpec[] {
+  return [
+    param("exciter.hardness", "Hardness", "exciter", 0, 1, d.hardness, primary),
+    param("exciter.strength", "Strength", "exciter", 0, 1, 0.8, primary),
+    param("resonator.decay", "Decay", "resonator", 0.25, 4, 1, {
+      unit: "×",
+      scale: "log",
+      primary: true,
+    }),
+    // Tilts the upper modes' levels, ±6 dB an octave of their ratio.
+    param("resonator.brightness", "Brightness", "resonator", -1, 1, 0, primary),
+    ...(d.bodyMix === undefined
+      ? []
+      : [
+          param("body.size", "Size", "body", 0.7, 1.4, 1, {
+            unit: "×",
+            primary: true,
+          }),
+          param("body.resonance", "Resonance", "body", 0.5, 2, 1, {
+            unit: "×",
+            primary: true,
+          }),
+          param("body.tone", "Tone", "body", -1, 1, 0, primary),
+          param("body.mix", "Mix", "body", 0, 1, d.bodyMix, primary),
+        ]),
+    ...lowpassParams(d.cutoff),
+    ...shared(d.send),
   ];
 }
 

@@ -160,38 +160,6 @@ export interface Take {
   bpm: number;
 }
 
-// A take moved later on its timeline by `by` ms, e.g. one recorded from a
-// scrolled position rather than the top.
-export function shiftTake(take: Take, by: number): Take {
-  if (by <= 0) return take;
-  return {
-    notes: take.notes.map((note) => ({ ...note, start: note.start + by })),
-    length: take.length + by,
-    bpm: take.bpm,
-  };
-}
-
-// Two takes laid over each other, for overdubbing the take or a track: the
-// notes combined by start, as long as the longer of the two. `base`'s tempo is
-// kept, and `added` (played at its own tempo) is scaled into it first.
-export function overdub(base: Take | null, added: Take): Take {
-  if (!base) return added;
-  const scale = added.bpm / base.bpm;
-  const merged = [
-    ...base.notes,
-    ...added.notes.map((note) => ({
-      ...note,
-      start: note.start * scale,
-      duration: note.duration * scale,
-    })),
-  ].sort((a, b) => a.start - b.start);
-  return {
-    notes: merged,
-    length: Math.max(base.length, added.length * scale),
-    bpm: base.bpm,
-  };
-}
-
 // A take on its own timeline in ms. On a grid it stretches to the tempo,
 // keeping its beats, then snaps in whole bars of the meter.
 export function timeline(take: Take | null, timing: Timing) {

@@ -79,12 +79,15 @@ export interface StringPatch extends BasePatch {
   noDamperAbove?: number;
   pickup?: number;
   hammerMass?: KeyTable;
+  // A sitar's jawari bridge: the allpass coefficient while the string touches
+  // it (scaled by the Jawari param) and how far the string swings first.
+  jawari?: { contact: number; gap: number };
 }
 
 export interface BorePatch extends BasePatch {
   id: InstrumentId;
   family: "bore";
-  model: "flute" | "saxophone" | "brass";
+  model: "flute" | "saxophone" | "brass" | "clarinet";
   pressure: readonly [low: number, high: number];
   tuningCents: TuningTables;
 }
@@ -176,5 +179,49 @@ export interface OscillatorPatch extends BasePatch {
   polyphony: number;
 }
 
+// Free reeds (harmonium, harmonica): per key, one or more reed tongues that
+// swing through a slot, driven by bellows or breath pressure.
+export interface ReedPatch extends BasePatch {
+  id: InstrumentId;
+  family: "reed";
+  polyphony: number;
+  // Each reed on a key: its tuning off the note (cents) and level. A second
+  // reed a few cents sharp beats against the first.
+  reeds: readonly (readonly [cents: number, level: number])[];
+  // Steady drive at velocity 0 and 1; above 1 the reed speaks, and the
+  // higher it is, the wider and brighter it swings.
+  pressure: readonly [low: number, high: number];
+  // How fast a reed's swing dies away on its own (s); it speaks faster the
+  // further the drive is above 1.
+  settle: KeyTable;
+  // How much less the reed opens on its way back through the slot (0 the same
+  // both ways, odd harmonics only; 1 one way only).
+  asymmetry: number;
+  tuningCents: TuningTables;
+}
+
+// Tuned percussion (xylophone, steel pan, kalimba): each key a set of modes
+// at fixed ratios to the note, struck by a mallet or plucked by a thumb.
+// Nothing damps them; every note rings until it fades.
+export interface BarPatch extends BasePatch {
+  id: InstrumentId;
+  family: "bar";
+  strike: "mallet" | "thumb";
+  polyphony: number;
+  // Each mode: its ratio to the note, its level and its T60 (s) at C4.
+  modes: readonly (readonly [ratio: number, level: number, t60: number])[];
+  // How every mode's T60 scales across the range.
+  decay: KeyTable;
+  // How long the mallet or thumb stays on (ms), soft to hard: a shorter
+  // contact reaches higher modes.
+  contact: readonly [soft: number, hard: number];
+}
+
 export type Patch =
-  StringPatch | BorePatch | BowedPatch | DrumKitPatch | OscillatorPatch;
+  | StringPatch
+  | BorePatch
+  | BowedPatch
+  | DrumKitPatch
+  | OscillatorPatch
+  | ReedPatch
+  | BarPatch;

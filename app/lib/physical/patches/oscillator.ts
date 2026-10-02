@@ -1,12 +1,13 @@
 import { oscillatorParams } from "./params";
 import type { OscillatorPatch } from "./types";
 
-// A plain oscillator, the one source that isn't a physical model.
+// A plain oscillator, the one source that isn't a physical model. With nothing
+// physical to stay within, it spans C0 to G9, the top of MIDI.
 export const oscillator: OscillatorPatch = {
   id: "oscillator",
   name: "Oscillator",
   family: "oscillator",
-  range: [21, 108],
+  range: [12, 127],
   polyphony: 8,
   // A sine at velocity 0.7 is 0.7/√2 RMS, then −3 dB from the centre pan:
   // 0.1259 / (0.7 · 0.7071 · 0.7071) puts C4 at −18 dBFS RMS.

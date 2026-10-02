@@ -1,4 +1,5 @@
 import {
+  memo,
   useCallback,
   useEffect,
   useRef,
@@ -12,7 +13,6 @@ import {
   AudioLines,
   AudioWaveform,
   Headphones,
-  CassetteTape,
   ChartNoAxesGantt,
   Circle,
   LayoutGrid,
@@ -21,8 +21,10 @@ import {
   Pause,
   Play,
   Pointer,
+  Repeat,
   RotateCcw,
   Save,
+  Scissors,
   Square,
   Trash2,
   VolumeX,
@@ -56,12 +58,13 @@ import {
   ScreenLevel,
   ScreenSeek,
   ScreenSelection,
+  ScreenValue,
   TILES_PER_PAGE,
   type ScreenOverlay,
   type ScreenReadout,
   type ScreenView,
 } from "./DeviceScreen";
-import { AdsrIcon, DRUM_PIECES } from "./instrumentIcons";
+import { AdsrIcon, DRUM_PIECES, RollIcon } from "./instrumentIcons";
 import {
   METERS,
   SUBDIVISIONS,
@@ -69,9 +72,6 @@ import {
   beatMs,
   gridLabel,
   meterLabel,
-  overdub,
-  shiftTake,
-  type Take,
 } from "./noteRecorder";
 import { ICON_CHOICES, PresetIcon } from "./presetIcons";
 import {
@@ -90,7 +90,19 @@ import { useHotkeyListener, useHotkeys } from "../../providers/HotkeyProvider";
 import { hotkeyLabel, type Control, type Tool } from "./input/keymap";
 import { CHORD_PALETTE, chordById } from "./chords";
 import { setChordMacro, useChordMacros } from "./chordStore";
-import { audible, clipOf, makeTrack, passOf, startsOf, type Track } from "./tracks";
+import {
+  audible,
+  clipOf,
+  cutToLoop,
+  loopStep,
+  makeTrack,
+  MAX_REPEATS,
+  passOf,
+  repeatsOf,
+  startsOf,
+  takeBeats,
+  type Track,
+} from "./tracks";
 import { useTrackMix } from "../../hooks/useTrackMix";
 import { useMixScrub } from "../../hooks/useMixScrub";
 import { setTake, setTracks, useSession } from "./sessionStore";
@@ -105,10 +117,58 @@ export interface SynthDeviceProps {
 const INITIAL_PRESET = "piano";
 // The take shown as a potential track on the tracks view.
 const TAKE_ID = "session-take";
-const INITIAL_VOLUME_STEP = 8;
+// The system volume starts full, and the synth's level where the volume used
+// to be, so the Device sounds as it did.
+const INITIAL_VOLUME_STEP = 10;
+const INITIAL_LEVEL_STEP = 8;
 const NOTICE_MS = 1800;
 const OVERLAY_MS = 1200;
 const MODULE_IDS: readonly ModuleId[] = ["adsr", "lfo", "fx"];
+// A place in a take as bar.beat.step, counting from 1, to the nearest step.
+const positionLabel = (beats: number, barBeats: number, perBeat: number) => {
+  const steps = Math.round(beats * perBeat);
+  const bar = Math.floor(steps / (barBeats * perBeat));
+  const beat = Math.floor(steps / perBeat) % barBeats;
+  return `${bar + 1}.${beat + 1}.${(steps % perBeat) + 1}`;
+};
+
+// Ten columns of holes, in rows along the screen's straight sides, with the
+// four corner holes left undrilled so the field reads as rounded: a hole is
+// drilled if it lies within a one-hole radius of the field's inner rectangle.
+const GRILLE_COLUMNS = 10;
+const GRILLE_ROWS = 52;
+const GRILLE_RADIUS = 1;
+const GRILLE_DRILLED = Array.from(
+  { length: GRILLE_COLUMNS * GRILLE_ROWS },
+  (_, hole) => {
+    const column = hole % GRILLE_COLUMNS;
+    const row = Math.floor(hole / GRILLE_COLUMNS);
+    const x = Math.max(
+      0,
+      GRILLE_RADIUS - column,
+      column - (GRILLE_COLUMNS - 1 - GRILLE_RADIUS),
+    );
+    const y = Math.max(
+      0,
+      GRILLE_RADIUS - row,
+      row - (GRILLE_ROWS - 1 - GRILLE_RADIUS),
+    );
+    return x * x + y * y <= GRILLE_RADIUS * GRILLE_RADIUS;
+  },
+);
+
+// A cosmetic speaker grille either side of the screen. Memoized: it never
+// changes, and the Device re-renders on every knob turn.
+const Grille = memo(function Grille() {
+  return (
+    <span className={styles.grille} aria-hidden="true">
+      {GRILLE_DRILLED.map((drilled, hole) => (
+        <span key={hole} data-blank={!drilled || undefined} />
+      ))}
+    </span>
+  );
+});
+
 // The green knob moves the tempo in 5 BPM steps; the arrows by 1.
 const BPM_KNOB_STEP = 5;
 
@@ -168,6 +228,27 @@ const F3_MIDI = 53;
 const KEY_VELOCITY = 0.8;
 const WHITE_KEYS = [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23];
 const BLACK_KEYS = [1, 3, 5, 8, 10, 13, 15, 17, 20, 22];
+const KEYBED_LOW = F3_MIDI + WHITE_KEYS[0];
+const KEYBED_HIGH = F3_MIDI + WHITE_KEYS[WHITE_KEYS.length - 1];
+
+// How far the octave buttons reach for a preset: the shifted keybed may hang
+// at most 11 notes past either end of its instrument's range, where they fold
+// back in by octaves. The piano gets ±3, the flute ±1. Kits play pieces by
+// pitch class, so shifting their octave would change nothing.
+const octaveLimits = ({ target, octave }: DevicePreset) => {
+  const patch = PATCH_BY_ID[target];
+  if (patch.family === "drums") return [0, 0] as const;
+  const [low, high] = patch.range;
+  return [
+    Math.ceil((low - 11 - (KEYBED_LOW + octave)) / 12),
+    Math.floor((high + 11 - (KEYBED_HIGH + octave)) / 12),
+  ] as const;
+};
+
+const clampOctave = (shift: number, preset: DevicePreset) => {
+  const [lowest, highest] = octaveLimits(preset);
+  return Math.min(highest, Math.max(lowest, shift));
+};
 
 const octaveOf = (midi: number) => Math.floor(midi / 12) - 1;
 
@@ -182,7 +263,8 @@ const engravedNote = (midi: number) => {
 const iconLabel = (icon: string) =>
   icon.charAt(0).toUpperCase() + icon.slice(1);
 
-// Moves an item index to the same slot on the next or previous page, wrapping.
+// Moves an item index to the same slot on the next or previous page,
+// stopping at the first and last page as the knob does.
 const turnPage = (
   index: number,
   direction: 1 | -1,
@@ -190,7 +272,10 @@ const turnPage = (
   count: number,
 ) => {
   const pages = Math.ceil(count / perPage);
-  const page = (Math.floor(index / perPage) + direction + pages) % pages;
+  const page = Math.min(
+    pages - 1,
+    Math.max(0, Math.floor(index / perPage) + direction),
+  );
   return Math.min(page * perPage + (index % perPage), count - 1);
 };
 
@@ -225,6 +310,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const [preset, setPreset] = useState(() => findPreset(INITIAL_PRESET));
   const [paramIndex, setParamIndex] = useState(0);
   const [volumeStep, setVolumeStep] = useState(INITIAL_VOLUME_STEP);
+  const [levelStep, setLevelStep] = useState(INITIAL_LEVEL_STEP);
   const [moduleSteps, setModuleSteps] = useState(INITIAL_MODULE_STEPS);
   const [moduleOn, setModuleOn] = useState(MODULES_OFF);
   const [idleSeek, setIdleSeek] = useState(0);
@@ -240,7 +326,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   // Where the stopped roll is scrolled to (the time on its keys line); null
   // is the end of the take.
   const [rollPosition, setRollPosition] = useState<number | null>(null);
-  // Takes kept from record mode, and the one the green knob picked.
+  // Takes kept from record mode, and the one the blue knob picked.
   const { take, tracks } = useSession();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [octave, setOctave] = useState(0);
@@ -290,14 +376,19 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const isTake = picked?.id === TAKE_ID;
   const track = picked && !isTake ? picked : undefined;
   // Each entry's clip at the tempo, on a timeline at least four bars long
-  // that ends on the bar after the last entry's first pass.
+  // that ends on the bar after the last entry's last repeat.
   const clips = entries.map((candidate) => clipOf(candidate, transport.bpm));
   const trackSpan =
     barBeats *
     Math.max(
       4,
       ...entries.map((candidate, i) =>
-        Math.ceil((candidate.start + clips[i].length) / barBeats),
+        Math.ceil(
+          (candidate.start +
+            clips[i].offset +
+            clips[i].length * clips[i].repeats) /
+            barBeats,
+        ),
       ),
     );
   // The take is only an indicator; the mix plays the kept tracks.
@@ -341,7 +432,14 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     JSON.stringify([
       transport.bpm,
       trackSpan,
-      tracks.map((track) => [track.id, track.start, track.sound, track.take]),
+      tracks.map((track) => [
+        track.id,
+        track.start,
+        track.sound,
+        track.take,
+        track.loop?.on ? track.loop : null,
+        track.repeats,
+      ]),
     ]),
     renderMix,
   );
@@ -356,12 +454,9 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   };
   const mixBars = Math.max(
     1,
-    Math.ceil(
-      (trackSpan * beatMs(transport.timing)) / barMs(transport.timing),
-    ),
+    Math.ceil((trackSpan * beatMs(transport.timing)) / barMs(transport.timing)),
   );
-  const mixAt =
-    mixScrubPos ?? (mix.position() ?? 0) * beatMs(transport.timing);
+  const mixAt = mixScrubPos ?? (mix.position() ?? 0) * beatMs(transport.timing);
   const mixBar = Math.min(
     mixBars - 1,
     Math.floor(mixAt / barMs(transport.timing)),
@@ -396,6 +491,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     const initial = findPreset(INITIAL_PRESET);
     deviceEngine.loadPreset(initial, presetEdits(initial.id));
     deviceEngine.setVolume(INITIAL_VOLUME_STEP / (KNOB_STEPS - 1));
+    deviceEngine.setLevel(INITIAL_LEVEL_STEP / (KNOB_STEPS - 1));
     for (const id of MODULE_IDS)
       applyModule(id, false, INITIAL_MODULE_STEPS[id]);
   }, []);
@@ -453,11 +549,13 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     syncLitNotes();
   };
 
-  // Keeps the selected param when the next instrument has it too.
+  // Keeps the selected param when the next instrument has it too, and the
+  // octave shift as far as the next one's range allows.
   const selectPreset = (next: DevicePreset) => {
     deviceEngine.unlock();
     deviceEngine.loadPreset(next, library.edits[next.id]);
     setPreset(next);
+    setOctave((current) => clampOctave(current, next));
     const index = Math.max(
       0,
       PATCH_BY_ID[next.target].params.findIndex(({ id }) => id === selected.id),
@@ -485,12 +583,13 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     } else if (view === "tempo") {
       transport.setBpm(transport.bpm + direction);
     } else if (view === "tracks") {
-      slideTrack(direction * (shift ? 1 : barBeats));
+      if (shift) repeatTrack(direction);
+      else slideTrack(direction * barBeats);
     } else if (shift) {
       const index = presets.findIndex(({ id }) => id === preset.id) + direction;
       selectPreset(presets[(index + presets.length) % presets.length]);
     } else {
-      setOctave((current) => Math.min(2, Math.max(-2, current + direction)));
+      setOctave((current) => clampOctave(current + direction, preset));
     }
   };
 
@@ -500,32 +599,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const pause = () => {
     setRollPosition(transport.roll().now);
     transport.stop();
-  };
-
-  // Which entry a recording lands on, the take as it was before it (so a track
-  // take can be restored), and where on the take the recording began.
-  const recordTarget = useRef<string>(TAKE_ID);
-  const takeBefore = useRef<Take | null>(null);
-  const recordStart = useRef(0);
-
-  // Ends the take and lays it over what the recording targeted: the take, or
-  // the picked track (an overdub). The recording began at `recordStart`.
-  const finishTake = () => {
-    const recorded = transport.keepTake();
-    if (!recorded) return;
-    const placed = shiftTake(recorded, recordStart.current);
-    const target = recordTarget.current;
-    if (target === TAKE_ID) {
-      setTake(overdub(takeBefore.current, placed));
-    } else {
-      const merged = overdub(takeBefore.current, placed);
-      setTracks((current) =>
-        current.map((candidate) =>
-          candidate.id === target ? { ...candidate, take: merged } : candidate,
-        ),
-      );
-      setTake(merged);
-    }
   };
 
   // Play and pause in one: plays the take from where the stopped roll is
@@ -539,7 +612,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       return;
     }
     if (transport.state === "recording") {
-      finishTake();
+      transport.stop();
       return;
     }
     if (transport.state === "playing") {
@@ -565,7 +638,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       return;
     }
     if (transport.state === "recording") {
-      finishTake();
+      transport.stop();
       return;
     }
     if (view === "roll") {
@@ -628,18 +701,14 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     showNotice(`Deleted ${track.name}`);
   };
 
-  // Starts a take, showing it on the roll, or ends it where it stops. The take
-  // lands on whatever is picked: the take, or a track. Recording always starts
-  // from where the stopped roll is scrolled to.
+  // Starts a take, showing it on the roll, or ends it where it stops. Each
+  // recording replaces the take from the top; the tracks are never touched.
   const pressRecord = () => {
     deviceEngine.unlock();
     if (transport.state === "recording") {
-      finishTake();
+      transport.stop();
       return;
     }
-    recordTarget.current = pickedEntry?.id ?? TAKE_ID;
-    takeBefore.current = take;
-    recordStart.current = rollPosition ?? 0;
     setView("roll");
     // The tracks play along from the top, lined up with the new take.
     const origin = transport.record();
@@ -764,7 +833,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const pressTracks = () => {
     setRollPosition(null);
     if (transport.state === "recording") {
-      finishTake();
+      transport.stop();
       return;
     }
     setView((current) => (current === "tracks" ? "scope" : "tracks"));
@@ -775,7 +844,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const pressTake = () => {
     setRollPosition(null);
     if (transport.state === "recording") {
-      finishTake();
+      transport.stop();
       return;
     }
     setShiftLatched(false);
@@ -789,7 +858,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   };
 
   // Save in record mode keeps the take as a new track, with the preset and
-  // timing it plays with now, and shows it on the tracks.
+  // timing it plays with now, and shows it on the tracks from the top.
   const saveTrack = () => {
     const recorded = transport.keepTake();
     if (!recorded) {
@@ -807,6 +876,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     setTracks((current) => [...current, kept]);
     setSelectedIndex(tracks.length + 1);
     setTake(null);
+    setMixScrubPos(null);
+    mix.stop();
     setView("tracks");
     showNotice(`Saved ${kept.name}`);
   };
@@ -818,11 +889,68 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       ),
     );
 
-  // The arrows slide the picked track along the timeline, by bars, or with
-  // Shift by beats. The take doesn't move.
+  // Where a track starts on the timeline, as the footer shows it.
+  const startLabel = (beats: number) =>
+    `Bar ${Math.floor(beats / barBeats) + 1}${
+      beats % barBeats ? ` beat ${Math.floor(beats % barBeats) + 1}` : ""
+    }`;
+
+  // The arrows slide the picked track along the timeline by bars; Shift and
+  // the blue knob slide it by beats. The take doesn't move.
   const slideTrack = (beats: number) => {
     if (!track) return;
     updateTrack(track.id, { start: Math.max(0, track.start + beats) });
+  };
+
+  // Shift and the arrows play the picked track once more or once less, back
+  // to back, at least once.
+  const repeatTrack = (direction: 1 | -1) => {
+    if (!track) return;
+    const repeats = Math.min(
+      MAX_REPEATS,
+      Math.max(1, repeatsOf(track) + direction),
+    );
+    updateTrack(track.id, { repeats });
+  };
+
+  // The picked track's loop while it plays. Shift turns the red and blue
+  // knobs over to its edges, a step at a time: red its start, blue its end.
+  const trackLoop = track?.loop?.on ? track.loop : null;
+  const loopUnit = track ? loopStep(track) : 1;
+  const loopReach = track ? takeBeats(track) : 0;
+  const loopSteps = Math.max(2, Math.ceil(loopReach / loopUnit) + 1);
+  const loopLabel = (beats: number) =>
+    positionLabel(
+      beats,
+      track?.timing.meter.beats ?? barBeats,
+      Math.round(1 / loopUnit),
+    );
+  const setLoopEdge = (edge: "start" | "end", step: number) => {
+    if (!track || !trackLoop) return;
+    const at = Math.min(step * loopUnit, loopReach);
+    const { start, end } = trackLoop;
+    updateTrack(track.id, {
+      loop:
+        edge === "start"
+          ? { ...trackLoop, start: Math.max(0, Math.min(at, end - loopUnit)) }
+          : { ...trackLoop, end: Math.max(at, start + loopUnit) },
+    });
+  };
+
+  // On the tracks the Save pad turns the picked track's loop on and off,
+  // keeping its edges; at first it spans the whole take. With Shift, while it
+  // loops, it cuts the track to its loop.
+  const pressLoop = (looping: Track) => {
+    if (!shift || !looping.loop?.on) {
+      updateTrack(looping.id, {
+        loop: looping.loop
+          ? { ...looping.loop, on: !looping.loop.on }
+          : { start: 0, end: takeBeats(looping), on: true },
+      });
+      return;
+    }
+    updateTrack(looping.id, cutToLoop(looping, transport.bpm));
+    showNotice(`Cut ${looping.name} to its loop`);
   };
 
   // The picked track's mute, and with Shift its solo. The take has neither.
@@ -842,10 +970,17 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       ),
     ].join(" · ");
 
+  // With Shift, while the picked track loops, the Save pad cuts it.
+  const cutPad = shift && trackLoop !== null;
+
   // Shift + Save resets the preset instead. Neither applies to the tempo, so
   // in its view Save switches tap mode, where played notes tap the tempo.
   const pressSave = () => {
-    // On the roll and the tracks, Save keeps the take as a track.
+    if (track) {
+      pressLoop(track);
+      return;
+    }
+    // On the roll, and the take on the tracks, Save keeps it as a track.
     if (view === "roll" || view === "tracks") {
       saveTrack();
       return;
@@ -898,8 +1033,9 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     showNotice(message);
   };
 
-  // The red knob picks a param, the blue one sets its value; the footer shows
-  // both in their knob colours.
+  // The green knob picks a param on the scope, the red one on the synth page;
+  // the blue one sets its value on both. The screen shows them in their knob
+  // colours.
   const selectParam = (index: number) => {
     setParamIndex(index);
     setParamPage(Math.floor(index / PARAMS_PER_PAGE));
@@ -958,6 +1094,17 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     deviceEngine.setVolume(step / (KNOB_STEPS - 1));
     showOverlay({
       label: "Volume",
+      value: step / (KNOB_STEPS - 1),
+      display: `${step * 10}%`,
+    });
+  };
+
+  // The red knob on the scope: the synth's level before the clipper.
+  const setLevel = (step: number) => {
+    setLevelStep(step);
+    deviceEngine.setLevel(step / (KNOB_STEPS - 1));
+    showOverlay({
+      label: "Level",
       value: step / (KNOB_STEPS - 1),
       display: `${step * 10}%`,
     });
@@ -1062,7 +1209,10 @@ export function SynthDevice({ className }: SynthDeviceProps) {
 
   const selectedDisplay = formatParam(selected, selectedValue);
   const selection = (
-    <ScreenSelection label={selected.label} value={selectedDisplay} />
+    <>
+      <ScreenSeek>{selected.label}</ScreenSeek>{" "}
+      <ScreenValue>{selectedDisplay}</ScreenValue>
+    </>
   );
   const params = specs.map((spec) => ({
     id: spec.id,
@@ -1112,19 +1262,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     Math.ceil((rollEnd - rollFirst) / beatLength) + 1,
   );
   const barOf = (ms: number) => Math.max(1, Math.ceil(ms / barLength));
-  // The roll's frame, shifted to where the recording began so a take recorded
-  // from a scrolled position shows from there.
-  const rollFrame = () => {
-    const frame = transport.roll();
-    if (transport.state !== "recording" || recordStart.current === 0)
-      return frame;
-    const at = recordStart.current;
-    return {
-      now: frame.now + at,
-      notes: frame.notes.map((note) => ({ ...note, start: note.start + at })),
-      state: frame.state,
-    };
-  };
   // Scrolling scrubs the take: it plays at the speed it is scrolled.
   const scrub = useScrub(
     [
@@ -1135,10 +1272,10 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       JSON.stringify(values),
       JSON.stringify(moduleOn),
       JSON.stringify(moduleSteps),
-      volumeStep,
+      levelStep,
     ].join("|"),
     () => {
-      const { now, notes } = rollFrame();
+      const { now, notes } = transport.roll();
       return { notes, length: now };
     },
   );
@@ -1150,7 +1287,9 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const scrollRoll = (ms: number) =>
     setRollPosition(scrub.scrollBy(ms, rollAt, rollFirst, rollEnd));
 
-  // The green knob scrolls whatever the screen shows; on the scope it is idle.
+  // The green knob scrolls whatever the screen shows; on the scope it picks a
+  // param and on the tracks it seeks the mix (see the knobs), and while the
+  // roll runs it is idle.
   const seek =
     view === "synth"
       ? {
@@ -1195,30 +1334,20 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                     setRollPosition(end ? null : to);
                   },
                 }
-              : view === "tracks"
+              : view === "tempo"
                 ? {
-                    step: selectedIndex,
-                    steps: Math.max(2, entries.length),
-                    label: picked?.name ?? "",
-                    set: (index: number) =>
-                      setSelectedIndex(Math.min(index, entries.length - 1)),
+                    step: Math.round((transport.bpm - MIN_BPM) / BPM_KNOB_STEP),
+                    steps: (MAX_BPM - MIN_BPM) / BPM_KNOB_STEP + 1,
+                    label: `${transport.bpm} BPM`,
+                    set: (step: number) =>
+                      transport.setBpm(MIN_BPM + step * BPM_KNOB_STEP),
                   }
-                : view === "tempo"
-                  ? {
-                      step: Math.round(
-                        (transport.bpm - MIN_BPM) / BPM_KNOB_STEP,
-                      ),
-                      steps: (MAX_BPM - MIN_BPM) / BPM_KNOB_STEP + 1,
-                      label: `${transport.bpm} BPM`,
-                      set: (step: number) =>
-                        transport.setBpm(MIN_BPM + step * BPM_KNOB_STEP),
-                    }
-                  : {
-                      step: idleSeek,
-                      steps: KNOB_STEPS,
-                      label: "",
-                      set: setIdleSeek,
-                    };
+                : {
+                    step: idleSeek,
+                    steps: KNOB_STEPS,
+                    label: "",
+                    set: setIdleSeek,
+                  };
 
   const engine = soundName();
   const octaveLabel = `OCT ${octave > 0 ? "+" : octave < 0 ? "−" : "±"}${Math.abs(octave)}`;
@@ -1228,7 +1357,14 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     </ScreenSeek>
   );
   const screen = {
-    scope: { status: octaveLabel, footer: [engine, selection] },
+    scope: {
+      status: (
+        <>
+          {octaveLabel} · <ScreenLevel>Level {levelStep * 10}%</ScreenLevel>
+        </>
+      ),
+      footer: [engine, selection],
+    },
     // The highlighted row shows the selection, so the footer shows the page.
     synth: {
       status: octaveLabel,
@@ -1247,27 +1383,38 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     lfo: { status: "", footer: ["", ""] },
     fx: { status: "", footer: ["", ""] },
     tempo: { status: meterLabel(transport.timing.meter), footer: ["", ""] },
-    // The picked track in green, as the green knob picks it, and where it
+    // The picked track in blue, as the blue knob picks it, and where it
     // starts.
     tracks: {
       status: picked ? (
-        <ScreenSeek>
+        <ScreenValue>
           {selectedIndex + 1}/{entries.length}
-        </ScreenSeek>
+        </ScreenValue>
       ) : (
         ""
       ),
       footer: track
         ? [
             <>
-              Starts bar {Math.floor(track.start / barBeats) + 1}
-              {track.start % barBeats
-                ? ` beat ${(track.start % barBeats) + 1}`
-                : ""}
-              {" · "}
+              {shift && !trackLoop ? (
+                <ScreenValue>Starts {startLabel(track.start)}</ScreenValue>
+              ) : (
+                `Starts ${startLabel(track.start)}`
+              )}
+              {` · ×${repeatsOf(track)} · `}
               <ScreenLevel>Vol {Math.round(track.volume * 100)}%</ScreenLevel>
             </>,
-            "←→ slide · Mute/Solo · Trash",
+            trackLoop ? (
+              <>
+                Loop{" "}
+                <ScreenSelection
+                  label={`${loopLabel(trackLoop.start)} –`}
+                  value={loopLabel(trackLoop.end)}
+                />
+              </>
+            ) : (
+              "←→ slide · ⇧←→ repeat · Trash"
+            ),
           ]
         : picked
           ? ["Take · record, or Save to keep it", ""]
@@ -1305,10 +1452,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
           {Math.max(1, Math.ceil(presets.length / TILES_PER_PAGE.presets))}
         </ScreenSeek>
       ),
-      footer: [
-        presets[presetIndex]?.name ?? "",
-        "Press a pad twice to bind",
-      ],
+      footer: [presets[presetIndex]?.name ?? "", "Press a pad twice to bind"],
     },
     chords: {
       status: (
@@ -1380,6 +1524,27 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               )}
               {activeModule ? (
                 renderModuleKnob(activeModule, 1, "var(--synth-green)")
+              ) : view === "scope" ? (
+                <Knob
+                  label="Parameter"
+                  valueLabel={selected.label}
+                  step={specs.indexOf(selected)}
+                  steps={Math.max(2, specs.length)}
+                  color="var(--synth-green)"
+                  onChange={(index) =>
+                    selectParam(Math.min(index, specs.length - 1))
+                  }
+                />
+              ) : view === "tracks" ? (
+                <Knob
+                  label="Seek"
+                  valueLabel={`Bar ${mixBar + 1} of ${mixBars}`}
+                  step={mixStep}
+                  steps={mixSteps}
+                  color="var(--synth-green)"
+                  fine
+                  onChange={(step) => scrubMix(step)}
+                />
               ) : (
                 <Knob
                   label="Seek"
@@ -1391,6 +1556,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                 />
               )}
             </div>
+
+            <Grille />
 
             <DeviceScreen
               className={styles.screenSlot}
@@ -1425,7 +1592,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               }
               trackSpan={trackSpan}
               barBeats={barBeats}
-              getRoll={rollFrame}
+              getRoll={transport.roll}
               rollPosition={rollScrolls ? rollAt : null}
               onRollScroll={rollScrolls ? scrollRoll : undefined}
               beat={
@@ -1495,18 +1662,35 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               )}
             />
 
+            <Grille />
+
             <div className={styles.knobColumn}>
               {activeModule ? (
                 renderModuleKnob(activeModule, 2, "var(--synth-red)")
+              ) : shift && trackLoop ? (
+                <Knob
+                  label="Loop start"
+                  valueLabel={loopLabel(trackLoop.start)}
+                  step={Math.round(trackLoop.start / loopUnit)}
+                  steps={loopSteps}
+                  color="var(--synth-red)"
+                  onChange={(step) => setLoopEdge("start", step)}
+                />
               ) : view === "tracks" ? (
                 <Knob
-                  label="Seek"
-                  valueLabel={`Bar ${mixBar + 1} of ${mixBars}`}
-                  step={mixStep}
-                  steps={mixSteps}
+                  label="Track volume"
+                  valueLabel={
+                    track ? `${Math.round(track.volume * 100)}%` : undefined
+                  }
+                  step={Math.round((track?.volume ?? 1) * (KNOB_STEPS - 1))}
+                  steps={KNOB_STEPS}
                   color="var(--synth-red)"
-                  fine
-                  onChange={(step) => scrubMix(step)}
+                  onChange={(step) => {
+                    if (track)
+                      updateTrack(track.id, {
+                        volume: step / (KNOB_STEPS - 1),
+                      });
+                  }}
                 />
               ) : view === "roll" ? (
                 <Knob
@@ -1516,6 +1700,15 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   steps={METERS.length}
                   color="var(--synth-red)"
                   onChange={transport.setMeter}
+                />
+              ) : view === "scope" ? (
+                <Knob
+                  label="Level"
+                  valueLabel={`${levelStep * 10}%`}
+                  step={levelStep}
+                  steps={KNOB_STEPS}
+                  color="var(--synth-red)"
+                  onChange={setLevel}
                 />
               ) : (
                 <Knob
@@ -1531,21 +1724,34 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               )}
               {activeModule ? (
                 renderModuleKnob(activeModule, 3, "var(--synth-blue)")
+              ) : shift && trackLoop ? (
+                <Knob
+                  label="Loop end"
+                  valueLabel={loopLabel(trackLoop.end)}
+                  step={Math.round(trackLoop.end / loopUnit)}
+                  steps={loopSteps}
+                  color="var(--synth-blue)"
+                  onChange={(step) => setLoopEdge("end", step)}
+                />
+              ) : shift && track ? (
+                <Knob
+                  label="Slide"
+                  valueLabel={startLabel(track.start)}
+                  step={Math.round(track.start)}
+                  steps={trackSpan + 1}
+                  color="var(--synth-blue)"
+                  onChange={(beats) => updateTrack(track.id, { start: beats })}
+                />
               ) : view === "tracks" ? (
                 <Knob
-                  label="Track volume"
-                  valueLabel={
-                    track ? `${Math.round(track.volume * 100)}%` : undefined
-                  }
-                  step={Math.round((track?.volume ?? 1) * (KNOB_STEPS - 1))}
-                  steps={KNOB_STEPS}
+                  label="Track"
+                  valueLabel={picked?.name}
+                  step={selectedIndex}
+                  steps={Math.max(2, entries.length)}
                   color="var(--synth-blue)"
-                  onChange={(step) => {
-                    if (track)
-                      updateTrack(track.id, {
-                        volume: step / (KNOB_STEPS - 1),
-                      });
-                  }}
+                  onChange={(index) =>
+                    setSelectedIndex(Math.min(index, entries.length - 1))
+                  }
                 />
               ) : view === "roll" ? (
                 <Knob
@@ -1622,19 +1828,27 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                       ? tapMode
                         ? "Stop tap tempo"
                         : "Tap tempo"
-                      : view === "roll" || view === "tracks"
-                        ? "Save take as a track"
-                        : shift
-                          ? "Reset preset"
-                          : "Save preset"
+                      : cutPad
+                        ? "Cut track to loop"
+                        : track
+                          ? `Loop ${trackLoop ? "off" : "on"}`
+                          : view === "roll" || view === "tracks"
+                            ? "Save take as a track"
+                            : shift
+                              ? "Reset preset"
+                              : "Save preset"
                   }
                   accent="var(--synth-red)"
-                  lit={tapMode}
+                  lit={tapMode || trackLoop !== null}
                   {...toolHotkey("save")}
                   onPress={pressSave}
                 >
                   {view === "tempo" ? (
                     <Pointer />
+                  ) : cutPad ? (
+                    <Scissors />
+                  ) : track ? (
+                    <Repeat />
                   ) : shift && canRevert ? (
                     <RotateCcw />
                   ) : (
@@ -1723,7 +1937,9 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                       : view === "tempo"
                         ? "Slower"
                         : view === "tracks"
-                          ? "Slide track earlier"
+                          ? shift
+                            ? "Repeat track less"
+                            : "Slide track earlier"
                           : shift
                             ? "Previous preset"
                             : "Octave down"
@@ -1741,7 +1957,9 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                       : view === "tempo"
                         ? "Faster"
                         : view === "tracks"
-                          ? "Slide track later"
+                          ? shift
+                            ? "Repeat track more"
+                            : "Slide track later"
                           : shift
                             ? "Next preset"
                             : "Octave up"
@@ -1774,7 +1992,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   {...toolHotkey("take")}
                   onPress={pressTake}
                 >
-                  <CassetteTape />
+                  <RollIcon />
                 </Pad>
               </div>
               <div className={styles.bank} role="group" aria-label="Modules">

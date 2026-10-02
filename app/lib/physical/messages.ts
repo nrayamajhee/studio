@@ -12,6 +12,16 @@ export type InstrumentId =
   | "bassTrumpet"
   | "saxophone"
   | "flute"
+  | "clarinet"
+  | "trombone"
+  | "harmonium"
+  | "harmonica"
+  | "sitar"
+  | "ukulele"
+  | "banjo"
+  | "xylophone"
+  | "steelPan"
+  | "kalimba"
   | "oscillator";
 
 export type KitId = "drums" | "drums808" | "madal" | "tabla";

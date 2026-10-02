@@ -145,8 +145,28 @@ describe("Engine", () => {
 });
 
 describe("instruments", () => {
-  const strings: InstrumentId[] = ["piano", "guitar", "bass", "uprightBass"];
-  const others: InstrumentId[] = ["violin", "saxophone", "flute", "oscillator"];
+  const strings: InstrumentId[] = [
+    "piano",
+    "guitar",
+    "bass",
+    "uprightBass",
+    "sitar",
+    "ukulele",
+    "banjo",
+  ];
+  const others: InstrumentId[] = [
+    "violin",
+    "saxophone",
+    "clarinet",
+    "trombone",
+    "flute",
+    "harmonium",
+    "harmonica",
+    "xylophone",
+    "steelPan",
+    "kalimba",
+    "oscillator",
+  ];
 
   it.each(RATES)("stay in tune across their ranges (%i Hz)", async (fs) => {
     for (const id of strings) {

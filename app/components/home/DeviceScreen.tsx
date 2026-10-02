@@ -220,20 +220,57 @@ export interface ScreenTrack {
 
 const TRACKS_PER_PAGE = 4;
 
+// Wheel travel (px) that moves the pick one track.
+const WHEEL_PER_TRACK = 40;
+
+// A wheel event's travel in pixels, whatever unit the browser reports.
+const wheelPixels = (event: WheelEvent, delta: number, page: number) =>
+  event.deltaMode === WheelEvent.DOM_DELTA_LINE
+    ? delta * 16
+    : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+      ? delta * page
+      : delta;
+
 // The tracks' rows, with the mix's playhead: each frame sets --playhead (0–1
 // across the timeline, or -1 while stopped) for the lanes' playhead lines.
+// Scrolling the wheel over them picks a track, like the blue knob.
 function TrackList({
   className,
   getPosition,
   span,
+  onStep,
   children,
 }: {
   className: string;
   getPosition: () => number | null;
   span: number;
+  onStep?: (tracks: number) => void;
   children: ReactNode;
 }) {
   const list = useRef<HTMLDivElement>(null);
+  const step = useRef(onStep);
+  useEffect(() => {
+    step.current = onStep;
+  }, [onStep]);
+
+  // React registers wheel listeners as passive, so preventDefault needs a
+  // native one.
+  useEffect(() => {
+    const element = list.current;
+    if (!element) return;
+    let travel = 0;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      if (event.deltaY === 0 || !step.current) return;
+      travel += wheelPixels(event, event.deltaY, element.clientHeight);
+      const tracks = Math.trunc(travel / WHEEL_PER_TRACK);
+      if (tracks === 0) return;
+      travel -= tracks * WHEEL_PER_TRACK;
+      step.current(tracks);
+    };
+    element.addEventListener("wheel", onWheel, { passive: false });
+    return () => element.removeEventListener("wheel", onWheel);
+  }, []);
   useEffect(() => {
     const element = list.current;
     if (!element) return;
@@ -259,7 +296,8 @@ function TrackList({
 
 // A track's lane, like a clip on the studio's timeline: bar lines, the take's
 // notes as short bars at their pitch within the take's range (at least an
-// octave), and when it loops, fainter repeats out to the end.
+// octave), and fainter repeats after the first pass, marked ×2, ×3… in their
+// middle. A track's own loop is outlined in red where it first plays.
 function TrackLane({
   track,
   span,
@@ -272,8 +310,8 @@ function TrackLane({
   const { clip, start, color } = track;
   const passes: number[] = [];
   for (
-    let at = start;
-    clip.length > 0 && at < span && (passes.length === 0 || clip.loops);
+    let at = start + clip.offset;
+    clip.length > 0 && at < span && passes.length < clip.repeats;
     at += clip.length
   )
     passes.push(at);
@@ -296,6 +334,7 @@ function TrackLane({
         <span
           key={`pass-${pass}`}
           className={styles.pass}
+          data-loop={(clip.looped && pass === 0) || undefined}
           style={{
             left: percent(at),
             width: percent(Math.min(clip.length, span - at)),
@@ -322,6 +361,18 @@ function TrackLane({
             />
           )),
       )}
+      {passes.slice(1).map((at, i) => (
+        <span
+          key={`count-${i}`}
+          className={styles.passCount}
+          style={{
+            left: percent(at + Math.min(clip.length, span - at) / 2),
+            color,
+          }}
+        >
+          ×{i + 2}
+        </span>
+      ))}
     </span>
   );
 }
@@ -351,7 +402,7 @@ export function ScreenSelection({
   );
 }
 
-// Whatever the green knob moves through (a page counter), in green.
+// Whatever the green knob moves through (a page counter, a param), in green.
 export function ScreenSeek({ children }: { children: ReactNode }) {
   return <span className={styles.seeking}>{children}</span>;
 }
@@ -359,6 +410,11 @@ export function ScreenSeek({ children }: { children: ReactNode }) {
 // A level the red knob sets, in red.
 export function ScreenLevel({ children }: { children: ReactNode }) {
   return <span className={styles.selectionLabel}>{children}</span>;
+}
+
+// A value the blue knob sets, in blue.
+export function ScreenValue({ children }: { children: ReactNode }) {
+  return <span className={styles.selectionValue}>{children}</span>;
 }
 
 export interface DeviceScreenProps {
@@ -512,6 +568,11 @@ export function DeviceScreen({
             className={styles.tracks}
             getPosition={getTrackPosition}
             span={trackSpan}
+            onStep={(step) =>
+              onSelect?.(
+                Math.min(tracks.length - 1, Math.max(0, selected + step)),
+              )
+            }
           >
             {tracks.length === 0 ? (
               <span className={styles.tracksEmpty}>
@@ -552,9 +613,7 @@ export function DeviceScreen({
                       <span className={styles.trackLabel} aria-hidden="true">
                         <span className={styles.trackName}>
                           {!track.potential && (
-                            <span className={styles.trackNumber}>
-                              #{index}
-                            </span>
+                            <span className={styles.trackNumber}>#{index}</span>
                           )}
                           {track.name}
                         </span>

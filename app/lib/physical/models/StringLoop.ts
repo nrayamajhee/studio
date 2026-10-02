@@ -27,7 +27,14 @@ function lightestLoss(p: number, w0: number, perPeriod: number) {
 
 // Single-delay-loop string (extended Karplus-Strong):
 // delay → M dispersion allpasses → one-pole loss·g → fractional tuning allpass
-// → + excitation → back into the delay.
+// → [jawari] → + excitation → back into the delay.
+//
+// The jawari is a sitar's broad curved bridge, which the string grazes as it
+// swings. Following Pierce & Van Duyne's passive nonlinear filter, it is a
+// first-order allpass whose coefficient switches while the string is past the
+// bridge's gap, shortening the loop for that part of each swing: loud notes
+// buzz and the buzz fades with them. It is a rotation of (input, state), so
+// switching never adds energy and the loop stays stable.
 export class StringLoop {
   readonly delay: DelayLine;
   private readonly fs: number;
@@ -46,12 +53,27 @@ export class StringLoop {
   private nInt = 2;
   private f0 = 440;
   private w0 = 0;
+  private jawari = false;
+  private contact = 0;
+  private contactNorm = 1;
+  private gap = 0;
+  private bridge = 0;
   // Nominal loop length in samples, for pickup and pluck-position combs.
   period = 100;
 
   constructor(fs: number, lowestHz: number) {
     this.fs = fs;
     this.delay = new DelayLine(fs / lowestHz + 8);
+  }
+
+  // A jawari bridge: `contact` (0–0.9) is the allpass coefficient while the
+  // string touches it, `gap` how far it swings before it does. Set before
+  // tune(), which takes the bridge's one sample of rest delay out of the loop.
+  setJawari(contact: number, gap: number) {
+    this.jawari = true;
+    this.contact = contact;
+    this.contactNorm = Math.sqrt(1 - contact * contact);
+    this.gap = gap;
   }
 
   // Tunes the loop so its fundamental lands exactly on f0:
@@ -72,12 +94,14 @@ export class StringLoop {
     const p = lightestLoss(brightness, w0, 10 ** (-3 / (f0 * t60)));
     this.p = p;
     const tauLoss = onePolePhaseDelay(p, w0);
+    // At rest the jawari is an allpass at 0: exactly one sample.
+    const bridge = this.jawari ? 1 : 0;
     let m = Math.max(0, Math.min(MAX_STAGES, Math.round(stages)));
-    let d = fs / f0 - tauLoss - m * allpass1PhaseDelay(coef, w0);
+    let d = fs / f0 - tauLoss - bridge - m * allpass1PhaseDelay(coef, w0);
     // Keep at least two samples of pure delay by dropping dispersion stages.
     while (m > 0 && Math.floor(d - 0.5) < 2) {
       m--;
-      d = fs / f0 - tauLoss - m * allpass1PhaseDelay(coef, w0);
+      d = fs / f0 - tauLoss - bridge - m * allpass1PhaseDelay(coef, w0);
     }
     this.stages = m;
     this.nInt = Math.max(1, Math.floor(d - 0.5));
@@ -108,9 +132,17 @@ export class StringLoop {
     this.lp = (1 - this.p) * y + this.p * this.lp;
     this.g += (this.gTarget - this.g) * this.gCoef;
     const lossy = this.lp * this.g;
-    const tuned = this.tA * lossy + this.tX1 - this.tA * this.tY1;
+    let tuned = this.tA * lossy + this.tX1 - this.tA * this.tY1;
     this.tX1 = lossy;
     this.tY1 = tuned;
+    if (this.jawari) {
+      // Normalized-ladder allpass: (a·x + c·s, c·x − a·s) is a rotation.
+      const a = this.bridge > this.gap ? this.contact : 0;
+      const c = a === 0 ? 1 : this.contactNorm;
+      const through = a * tuned + c * this.bridge;
+      this.bridge = c * tuned - a * this.bridge;
+      tuned = through;
+    }
     const out = tuned + excitation;
     this.delay.write(out);
     return out;
@@ -123,6 +155,7 @@ export class StringLoop {
     this.lp = 0;
     this.tX1 = 0;
     this.tY1 = 0;
+    this.bridge = 0;
   }
 
   // g = 10^(−3/(f0·T60)) / |H_loss(ω0)|: loses 60 dB after f0·T60 periods.

@@ -3,13 +3,16 @@ import type { PlayedNote, Take } from "./noteRecorder";
 import type { Track } from "./tracks";
 
 // What has been recorded: the working take and the tracks kept from it,
-// persisted in localStorage so a reload keeps them.
+// persisted in localStorage under their own keys so a reload keeps them.
 export interface Session {
   take: Take | null;
   tracks: readonly Track[];
 }
 
-const STORAGE_KEY = "studio.session";
+const TAKE_KEY = "studio.take";
+const TRACKS_KEY = "studio.tracks";
+// Where both used to be kept together; split into the two keys on first read.
+const LEGACY_KEY = "studio.session";
 const EMPTY: Session = { take: null, tracks: [] };
 
 let session: Session | null = null;
@@ -55,32 +58,55 @@ const isTrack = (value: unknown): value is Track => {
     isNumber(track.start) &&
     isNumber(track.volume) &&
     typeof track.muted === "boolean" &&
-    typeof track.soloed === "boolean"
+    typeof track.soloed === "boolean" &&
+    (track.repeats === undefined ||
+      (isNumber(track.repeats) && track.repeats >= 1)) &&
+    (track.loop === undefined ||
+      (isNumber(track.loop?.start) &&
+        isNumber(track.loop.end) &&
+        typeof track.loop.on === "boolean"))
   );
 };
 
-// Anything that doesn't look like a take or track is dropped.
-function read(): Session {
+const load = (key: string): unknown => {
   try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
-    return {
-      take: isTake(stored?.take) ? stored.take : null,
-      tracks: Array.isArray(stored?.tracks)
-        ? (stored.tracks as unknown[]).filter(isTrack)
-        : [],
-    };
+    return JSON.parse(localStorage.getItem(key) ?? "null");
   } catch {
-    return EMPTY;
+    return null;
   }
-}
+};
 
-function update(change: (current: Session) => Session) {
-  session = change(session ?? read());
+// Stores `value` under `key`, or with no value removes the key.
+const save = (key: string, value?: unknown) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    if (value === undefined) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(value));
   } catch {
     // Storage can be unavailable (private mode) or full; the change still applies.
   }
+};
+
+// Anything that doesn't look like a take or track is dropped.
+const takeOf = (value: unknown) => (isTake(value) ? value : null);
+const tracksOf = (value: unknown) =>
+  Array.isArray(value) ? (value as unknown[]).filter(isTrack) : [];
+
+function read(): Session {
+  const legacy = load(LEGACY_KEY) as Record<string, unknown> | null;
+  if (!legacy)
+    return { take: takeOf(load(TAKE_KEY)), tracks: tracksOf(load(TRACKS_KEY)) };
+  const migrated = {
+    take: takeOf(legacy.take),
+    tracks: tracksOf(legacy.tracks),
+  };
+  save(TAKE_KEY, migrated.take);
+  save(TRACKS_KEY, migrated.tracks);
+  save(LEGACY_KEY);
+  return migrated;
+}
+
+function update(next: Session) {
+  session = next;
   listeners.forEach((listener) => listener());
 }
 
@@ -99,11 +125,15 @@ export function useSession() {
 }
 
 export function setTake(take: Take | null) {
-  update((current) => ({ ...current, take }));
+  save(TAKE_KEY, take);
+  update({ ...getSnapshot(), take });
 }
 
 export function setTracks(
   change: (tracks: readonly Track[]) => readonly Track[],
 ) {
-  update((current) => ({ ...current, tracks: change(current.tracks) }));
+  const current = getSnapshot();
+  const tracks = change(current.tracks);
+  save(TRACKS_KEY, tracks);
+  update({ ...current, tracks });
 }

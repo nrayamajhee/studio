@@ -1,6 +1,6 @@
 # How the synth engine works
 
-The Device doesn't play samples, and apart from one plain Oscillator source (§5.5) it doesn't use oscillators. Every other note is a small physics simulation. An **exciter** (hammer, pick, finger, breath, bow or drum stick) drives a **resonator** (a string, a tube or a drum head), and the resonator's own feedback loop creates the pitch and tone. A **body** (soundboard, guitar top, bell) then colors the result.
+The Device doesn't play samples, and apart from one plain Oscillator source (§5.7) it doesn't use oscillators. Every other note is a small physics simulation. An **exciter** (hammer, pick, finger, breath, bow or drum stick) drives a **resonator** (a string, a tube, a reed or a drum head), and the resonator's own feedback loop creates the pitch and tone. A **body** (soundboard, guitar top, bell) then colors the result.
 
 ```text
   +-----------+  energy   +-------------+  vibration  +--------+       +--------+
@@ -121,13 +121,16 @@ Each instrument owns one **bus**. Its voices add their panned output into the bu
           (+) <----- metronome woodblock, dry
                 |
                 v
-         x master volume
+         x master level            (the Device's red Level knob)
                 |
                 v
-         safety clipper    unity below 0.7 (-3 dBFS), tanh knee above, never > 1.0
+         peak limiter      1.5 ms look-ahead, ceiling 0.7 (-3 dBFS), 100 ms release
                 |
                 v
-         worklet output  -> browser limiter -> analyser -> speakers
+         safety clipper    tanh knee above 0.7, never > 1.0 (a last resort)
+                |
+                v
+         worklet output  -> browser limiter -> analyser -> system volume -> speakers
 ```
 
 - **Idle buses cost nothing.** After its last voice ends, a bus keeps running for 0.5 s so the body can ring out, then it is skipped entirely.
@@ -157,7 +160,8 @@ Each instrument owns one **bus**. Its voices add their panned output into the bu
 
 - **The metronome stays dry.** Its woodblock is added after the LFO and FX, so tremolo or echoes never blur the click.
 - **No zipper noise.** Gain, send, drive, volume, reverb return and the LFO and FX amounts glide through `Smoother`s (~10 ms one-pole).
-- **Why a clipper _and_ a limiter?** A chord hitting many strings at once can produce sub-millisecond peaks that the browser's compressor is too slow to catch. The tanh knee catches those, and the compressor handles sustained loudness.
+- **Why two limiters?** A chord's hammers or plucks land on the same sample, so their transients stack almost fully: a piano triad at the default level peaks about 6 dB over −3 dBFS. Those sub-millisecond peaks are too fast for the browser's compressor. The engine's look-ahead limiter (`dsp/PeakLimiter.ts`) sees each peak 1.5 ms early and ramps the gain down to meet it, so the chord is turned down for a moment instead of squashed; below the ceiling it only delays. It delays everything by those 1.5 ms. The tanh clipper behind it only catches what rounding lets through, and the browser's compressor still guards the track mixer and scrubber, which sum rendered buffers outside the engine.
+- **Level and volume.** The master level (`master.volume`) is applied before the limiter, so it sets how hard chords push into it. The Device's white knob is a system volume after the browser limiter and analyser, so turning it up never clips.
 
 ## 4. Voices and their lifecycle
 
@@ -185,7 +189,7 @@ When all voices are busy, `pickVictim` chooses which one to reuse: the **quietes
 
 ## 5. The instruments
 
-### 5.1 Strings: piano, guitars, basses and harp
+### 5.1 Strings: piano, guitars, ukulele, banjo, basses, harp and sitar
 
 `models/StringLoop.ts` is an extended **Karplus-Strong** loop. A wave travels around a delay line, and each trip through the loop filters it a little:
 
@@ -265,8 +269,18 @@ The exciter writes a short burst into a buffer, and the loop adds it in sample b
 - **Strum.** Chord-macro notes arrive as a burst within 15 ms. If the Strum param is set, each note in the burst is delayed a few more milliseconds than the last.
 - **Electric guitar and bass** have no acoustic body. A pickup tap subtracts the loop read a few samples away (the comb filter of a magnetic pickup), and the bus drive stands in for the amp. The **nylon guitar** uses the finger exciter, darker loss and less stiffness than steel.
 - **Harp.** A string per key, and no dampers anywhere in its range, so every note rings until it fades.
+- **Ukulele and banjo.** Both use per-string allocation. The ukulele's four nylon strings are re-entrant (G4 C4 E4 A4, the G above the C), over a small body whose modes sit higher than a guitar's. The banjo's five steel strings are in open G with the short high g drone, picked near the bridge; its body is a tight drumhead, so the modal body holds membrane modes that ring bright and short, and the strings fade sooner than a guitar's.
+- **Sitar.** A steel string plucked by a wire mizrab, over a body that holds both the gourd's modes and the **taraf**: eleven sympathetic strings tuned to C major (C4–G5), each a 3 s mode at its fundamental and a 2 s mode at its octave, so they ring along with matching notes and harmonics. The playing string buzzes on its **jawari**, a broad curved bridge, modelled after Pierce & Van Duyne's passive nonlinear filter: one more stage in the loop, a first-order allpass that is a plain one-sample delay at rest and switches to coefficient `contact` (0.6 × the Jawari param) while the string is past the bridge's gap.
 
-### 5.2 Blown: flute, alto sax, trumpet and bass trumpet (ported from STK)
+  ```text
+    ... tuning allpass ---> JAWARI ---> + excitation ---> delay line ...
+                            |  s > gap ?  a = contact : a = 0
+                            |  (y, s') = (a x + c s, c x - a s),  c = sqrt(1 - a^2)
+  ```
+
+  Shortening the loop for part of every swing throws energy into the upper partials, and the louder the string, the more of each swing it spends on the bridge, so the note blooms brighter after the pluck and the buzz fades with it. Written as a rotation of (input, state), the stage never adds energy however it switches, so the loop stays stable. Its rest delay of one sample is taken out of the loop length, so the sitar is in tune by construction like the other strings. The string's loss is kept light and its T60 long, because the buzz only lasts as long as the partials it feeds.
+
+### 5.2 Blown: flute, alto sax, clarinet, trumpet, bass trumpet and trombone (ported from STK)
 
 A wind instrument is a nonlinear "mouth" coupled to a tube. Pressure waves travel down the tube, reflect off the open end or bell, and come back to disturb the jet or reed. That disturbance is what keeps the note going.
 
@@ -298,7 +312,9 @@ STK's lip resonance (radius 0.997, input gain 0.03) has a DC gain of about 0.03/
    r = 1 - 0.026 w          gain = 2.26 w^2          (w = 2 pi f_lip / fs)
 ```
 
-These match STK at 880 Hz, where it speaks well, and keep the lips behaving the same at every pitch, so both trumpets speak from E2 to C6. Lip tension moves the resonance ±0.05 octave, brightening and bending the note as tightening real lips does.
+These match STK at 880 Hz, where it speaks well, and keep the lips behaving the same at every pitch, so both trumpets speak from E2 to C6. Lip tension moves the resonance ±0.05 octave, brightening and bending the note as tightening real lips does. The **trombone** is the same lip loop with a larger, darker bell (presence near 600 Hz) and a long portamento for the slide.
+
+The **clarinet** (STK `Clarinet`) is a reed on a cylinder: one delay line, the reed table `0.7 − slope·x` on the difference between the reflected wave and the breath, and an end reflection of −0.95 through a two-point average. The inverting reflection makes the loop two passes of the bore, so its delay is half the period, less the average's half sample and the loop's sample; a tube closed at one end like this sounds mostly odd harmonics.
 
 Shared behavior:
 
@@ -373,7 +389,53 @@ Each piece is one voice: hitting it again restarts it. The kits differ only in t
 
 The **metronome** is a separate two-mode woodblock (1.9/2.9 kHz, higher when accented) that goes straight to the master, dry.
 
-### 5.5 Oscillator (not a physical model)
+### 5.5 Free reeds: harmonium and harmonica (`models/ReedInstrument.ts`)
+
+A free reed is a brass tongue that swings through a slot. Each swing it lets a pulse of air past, and that pulsing flow is the sound; unlike the sax's reed, no tube sets the pitch, so the tongue's own frequency does.
+
+```text
+   pressure = ADSR x drive x (1 + swell)          swell: bellows (harmonium), hand tremolo (harmonica)
+        |
+        v
+   +--------------------------+     x      +---------------------------+   flow   +-----------+
+   | REED  van der Pol        | ---------> | SLOT  opening(x - slot)   | -------> | d/dt      | --> DC block --> lowpass --> bus
+   | x'' - (2/t)(D - 1 - 4Dx^2)x'          |   + (1 - asym) opening(-x - slot)    | (radiated |
+   |     + w^2 x = 0          |            |   + clearance;  x sqrt(p) |          |  sound)   |
+   +--------------------------+            +---------------------------+          +-----------+
+                                                                   + air noise riding on the flow
+```
+
+- **The reed** is a two-pole resonator tuned to the note whose swing dies away over `settle` seconds, fed by its own velocity in proportion to the drive `D`. Below D = 1 it just rings down; above it the swing grows and settles at an amplitude of `√((D − 1)/D)`, so a harder push swings it wider. The pressure step bends the reed first (`push`), so it speaks in tens of milliseconds rather than growing from nothing.
+- **The slot.** Air rushes past once the tongue is more than `slot` from rest (the Brightness param moves it); the opening's corners are rounded so high notes don't alias. `asymmetry` is how much less it opens on the way back: one-sided swings keep the fundamental, symmetric ones would sound the octave. The flow follows the opening and `√pressure` (Bernoulli).
+- **The sound** is the flow's slope, as a small source radiates, so the pulses' edges make it bright, and a wider swing brightens it further. Its 6 dB-per-octave rise is mostly taken back so the range sits level.
+- **Two reeds a key** (harmonium): the second is a few cents sharp, so the pair beats; the Celeste param scales how far.
+- **Polyphonic.** Up to 12 voices (harmonium) or 6 (harmonica); a measured `tuningCents` table corrects the small detune of the discrete oscillator.
+
+### 5.6 Tuned percussion: xylophone, steel pan and kalimba (`models/BarInstrument.ts`)
+
+A struck bar, a hammered pan dome and a plucked tine all ring in a handful of modes whose frequencies are fixed multiples of the note, and mostly not whole ones. Each key is a small modal bank:
+
+```text
+  strike: half-sine pulse, length = contact(hardness) x (1 + 0.3 x (0.5 - velocity))
+        |
+        v
+  +----------------------------------------------+
+  | MODES   f0 x ratio, level x ratio^brightness, |  --> lowpass --> master ADSR --> pan (by key) --> bus
+  |         T60 x decay(key) x Decay param        |
+  +----------------------------------------------+
+```
+
+|               | Xylophone                                                                       | Steel pan                                                    | Kalimba                         |
+| ------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------- |
+| Modes (ratio) | 1, 3, 6.2, 9.9, 13.9 (bars undercut to the twelfth; tubes lift the fundamental) | 1, 2, 3, 4.02, 5.05, with twins at 1.004 and 2.006 that beat | 1, 6.27, 17.55 (a clamped tine) |
+| Strike        | hard mallet, 1.2–0.25 ms                                                        | rubber-tipped stick, 3–0.8 ms                                | thumb, 4–1.5 ms                 |
+| Body          | none                                                                            | none                                                         | a small box (modal)             |
+
+- **The strike** is the drum kit's half-sine stick pulse, area-normalized, so the low modes keep their level and a shorter contact (a harder mallet, a harder hit) only adds the highs.
+- **Exact tuning.** Every mode is a resonator at its own frequency, so nothing needs a tuning table. Modes above 0.45·fs are left silent.
+- **No dampers.** A note rings until it fades; striking it again while it rings adds to what is sounding, as on the real thing.
+
+### 5.7 Oscillator (not a physical model)
 
 The one source with nothing to simulate: a sine, triangle, square or saw (the **Wave** param, in the LFO's shape order with a saw in place of random) through a lowpass, for the master ADSR, LFO and FX to shape. It runs on its own bus like any instrument, so it reaches them the same way.
 
@@ -478,7 +540,7 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
 
 ## 10. Calibration and checks
 
-- **Pitch.** Strings are in tune by construction, because the loop filters' delay is compensated at the fundamental. The flute, sax and violin use measured `tuningCents` tables per sample rate. Re-measure those after changing their loops.
+- **Pitch.** Strings are in tune by construction, because the loop filters' delay is compensated at the fundamental. The winds, brass, free reeds and bowed strings use measured `tuningCents` tables per sample rate. Re-measure those after changing their loops.
 - **Loudness.** Each patch's `outputGain` puts a mezzo-forte C4 at −18 dBFS RMS. Drum pieces peak at −3 dBFS on a hard hit.
 - **Offline rendering.** `offline/renderEngine.ts` runs the same `Engine` in plain TypeScript (Node or browser). `offline/renderOffline.ts` renders through the real worklet in an `OfflineAudioContext`.
 - **Diagnostics** (`offline/diagnostics.ts`, runnable from Storybook > Lab / Instrument Lab > Diagnostics):
@@ -504,7 +566,7 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
   |-- processor.worklet.ts   the AudioWorkletProcessor (only file touching worklet globals)
   |-- messages.ts            event / stats / warning types shared by both threads
   |-- engine/
-  |   |-- Engine.ts          render loop, segmenting, master stage, safety clip
+  |   |-- Engine.ts          render loop, segmenting, master stage, limiter, safety clip
   |   |-- MasterLfo.ts       the LFO over the mix: pitch, volume, filter, pan
   |   |-- MasterFx.ts        drive, chorus, ping-pong delay over the mix
   |   |-- EventQueue.ts      preallocated frame-sorted queue
@@ -512,17 +574,19 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
   |   |-- Voice.ts           voice state machine, pickVictim
   |   `-- ParamSet.ts        clamped param values by id
   |-- models/
-  |   |-- StringLoop.ts      single-delay-loop string
+  |   |-- StringLoop.ts      single-delay-loop string, jawari bridge
   |   |-- exciters.ts        hammer, pluck, stick
-  |   |-- StringInstrument.ts piano, guitar, basses
-  |   |-- BoreInstrument.ts  flute, sax, brass
+  |   |-- StringInstrument.ts piano, guitars, ukulele, banjo, basses, harp, sitar
+  |   |-- BoreInstrument.ts  flute, sax, clarinet, brass
+  |   |-- ReedInstrument.ts  harmonium, harmonica (free reeds)
+  |   |-- BarInstrument.ts   xylophone, steel pan, kalimba (modal)
   |   |-- BowedInstrument.ts violin
   |   |-- DrumKit.ts         drum kits + metronome woodblock
   |   |-- OscillatorInstrument.ts  band-limited oscillator source
   |   |-- Body.ts            modal / radiation bodies, tilt
   |   `-- Waveguide.ts       fractional delay section (STK DelayL style)
   |-- dsp/                   DelayLine, filters, Svf, modal banks, Fdn, Adsr, noise/LFO,
-  |                          jet/reed/bow tables, phase-delay math
+  |                          jet/reed/bow tables, phase-delay math, peak limiter
   |-- patches/               per-instrument constants, key tables, ParamSpecs, tuning tables
   `-- offline/               renderers, analysis, diagnostics
 ```

@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MIX_LEAD } from "../lib/physical/TrackMixer";
 import { deviceEngine } from "../components/home/deviceEngine";
-import { audible, passOf, startsOf, type Track } from "../components/home/tracks";
+import {
+  audible,
+  passOf,
+  startsOf,
+  type Track,
+} from "../components/home/tracks";
 
 type Mixer = NonNullable<ReturnType<typeof deviceEngine.mixer>>;
 
@@ -9,6 +14,9 @@ type Mixer = NonNullable<ReturnType<typeof deviceEngine.mixer>>;
 // muted or left out of a solo.
 const levelOf = (track: Track, tracks: readonly Track[]) =>
   audible(track, tracks) ? track.volume : 0;
+
+// The loop a track plays, which changes what renders and where it starts.
+const loopOf = (track: Track) => (track.loop?.on ? track.loop : null);
 
 // The tracks view's play mode: every track rendered offline with the sound it
 // was saved with, then mixed together on the audio clock, looping over a
@@ -38,6 +46,7 @@ export function useTrackMix(
       JSON.stringify(track.sound),
       track.timing.perBeat > 0 ? bpm : track.take.bpm,
       JSON.stringify(track.take),
+      JSON.stringify(loopOf(track)),
     ].join("|");
     const cached = renders.current.get(track.id);
     if (cached?.key === key) return cached.buffer;
@@ -130,7 +139,13 @@ export function useTrackMix(
   const arrangement = JSON.stringify([
     bpm,
     span,
-    tracks.map(({ id, start, sound }) => [id, start, sound]),
+    tracks.map((track) => [
+      track.id,
+      track.start,
+      track.sound,
+      loopOf(track),
+      track.repeats,
+    ]),
   ]);
   const levels = JSON.stringify(tracks.map((track) => levelOf(track, tracks)));
 

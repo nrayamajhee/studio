@@ -20,6 +20,9 @@ export class PhysicalSynth {
   private analyser: AnalyserNode | null = null;
   // Where the worklet joins the output, ahead of the limiter and analyser.
   private output: AudioNode | null = null;
+  // The system volume, after the limiter, so turning it up never clips.
+  private volume: GainNode | null = null;
+  private volumeLevel = 1;
   private booting: Promise<void> | null = null;
   private pending: EngineEvent[] = [];
   private statsListeners = new Set<Listener<EngineStats>>();
@@ -55,6 +58,14 @@ export class PhysicalSynth {
 
   getAnalyser() {
     return this.analyser;
+  }
+
+  // The system volume (0–1), after the engine's master level and clipper and
+  // the limiter; the analyser sees the output before it.
+  setVolume(value: number) {
+    this.volumeLevel = value;
+    if (this.ctx && this.volume)
+      this.volume.gain.setTargetAtTime(value, this.ctx.currentTime, 0.015);
   }
 
   noteOn(
@@ -179,7 +190,13 @@ export class PhysicalSynth {
     limiter.release.value = 0.1;
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 2048;
-    node.connect(limiter).connect(analyser).connect(ctx.destination);
+    const volume = ctx.createGain();
+    volume.gain.value = this.volumeLevel;
+    node
+      .connect(limiter)
+      .connect(analyser)
+      .connect(volume)
+      .connect(ctx.destination);
 
     await new Promise<void>((resolve) => {
       node.port.onmessage = (message: MessageEvent<WorkletMessage>) => {
@@ -201,6 +218,7 @@ export class PhysicalSynth {
     this.node = node;
     this.analyser = analyser;
     this.output = limiter;
+    this.volume = volume;
     this.isReady = true;
     if (this.pending.length > 0) {
       node.port.postMessage(this.pending);

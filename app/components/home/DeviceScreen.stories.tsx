@@ -171,7 +171,9 @@ export const Tracks: Story = {
         start: 0,
         clip: {
           length: 8,
-          loops: true,
+          offset: 0,
+          repeats: 2,
+          looped: false,
           notes: [60, 64, 67, 72, 67, 64, 60, 55].map((note, i) => ({
             note,
             start: i,
@@ -191,7 +193,9 @@ export const Tracks: Story = {
         start: 4,
         clip: {
           length: 6,
-          loops: false,
+          offset: 0,
+          repeats: 1,
+          looped: false,
           notes: [53, 57, 60].map((note) => ({ note, start: 0, length: 6 })),
         },
         volume: 0.5,

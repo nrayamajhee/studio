@@ -195,12 +195,26 @@ const DIAGNOSTICS: {
           "guitar",
           "bass",
           "uprightBass",
+          "sitar",
+          "ukulele",
+          "banjo",
         ] as InstrumentId[]) {
           rows.push(
             ...(await tuningSweep(workletRenderer, id, fs, notesInRange(id))),
           );
         }
-        for (const id of ["violin", "saxophone", "flute"] as InstrumentId[]) {
+        for (const id of [
+          "violin",
+          "saxophone",
+          "clarinet",
+          "trombone",
+          "flute",
+          "harmonium",
+          "harmonica",
+          "xylophone",
+          "steelPan",
+          "kalimba",
+        ] as InstrumentId[]) {
           rows.push(
             ...(await tuningSweep(
               workletRenderer,
