@@ -135,7 +135,7 @@ const rollNotes = [60, 64, 67, 72].map((note, i) => ({
 export const Roll: Story = {
   args: {
     view: "roll",
-    status: "Take · Tape",
+    status: "Take · 4/4",
     footer: ["", ""],
     getRoll: () => ({
       now: 3500,

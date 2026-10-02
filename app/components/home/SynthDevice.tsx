@@ -70,6 +70,7 @@ import {
   gridLabel,
   meterLabel,
   overdub,
+  shiftTake,
   type Take,
 } from "./noteRecorder";
 import { ICON_CHOICES, PresetIcon } from "./presetIcons";
@@ -89,8 +90,9 @@ import { useHotkeyListener, useHotkeys } from "../../providers/HotkeyProvider";
 import { hotkeyLabel, type Control, type Tool } from "./input/keymap";
 import { CHORD_PALETTE, chordById } from "./chords";
 import { setChordMacro, useChordMacros } from "./chordStore";
-import { audible, clipOf, makeTrack, type Track } from "./tracks";
+import { audible, clipOf, makeTrack, passOf, startsOf, type Track } from "./tracks";
 import { useTrackMix } from "../../hooks/useTrackMix";
+import { useMixScrub } from "../../hooks/useMixScrub";
 import { setTake, setTracks, useSession } from "./sessionStore";
 import { useScrub } from "../../hooks/useScrub";
 import { MAX_BPM, MIN_BPM, useTransport } from "../../hooks/useTransport";
@@ -101,8 +103,8 @@ export interface SynthDeviceProps {
 }
 
 const INITIAL_PRESET = "piano";
-// The tape shown as a potential track on the tracks view.
-const TAPE_ID = "session-tape";
+// The take shown as a potential track on the tracks view.
+const TAKE_ID = "session-take";
 const INITIAL_VOLUME_STEP = 8;
 const NOTICE_MS = 1800;
 const OVERLAY_MS = 1200;
@@ -146,8 +148,6 @@ function applyModule(id: ModuleId, on: boolean, steps: readonly number[]) {
       : null,
   );
 }
-
-
 
 const NOTE_NAMES = [
   "C",
@@ -232,6 +232,11 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const [paramPage, setParamPage] = useState(0);
   const [iconIndex, setIconIndex] = useState(0);
   const [presetIndex, setPresetIndex] = useState(0);
+  // The saved preset the Delete pad removes, in the library.
+  const trash =
+    view === "presets" && presets[presetIndex]?.user
+      ? presets[presetIndex]
+      : null;
   // Where the stopped roll is scrolled to (the time on its keys line); null
   // is the end of the take.
   const [rollPosition, setRollPosition] = useState<number | null>(null);
@@ -254,16 +259,20 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const [notice, showNotice] = useMomentary<string>(NOTICE_MS);
   // A saved preset Stop deletes on a second press, while its warning shows.
   const [pendingDelete, armDelete] = useMomentary<string>(NOTICE_MS);
+  // A pad press that binds or sets a chord macro is confirmed by a second
+  // press, like the delete.
+  const [pendingBind, armBind] = useMomentary<number>(NOTICE_MS);
+  const [pendingChord, armChord] = useMomentary<number>(NOTICE_MS);
   const held = useRef(new Map<number, HeldKey>());
   const transport = useTransport();
   const shift = shiftLatched || keys.shift;
   const tapMode = transport.tapping && view === "tempo";
   const barBeats = transport.timing.meter.beats;
-  // The tape as a potential track: the current take, named for the instrument
+  // The take as a potential track: the current take, named for the instrument
   // playing now. It has no mute or solo.
-  const tapeTrack: Track = {
-    id: TAPE_ID,
-    name: preset.name,
+  const takeTrack: Track = {
+    id: TAKE_ID,
+    name: "Take",
     color: "#f4f3ef",
     presetId: preset.id,
     sound: deviceEngine.sound(),
@@ -274,12 +283,12 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     muted: false,
     soloed: false,
   };
-  const entries: readonly Track[] = [tapeTrack, ...tracks];
-  // The picked row, kept across views so tape mode edits the picked track.
+  const entries: readonly Track[] = [takeTrack, ...tracks];
+  // The picked row, kept across views so the roll edits the picked track.
   const pickedEntry = entries[Math.min(selectedIndex, entries.length - 1)];
   const picked = view === "tracks" ? pickedEntry : undefined;
-  const isTape = picked?.id === TAPE_ID;
-  const track = picked && !isTape ? picked : undefined;
+  const isTake = picked?.id === TAKE_ID;
+  const track = picked && !isTake ? picked : undefined;
   // Each entry's clip at the tempo, on a timeline at least four bars long
   // that ends on the bar after the last entry's first pass.
   const clips = entries.map((candidate) => clipOf(candidate, transport.bpm));
@@ -291,9 +300,80 @@ export function SynthDevice({ className }: SynthDeviceProps) {
         Math.ceil((candidate.start + clips[i].length) / barBeats),
       ),
     );
-  // The tape is only an indicator; the mix plays the kept tracks.
+  // The take is only an indicator; the mix plays the kept tracks.
   const mix = useTrackMix(tracks, transport.bpm, trackSpan);
-  // What the Play pad shows: the mix on the tracks view, else the tape.
+  // Renders every track's arrangement over the timeline and sums them, so the
+  // mix can be scrubbed like a take.
+  const renderMix = async () => {
+    const span = trackSpan * beatMs(transport.timing);
+    const parts = await Promise.all(
+      tracks.map((track) => {
+        const pass = passOf(track, transport.bpm);
+        const starts = startsOf(track, pass, transport.bpm, trackSpan);
+        const notes = starts.flatMap((at) =>
+          pass.notes.map((note) => ({ ...note, start: note.start + at })),
+        );
+        return deviceEngine.render(notes, span, track.sound);
+      }),
+    );
+    const buffers = parts.filter(
+      (buffer): buffer is AudioBuffer => buffer !== null,
+    );
+    if (buffers.length === 0) return null;
+    const length = Math.max(...buffers.map((buffer) => buffer.length));
+    const out = new AudioBuffer({
+      numberOfChannels: 2,
+      length,
+      sampleRate: buffers[0].sampleRate,
+    });
+    for (let c = 0; c < out.numberOfChannels; c++) {
+      const dst = out.getChannelData(c);
+      for (const buffer of buffers) {
+        const src = buffer.getChannelData(
+          Math.min(c, buffer.numberOfChannels - 1),
+        );
+        for (let i = 0; i < buffer.length; i++) dst[i] += src[i];
+      }
+    }
+    return out;
+  };
+  const mixScrub = useMixScrub(
+    JSON.stringify([
+      transport.bpm,
+      trackSpan,
+      tracks.map((track) => [track.id, track.start, track.sound, track.take]),
+    ]),
+    renderMix,
+  );
+  // Where the mix was last scrubbed to (ms), so the playhead follows it until
+  // playback takes over.
+  const [mixScrubPos, setMixScrubPos] = useState<number | null>(null);
+  const scrubMix = (to: number) => {
+    mixScrub.scrollTo(to, mixScrubPos ?? 0);
+    setMixScrubPos(to);
+    // Move the play position too, so Play resumes from where it was scrubbed.
+    mix.seek(to / beatMs(transport.timing));
+  };
+  const mixBars = Math.max(
+    1,
+    Math.ceil(
+      (trackSpan * beatMs(transport.timing)) / barMs(transport.timing),
+    ),
+  );
+  const mixAt =
+    mixScrubPos ?? (mix.position() ?? 0) * beatMs(transport.timing);
+  const mixBar = Math.min(
+    mixBars - 1,
+    Math.floor(mixAt / barMs(transport.timing)),
+  );
+  // The seek knob is continuous in milliseconds, so scrubbing follows the
+  // drag rather than snapping to a grid.
+  const mixSteps = Math.max(
+    2,
+    Math.round(trackSpan * beatMs(transport.timing)),
+  );
+  const mixStep = Math.min(mixSteps - 1, mixAt);
+  // What the Play pad shows: the mix on the tracks view, else the take.
   const playing =
     view === "tracks" ? mix.playing : transport.state === "playing";
   const pauseMix = mix.pause;
@@ -400,12 +480,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       );
     } else if (view === "chords") {
       setChordIndex((index) =>
-        turnPage(
-          index,
-          direction,
-          TILES_PER_PAGE.chords,
-          CHORD_PALETTE.length,
-        ),
+        turnPage(index, direction, TILES_PER_PAGE.chords, CHORD_PALETTE.length),
       );
     } else if (view === "tempo") {
       transport.setBpm(transport.bpm + direction);
@@ -427,14 +502,44 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     transport.stop();
   };
 
+  // Which entry a recording lands on, the take as it was before it (so a track
+  // take can be restored), and where on the take the recording began.
+  const recordTarget = useRef<string>(TAKE_ID);
+  const takeBefore = useRef<Take | null>(null);
+  const recordStart = useRef(0);
+
+  // Ends the take and lays it over what the recording targeted: the take, or
+  // the picked track (an overdub). The recording began at `recordStart`.
+  const finishTake = () => {
+    const recorded = transport.keepTake();
+    if (!recorded) return;
+    const placed = shiftTake(recorded, recordStart.current);
+    const target = recordTarget.current;
+    if (target === TAKE_ID) {
+      setTake(overdub(takeBefore.current, placed));
+    } else {
+      const merged = overdub(takeBefore.current, placed);
+      setTracks((current) =>
+        current.map((candidate) =>
+          candidate.id === target ? { ...candidate, take: merged } : candidate,
+        ),
+      );
+      setTake(merged);
+    }
+  };
+
   // Play and pause in one: plays the take from where the stopped roll is
   // scrolled to (from the top when it rests at the end), and pauses it while
-  // it plays. While recording, throws the new take away and plays the one
-  // before it from the top.
+  // it plays. While recording, Play pauses the take.
   const pressPlay = () => {
     if (view === "tracks") {
+      setMixScrubPos(null);
       if (mix.playing) mix.pause();
       else mix.play();
+      return;
+    }
+    if (transport.state === "recording") {
+      finishTake();
       return;
     }
     if (transport.state === "playing") {
@@ -450,11 +555,17 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     transport.play(from);
   };
 
-  // Stops playback. On the tracks it rewinds to the very start; on the tape it
-  // holds like pause, and a second press scrolls the tape back to the top.
+  // Stops playback. On the tracks it rewinds to the very start; on the take it
+  // holds like pause, and a second press scrolls the take back to the top.
+  // While recording, Stop pauses the take.
   const pressStop = () => {
     if (view === "tracks") {
+      setMixScrubPos(null);
       mix.stop();
+      return;
+    }
+    if (transport.state === "recording") {
+      finishTake();
       return;
     }
     if (view === "roll") {
@@ -492,14 +603,14 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       return;
     }
     if (view !== "tracks" || !picked) return;
-    if (isTape) {
-      if (pendingDelete !== TAPE_ID) {
-        armDelete(TAPE_ID);
-        showNotice("Press again to discard the tape");
+    if (isTake) {
+      if (pendingDelete !== TAKE_ID) {
+        armDelete(TAKE_ID);
+        showNotice("Press again to discard the take");
         return;
       }
       setTake(null);
-      showNotice("Discarded the tape");
+      showNotice("Discarded the take");
       return;
     }
     if (!track) return;
@@ -511,45 +622,24 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     setTracks((current) =>
       current.filter((candidate) => candidate.id !== track.id),
     );
-    setSelectedIndex((index) => Math.max(0, Math.min(index, entries.length - 2)));
+    setSelectedIndex((index) =>
+      Math.max(0, Math.min(index, entries.length - 2)),
+    );
     showNotice(`Deleted ${track.name}`);
   };
 
-  // Which entry a recording lands on, and the tape as it was before it, so a
-  // track take can be restored.
-  const recordTarget = useRef<string>(TAPE_ID);
-  const takeBefore = useRef<Take | null>(null);
-
-  // Ends the take and lays it over what the recording targeted: the tape, or
-  // the picked track (an overdub).
-  const finishTake = () => {
-    const recorded = transport.keepTake();
-    if (!recorded) return;
-    const target = recordTarget.current;
-    if (target === TAPE_ID) {
-      setTake(overdub(takeBefore.current, recorded));
-    } else {
-      const merged = overdub(takeBefore.current, recorded);
-      setTracks((current) =>
-        current.map((candidate) =>
-          candidate.id === target ? { ...candidate, take: merged } : candidate,
-        ),
-      );
-      setTake(merged);
-    }
-  };
-
   // Starts a take, showing it on the roll, or ends it where it stops. The take
-  // lands on whatever is picked: the tape, or a track.
+  // lands on whatever is picked: the take, or a track. Recording always starts
+  // from where the stopped roll is scrolled to.
   const pressRecord = () => {
     deviceEngine.unlock();
-    setRollPosition(null);
     if (transport.state === "recording") {
       finishTake();
       return;
     }
-    recordTarget.current = pickedEntry?.id ?? TAPE_ID;
+    recordTarget.current = pickedEntry?.id ?? TAKE_ID;
     takeBefore.current = take;
+    recordStart.current = rollPosition ?? 0;
     setView("roll");
     // The tracks play along from the top, lined up with the new take.
     const origin = transport.record();
@@ -570,12 +660,15 @@ export function SynthDevice({ className }: SynthDeviceProps) {
 
   const pressTool = (pad: Tool) => {
     if (pad === "record") pressRecord();
-    else if (pad === "tracks") pressTracks();
-    else if (pad === "tape") pressTape();
     else if (pad === "play") pressPlay();
+    else if (pad === "stop") pressStop();
+    else if (pad === "tracks") pressTracks();
+    else if (pad === "take") pressTake();
     else if (pad === "metronome") pressMetronome();
     else if (pad === "synth") pressSynth();
     else if (pad === "save") pressSave();
+    else if (pad === "delete") pressTrash();
+    else if (pad === "mute") pressMute();
     else pressModule(pad);
   };
 
@@ -595,6 +688,12 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const pressChordPad = (index: number) => {
     if (view === "chords") {
       const chosen = CHORD_PALETTE[chordIndex];
+      // Set the macro on a second press of the same pad, like the delete.
+      if (pendingChord !== index) {
+        armChord(index);
+        showNotice(`Press again to set chord ${index + 1} to ${chosen.name}`);
+        return;
+      }
       setChordMacro(index, chosen.id);
       showNotice(`Chord ${index + 1} → ${chosen.name}`);
       return;
@@ -617,6 +716,12 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const pressPresetPad = (pad: number) => {
     if (view === "presets") {
       const chosen = presets[presetIndex];
+      // Bind on a second press of the same pad, like the delete.
+      if (pendingBind !== pad) {
+        armBind(pad);
+        showNotice(`Press again to bind to ${padName(pad).toLowerCase()}`);
+        return;
+      }
       bindPad(pad, chosen.id, shift);
       showNotice(`${padName(pad)} → ${chosen.name}`);
       return;
@@ -665,9 +770,9 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     setView((current) => (current === "tracks" ? "scope" : "tracks"));
   };
 
-  // Opens or closes the tape (record mode), which Record also opens. While
+  // Opens or closes the take (record mode), which Record also opens. While
   // recording it ends the take.
-  const pressTape = () => {
+  const pressTake = () => {
     setRollPosition(null);
     if (transport.state === "recording") {
       finishTake();
@@ -678,8 +783,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       setView("scope");
       return;
     }
-    // Load the picked track into the tape, so the roll shows and edits it.
-    if (pickedEntry.id !== TAPE_ID) setTake(pickedEntry.take);
+    // Load the picked track into the take, so the roll shows and edits it.
+    if (pickedEntry.id !== TAKE_ID) setTake(pickedEntry.take);
     setView("roll");
   };
 
@@ -714,13 +819,13 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     );
 
   // The arrows slide the picked track along the timeline, by bars, or with
-  // Shift by beats. The tape doesn't move.
+  // Shift by beats. The take doesn't move.
   const slideTrack = (beats: number) => {
     if (!track) return;
     updateTrack(track.id, { start: Math.max(0, track.start + beats) });
   };
 
-  // The picked track's mute, and with Shift its solo. The tape has neither.
+  // The picked track's mute, and with Shift its solo. The take has neither.
   const pressTrackSwitch = () => {
     if (!track) return;
     if (shift) updateTrack(track.id, { soloed: !track.soloed });
@@ -740,18 +845,18 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   // Shift + Save resets the preset instead. Neither applies to the tempo, so
   // in its view Save switches tap mode, where played notes tap the tempo.
   const pressSave = () => {
-    if (view === "roll") {
+    // On the roll and the tracks, Save keeps the take as a track.
+    if (view === "roll" || view === "tracks") {
       saveTrack();
       return;
     }
-    // Save does nothing on the tracks; a take is kept from the roll.
-    if (view === "tracks") return;
     if (view === "tempo") {
       if (transport.tapping) transport.stopTapping();
       else transport.startTapping();
       return;
     }
-    if (shift) {
+    // Shift reverts the preset, which only matters while configuring it.
+    if (shift && canRevert) {
       pressReset();
       return;
     }
@@ -939,9 +1044,12 @@ export function SynthDevice({ className }: SynthDeviceProps) {
         }
         return;
       case "chord":
-        if (down && chord === control.index) {
-          setChord(null);
-          ignore();
+        // Holding any chord key drops a latched chord, so it doesn't come
+        // back when the key is let go; the key for the latched chord just
+        // stops it rather than playing it.
+        if (down) {
+          if (chord !== null) setChord(null);
+          if (chord === control.index) ignore();
         }
         return;
       default:
@@ -982,19 +1090,16 @@ export function SynthDevice({ className }: SynthDeviceProps) {
         };
       })
     : [];
-  // The saved preset Stop deletes, in the library.
-  const trash =
-    view === "presets" && presets[presetIndex]?.user
-      ? presets[presetIndex]
-      : null;
   // The Synth pad opens the library by default, the parameters with Shift.
   const synthMode = view === "synth" || shift;
+  // Shift reverts the preset, but only while configuring it on the synth view.
+  const canRevert = view === "synth";
   const padPresets = padBindings.map(
     (id) => presets.find((candidate) => candidate.id === id) ?? null,
   );
 
   // Stopped, the roll shows the whole take and scrolls by beats from its start
-  // to its end. The keys line is the tape head: what crosses it plays.
+  // to its end. The keys line is the playhead: what crosses it plays.
   const beatLength = beatMs(transport.timing);
   const barLength = barMs(transport.timing);
   const rollEnd = transport.takeLength;
@@ -1007,6 +1112,19 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     Math.ceil((rollEnd - rollFirst) / beatLength) + 1,
   );
   const barOf = (ms: number) => Math.max(1, Math.ceil(ms / barLength));
+  // The roll's frame, shifted to where the recording began so a take recorded
+  // from a scrolled position shows from there.
+  const rollFrame = () => {
+    const frame = transport.roll();
+    if (transport.state !== "recording" || recordStart.current === 0)
+      return frame;
+    const at = recordStart.current;
+    return {
+      now: frame.now + at,
+      notes: frame.notes.map((note) => ({ ...note, start: note.start + at })),
+      state: frame.state,
+    };
+  };
   // Scrolling scrubs the take: it plays at the speed it is scrolled.
   const scrub = useScrub(
     [
@@ -1020,7 +1138,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       volumeStep,
     ].join("|"),
     () => {
-      const { now, notes } = transport.roll();
+      const { now, notes } = rollFrame();
       return { notes, length: now };
     },
   );
@@ -1065,40 +1183,42 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   setChordIndex(Math.min(index, CHORD_PALETTE.length - 1)),
               }
             : rollScrolls
-            ? {
-                step: Math.round((rollAt - rollFirst) / beatLength),
-                steps: rollSteps,
-                label: `Bar ${barOf(rollAt)} of ${barOf(rollEnd)}`,
-                // The last step is the end, which stays put as the take grows.
-                set: (step: number) => {
-                  const end = step >= rollSteps - 1;
-                  const to = end ? rollEnd : rollFirst + step * beatLength;
-                  scrub.scrollTo(to, rollAt);
-                  setRollPosition(end ? null : to);
-                },
-              }
-            : view === "tracks"
               ? {
-                  step: selectedIndex,
-                  steps: Math.max(2, entries.length),
-                  label: picked?.name ?? "",
-                  set: (index: number) =>
-                    setSelectedIndex(Math.min(index, entries.length - 1)),
+                  step: Math.round((rollAt - rollFirst) / beatLength),
+                  steps: rollSteps,
+                  label: `Bar ${barOf(rollAt)} of ${barOf(rollEnd)}`,
+                  // The last step is the end, which stays put as the take grows.
+                  set: (step: number) => {
+                    const end = step >= rollSteps - 1;
+                    const to = end ? rollEnd : rollFirst + step * beatLength;
+                    scrub.scrollTo(to, rollAt);
+                    setRollPosition(end ? null : to);
+                  },
                 }
-              : view === "tempo"
+              : view === "tracks"
                 ? {
-                    step: Math.round((transport.bpm - MIN_BPM) / BPM_KNOB_STEP),
-                    steps: (MAX_BPM - MIN_BPM) / BPM_KNOB_STEP + 1,
-                    label: `${transport.bpm} BPM`,
-                    set: (step: number) =>
-                      transport.setBpm(MIN_BPM + step * BPM_KNOB_STEP),
+                    step: selectedIndex,
+                    steps: Math.max(2, entries.length),
+                    label: picked?.name ?? "",
+                    set: (index: number) =>
+                      setSelectedIndex(Math.min(index, entries.length - 1)),
                   }
-                : {
-                    step: idleSeek,
-                    steps: KNOB_STEPS,
-                    label: "",
-                    set: setIdleSeek,
-                  };
+                : view === "tempo"
+                  ? {
+                      step: Math.round(
+                        (transport.bpm - MIN_BPM) / BPM_KNOB_STEP,
+                      ),
+                      steps: (MAX_BPM - MIN_BPM) / BPM_KNOB_STEP + 1,
+                      label: `${transport.bpm} BPM`,
+                      set: (step: number) =>
+                        transport.setBpm(MIN_BPM + step * BPM_KNOB_STEP),
+                    }
+                  : {
+                      step: idleSeek,
+                      steps: KNOB_STEPS,
+                      label: "",
+                      set: setIdleSeek,
+                    };
 
   const engine = soundName();
   const octaveLabel = `OCT ${octave > 0 ? "+" : octave < 0 ? "−" : "±"}${Math.abs(octave)}`;
@@ -1150,7 +1270,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
             "←→ slide · Mute/Solo · Trash",
           ]
         : picked
-          ? ["Tape · record, or Save to keep it", ""]
+          ? ["Take · record, or Save to keep it", ""]
           : ["", ""],
     },
     // The meter and grid in the red and blue of the knobs that set them; when
@@ -1185,21 +1305,21 @@ export function SynthDevice({ className }: SynthDeviceProps) {
           {Math.max(1, Math.ceil(presets.length / TILES_PER_PAGE.presets))}
         </ScreenSeek>
       ),
-      footer: [presets[presetIndex]?.name ?? "", "Press a pad to bind"],
+      footer: [
+        presets[presetIndex]?.name ?? "",
+        "Press a pad twice to bind",
+      ],
     },
     chords: {
       status: (
         <ScreenSeek>
           Chords {Math.floor(chordIndex / TILES_PER_PAGE.chords) + 1}/
-          {Math.max(
-            1,
-            Math.ceil(CHORD_PALETTE.length / TILES_PER_PAGE.chords),
-          )}
+          {Math.max(1, Math.ceil(CHORD_PALETTE.length / TILES_PER_PAGE.chords))}
         </ScreenSeek>
       ),
       footer: [
         CHORD_PALETTE[chordIndex]?.name ?? "",
-        "Press a chord pad to set",
+        "Press a chord pad twice to set",
       ],
     },
   }[view];
@@ -1216,8 +1336,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
           volume: candidate.volume,
           muted: candidate.muted,
           soloed: candidate.soloed,
-          audible: candidate.id === TAPE_ID ? true : audible(candidate, tracks),
-          potential: candidate.id === TAPE_ID,
+          audible: candidate.id === TAKE_ID ? true : audible(candidate, tracks),
+          potential: candidate.id === TAKE_ID,
         }))
       : [];
   // On/off, centred along the bottom of the module and tempo views.
@@ -1298,10 +1418,14 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               badges={badge && !notice ? [badge] : undefined}
               timing={transport.timing}
               tracks={screenTracks}
-              getTrackPosition={mix.position}
+              getTrackPosition={() =>
+                mixScrubPos !== null
+                  ? mixScrubPos / beatMs(transport.timing)
+                  : mix.position()
+              }
               trackSpan={trackSpan}
               barBeats={barBeats}
-              getRoll={transport.roll}
+              getRoll={rollFrame}
               rollPosition={rollScrolls ? rollAt : null}
               onRollScroll={rollScrolls ? scrollRoll : undefined}
               beat={
@@ -1328,21 +1452,21 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                         icon: <span>{chord.label}</span>,
                       }))
                     : presets.map((candidate) => {
-                      const bound = [
-                        ...library.buttons.map((id, pad) =>
-                          id === candidate.id ? `${pad + 1}` : "",
-                        ),
-                        ...library.shiftButtons.map((id, pad) =>
-                          id === candidate.id ? `⇧${pad + 1}` : "",
-                        ),
-                      ].filter(Boolean);
-                      return {
-                        id: candidate.id,
-                        label: candidate.name,
-                        icon: <PresetIcon icon={candidate.icon} />,
-                        badge: bound.length > 0 ? bound.join(" ") : undefined,
-                      };
-                    })
+                        const bound = [
+                          ...library.buttons.map((id, pad) =>
+                            id === candidate.id ? `${pad + 1}` : "",
+                          ),
+                          ...library.shiftButtons.map((id, pad) =>
+                            id === candidate.id ? `⇧${pad + 1}` : "",
+                          ),
+                        ].filter(Boolean);
+                        return {
+                          id: candidate.id,
+                          label: candidate.name,
+                          icon: <PresetIcon icon={candidate.icon} />,
+                          badge: bound.length > 0 ? bound.join(" ") : undefined,
+                        };
+                      })
               }
               selected={
                 view === "save"
@@ -1375,20 +1499,15 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               {activeModule ? (
                 renderModuleKnob(activeModule, 2, "var(--synth-red)")
               ) : view === "tracks" ? (
-                track ? (
-                  <Knob
-                    label="Track volume"
-                    valueLabel={`${Math.round(track.volume * 100)}%`}
-                    step={Math.round(track.volume * (KNOB_STEPS - 1))}
-                    steps={KNOB_STEPS}
-                    color="var(--synth-red)"
-                    onChange={(step) =>
-                      updateTrack(track.id, {
-                        volume: step / (KNOB_STEPS - 1),
-                      })
-                    }
-                  />
-                ) : null
+                <Knob
+                  label="Seek"
+                  valueLabel={`Bar ${mixBar + 1} of ${mixBars}`}
+                  step={mixStep}
+                  steps={mixSteps}
+                  color="var(--synth-red)"
+                  fine
+                  onChange={(step) => scrubMix(step)}
+                />
               ) : view === "roll" ? (
                 <Knob
                   label="Time signature"
@@ -1412,6 +1531,22 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               )}
               {activeModule ? (
                 renderModuleKnob(activeModule, 3, "var(--synth-blue)")
+              ) : view === "tracks" ? (
+                <Knob
+                  label="Track volume"
+                  valueLabel={
+                    track ? `${Math.round(track.volume * 100)}%` : undefined
+                  }
+                  step={Math.round((track?.volume ?? 1) * (KNOB_STEPS - 1))}
+                  steps={KNOB_STEPS}
+                  color="var(--synth-blue)"
+                  onChange={(step) => {
+                    if (track)
+                      updateTrack(track.id, {
+                        volume: step / (KNOB_STEPS - 1),
+                      });
+                  }}
+                />
               ) : view === "roll" ? (
                 <Knob
                   label="Grid"
@@ -1463,13 +1598,16 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                 <Pad
                   label={view === "tracks" ? "Stop and rewind" : "Stop"}
                   accent="var(--synth-red)"
+                  {...toolHotkey("stop")}
                   onPress={pressStop}
                 >
                   <Square fill="currentColor" />
                 </Pad>
                 <Pad
                   label={
-                    transport.state === "recording" ? "Stop recording" : "Record"
+                    transport.state === "recording"
+                      ? "Stop recording"
+                      : "Record"
                   }
                   accent="var(--synth-red)"
                   lit={transport.state === "recording"}
@@ -1479,6 +1617,31 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   <Circle fill="currentColor" />
                 </Pad>
                 <Pad
+                  label={
+                    view === "tempo"
+                      ? tapMode
+                        ? "Stop tap tempo"
+                        : "Tap tempo"
+                      : view === "roll" || view === "tracks"
+                        ? "Save take as a track"
+                        : shift
+                          ? "Reset preset"
+                          : "Save preset"
+                  }
+                  accent="var(--synth-red)"
+                  lit={tapMode}
+                  {...toolHotkey("save")}
+                  onPress={pressSave}
+                >
+                  {view === "tempo" ? (
+                    <Pointer />
+                  ) : shift && canRevert ? (
+                    <RotateCcw />
+                  ) : (
+                    <Save />
+                  )}
+                </Pad>
+                <Pad
                   label="Tracks"
                   accent="var(--synth-red)"
                   lit={view === "tracks"}
@@ -1486,16 +1649,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   onPress={pressTracks}
                 >
                   <ChartNoAxesGantt />
-                </Pad>
-                <Pad
-                  label="Tape (record mode)"
-                  accent="var(--synth-red)"
-                  lit={recordMode}
-                  indicator={transport.state === "recording"}
-                  {...toolHotkey("tape")}
-                  onPress={pressTape}
-                >
-                  <CassetteTape />
                 </Pad>
                 <Pad
                   label={
@@ -1601,33 +1754,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                 </Pad>
                 <Pad
                   label={
-                    view === "roll"
-                      ? "Save take as a track"
-                      : view === "tracks"
-                        ? "Save"
-                        : view === "tempo"
-                          ? tapMode
-                            ? "Stop tap tempo"
-                            : "Tap tempo"
-                          : shift
-                            ? "Reset preset"
-                            : "Save preset"
-                  }
-                  accent="var(--synth-red)"
-                  lit={tapMode}
-                  {...toolHotkey("save")}
-                  onPress={pressSave}
-                >
-                  {view === "tempo" ? (
-                    <Pointer />
-                  ) : shift && view !== "tracks" ? (
-                    <RotateCcw />
-                  ) : (
-                    <Save />
-                  )}
-                </Pad>
-                <Pad
-                  label={
                     trash
                       ? `Delete ${trash.name}`
                       : view === "tracks" && track
@@ -1636,9 +1762,19 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   }
                   accent="var(--synth-red)"
                   lit={pendingDelete === (trash?.id ?? track?.id)}
+                  {...toolHotkey("delete")}
                   onPress={pressTrash}
                 >
                   <Trash2 />
+                </Pad>
+                <Pad
+                  label="Take (record mode)"
+                  accent="var(--synth-red)"
+                  lit={recordMode}
+                  {...toolHotkey("take")}
+                  onPress={pressTake}
+                >
+                  <CassetteTape />
                 </Pad>
               </div>
               <div className={styles.bank} role="group" aria-label="Modules">
@@ -1670,6 +1806,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                       ? Boolean(shift ? track?.soloed : track?.muted)
                       : view === "chords"
                   }
+                  {...toolHotkey("mute")}
                   onPress={pressMute}
                 >
                   {view === "tracks" ? (

@@ -214,7 +214,7 @@ export interface ScreenTrack {
   muted: boolean;
   soloed: boolean;
   audible: boolean;
-  // The tape shown as a potential track: no mute or solo.
+  // The take shown as a potential track: no mute or solo.
   potential?: boolean;
 }
 
@@ -535,7 +535,7 @@ export function DeviceScreen({
                       tone="secondary"
                       aria-label={
                         track.potential
-                          ? `${track.name}, tape`
+                          ? `${track.name}, take`
                           : `${track.name}, ${track.detail}, volume ${Math.round(
                               track.volume * 100,
                             )}%${track.muted ? ", muted" : ""}${
@@ -550,7 +550,14 @@ export function DeviceScreen({
                       onClick={() => onSelect?.(index)}
                     >
                       <span className={styles.trackLabel} aria-hidden="true">
-                        <span className={styles.trackName}>{track.name}</span>
+                        <span className={styles.trackName}>
+                          {!track.potential && (
+                            <span className={styles.trackNumber}>
+                              #{index}
+                            </span>
+                          )}
+                          {track.name}
+                        </span>
                         {!track.potential && (
                           <span className={styles.trackFlags}>
                             <span data-on={track.muted || undefined}>M</span>

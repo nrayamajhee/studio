@@ -160,5 +160,13 @@ export function useTrackMix(
 
   useEffect(() => () => void mixer.current?.stop(), []);
 
-  return { playing, play, follow, pause, stop, position };
+  // Moves the play position (beats) without starting, so Play begins there;
+  // while it plays, it carries on from the new place.
+  const seek = useCallback((beat: number) => {
+    paused.current = Math.max(0, beat);
+    if (isPlaying.current)
+      void restart.current(paused.current, looping.current);
+  }, []);
+
+  return { playing, play, follow, pause, stop, seek, position };
 }

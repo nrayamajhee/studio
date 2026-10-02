@@ -2,8 +2,8 @@ import { useSyncExternalStore } from "react";
 import type { PlayedNote, Take } from "./noteRecorder";
 import type { Track } from "./tracks";
 
-// What has been recorded: the tape's latest take and the tracks kept from
-// it, persisted in localStorage so a reload keeps them.
+// What has been recorded: the working take and the tracks kept from it,
+// persisted in localStorage so a reload keeps them.
 export interface Session {
   take: Take | null;
   tracks: readonly Track[];

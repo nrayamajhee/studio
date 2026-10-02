@@ -36,7 +36,7 @@ export const TRACK_COLORS = [
 
 // The next track from a take: named for its instrument, coloured in turn,
 // unmuted, at the top of the timeline. It keeps its own copy, so later takes
-// on the tape leave it alone.
+// on the take leave it alone.
 export function makeTrack(
   count: number,
   name: string,

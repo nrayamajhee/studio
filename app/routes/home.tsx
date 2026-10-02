@@ -62,19 +62,11 @@ export default function Home() {
       </main>
 
       <footer
-        className="absolute inset-x-0 bottom-6 z-10 text-center text-sm select-text flex flex-col items-center gap-1"
+        className="absolute inset-x-0 bottom-6 z-10 text-sm select-text flex items-center justify-between gap-4 px-6 sm:px-8"
         style={{
           color: "color-mix(in srgb, #000000, #ffffff var(--theme-mix))",
         }}
       >
-        <Link
-          to="https://buymeacoffee.com/nrayamajhee"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
-        >
-          Buy me a coffee!
-        </Link>
         <span>
           A quiet place for loud ideas by{" "}
           <Link
@@ -85,7 +77,22 @@ export default function Home() {
           >
             Nishan Rayamajhee
           </Link>
+          {" | "}
+          <Link
+            to="/storybook"
+            className="font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
+          >
+            Docs
+          </Link>
         </span>
+        <Link
+          to="https://buymeacoffee.com/nrayamajhee"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
+        >
+          Buy me a coffee!
+        </Link>
       </footer>
 
       <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50">

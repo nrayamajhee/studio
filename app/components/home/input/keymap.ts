@@ -3,11 +3,14 @@ import type { ModuleId } from "../deviceEngine";
 export type Tool =
   | "record"
   | "play"
+  | "stop"
   | "tracks"
-  | "tape"
+  | "take"
   | "metronome"
   | "synth"
   | "save"
+  | "delete"
+  | "mute"
   | ModuleId;
 
 // Everything the keyboard can press on the Device.
@@ -50,24 +53,29 @@ const NOTE_KEYS = [
   "\\",
 ];
 
-// The pads' two rows sit on the home and bottom rows, lined up from the right
-// edge. Top: Tracks and Tape on A and X, Synth, ADSR, LFO and FX on S D F G,
-// four presets on H J K L, Metronome on Z. Bottom: four chords on B N M ,,
-// Record and Save on C V. Space plays, and the arrows and Shift press their
-// own pads. One blank slot stays before the presets.
-const PRESET_KEYS = ["H", "J", "K", "L"];
-const CHORD_KEYS = ["B", "N", "M", ","];
+// The two pad rows sit on the home and bottom keyboard rows, in order, with
+// Space, Shift and the arrows as their own transport keys. The bottom row
+// starts at X so it sits under the home row the way the physical keys do:
+// ; lines up with ., ' with /, and so on. Top, left to right: Play (Space),
+// Stop (A), Record (S), Save (D), Tracks (F), Metronome (G), ADSR (H),
+// Synth (J), then four presets (K L ; '). Bottom: Shift, ← , →, Delete (X),
+// Take (C), LFO (V), FX (B), Mute (N), then four chords (M , . /).
+const PRESET_KEYS = ["K", "L", ";", "'"];
+const CHORD_KEYS = ["M", ",", ".", "/"];
 const TOOL_KEYS: Readonly<Record<Tool, string>> = {
-  metronome: "Z",
-  tracks: "A",
-  tape: "X",
-  synth: "S",
-  adsr: "D",
-  lfo: "F",
-  fx: "G",
   play: "Space",
-  record: "C",
-  save: "V",
+  stop: "A",
+  record: "S",
+  save: "D",
+  tracks: "F",
+  metronome: "G",
+  adsr: "H",
+  synth: "J",
+  delete: "X",
+  take: "C",
+  lfo: "V",
+  fx: "B",
+  mute: "N",
 };
 
 // KeyboardEvent.code for each label that isn't Key<letter> or Digit<n>.

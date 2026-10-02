@@ -13,6 +13,9 @@ export interface KnobProps {
   markColor?: string;
   onChange?: (step: number) => void;
   className?: string;
+  // Continuous: the value is a float over 0..steps-1 and one drag covers the
+  // whole range, for scrubbing rather than stepping.
+  fine?: boolean;
 }
 
 const TEETH = 36;
@@ -38,6 +41,10 @@ const GEAR_EDGE = `polygon(${Array.from({ length: TEETH }, (_, tooth) =>
 // Horizontal drag distance and trackpad scroll distance (px) per detent.
 const DRAG_STEP = 24;
 const WHEEL_STEP = 50;
+// With `fine`, a horizontal drag of this many px covers the whole range, and
+// one wheel notch or click moves this fraction of it.
+const FINE_TRAVEL = 260;
+const FINE_NOTCH = 120;
 
 export function Knob({
   label,
@@ -48,6 +55,7 @@ export function Knob({
   markColor = "#ffffff",
   onChange,
   className,
+  fine = false,
 }: KnobProps) {
   const ref = useRef<HTMLButtonElement>(null);
   const drag = useRef<{
@@ -64,7 +72,9 @@ export function Knob({
     if (clamped !== step) onChange?.(clamped);
   };
 
-  const nudge = useEffectEvent((detents: number) => set(step + detents));
+  const nudge = useEffectEvent((detents: number) =>
+    set(step + (fine ? (detents * (steps - 1)) / FINE_NOTCH : detents)),
+  );
 
   useEffect(() => {
     const node = ref.current;
@@ -114,7 +124,11 @@ export function Knob({
         if (!start || start.pointerId !== event.pointerId) return;
         const distance = event.clientX - start.x;
         if (Math.abs(distance) >= 4) start.moved = true;
-        set(start.step + Math.trunc(distance / DRAG_STEP));
+        set(
+          fine
+            ? start.step + (distance / FINE_TRAVEL) * (steps - 1)
+            : start.step + Math.trunc(distance / DRAG_STEP),
+        );
       }}
       onPointerUp={() => {
         dragged.current = drag.current?.moved ?? false;
@@ -128,7 +142,11 @@ export function Knob({
           dragged.current = false;
           return;
         }
-        onChange?.((step + 1) % steps);
+        onChange?.(
+          fine
+            ? Math.min(steps - 1, step + (steps - 1) / FINE_NOTCH)
+            : (step + 1) % steps,
+        );
       }}
     >
       <span

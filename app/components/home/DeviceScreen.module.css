@@ -565,8 +565,6 @@
   transition: none;
 }
 
-
-
 /* Green marks the track the green knob picked. */
 .track[aria-pressed="true"] {
   border-color: var(--screen-green);
@@ -595,6 +593,12 @@
   font-weight: 600;
   line-height: 15px;
   letter-spacing: 0.06em;
+}
+
+/* The track's number, ahead of its name. */
+.trackNumber {
+  margin-right: 5px;
+  color: color-mix(in srgb, var(--screen-ink) 55%, transparent);
 }
 
 /* The studio's mute and solo buttons as pills: filled when on. */
@@ -693,6 +697,6 @@
   z-index: 1;
   left: calc(137px + var(--playhead, -1) * (100% - 141px));
   width: 2px;
-  background: var(--screen-green);
+  background: var(--screen-red);
   opacity: clamp(0, calc((var(--playhead, -1) + 1) * 1000), 1);
 }
