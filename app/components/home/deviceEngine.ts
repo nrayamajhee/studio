@@ -53,7 +53,6 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Electric Guitar",
     target: "electricGuitar",
     octave: 0,
-    shiftPad: 1,
   },
   {
     id: "guitar",
@@ -69,7 +68,6 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Bass Guitar",
     target: "bass",
     octave: -24,
-    shiftPad: 2,
   },
   {
     id: "nylonGuitar",
@@ -84,7 +82,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Violin",
     target: "violin",
     octave: 0,
-    shiftPad: 3,
+    shiftPad: 1,
   },
   {
     id: "cello",
@@ -99,7 +97,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Upright Bass",
     target: "uprightBass",
     octave: -24,
-    pad: 2,
+    shiftPad: 3,
   },
   {
     id: "harp",
@@ -107,7 +105,6 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Harp",
     target: "harp",
     octave: 0,
-    shiftPad: 0,
   },
   {
     id: "trumpet",
@@ -115,7 +112,6 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Trumpet",
     target: "trumpet",
     octave: 0,
-    shiftPad: 4,
   },
   {
     id: "bassTrumpet",
@@ -130,7 +126,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Flute",
     target: "flute",
     octave: 12,
-    pad: 3,
+    pad: 2,
   },
   {
     id: "saxophone",
@@ -138,7 +134,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Alto Sax",
     target: "saxophone",
     octave: 0,
-    pad: 4,
+    shiftPad: 2,
   },
   {
     id: "madal",
@@ -160,7 +156,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Drum Kit",
     target: "drums",
     octave: 0,
-    pad: 5,
+    pad: 3,
   },
   {
     id: "drums808",
@@ -168,7 +164,6 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "808 Kit",
     target: "drums808",
     octave: 0,
-    shiftPad: 5,
   },
   {
     id: "oscillator",
@@ -176,6 +171,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Oscillator",
     target: "oscillator",
     octave: 0,
+    shiftPad: 0,
   },
 ];
 

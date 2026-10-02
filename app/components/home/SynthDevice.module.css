@@ -108,9 +108,9 @@
   margin-bottom: calc(-1 * var(--inset));
 }
 
-/* Two rows of twelve. Controls fill the left six; presets the top right and
-   chords the bottom right. Groups sit one inset apart, so each row is one
-   line. */
+/* Two rows of twelve. Controls fill the left six; then a two-wide group; then
+   four presets (top) or four chords (bottom) at the right. Groups sit one
+   inset apart, so each row is one line. */
 .banks {
   display: flex;
   flex-direction: column;
@@ -124,7 +124,8 @@
 
 .bank {
   display: grid;
-  grid-template-columns: repeat(6, 68px);
+  grid-auto-flow: column;
+  grid-auto-columns: 68px;
   gap: var(--inset);
 }
 

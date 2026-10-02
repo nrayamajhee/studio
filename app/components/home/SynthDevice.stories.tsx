@@ -9,7 +9,7 @@ const meta = {
   parameters: { layout: "padded" },
   decorators: [
     (Story) => (
-      <div className="home-background h-[640px] rounded-xl p-8">
+      <div className="h-[640px] w-full">
         <HotkeyProvider>
           <Story />
         </HotkeyProvider>

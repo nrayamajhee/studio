@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 import { PATCH_BY_ID } from "../../lib/physical/patches";
 import { DEVICE_PRESETS, type DevicePreset } from "./deviceEngine";
 
-// Saved presets (`instruments`) and which preset each of the six preset
+// Saved presets (`instruments`) and which preset each of the four preset
 // pads plays (`buttons`) and plays with Shift held (`shiftButtons`), "" for
 // none, persisted in localStorage.
 export type PresetEdits = Readonly<Record<string, number>>;
@@ -17,7 +17,7 @@ export interface PresetLibrary {
 }
 
 const STORAGE_KEY = "studio.instruments";
-const PRESET_PADS = 6;
+const PRESET_PADS = 4;
 
 // What the pads play at first, and with Shift a relative from the same family,
 // as the built-in presets place themselves. Every built-in preset stays in the

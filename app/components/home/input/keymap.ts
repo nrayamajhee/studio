@@ -1,7 +1,14 @@
 import type { ModuleId } from "../deviceEngine";
 
 export type Tool =
-  "record" | "play" | "tracks" | "metronome" | "synth" | "save" | ModuleId;
+  | "record"
+  | "play"
+  | "tracks"
+  | "tape"
+  | "metronome"
+  | "synth"
+  | "save"
+  | ModuleId;
 
 // Everything the keyboard can press on the Device.
 export type Control =
@@ -44,15 +51,16 @@ const NOTE_KEYS = [
 ];
 
 // The pads' two rows sit on the home and bottom rows, lined up from the right
-// edge. Top: Tracks, Synth, ADSR, LFO and FX on A S D F G, presets on
-// H J K L ; ', Metronome on Z (no home-row key left of A). Bottom: chords on
-// B N M , . /, Record and Save on C V. Space plays, and the arrows and Shift
-// press their own pads.
-const PRESET_KEYS = ["H", "J", "K", "L", ";", "'"];
-const CHORD_KEYS = ["B", "N", "M", ",", ".", "/"];
+// edge. Top: Tracks and Tape on A and X, Synth, ADSR, LFO and FX on S D F G,
+// four presets on H J K L, Metronome on Z. Bottom: four chords on B N M ,,
+// Record and Save on C V. Space plays, and the arrows and Shift press their
+// own pads. One blank slot stays before the presets.
+const PRESET_KEYS = ["H", "J", "K", "L"];
+const CHORD_KEYS = ["B", "N", "M", ","];
 const TOOL_KEYS: Readonly<Record<Tool, string>> = {
   metronome: "Z",
   tracks: "A",
+  tape: "X",
   synth: "S",
   adsr: "D",
   lfo: "F",

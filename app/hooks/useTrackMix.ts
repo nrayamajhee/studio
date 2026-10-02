@@ -37,6 +37,7 @@ export function useTrackMix(
     const key = [
       JSON.stringify(track.sound),
       track.timing.perBeat > 0 ? bpm : track.take.bpm,
+      JSON.stringify(track.take),
     ].join("|");
     const cached = renders.current.get(track.id);
     if (cached?.key === key) return cached.buffer;
@@ -111,10 +112,19 @@ export function useTrackMix(
     setPlaying(false);
   }, []);
 
-  // Where the mix is (beats), or null while it is stopped; read every frame.
+  // Stops and rewinds to the top, so Play starts over.
+  const stop = useCallback(() => {
+    run.current++;
+    mixer.current?.stop();
+    paused.current = 0;
+    setPlaying(false);
+  }, []);
+
+  // Where the mix is (beats); read every frame. Stopped, it holds the paused
+  // position so the playhead stays put instead of disappearing.
   const position = useCallback(() => {
     const at = mixer.current?.position();
-    return at == null ? null : at / beatSeconds.current;
+    return at == null ? paused.current : at / beatSeconds.current;
   }, []);
 
   const arrangement = JSON.stringify([
@@ -150,5 +160,5 @@ export function useTrackMix(
 
   useEffect(() => () => void mixer.current?.stop(), []);
 
-  return { playing, play, follow, pause, position };
+  return { playing, play, follow, pause, stop, position };
 }

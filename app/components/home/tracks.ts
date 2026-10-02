@@ -34,11 +34,12 @@ export const TRACK_COLORS = [
   "#eab308",
 ];
 
-// The next track from a take: numbered, coloured in turn, unmuted, at the
-// top of the timeline. It keeps its own copy, so later takes on the tape
-// leave it alone.
+// The next track from a take: named for its instrument, coloured in turn,
+// unmuted, at the top of the timeline. It keeps its own copy, so later takes
+// on the tape leave it alone.
 export function makeTrack(
   count: number,
+  name: string,
   take: Take,
   presetId: string,
   sound: DeviceSound,
@@ -46,7 +47,7 @@ export function makeTrack(
 ): Track {
   return {
     id: `track-${Date.now().toString(36)}`,
-    name: `Track ${count + 1}`,
+    name,
     color: TRACK_COLORS[count % TRACK_COLORS.length],
     presetId,
     sound: structuredClone(sound),

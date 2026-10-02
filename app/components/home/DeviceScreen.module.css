@@ -565,6 +565,8 @@
   transition: none;
 }
 
+
+
 /* Green marks the track the green knob picked. */
 .track[aria-pressed="true"] {
   border-color: var(--screen-green);
@@ -576,43 +578,28 @@
 }
 
 .trackLabel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto auto;
-  align-content: center;
-  column-gap: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   min-width: 0;
   text-align: left;
 }
 
-.trackName,
-.trackDetail {
+.trackName {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   text-transform: uppercase;
-}
-
-.trackName {
   font-size: 12px;
   font-weight: 600;
   line-height: 15px;
   letter-spacing: 0.06em;
 }
 
-.trackDetail {
-  grid-column: 1;
-  font-size: 10px;
-  line-height: 13px;
-  letter-spacing: 0.04em;
-  color: color-mix(in srgb, var(--screen-ink) 55%, transparent);
-}
-
 /* The studio's mute and solo buttons as pills: filled when on. */
 .trackFlags {
   display: flex;
-  grid-column: 2;
-  grid-row: 1 / -1;
   align-self: center;
   gap: 3px;
 }
@@ -691,13 +678,20 @@
   background: var(--screen-red);
 }
 
-/* Where the mix is, across every lane; hidden while it is stopped. */
+/* The tape has no volume, but keeps the strip's column so its lane lines up. */
+.trackVolume[data-empty] {
+  background: transparent;
+}
+
+/* Where the mix is, across every lane; hidden while it is stopped. It starts
+   at the lane's left edge (past the 112px label and 5px volume strip) and
+   spans the lane's width. */
 .playhead {
   position: absolute;
   top: 0;
   bottom: 0;
   z-index: 1;
-  left: calc(var(--playhead, -1) * 100%);
+  left: calc(137px + var(--playhead, -1) * (100% - 141px));
   width: 2px;
   background: var(--screen-green);
   opacity: clamp(0, calc((var(--playhead, -1) + 1) * 1000), 1);

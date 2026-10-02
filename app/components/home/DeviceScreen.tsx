@@ -14,6 +14,7 @@ export type ScreenView =
   | "synth"
   | "save"
   | "presets"
+  | "chords"
   | "adsr"
   | "lfo"
   | "fx"
@@ -213,6 +214,8 @@ export interface ScreenTrack {
   muted: boolean;
   soloed: boolean;
   audible: boolean;
+  // The tape shown as a potential track: no mute or solo.
+  potential?: boolean;
 }
 
 const TRACKS_PER_PAGE = 4;
@@ -249,6 +252,7 @@ function TrackList({
   return (
     <div ref={list} className={className} role="group" aria-label="Tracks">
       {children}
+      <span className={styles.playhead} aria-hidden="true" />
     </div>
   );
 }
@@ -299,7 +303,6 @@ function TrackLane({
           }}
         />
       ))}
-      <span className={styles.playhead} />
       {passes.flatMap((at, pass) =>
         clip.notes
           .filter((note) => at + note.start < span)
@@ -404,6 +407,7 @@ export const PARAMS_PER_PAGE = 15;
 export const TILES_PER_PAGE: Record<string, number> = {
   save: 48,
   presets: 8,
+  chords: 8,
 };
 
 const noAnalyser = () => null;
@@ -529,29 +533,39 @@ export function DeviceScreen({
                       key={track.id}
                       variant="ghost"
                       tone="secondary"
-                      aria-label={`${track.name}, ${track.detail}, volume ${Math.round(
-                        track.volume * 100,
-                      )}%${track.muted ? ", muted" : ""}${
-                        track.soloed ? ", solo" : ""
-                      }`}
+                      aria-label={
+                        track.potential
+                          ? `${track.name}, tape`
+                          : `${track.name}, ${track.detail}, volume ${Math.round(
+                              track.volume * 100,
+                            )}%${track.muted ? ", muted" : ""}${
+                              track.soloed ? ", solo" : ""
+                            }`
+                      }
                       aria-pressed={index === selected}
                       className={styles.track}
                       data-quiet={!track.audible || undefined}
+                      data-potential={track.potential || undefined}
                       {...keepFocus}
                       onClick={() => onSelect?.(index)}
                     >
                       <span className={styles.trackLabel} aria-hidden="true">
                         <span className={styles.trackName}>{track.name}</span>
-                        <span className={styles.trackDetail}>
-                          {track.detail}
-                        </span>
-                        <span className={styles.trackFlags}>
-                          <span data-on={track.muted || undefined}>M</span>
-                          <span data-on={track.soloed || undefined}>S</span>
-                        </span>
+                        {!track.potential && (
+                          <span className={styles.trackFlags}>
+                            <span data-on={track.muted || undefined}>M</span>
+                            <span data-on={track.soloed || undefined}>S</span>
+                          </span>
+                        )}
                       </span>
-                      <span className={styles.trackVolume} aria-hidden="true">
-                        <span style={{ height: `${track.volume * 100}%` }} />
+                      <span
+                        className={styles.trackVolume}
+                        data-empty={track.potential || undefined}
+                        aria-hidden="true"
+                      >
+                        {!track.potential && (
+                          <span style={{ height: `${track.volume * 100}%` }} />
+                        )}
                       </span>
                       <TrackLane
                         track={track}
@@ -604,11 +618,17 @@ export function DeviceScreen({
           </div>
         )}
 
-        {(view === "save" || view === "presets") && (
+        {(view === "save" || view === "presets" || view === "chords") && (
           <div
             className={cn(styles.tiles, view === "save" && styles.iconTiles)}
             role="group"
-            aria-label={view === "save" ? "Preset icon" : "Preset library"}
+            aria-label={
+              view === "save"
+                ? "Preset icon"
+                : view === "chords"
+                  ? "Chord palette"
+                  : "Preset library"
+            }
           >
             {visibleTiles.map((tile, i) => {
               const index = tilePage * perPage + i;
@@ -626,7 +646,7 @@ export function DeviceScreen({
                   <span className={styles.tileIcon} aria-hidden="true">
                     {tile.icon}
                   </span>
-                  {view === "presets" && (
+                  {(view === "presets" || view === "chords") && (
                     <span className={styles.tileName} aria-hidden="true">
                       {tile.label}
                     </span>
