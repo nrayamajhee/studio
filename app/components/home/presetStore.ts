@@ -219,6 +219,20 @@ export function clearEdits(presetId: string) {
   update((lib) => ({ ...lib, edits: without(lib.edits, presetId) }));
 }
 
+// Drops every preset's edits, so each sounds as it was built or saved.
+export function clearAllEdits() {
+  update((lib) => ({ ...lib, edits: {} }));
+}
+
+// Puts every pad, and its Shift alternate, back on its built-in preset.
+export function resetPads() {
+  update((lib) => ({
+    ...lib,
+    buttons: DEFAULT_LIBRARY.buttons,
+    shiftButtons: DEFAULT_LIBRARY.shiftButtons,
+  }));
+}
+
 // Binds a preset to a pad, or with shift to the pad's Shift alternate.
 export function bindPad(pad: number, presetId: string, shift = false) {
   const field = shift ? "shiftButtons" : "buttons";

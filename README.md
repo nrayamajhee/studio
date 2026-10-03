@@ -60,20 +60,24 @@ npm install
 
 The home page (`app/routes/home.tsx`) renders The Device, a digital desktop synthesizer played through the physical-modeling engine (see [Synth engine](#synth-engine)).
 
-| Path                                   | Purpose                                                                      |
-| -------------------------------------- | ---------------------------------------------------------------------------- |
-| `app/components/home/SynthDevice.tsx`  | The Device: layout, state, hotkeys                                           |
-| `app/components/home/DeviceScreen.tsx` | The screen and its views                                                     |
-| `app/components/home/deviceEngine.ts`  | The only audio module the Device imports; built-in presets                   |
-| `app/components/home/presetStore.ts`   | Saved presets, pad bindings and edits (`localStorage`)                       |
-| `app/hooks/useTransport.ts`            | Recording, playback, metronome, tempo and tap tempo                          |
-| `app/components/home/noteRecorder.ts`  | Takes as played (start, held length, velocity); 16th-step quantizing         |
-| `app/components/home/NoteRoll.tsx`     | The screen's piano roll: C0–C10 keys, notes rising from them                 |
-| `app/hooks/useScrub.ts`                | Scrubbing the stopped roll: renders the take, plays it at the scroll's speed |
-| `app/components/home/tracks.ts`        | Takes kept as tracks: clip, start, repeats, mute, solo, loop and cut         |
-| `app/components/home/sessionStore.ts`  | The tape's take and the tracks (`localStorage`)                              |
-| `app/components/design-system/`        | Device primitives `Key`, `Knob`, `Pad` and base controls                     |
-| `app/components/lab/`                  | Instrument Lab (Storybook only)                                              |
+| Path                                   | Purpose                                                                                |
+| -------------------------------------- | -------------------------------------------------------------------------------------- |
+| `app/components/home/SynthDevice.tsx`  | The Device: layout, state, hotkeys                                                     |
+| `app/components/home/DeviceScreen.tsx` | The screen and its views                                                               |
+| `app/components/home/deviceEngine.ts`  | The only audio module the Device imports; built-in presets                             |
+| `app/components/home/presetStore.ts`   | Saved presets, pad bindings and edits (`localStorage`)                                 |
+| `app/hooks/useTransport.ts`            | Recording, playback, metronome, tempo and tap tempo                                    |
+| `app/components/home/noteRecorder.ts`  | Takes as played (start, held length, velocity); 16th-step quantizing                   |
+| `app/components/home/NoteRoll.tsx`     | The screen's piano roll: C0–C10 keys, notes rising from them                           |
+| `app/hooks/useScrub.ts`                | Scrubbing the stopped roll: renders the take, plays it at the scroll's speed           |
+| `app/components/home/tracks.ts`        | Takes kept as tracks: clip, start, repeats, mute, solo, loop and cut                   |
+| `app/components/home/sessionStore.ts`  | The tape's take, and the album: songs of tracks, each with its tempo (`localStorage`)  |
+| `app/components/home/modules.ts`       | ADSR, LFO and FX settings, which the tape and each track keep their own of             |
+| `app/components/home/stepPattern.ts`   | The drum sequencer's pattern (Shift + Tape): hits in beats, kit rows, saving as a take |
+| `app/hooks/useStepPlayer.ts`           | Loops the drum pattern on the audio clock; lands recorded taps on the nearest step     |
+| `app/components/home/exportMix.ts`     | Saving the tracks: the mix as FLAC (`flac.ts`), or MIDI                                |
+| `app/components/design-system/`        | Device primitives `Key`, `Knob`, `Pad` and base controls                               |
+| `app/components/lab/`                  | Instrument Lab (Storybook only)                                                        |
 
 Design rules:
 
@@ -81,7 +85,7 @@ Design rules:
 - Two spacing values: `--gap` for the bezel (and the page margin, from twice it on wide screens down to half on phones), `--inset` for everything else.
 - Theme colours are `color-mix(in srgb, <light>, <dark> var(--theme-mix))` so they fade with the 400 ms theme cross-fade. Keep colour transitions off those elements; their own transitions snap mid-fade.
 - Keyboard hotkeys must never overlap between keys and pads.
-- A pad with no function stays blank; never give it an icon it can't act on.
+- A pad with nothing bound to it (an empty preset pad) stays blank. A pad that does nothing in the current view keeps its icon.
 
 ## Synth engine
 

@@ -1,5 +1,6 @@
 import {
   physicalSynth,
+  type DrumPieceId,
   type EngineEvent,
   type InstrumentId,
   type KitId,
@@ -447,6 +448,21 @@ export const deviceEngine = {
     if (isKit(target))
       physicalSynth.hit(target, keyPiece(target, midi), velocity);
     else physicalSynth.noteOn(target, note, velocity);
+  },
+
+  // A kit's piece, now or at `time` on the audio clock (see `now`).
+  hit(kit: KitId, piece: DrumPieceId, velocity: number, time?: number) {
+    physicalSynth.hit(kit, piece, velocity, time);
+  },
+
+  // The audio clock (s), which timed hits are scheduled on.
+  now() {
+    return physicalSynth.now();
+  },
+
+  // How far (s) the speakers lag the audio clock.
+  latency() {
+    return physicalSynth.latency();
   },
 
   noteOff(midi: number) {

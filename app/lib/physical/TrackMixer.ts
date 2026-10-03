@@ -3,11 +3,13 @@
 // looping (or once through). Notes ringing past a pass or the loop's end
 // overlap what follows, as they would live.
 
-// From play() to the first sound, and how far ahead (s) each loop is
-// scheduled.
+// From play() to the first sound; how far ahead (s) passes are scheduled, and
+// how often (s) the schedule is topped up, so an hour of repeats costs no
+// more than a bar of them.
 export const MIX_LEAD = 0.05;
 const LEAD = MIX_LEAD;
 const AHEAD = 1;
+const TOP_UP = 0.25;
 const FADE = 0.01;
 const GLIDE = 0.02;
 
@@ -50,14 +52,26 @@ export class TrackMixer {
     this.output.gain.cancelScheduledValues(now);
     this.output.gain.setValueAtTime(1, now);
     for (const track of tracks) this.gainOf(track.id).gain.value = track.gain;
-    const schedule = (loop: number) => {
-      const top = this.origin + loop * span;
-      for (const track of tracks) {
-        for (const start of track.starts) {
+    const passes = tracks
+      .flatMap((track) => track.starts.map((start) => ({ track, start })))
+      .sort((a, b) => a.start - b.start);
+    // Everything starting before the horizon is scheduled.
+    let horizon = now;
+    let first = true;
+    const topUp = () => {
+      const until = Math.max(this.ctx.currentTime, now) + AHEAD;
+      const firstLoop = Math.max(0, Math.floor((horizon - this.origin) / span));
+      const lastLoop = repeat
+        ? Math.floor((until - this.origin) / span)
+        : firstLoop;
+      for (let loop = firstLoop; loop <= lastLoop; loop++) {
+        const top = this.origin + loop * span;
+        for (const { track, start } of passes) {
           const at = top + start;
-          // A pass already under way when play starts picks up mid-buffer.
-          const offset = Math.max(0, now - at);
-          if (offset >= track.buffer.duration) continue;
+          if (at >= until) break;
+          // At first, a pass already under way picks up mid-buffer.
+          if (first ? at + track.buffer.duration <= now : at < horizon)
+            continue;
           const source = new AudioBufferSourceNode(this.ctx, {
             buffer: track.buffer,
           });
@@ -66,18 +80,16 @@ export class TrackMixer {
             source.disconnect();
             this.sources.delete(source);
           };
-          source.start(Math.max(at, now), offset);
+          source.start(Math.max(at, now), Math.max(0, now - at));
           this.sources.add(source);
         }
       }
-      if (!repeat) return;
-      const next = top + span;
-      this.timer = setTimeout(
-        () => schedule(loop + 1),
-        Math.max(0, (next - AHEAD - this.ctx.currentTime) * 1000),
-      );
+      first = false;
+      horizon = until;
+      if (!repeat && horizon >= this.origin + span) return;
+      this.timer = setTimeout(topUp, TOP_UP * 1000);
     };
-    schedule(0);
+    topUp();
   }
 
   // Stops with a short fade; returns where in the arrangement it was (s).

@@ -10,7 +10,11 @@ import {
   type ReactNode,
 } from "react";
 import { keyboardFocus, moveFocus } from "../components/home/input/focus";
-import { KEYMAP, controlId, type Control } from "../components/home/input/keymap";
+import {
+  KEYMAP,
+  controlId,
+  type Control,
+} from "../components/home/input/keymap";
 
 export interface HeldKeys {
   // Controls whose keys are down, in the order they went down.
@@ -97,7 +101,7 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
 
   const onKey = useEffectEvent((event: KeyboardEvent, down: boolean) => {
     if (typing(event)) return;
-    if (event.code === "Backquote") {
+    if (event.code === "Tab") {
       event.preventDefault();
       if (down) moveFocus(event.shiftKey ? -1 : 1);
       return;

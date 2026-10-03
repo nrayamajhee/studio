@@ -56,6 +56,11 @@ export class PhysicalSynth {
     return this.ctx?.currentTime ?? 0;
   }
 
+  // How long (s) a sound scheduled now takes to reach the speakers.
+  latency() {
+    return this.ctx?.outputLatency || this.ctx?.baseLatency || 0;
+  }
+
   getAnalyser() {
     return this.analyser;
   }

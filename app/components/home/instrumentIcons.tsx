@@ -1,6 +1,7 @@
 import type { ComponentType, SVGProps } from "react";
 import { Bell, Drum, Hand } from "lucide-react";
 import type { DrumPieceId } from "../../lib/physical";
+import type { ChordStyleId } from "./chordStyles";
 
 // Stroke icons in the lucide style for instruments and drum pieces lucide
 // doesn't cover.
@@ -260,6 +261,66 @@ export function RollIcon(props: SVGProps<SVGSVGElement>) {
       <path d="M5 6v12" />
       <path d="M12 4v10" />
       <path d="M19 12v8" />
+    </svg>
+  );
+}
+
+// How a chord style plays, as a little piano roll: a bar a note, time to
+// the right and pitch upwards, [from, to, height].
+const STYLE_NOTES: Readonly<Record<ChordStyleId, readonly number[][]>> = {
+  block: [
+    [5, 19, 17],
+    [5, 19, 12],
+    [5, 19, 7],
+  ],
+  pulse: [3, 8.5, 14, 19.5].flatMap((x) => [
+    [x, x + 1.5, 17],
+    [x, x + 1.5, 12],
+    [x, x + 1.5, 7],
+  ]),
+  strum: [
+    [4, 19, 17],
+    [8, 19, 12],
+    [12, 19, 7],
+  ],
+  up: [
+    [4, 8, 17],
+    [10, 14, 12],
+    [16, 20, 7],
+  ],
+  down: [
+    [4, 8, 7],
+    [10, 14, 12],
+    [16, 20, 17],
+  ],
+  upDown: [
+    [3, 5, 17],
+    [8, 10, 12],
+    [13, 15, 7],
+    [18, 20, 12],
+  ],
+  broken: [
+    [4, 9, 17],
+    [13, 20, 12],
+    [13, 20, 7],
+  ],
+  alberti: [
+    [3, 5, 17],
+    [8, 10, 7],
+    [13, 15, 12],
+    [18, 20, 7],
+  ],
+};
+
+export function ChordStyleIcon({
+  pattern,
+  ...props
+}: SVGProps<SVGSVGElement> & { pattern: ChordStyleId }) {
+  return (
+    <svg {...base} {...props}>
+      {STYLE_NOTES[pattern].map(([from, to, y]) => (
+        <path key={`${from}-${y}`} d={`M${from} ${y}H${to}`} />
+      ))}
     </svg>
   );
 }

@@ -1,6 +1,6 @@
-// Tab plays F3, so ` (and Shift + `) steps focus through the page's controls
-// in its place, and Return presses the focused one (Space always plays). Esc or
-// any press on the Device ends it.
+// Tab (and Shift + Tab) steps focus through the page's controls in the
+// Device's order, and Return presses the focused one (Space always plays).
+// Esc or any press on the Device ends it.
 const FOCUSABLE =
   "a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]";
 

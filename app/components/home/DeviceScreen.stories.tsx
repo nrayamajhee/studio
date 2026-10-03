@@ -4,6 +4,8 @@ import { PATCH_BY_ID } from "../../lib/physical/patches";
 import { formatParam } from "../../lib/physical/patches/format";
 import { DEVICE_PRESETS } from "./deviceEngine";
 import { DeviceScreen } from "./DeviceScreen";
+import { DEFAULT_TIMING } from "./noteRecorder";
+import { DRUM_PIECES } from "./instrumentIcons";
 import { ICON_CHOICES, PresetIcon } from "./presetIcons";
 
 const pianoParams = PATCH_BY_ID.piano.params.map((spec) => ({
@@ -135,7 +137,8 @@ const rollNotes = [60, 64, 67, 72].map((note, i) => ({
 export const Roll: Story = {
   args: {
     view: "roll",
-    status: "Take · 4/4",
+    timing: { ...DEFAULT_TIMING, bpm: 120 },
+    status: "Tape · 4/4",
     footer: ["", ""],
     getRoll: () => ({
       now: 3500,
@@ -150,6 +153,33 @@ export const Roll: Story = {
       ],
       state: "stopped",
     }),
+  },
+};
+
+// A bar of a rock beat on the drum kit, the head on beat two.
+const kitPieces = ["closedHat", "kick", "snare"] as const;
+export const Steps: Story = {
+  args: {
+    view: "steps",
+    title: "Drum Kit",
+    status: "1.2.1 · 1 bar 1/16",
+    footer: ["", "Keys set hits at the head"],
+    stepRows: kitPieces.map((piece) => {
+      const { name, Icon } = DRUM_PIECES[piece];
+      return { id: piece, label: name, icon: Icon && <Icon /> };
+    }),
+    stepCount: 16,
+    stepsPerBeat: 4,
+    stepsPerBar: 16,
+    stepHits: new Set([
+      ...[0, 2, 4, 6, 8, 10, 12, 14].map((step) => `0:${step}`),
+      "1:0",
+      "1:8",
+      "1:10",
+      "2:4",
+      "2:12",
+    ]),
+    getStepHead: () => 4,
   },
 };
 

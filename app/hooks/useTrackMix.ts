@@ -183,5 +183,16 @@ export function useTrackMix(
       void restart.current(paused.current, looping.current);
   }, []);
 
-  return { playing, play, follow, pause, stop, seek, position };
+  // One pass of a track as the mix plays it, rendered once and cached; the
+  // scrubbed mix is built from these too.
+  return {
+    playing,
+    play,
+    follow,
+    pause,
+    stop,
+    seek,
+    position,
+    renderPass: render,
+  };
 }

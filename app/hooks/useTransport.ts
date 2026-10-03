@@ -1,8 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from "react";
 import { deviceEngine } from "../components/home/deviceEngine";
 import { setTake, useSession } from "../components/home/sessionStore";
 import {
   DEFAULT_TIMING,
+  MAX_TAKE_MS,
   METERS,
   NoteRecorder,
   SUBDIVISIONS,
@@ -257,9 +264,10 @@ export function useTransport() {
     const recorder = session.current;
     if (!recorder) return null;
     session.current = null;
-    const now = performance.now();
-    const notes = recorder.take(now);
+    // A take ends at the hour, even if the timer that ends it fires late.
+    const now = Math.min(performance.now(), recorder.origin + MAX_TAKE_MS);
     const length = now - recorder.origin;
+    const notes = recorder.take(now).filter(({ start }) => start < length);
     display.current = { kind: "idle" };
     if (notes.length === 0) return null;
     const recorded: Take = { notes, length, bpm };
@@ -305,6 +313,14 @@ export function useTransport() {
     finishRecording();
     setState("stopped");
   };
+
+  // A take records for an hour at most, then ends itself.
+  const endTake = useEffectEvent(stop);
+  useEffect(() => {
+    if (state !== "recording") return;
+    const timer = setTimeout(endTake, MAX_TAKE_MS);
+    return () => clearTimeout(timer);
+  }, [state]);
 
   // A played note, while recording. Velocity is 0–1.
   const capture = (note: number, on: boolean, velocity = 0) => {

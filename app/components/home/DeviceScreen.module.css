@@ -289,6 +289,28 @@
   text-transform: uppercase;
 }
 
+/* A message alone is inverted, white on black, so it punches through. */
+.meter[data-message] {
+  width: auto;
+  max-width: 78%;
+  padding: 12px 20px;
+  border-color: transparent;
+  border-radius: 14px;
+  color: var(--screen-bg);
+  background: var(--screen-ink);
+}
+
+.meterMessage {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
 .meterTrack {
   position: relative;
   height: 12px;
@@ -513,6 +535,34 @@
   color: var(--screen-ink);
 }
 
+/* A pad's icon in a hint, outlined like a keycap, sitting on the text's line. */
+.padBadge {
+  display: inline-grid;
+  place-items: center;
+  height: 15px;
+  padding: 0 4px;
+  margin: 0 2px;
+  vertical-align: top;
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: 4px;
+}
+
+.padBadge svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* On the roll a caption or notice takes the C labels' place in their type,
+   so the keys stay put when one comes or goes. */
+.badges.rollCaption,
+.readout.rollCaption {
+  bottom: 10px;
+  font-size: 10px;
+  line-height: 10px;
+  letter-spacing: normal;
+  color: color-mix(in srgb, var(--screen-ink) 60%, transparent);
+}
+
 .title {
   display: flex;
   align-items: center;
@@ -629,11 +679,101 @@
   background: var(--screen-ink);
 }
 
-/* A line at the start of each bar. */
+/* The drum sequencer: a row a piece, its icon in a narrow column, then the
+   steps; each beat's first step a little brighter and each bar's set off by
+   a line. The head is a green column over the steps (--head of --columns). */
+.steps {
+  position: absolute;
+  top: 30px;
+  right: 20px;
+  bottom: 30px;
+  left: 20px;
+  display: grid;
+  gap: 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.stepRow {
+  display: grid;
+  grid-template-columns: 30px repeat(var(--columns), minmax(0, 1fr));
+  min-height: 0;
+}
+
+.stepPiece {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--screen-ink) 70%, transparent);
+}
+
+.stepPiece svg {
+  width: 14px;
+  height: 14px;
+}
+
+.stepCell {
+  position: relative;
+  min-height: 0;
+  cursor: pointer;
+}
+
+.stepCell::before {
+  position: absolute;
+  inset: 1px;
+  content: "";
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--screen-ink) 7%, transparent);
+}
+
+.stepCell[data-beat]::before {
+  background: color-mix(in srgb, var(--screen-ink) 13%, transparent);
+}
+
+.stepCell[data-bar] {
+  box-shadow: inset 1px 0 color-mix(in srgb, var(--screen-ink) 30%, transparent);
+}
+
+.stepCell[data-hit]::before {
+  background: var(--screen-ink);
+}
+
+.stepHead {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: calc(30px + var(--head, 0) * (100% - 30px) / var(--columns));
+  width: calc((100% - 30px) / var(--columns));
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--screen-green) 30%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--screen-green);
+  pointer-events: none;
+}
+
+.stepHead[data-recording] {
+  background: color-mix(in srgb, var(--screen-red) 30%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--screen-red);
+}
+
+/* The lane is a window on the timeline; zoomed in (--zoom), its content
+   stretches and slides so the window starts at --from (0–1 of it). A line
+   marks the start of each bar. */
 .lane {
   position: relative;
   overflow: hidden;
   border-radius: 4px;
+}
+
+.laneContent {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--from, 0) * var(--zoom, 1) * -100%);
+  width: calc(var(--zoom, 1) * 100%);
   background-image: linear-gradient(
     to right,
     color-mix(in srgb, var(--screen-ink) 12%, transparent) 1px,
@@ -651,9 +791,21 @@
   border-radius: 4px;
 }
 
-/* The track's loop, in the red of the knobs that move its edges. */
+/* The section a track is trimmed to, outlined in red. */
 .pass[data-loop] {
   box-shadow: inset 0 0 0 1.5px var(--screen-red);
+}
+
+/* A clip's edges trim it when dragged: an unmarked strip astride each. */
+.loopEdge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 12px;
+  translate: -50% 0;
+  cursor: ew-resize;
+  touch-action: none;
 }
 
 .clipNote {
@@ -666,6 +818,19 @@
 
 .clipNote[data-repeat] {
   opacity: 0.55;
+}
+
+/* The drum pattern on the tape's row: dimmer than the take, in a faint
+   frame, so the two halves read apart. */
+.pass[data-steps] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--screen-ink) 22%, transparent);
+  border-radius: 3px;
+}
+
+.clipNote[data-steps] {
+  opacity: 0.45;
 }
 
 /* Which time through the take a repeat is, centred over its notes in the

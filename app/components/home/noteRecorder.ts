@@ -50,7 +50,7 @@ export interface Timing {
 }
 
 export const DEFAULT_TIMING: Timing = {
-  bpm: 120,
+  bpm: 72,
   meter: METERS[2],
   perBeat: 0,
 };
@@ -150,6 +150,9 @@ export const barsFor = (ms: number, timing: Timing) =>
   Math.max(1, Math.ceil((ms - stepMs(timing)) / barMs(timing))) *
   timing.meter.beats *
   timing.perBeat;
+
+// The longest a take records for, and the longest a track's repeats run.
+export const MAX_TAKE_MS = 60 * 60 * 1000;
 
 // A take as played, with the tempo it was played at. With no grid it plays
 // back once as played, like tape; on a grid it loops, snapped in whole bars

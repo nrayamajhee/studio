@@ -9,6 +9,8 @@ export interface NoteRollProps {
   position?: number | null;
   // Wheel scrolling over the roll, in ms (positive is later).
   onScroll?: (ms: number) => void;
+  // Letters each C along the bottom; off while a hint takes that line.
+  labels?: boolean;
   className?: string;
 }
 
@@ -41,18 +43,21 @@ export function NoteRoll({
   timing,
   position = null,
   onScroll,
+  labels = true,
   className,
 }: NoteRollProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const timed = useRef(timing);
   const scrolled = useRef(position);
   const scroll = useRef(onScroll);
+  const lettered = useRef(labels);
 
   useEffect(() => {
     timed.current = timing;
     scrolled.current = position;
     scroll.current = onScroll;
-  }, [timing, position, onScroll]);
+    lettered.current = labels;
+  }, [timing, position, onScroll, labels]);
 
   // A full roll height of wheel travel scrolls one window. React registers
   // wheel listeners as passive, so preventDefault needs a native one.
@@ -158,6 +163,7 @@ export function NoteRoll({
         context.fillRect(x, keysTop, w, KEYS_HEIGHT * 0.6 * ratio);
       }
 
+      if (!lettered.current) return;
       context.globalAlpha = 0.6;
       context.fillStyle = ink;
       context.font = `500 ${10 * ratio}px ${LABEL_FONT}`;

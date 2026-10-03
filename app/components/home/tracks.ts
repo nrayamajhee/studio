@@ -1,5 +1,7 @@
 import type { DeviceSound } from "./deviceEngine";
+import { modulesOf, withModules, type ModuleSettings } from "./modules";
 import {
+  MAX_TAKE_MS,
   timeline,
   type PlayedNote,
   type Take,
@@ -18,13 +20,16 @@ export interface TrackLoop {
 
 // A take kept on the tracks view, with the sound and preset that played it
 // and the timing it was recorded on (its own tempo, meter and grid). `start`
-// slides it along the timeline, in beats.
+// slides it along the timeline, in beats. Its notes are never changed in
+// place, but its ADSR, LFO and FX can be, and its sound renders through them.
 export interface Track {
   id: string;
   name: string;
   color: string;
   presetId: string;
   sound: DeviceSound;
+  // Missing on tracks saved before they kept their own; see `trackModules`.
+  modules?: ModuleSettings;
   take: Take;
   timing: Timing;
   start: number;
@@ -37,10 +42,6 @@ export interface Track {
   repeats?: number;
 }
 
-// Shift and the arrows add and remove repeats, up to this many; the scrubbed
-// mix renders the whole timeline, so it can't grow without bound.
-export const MAX_REPEATS = 16;
-
 // Note colours, one per track in turn, bright enough for the black screen.
 export const TRACK_COLORS = [
   "#f2884b",
@@ -51,15 +52,26 @@ export const TRACK_COLORS = [
   "#eab308",
 ];
 
+// A track's ADSR, LFO and FX, or for an older track the ones baked into it.
+export const trackModules = (track: Track) =>
+  track.modules ?? modulesOf(track.sound);
+
+// The change that gives a track `modules`, and renders it through them.
+export const modulesChange = (track: Track, modules: ModuleSettings) => ({
+  modules,
+  sound: withModules(track.sound, modules),
+});
+
 // The next track from a take: named for its instrument, coloured in turn,
-// unmuted, at the top of the timeline. It keeps its own copy, so later takes
-// on the take leave it alone.
+// unmuted, at the top of the timeline. It keeps its own copy of the take and
+// its effects, so later takes on the take leave it alone.
 export function makeTrack(
   count: number,
   name: string,
   take: Take,
   presetId: string,
   sound: DeviceSound,
+  modules: ModuleSettings,
   timing: Timing,
 ): Track {
   return {
@@ -67,7 +79,8 @@ export function makeTrack(
     name,
     color: TRACK_COLORS[count % TRACK_COLORS.length],
     presetId,
-    sound: structuredClone(sound),
+    sound: withModules(structuredClone(sound), modules),
+    modules: structuredClone(modules),
     take: structuredClone(take),
     timing,
     start: 0,
@@ -101,13 +114,20 @@ const takeBeatMs = (track: Track, bpm: number) =>
 const ownTimeline = (track: Track) =>
   timeline(track.take, { ...track.timing, bpm: track.take.bpm });
 
+// A place on the timeline (beats at `bpm`) as beats into a track's take.
+export const takeBeatsAt = (track: Track, bpm: number, beats: number) =>
+  ((beats - track.start) * (60_000 / bpm)) / takeBeatMs(track, bpm);
+
 // The whole take's length in its own beats: how far a loop can reach.
 export const takeBeats = (track: Track) =>
   ownTimeline(track).length / (60_000 / track.take.bpm);
 
-// What a loop's edges move by, in the take's beats: a grid step, or a
-// sixteenth on a free take.
-export const loopStep = (track: Track) => 1 / (track.timing.perBeat || 4);
+// A take's grid steps per beat: its own grid, or sixteenths on a free take.
+export const gridSteps = (track: Track) => track.timing.perBeat || 4;
+
+// What a loop's edges move by, in the take's beats: two grid steps (an eighth
+// on a free take), so the knob crosses a take quickly but stays on its grid.
+export const loopStep = (track: Track) => 2 / gridSteps(track);
 
 // The notes sounding in [from, to) ms, moved to start at 0. A note across an
 // edge is clipped to it: one held in from before starts at `from`, and one
@@ -158,6 +178,12 @@ export function startsOf(
 }
 
 export const repeatsOf = (track: Track) => track.repeats ?? 1;
+
+// As many repeats as fit in an hour at `bpm`, the longest a take records.
+export function maxRepeats(track: Track, bpm: number) {
+  const { length } = passOf(track, bpm);
+  return length > 0 ? Math.max(1, Math.floor(MAX_TAKE_MS / length)) : 1;
+}
 
 // A track's take as the tracks view draws it at `bpm`, in beats.
 export function clipOf(track: Track, bpm: number): TrackClip {

@@ -1,4 +1,10 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { cn } from "../../lib/utils";
 import { Button } from "../design-system/Button";
 import { NoteRoll } from "./NoteRoll";
@@ -15,11 +21,15 @@ export type ScreenView =
   | "save"
   | "presets"
   | "chords"
+  | "chordStyle"
+  | "album"
+  | "revert"
   | "adsr"
   | "lfo"
   | "fx"
   | "tempo"
   | "roll"
+  | "steps"
   | "tracks";
 
 export interface ScreenParam {
@@ -216,9 +226,14 @@ export interface ScreenTrack {
   audible: boolean;
   // The take shown as a potential track: no mute or solo.
   potential?: boolean;
+  // On the tape's row, the drum sequencer's pattern, drawn over the take
+  // from the start: the tape's other half.
+  pattern?: TrackClip;
 }
 
-const TRACKS_PER_PAGE = 4;
+// Rows the tracks view shows at once; past them the list scrolls a row at a
+// time to keep the picked one in view.
+const TRACKS_SHOWN = 4;
 
 // Wheel travel (px) that moves the pick one track.
 const WHEEL_PER_TRACK = 40;
@@ -231,27 +246,44 @@ const wheelPixels = (event: WheelEvent, delta: number, page: number) =>
       ? delta * page
       : delta;
 
+// The lanes' share of a row: everything but the 112px name, the 5px volume
+// strip, their gaps and the row's padding.
+const LANE_INSET = 141;
+
 // The tracks' rows, with the mix's playhead: each frame sets --playhead (0–1
-// across the timeline, or -1 while stopped) for the lanes' playhead lines.
-// Scrolling the wheel over them picks a track, like the blue knob.
+// across the lanes, or -1 while stopped or out of view) for the lanes'
+// playhead lines. Zoomed in, the lanes show `span / zoom` beats from `from`.
+// Scrolling the wheel over them picks a track, like the blue knob; scrolling
+// sideways pans the zoomed lanes.
 function TrackList({
   className,
   getPosition,
   span,
+  zoom,
+  from,
   onStep,
+  onPan,
   children,
 }: {
   className: string;
   getPosition: () => number | null;
   span: number;
+  zoom: number;
+  from: number;
   onStep?: (tracks: number) => void;
+  onPan?: (beats: number) => void;
   children: ReactNode;
 }) {
   const list = useRef<HTMLDivElement>(null);
   const step = useRef(onStep);
+  const pan = useRef<(pixels: number) => void>(undefined);
   useEffect(() => {
     step.current = onStep;
-  }, [onStep]);
+    pan.current = (pixels) => {
+      const lanes = (list.current?.clientWidth ?? 0) - LANE_INSET;
+      if (lanes > 0) onPan?.((pixels / lanes) * (span / zoom));
+    };
+  }, [onStep, onPan, span, zoom]);
 
   // React registers wheel listeners as passive, so preventDefault needs a
   // native one.
@@ -261,8 +293,15 @@ function TrackList({
     let travel = 0;
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
+      if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+        pan.current?.(wheelPixels(event, event.deltaX, element.clientWidth));
+        return;
+      }
       if (event.deltaY === 0 || !step.current) return;
-      travel += wheelPixels(event, event.deltaY, element.clientHeight);
+      const pixels = wheelPixels(event, event.deltaY, element.clientHeight);
+      // Turning back drops what was left over the other way.
+      if (Math.sign(pixels) !== Math.sign(travel)) travel = 0;
+      travel += pixels;
       const tracks = Math.trunc(travel / WHEEL_PER_TRACK);
       if (tracks === 0) return;
       travel -= tracks * WHEEL_PER_TRACK;
@@ -278,16 +317,23 @@ function TrackList({
     const draw = () => {
       frame = requestAnimationFrame(draw);
       const at = getPosition();
+      const shown = at === null ? -1 : ((at - from) / span) * zoom;
       element.style.setProperty(
         "--playhead",
-        String(at === null ? -1 : at / span),
+        String(shown < 0 || shown > 1 ? -1 : shown),
       );
     };
     draw();
     return () => cancelAnimationFrame(frame);
-  }, [getPosition, span]);
+  }, [getPosition, span, zoom, from]);
   return (
-    <div ref={list} className={className} role="group" aria-label="Tracks">
+    <div
+      ref={list}
+      className={className}
+      role="group"
+      aria-label="Tracks"
+      style={{ "--zoom": zoom, "--from": from / span } as CSSProperties}
+    >
       {children}
       <span className={styles.playhead} aria-hidden="true" />
     </div>
@@ -298,14 +344,73 @@ function TrackList({
 // notes as short bars at their pitch within the take's range (at least an
 // octave), and fainter repeats after the first pass, marked ×2, ×3… in their
 // middle. A track's own loop is outlined in red where it first plays.
+// Past this many passes the repeats are too narrow to draw one by one (an
+// hour of a short loop runs to thousands), so they show as one faded band
+// labelled with the count. A repeat narrower than this share of the lane has
+// no room for its own label.
+const MAX_DRAWN_PASSES = 32;
+const LABELLED_PASS = 0.06;
+
+type LoopEdgeId = "start" | "end";
+
+// An edge of a clip to drag along the lane, trimming it to a loop: an
+// unmarked grab area with a resize cursor. It reports where on the timeline
+// (beats) the pointer is.
+function LoopEdge({
+  edge,
+  at,
+  span,
+  onMove,
+  onDrag,
+}: {
+  edge: LoopEdgeId;
+  at: number;
+  span: number;
+  onMove: (edge: LoopEdgeId, beats: number) => void;
+  onDrag?: (dragging: boolean) => void;
+}) {
+  const move = (event: React.PointerEvent<HTMLSpanElement>) => {
+    const lane = event.currentTarget.parentElement;
+    if (!lane) return;
+    const { left, width } = lane.getBoundingClientRect();
+    onMove(
+      edge,
+      Math.min(1, Math.max(0, (event.clientX - left) / width)) * span,
+    );
+  };
+  return (
+    <span
+      className={styles.loopEdge}
+      style={{ left: `${(at / span) * 100}%` }}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        onDrag?.(true);
+      }}
+      onPointerMove={(event) => {
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) move(event);
+      }}
+      onPointerUp={(event) =>
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
+      onLostPointerCapture={() => onDrag?.(false)}
+    />
+  );
+}
+
 function TrackLane({
   track,
   span,
   barBeats,
+  onLoopEdge,
+  onLoopEdgeDrag,
 }: {
   track: ScreenTrack;
   span: number;
   barBeats: number;
+  onLoopEdge?: (edge: LoopEdgeId, beats: number) => void;
+  onLoopEdgeDrag?: (dragging: boolean) => void;
 }) {
   const { clip, start, color } = track;
   const passes: number[] = [];
@@ -315,7 +420,14 @@ function TrackLane({
     at += clip.length
   )
     passes.push(at);
-  const pitches = clip.notes.map(({ note }) => note);
+  const banded = passes.length > MAX_DRAWN_PASSES;
+  const drawn = banded ? passes.slice(0, 1) : passes;
+  const bandEnd = Math.min(span, passes[passes.length - 1] + clip.length);
+  const labelled = !banded && clip.length / span >= LABELLED_PASS;
+  const { pattern } = track;
+  const pitches = [...clip.notes, ...(pattern?.notes ?? [])].map(
+    ({ note }) => note,
+  );
   let low = Math.min(...pitches);
   let high = Math.max(...pitches);
   if (high - low < 12) {
@@ -325,64 +437,266 @@ function TrackLane({
   }
   const percent = (beats: number) => `${(beats / span) * 100}%`;
   return (
-    <span
-      className={styles.lane}
-      style={{ "--bars": span / barBeats } as CSSProperties}
-      aria-hidden="true"
-    >
-      {passes.map((at, pass) => (
-        <span
-          key={`pass-${pass}`}
-          className={styles.pass}
-          data-loop={(clip.looped && pass === 0) || undefined}
-          style={{
-            left: percent(at),
-            width: percent(Math.min(clip.length, span - at)),
-            background: `color-mix(in srgb, ${color} 12%, transparent)`,
-          }}
-        />
-      ))}
-      {passes.flatMap((at, pass) =>
-        clip.notes
-          .filter((note) => at + note.start < span)
-          .map((note, i) => (
+    <span className={styles.lane} aria-hidden="true">
+      <span
+        className={styles.laneContent}
+        style={{ "--bars": span / barBeats } as CSSProperties}
+      >
+        {pattern && pattern.length > 0 && (
+          <>
             <span
-              key={`${pass}-${i}`}
-              className={styles.clipNote}
-              data-repeat={pass > 0 || undefined}
+              className={styles.pass}
+              data-steps
               style={{
-                left: percent(at + note.start),
-                width: percent(
-                  Math.min(note.length, clip.length - note.start, span - at),
-                ),
-                top: `${12 + (1 - (note.note - low) / (high - low)) * 70}%`,
-                background: color,
+                left: 0,
+                width: percent(Math.min(pattern.length, span)),
               }}
             />
-          )),
-      )}
-      {passes.slice(1).map((at, i) => (
-        <span
-          key={`count-${i}`}
-          className={styles.passCount}
-          style={{
-            left: percent(at + Math.min(clip.length, span - at) / 2),
-            color,
-          }}
-        >
-          ×{i + 2}
-        </span>
-      ))}
+            {pattern.notes
+              .filter((note) => note.start < span)
+              .map((note, i) => (
+                <span
+                  key={`steps-${i}`}
+                  className={styles.clipNote}
+                  data-steps
+                  style={{
+                    left: percent(note.start),
+                    width: percent(Math.min(note.length, span - note.start)),
+                    top: `${12 + (1 - (note.note - low) / (high - low)) * 70}%`,
+                    background: color,
+                  }}
+                />
+              ))}
+          </>
+        )}
+        {drawn.map((at, pass) => (
+          <span
+            key={`pass-${pass}`}
+            className={styles.pass}
+            data-loop={(clip.looped && pass === 0) || undefined}
+            style={{
+              left: percent(at),
+              width: percent(Math.min(clip.length, span - at)),
+              background: `color-mix(in srgb, ${color} 12%, transparent)`,
+            }}
+          />
+        ))}
+        {drawn.flatMap((at, pass) =>
+          clip.notes
+            .filter((note) => at + note.start < span)
+            .map((note, i) => (
+              <span
+                key={`${pass}-${i}`}
+                className={styles.clipNote}
+                data-repeat={pass > 0 || undefined}
+                style={{
+                  left: percent(at + note.start),
+                  width: percent(
+                    Math.min(note.length, clip.length - note.start, span - at),
+                  ),
+                  top: `${12 + (1 - (note.note - low) / (high - low)) * 70}%`,
+                  background: color,
+                }}
+              />
+            )),
+        )}
+        {labelled &&
+          passes.slice(1).map((at, i) => (
+            <span
+              key={`count-${i}`}
+              className={styles.passCount}
+              style={{
+                left: percent(at + Math.min(clip.length, span - at) / 2),
+                color,
+              }}
+            >
+              ×{i + 2}
+            </span>
+          ))}
+        {onLoopEdge && passes.length > 0 && clip.length > 0 && (
+          <>
+            <LoopEdge
+              edge="start"
+              at={passes[0]}
+              span={span}
+              onMove={onLoopEdge}
+              onDrag={onLoopEdgeDrag}
+            />
+            <LoopEdge
+              edge="end"
+              at={Math.min(span, passes[0] + clip.length)}
+              span={span}
+              onMove={onLoopEdge}
+              onDrag={onLoopEdgeDrag}
+            />
+          </>
+        )}
+        {banded && (
+          <>
+            <span
+              className={styles.pass}
+              style={{
+                left: percent(passes[1]),
+                width: percent(bandEnd - passes[1]),
+                background: `color-mix(in srgb, ${color} 7%, transparent)`,
+              }}
+            />
+            <span
+              className={styles.passCount}
+              style={{ left: percent((passes[1] + bandEnd) / 2), color }}
+            >
+              ×{passes.length}
+            </span>
+          </>
+        )}
+      </span>
     </span>
   );
 }
 
+// A row of the drum sequencer: a piece of the kit, shown by its icon or, for
+// a hand-drum stroke, its syllable.
+export interface StepRow {
+  id: string;
+  label: string;
+  icon?: ReactNode;
+}
+
+// Up to this many steps show at once, in whole bars (or whole beats when a
+// bar alone has more); the page follows the head.
+const STEPS_PER_PAGE = 32;
+// Wheel travel (px) that moves the head one step.
+const WHEEL_PER_STEP = 40;
+
+// The drum sequencer's grid: a row a piece, its icon on the left, and the
+// steps running left to right, beats and bars marked. The head (where keys
+// set hits, or where the loop plays) is read every frame.
+function StepGrid({
+  rows,
+  steps,
+  perBeat,
+  barSteps,
+  hits,
+  getHead,
+  recording,
+  onToggle,
+  onMove,
+}: {
+  rows: readonly StepRow[];
+  steps: number;
+  perBeat: number;
+  barSteps: number;
+  hits: ReadonlySet<string>;
+  getHead: () => number;
+  recording: boolean;
+  onToggle?: (row: number, step: number) => void;
+  onMove?: (steps: number) => void;
+}) {
+  const grid = useRef<HTMLDivElement>(null);
+  const pageSteps =
+    barSteps <= STEPS_PER_PAGE
+      ? barSteps * Math.floor(STEPS_PER_PAGE / barSteps)
+      : perBeat * Math.floor(STEPS_PER_PAGE / perBeat);
+  const [page, setPage] = useState(0);
+  const shown = Math.min(page, Math.ceil(steps / pageSteps) - 1);
+  const columns = Math.min(pageSteps, steps - shown * pageSteps);
+  const move = useRef(onMove);
+  useEffect(() => {
+    move.current = onMove;
+  }, [onMove]);
+
+  useEffect(() => {
+    const element = grid.current;
+    if (!element) return;
+    let frame = 0;
+    const draw = () => {
+      frame = requestAnimationFrame(draw);
+      const head = getHead();
+      const at = Math.floor(head / pageSteps);
+      setPage(at);
+      element.style.setProperty("--head", String(head - at * pageSteps));
+    };
+    draw();
+    return () => cancelAnimationFrame(frame);
+  }, [getHead, pageSteps]);
+
+  // Sideways (or up and down) the wheel moves the head a step a notch.
+  useEffect(() => {
+    const element = grid.current;
+    if (!element) return;
+    let travel = 0;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const sideways = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+      const pixels = wheelPixels(
+        event,
+        sideways ? event.deltaX : event.deltaY,
+        element.clientWidth,
+      );
+      if (pixels === 0 || !move.current) return;
+      if (Math.sign(pixels) !== Math.sign(travel)) travel = 0;
+      travel += pixels;
+      const notches = Math.trunc(travel / WHEEL_PER_STEP);
+      if (notches === 0) return;
+      travel -= notches * WHEEL_PER_STEP;
+      move.current(notches);
+    };
+    element.addEventListener("wheel", onWheel, { passive: false });
+    return () => element.removeEventListener("wheel", onWheel);
+  }, []);
+
+  return (
+    <div
+      ref={grid}
+      className={styles.steps}
+      role="group"
+      aria-label="Drum steps"
+      style={
+        {
+          "--columns": columns,
+          gridTemplateRows: `repeat(${rows.length}, minmax(0, 1fr))`,
+        } as CSSProperties
+      }
+    >
+      {rows.map((row, r) => (
+        <div key={row.id} className={styles.stepRow}>
+          <span className={styles.stepPiece} title={row.label}>
+            {row.icon ?? row.label}
+          </span>
+          {Array.from({ length: columns }, (_, c) => {
+            const step = shown * pageSteps + c;
+            return (
+              <span
+                key={step}
+                className={styles.stepCell}
+                data-hit={hits.has(`${r}:${step}`) || undefined}
+                data-beat={step % perBeat === 0 || undefined}
+                data-bar={step % barSteps === 0 || undefined}
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  onToggle?.(r, step);
+                }}
+              />
+            );
+          })}
+        </div>
+      ))}
+      <span
+        className={styles.stepHead}
+        data-recording={recording || undefined}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 // A level shown over the current view, e.g. the volume while it changes.
+// Without a value it is a message alone, e.g. asking for a second press.
 export interface ScreenOverlay {
   label: string;
   // 0–1
-  value: number;
-  display: string;
+  value?: number;
+  display?: string;
 }
 
 // The setting the red knob picked (red) and its value, set by the blue knob
@@ -399,6 +713,22 @@ export function ScreenSelection({
       <span className={styles.selectionLabel}>{label}</span>{" "}
       <span className={styles.selectionValue}>{value}</span>
     </>
+  );
+}
+
+// A pad's icon in an outlined badge, for hints that point at the pad: its
+// name can mislead, since a pad's icon changes with what it does.
+export function ScreenPad({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <span className={styles.padBadge} role="img" aria-label={label}>
+      {children}
+    </span>
   );
 }
 
@@ -432,6 +762,11 @@ export interface DeviceScreenProps {
   tiles?: readonly ScreenTile[];
   selected?: number;
   onSelect?: (index: number) => void;
+  // Dragging a track's loop edge on the tracks view: which row, which edge
+  // and where on the timeline (beats).
+  onLoopEdge?: (index: number, edge: "start" | "end", beats: number) => void;
+  // A clip edge's drag starting and ending.
+  onLoopEdgeDrag?: (dragging: boolean) => void;
   // Tapping a param on the synth view selects it, like the red knob.
   onSelectParam?: (index: number) => void;
   // The four knob readings for the ADSR, LFO and FX views.
@@ -450,11 +785,29 @@ export interface DeviceScreenProps {
   getTrackPosition?: () => number | null;
   trackSpan?: number;
   barBeats?: number;
+  // How many times the timeline is stretched across the lanes, the beat at
+  // their left edge, and panning them sideways (beats).
+  trackZoom?: number;
+  trackFrom?: number;
+  onPanTracks?: (beats: number) => void;
   // The take for the roll view, read every frame, where it is scrolled to and
   // wheel scrolling over it (see NoteRoll).
   getRoll?: () => RollFrame;
   rollPosition?: number | null;
   onRollScroll?: (ms: number) => void;
+  // The drum sequencer: its rows, its length and grid in steps, the hits as
+  // `row:step`, the head (read every frame), and clicking a cell or moving
+  // the head with the wheel.
+  stepRows?: readonly StepRow[];
+  stepCount?: number;
+  stepsPerBeat?: number;
+  stepsPerBar?: number;
+  stepHits?: ReadonlySet<string>;
+  getStepHead?: () => number;
+  // Recording, the head turns red.
+  stepRecording?: boolean;
+  onToggleStep?: (row: number, step: number) => void;
+  onMoveStep?: (steps: number) => void;
   overlay?: ScreenOverlay;
   className?: string;
 }
@@ -464,12 +817,17 @@ export const TILES_PER_PAGE: Record<string, number> = {
   save: 48,
   presets: 8,
   chords: 8,
+  chordStyle: 8,
+  album: 8,
+  revert: 8,
 };
 
 const noAnalyser = () => null;
 const EMPTY_ROLL: RollFrame = { now: 0, notes: [], state: "stopped" };
 const noRoll = () => EMPTY_ROLL;
 const noPosition = () => null;
+const noHead = () => 0;
+const NO_HITS: ReadonlySet<string> = new Set();
 
 // The Device's display: a live scope by default, or the synth parameters, the
 // Save icon picker or the preset grid.
@@ -486,6 +844,8 @@ export function DeviceScreen({
   tiles = [],
   selected = 0,
   onSelect,
+  onLoopEdge,
+  onLoopEdgeDrag,
   onSelectParam,
   readouts = [],
   lfoShape = 0,
@@ -496,12 +856,32 @@ export function DeviceScreen({
   getTrackPosition = noPosition,
   trackSpan = 16,
   barBeats = 4,
+  trackZoom = 1,
+  trackFrom = 0,
+  onPanTracks,
   getRoll = noRoll,
   rollPosition = null,
+  stepRows = [],
+  stepCount = 16,
+  stepsPerBeat = 4,
+  stepsPerBar = 16,
+  stepHits = NO_HITS,
+  getStepHead = noHead,
+  stepRecording = false,
+  onToggleStep,
+  onMoveStep,
   onRollScroll,
   overlay,
   className,
 }: DeviceScreenProps) {
+  const [trackTop, setTrackTop] = useState(0);
+  if (view === "tracks") {
+    const top = Math.min(
+      Math.max(0, tracks.length - TRACKS_SHOWN),
+      Math.max(selected - TRACKS_SHOWN + 1, Math.min(selected, trackTop)),
+    );
+    if (top !== trackTop) setTrackTop(top);
+  }
   const perPage = TILES_PER_PAGE[view] ?? 1;
   const tilePage = Math.floor(selected / perPage);
   const visibleTiles = tiles.slice(
@@ -509,6 +889,10 @@ export function DeviceScreen({
     (tilePage + 1) * perPage,
   );
 
+  // The roll's C labels take the footer's line, unless a caption or a notice
+  // is showing there; then the roll makes room above it.
+  const captioned = Boolean(badges) || Boolean(footer[0] || footer[1]);
+  const footerShown = view !== "roll" || captioned;
   return (
     <div className={cn(styles.screen, className)}>
       <div className={styles.glass}>
@@ -568,6 +952,9 @@ export function DeviceScreen({
             className={styles.tracks}
             getPosition={getTrackPosition}
             span={trackSpan}
+            zoom={trackZoom}
+            from={trackFrom}
+            onPan={onPanTracks}
             onStep={(step) =>
               onSelect?.(
                 Math.min(tracks.length - 1, Math.max(0, selected + step)),
@@ -580,15 +967,9 @@ export function DeviceScreen({
               </span>
             ) : (
               tracks
-                .slice(
-                  Math.floor(selected / TRACKS_PER_PAGE) * TRACKS_PER_PAGE,
-                  (Math.floor(selected / TRACKS_PER_PAGE) + 1) *
-                    TRACKS_PER_PAGE,
-                )
+                .slice(trackTop, trackTop + TRACKS_SHOWN)
                 .map((track, i) => {
-                  const index =
-                    Math.floor(selected / TRACKS_PER_PAGE) * TRACKS_PER_PAGE +
-                    i;
+                  const index = trackTop + i;
                   return (
                     <Button
                       key={track.id}
@@ -596,7 +977,7 @@ export function DeviceScreen({
                       tone="secondary"
                       aria-label={
                         track.potential
-                          ? `${track.name}, take`
+                          ? `${track.name}, tape`
                           : `${track.name}, ${track.detail}, volume ${Math.round(
                               track.volume * 100,
                             )}%${track.muted ? ", muted" : ""}${
@@ -637,6 +1018,12 @@ export function DeviceScreen({
                         track={track}
                         span={trackSpan}
                         barBeats={barBeats}
+                        onLoopEdge={
+                          onLoopEdge && !track.potential
+                            ? (edge, beats) => onLoopEdge(index, edge, beats)
+                            : undefined
+                        }
+                        onLoopEdgeDrag={onLoopEdgeDrag}
                       />
                     </Button>
                   );
@@ -652,6 +1039,21 @@ export function DeviceScreen({
             timing={timing}
             position={rollPosition}
             onScroll={onRollScroll}
+            labels={!captioned}
+          />
+        )}
+
+        {view === "steps" && (
+          <StepGrid
+            rows={stepRows}
+            steps={stepCount}
+            perBeat={stepsPerBeat}
+            barSteps={stepsPerBar}
+            hits={stepHits}
+            getHead={getStepHead}
+            recording={stepRecording}
+            onToggle={onToggleStep}
+            onMove={onMoveStep}
           />
         )}
 
@@ -684,7 +1086,12 @@ export function DeviceScreen({
           </div>
         )}
 
-        {(view === "save" || view === "presets" || view === "chords") && (
+        {(view === "save" ||
+          view === "presets" ||
+          view === "chords" ||
+          view === "chordStyle" ||
+          view === "album" ||
+          view === "revert") && (
           <div
             className={cn(styles.tiles, view === "save" && styles.iconTiles)}
             role="group"
@@ -693,7 +1100,13 @@ export function DeviceScreen({
                 ? "Preset icon"
                 : view === "chords"
                   ? "Chord palette"
-                  : "Preset library"
+                  : view === "chordStyle"
+                    ? "Chord style"
+                    : view === "album"
+                      ? "Album"
+                      : view === "revert"
+                        ? "Revert"
+                        : "Preset library"
             }
           >
             {visibleTiles.map((tile, i) => {
@@ -712,7 +1125,11 @@ export function DeviceScreen({
                   <span className={styles.tileIcon} aria-hidden="true">
                     {tile.icon}
                   </span>
-                  {(view === "presets" || view === "chords") && (
+                  {(view === "presets" ||
+                    view === "chords" ||
+                    view === "chordStyle" ||
+                    view === "album" ||
+                    view === "revert") && (
                     <span className={styles.tileName} aria-hidden="true">
                       {tile.label}
                     </span>
@@ -729,7 +1146,10 @@ export function DeviceScreen({
         )}
 
         {badges ? (
-          <div className={styles.badges} aria-live="polite">
+          <div
+            className={cn(styles.badges, view === "roll" && styles.rollCaption)}
+            aria-live="polite"
+          >
             {badges.map(({ label, on }) => (
               <span key={label} className={styles.switchLabel}>
                 {label}
@@ -742,9 +1162,14 @@ export function DeviceScreen({
             ))}
           </div>
         ) : (
-          // The roll's C labels take the footer's line.
-          view !== "roll" && (
-            <div className={cn(styles.readout, styles.readoutBottom)}>
+          footerShown && (
+            <div
+              className={cn(
+                styles.readout,
+                styles.readoutBottom,
+                view === "roll" && styles.rollCaption,
+              )}
+            >
               <span>{footer[0]}</span>
               <span>{footer[1]}</span>
             </div>
@@ -752,18 +1177,31 @@ export function DeviceScreen({
         )}
 
         {overlay && (
-          <div className={styles.overlay} aria-hidden="true">
-            <div className={styles.meter}>
-              <div className={styles.meterLabel}>
-                <span>{overlay.label}</span>
-                <span>{overlay.display}</span>
-              </div>
-              <div className={styles.meterTrack}>
-                <div
-                  className={styles.meterFill}
-                  style={{ width: `${Math.round(overlay.value * 100)}%` }}
-                />
-              </div>
+          <div
+            className={styles.overlay}
+            role={overlay.value === undefined ? "status" : undefined}
+            aria-hidden={overlay.value !== undefined || undefined}
+          >
+            <div
+              className={styles.meter}
+              data-message={overlay.value === undefined || undefined}
+            >
+              {overlay.value === undefined ? (
+                <div className={styles.meterMessage}>{overlay.label}</div>
+              ) : (
+                <>
+                  <div className={styles.meterLabel}>
+                    <span>{overlay.label}</span>
+                    <span>{overlay.display}</span>
+                  </div>
+                  <div className={styles.meterTrack}>
+                    <div
+                      className={styles.meterFill}
+                      style={{ width: `${Math.round(overlay.value * 100)}%` }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

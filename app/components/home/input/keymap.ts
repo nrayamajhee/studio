@@ -22,65 +22,70 @@ export type Control =
   | { kind: "step"; direction: -1 | 1 }
   | { kind: "shift" };
 
-// Indexed by keybed semitone (F3 = 0). The piano takes the top two rows like
-// a real keyboard: white keys F3–E5 along Tab Q W E R T Y U I O P [ ] \, and
-// each black key on the number key between its neighbours (1 2 3 5 6 8 9 0 =
-// and Backspace).
+// Indexed by keybed semitone (F3 = 0). The piano takes the home row, as in a
+// DAW's musical typing: white keys F3–B4 along A S D F G H J K L ; ', and
+// each black key on the row above, between its neighbours (W E R, Y U,
+// O P [). The home row runs out at B4, so the top keys carry on above it:
+// C5 on -, C♯5 on =, D5 on ], D♯5 on Backspace and E5 on \ (Enter is left
+// for pressing a focused control).
 const NOTE_KEYS = [
-  "Tab",
-  "1",
-  "Q",
-  "2",
+  "A",
   "W",
-  "3",
+  "S",
   "E",
+  "D",
   "R",
-  "5",
-  "T",
-  "6",
+  "F",
+  "G",
   "Y",
+  "H",
   "U",
-  "8",
-  "I",
-  "9",
+  "J",
+  "K",
   "O",
-  "0",
+  "L",
   "P",
+  ";",
   "[",
+  "'",
+  "-",
   "=",
   "]",
   "⌫",
   "\\",
 ];
 
-// The two pad rows sit on the home and bottom keyboard rows, in order, with
-// Space, Shift and the arrows as their own transport keys. The bottom row
-// starts at X so it sits under the home row the way the physical keys do:
-// ; lines up with ., ' with /, and so on. Top, left to right: Play (Space),
-// Stop (A), Record (S), Save (D), Tracks (F), Metronome (G), ADSR (H),
-// Synth (J), then four presets (K L ; '). Bottom: Shift, ← , →, Delete (X),
-// Take (C), LFO (V), FX (B), Mute (N), then four chords (M , . /).
-const PRESET_KEYS = ["K", "L", ";", "'"];
-const CHORD_KEYS = ["M", ",", ".", "/"];
+// The pads sit around the piano. The number row picks sounds from its ends:
+// the four preset pads on 1 2 3 4 (with Shift, their alternates) and the four
+// chord pads on 7 8 9 0, with Save on 5 and Delete on 6 between them. The
+// bottom letter row covers the four pad columns from Tracks to Synth, the top
+// pads then the bottom ones, then Record and Stop:
+//   Z Tracks · X Metronome · C ADSR · V Synth
+//   B Take · N LFO · M FX · , Mute
+//   . Record · / Stop
+// Play is Space; Shift and the arrows are their own keys.
+const PRESET_KEYS = ["1", "2", "3", "4"];
+const CHORD_KEYS = ["7", "8", "9", "0"];
 const TOOL_KEYS: Readonly<Record<Tool, string>> = {
   play: "Space",
-  stop: "A",
-  record: "S",
-  save: "D",
-  tracks: "F",
-  metronome: "G",
-  adsr: "H",
-  synth: "J",
-  delete: "X",
-  take: "C",
-  lfo: "V",
-  fx: "B",
-  mute: "N",
+  stop: "/",
+  record: ".",
+  tracks: "Z",
+  metronome: "X",
+  adsr: "C",
+  synth: "V",
+  take: "B",
+  lfo: "N",
+  fx: "M",
+  mute: ",",
+  save: "5",
+  delete: "6",
 };
 
 // KeyboardEvent.code for each label that isn't Key<letter> or Digit<n>.
 const CODES: Readonly<Record<string, readonly string[]>> = {
   ",": ["Comma"],
+  "-": ["Minus"],
   ".": ["Period"],
   "/": ["Slash"],
   ";": ["Semicolon"],
@@ -90,9 +95,9 @@ const CODES: Readonly<Record<string, readonly string[]>> = {
   "]": ["BracketRight"],
   "\\": ["Backslash"],
   "←": ["ArrowLeft"],
+  "⌫": ["Backspace"],
   "→": ["ArrowRight"],
   "⇧": ["ShiftLeft", "ShiftRight"],
-  "⌫": ["Backspace"],
   Tab: ["Tab"],
   Space: ["Space"],
 };
@@ -100,7 +105,7 @@ const CODES: Readonly<Record<string, readonly string[]>> = {
 const codesOf = (label: string) =>
   CODES[label] ?? [/^\d$/.test(label) ? `Digit${label}` : `Key${label}`];
 
-// The badge each control shows: its key's legend.
+// The badge each control shows: its key's legend, or "" for none.
 export function hotkeyLabel(control: Control): string {
   switch (control.kind) {
     case "note":
@@ -151,7 +156,8 @@ const CONTROLS: readonly Control[] = [
 
 // KeyboardEvent.code → the control that key presses.
 export const KEYMAP: ReadonlyMap<string, Control> = new Map(
-  CONTROLS.flatMap((control) =>
-    codesOf(hotkeyLabel(control)).map((code) => [code, control] as const),
-  ),
+  CONTROLS.flatMap((control) => {
+    const label = hotkeyLabel(control);
+    return label ? codesOf(label).map((code) => [code, control] as const) : [];
+  }),
 );
