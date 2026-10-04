@@ -9,7 +9,7 @@ export const CHORD_STYLES: readonly {
   detail: string;
 }[] = [
   { id: "block", name: "Block", detail: "Every note at once" },
-  { id: "pulse", name: "Pulse", detail: "Four short strikes, a gap apart" },
+  { id: "pulse", name: "Pulse", detail: "Short strikes, a gap apart" },
   { id: "strum", name: "Strum", detail: "Low to high, a sweep apart" },
   { id: "up", name: "Arp up", detail: "One at a time, low to high" },
   { id: "down", name: "Arp down", detail: "One at a time, high to low" },
@@ -23,9 +23,8 @@ export const CHORD_STYLES: readonly {
 export const CHORD_RATES: readonly number[] = [1, 2, 3, 4, 6, 8];
 export const STRUM_GAPS: readonly number[] = [5, 10, 15, 20, 30, 40, 60, 80];
 
-// A pulse strikes the chord this many times, each held for this share of its
-// step, so a gap is left before the next.
-const PULSE_STRIKES = 4;
+// A pulse holds each strike for this share of its step, so a gap is left
+// before the next.
 const PULSE_GATE = 0.5;
 
 export interface ChordStyle {
@@ -76,7 +75,7 @@ export interface ChordVoice {
 
 // Plays `midis` in `style` until the returned function stops it, which
 // releases whatever still sounds. A pattern keeps going round while held,
-// each note lasting its step; a pulse strikes four times and stops. `stepMs`
+// each note lasting its step, or a pulse's strike half of it. `stepMs`
 // is read every step, so a new tempo takes hold at once.
 export function playChord(
   midis: readonly number[],
@@ -101,15 +100,14 @@ export function playChord(
   if (style.id === "block" || notes.length < 2) {
     notes.forEach(on);
   } else if (style.id === "pulse") {
-    let strikes = 0;
     let next = performance.now();
     const strike = () => {
       const step = stepMs();
       notes.forEach(on);
-      timers.push(setTimeout(() => notes.forEach(off), step * PULSE_GATE));
-      if (++strikes === PULSE_STRIKES) return;
+      timers[1] = setTimeout(() => notes.forEach(off), step * PULSE_GATE);
+      // After a stall (a hidden tab) carry on from now rather than catch up.
       next = Math.max(next + step, performance.now());
-      timers.push(setTimeout(strike, next - performance.now()));
+      timers[0] = setTimeout(strike, next - performance.now());
     };
     strike();
   } else if (style.id === "strum") {

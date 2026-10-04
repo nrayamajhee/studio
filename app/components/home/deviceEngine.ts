@@ -460,11 +460,6 @@ export const deviceEngine = {
     return physicalSynth.now();
   },
 
-  // How far (s) the speakers lag the audio clock.
-  latency() {
-    return physicalSynth.latency();
-  },
-
   noteOff(midi: number) {
     const entry = held.get(midi)?.pop();
     if (!entry) return;

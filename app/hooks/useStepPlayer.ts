@@ -101,24 +101,26 @@ export function useStepPlayer(source: () => StepSource) {
 
   useEffect(() => stop, [stop]);
 
-  // The step being heard now, or null while stopped.
+  // The step playing now on the audio clock, or null while stopped. Like the
+  // other playheads it isn't held back for the output latency browsers
+  // report, which some (Firefox) overstate, leaving it behind the sound.
   const position = useCallback(() => {
     const current = run.current;
     if (!current) return null;
-    const heard = deviceEngine.now() - deviceEngine.latency();
+    const now = deviceEngine.now();
     let at: Scheduled | undefined;
     for (const scheduled of current.recent)
-      if (scheduled.time <= heard) at = scheduled;
+      if (scheduled.time <= now) at = scheduled;
     return at?.step ?? current.recent[0]?.step ?? null;
   }, []);
 
-  // The step nearest a tap made now, as heard: a tap a little early lands on
-  // the coming step, which then doesn't play it again.
+  // The step nearest a tap made now: a tap a little early lands on the coming
+  // step, which then doesn't play it again.
   const nearest = (piece: string) => {
     const current = run.current;
     if (!current) return null;
     const { pattern, meter } = read.current();
-    const tapped = deviceEngine.now() - deviceEngine.latency();
+    const tapped = deviceEngine.now();
     const candidates = [
       ...current.recent,
       {
