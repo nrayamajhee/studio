@@ -113,6 +113,7 @@ import {
   meterLabel,
   type Meter,
 } from "./noteRecorder";
+import { ROLL_LANES, ROLL_LOW, ROLL_TOP, rollNote } from "./NoteRoll";
 import { ICON_CHOICES, PresetIcon } from "./presetIcons";
 import {
   allPresets,
@@ -389,8 +390,11 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       ? presets[presetIndex]
       : null;
   // Where the stopped roll is scrolled to (the time on its keys line); null
-  // is the end of the take.
+  // is the start of the take.
   const [rollPosition, setRollPosition] = useState<number | null>(null);
+  // The roll's lowest note in view, once scrolled; until then it follows the
+  // keys, from just below their lowest.
+  const [rollScrolledLow, setRollLow] = useState<number | null>(null);
   // Takes kept from record mode, and the one the blue knob picked.
   const {
     take,
@@ -941,7 +945,24 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   }, [view, stopStepPlayer]);
 
   // ↑ and ↓ on the tracks pick the row above or below, like the blue knob.
+  const clampRollLow = (low: number) =>
+    Math.min(ROLL_TOP, Math.max(ROLL_LOW, low));
+  const rollLow = clampRollLow(rollScrolledLow ?? F3_MIDI - 1 + 12 * octave);
+  const rollRange = `${rollNote(rollLow)}–${rollNote(rollLow + ROLL_LANES - 1)}`;
+  const scrollRollPitch = (semitones: number) =>
+    setRollLow(clampRollLow(rollLow + semitones));
+  // The blue knob moves the roll an octave a detent, keeping its semitone.
+  const rollOctave = Math.floor((rollLow - ROLL_LOW) / 12);
+  const rollOctaves = Math.floor((ROLL_TOP - ROLL_LOW) / 12) + 1;
+  const setRollOctave = (step: number) =>
+    setRollLow(clampRollLow(rollLow + 12 * (step - rollOctave)));
+
+  // On the tracks ↑ and ↓ pick a row; on the roll they move it a semitone.
   const pickRow = (direction: 1 | -1) => {
+    if (view === "roll") {
+      scrollRollPitch(-direction);
+      return;
+    }
     if (view !== "tracks") return;
     setSelectedIndex((index) =>
       Math.max(0, Math.min(entries.length - 1, index + direction)),
@@ -1208,7 +1229,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     }
     if (view === "roll") {
       if (transport.state === "playing") pause();
-      else setRollPosition(0);
+      else setRollPosition(null);
       return;
     }
     if (transport.state === "playing") pause();
@@ -2137,7 +2158,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const rollFirst = 0;
   const rollScrolls =
     view === "roll" && transport.state === "stopped" && rollEnd > 0;
-  const rollAt = Math.min(rollEnd, rollPosition ?? rollEnd);
+  const rollAt = Math.min(rollEnd, rollPosition ?? rollFirst);
   const rollSteps = Math.max(
     2,
     Math.ceil((rollEnd - rollFirst) / beatLength) + 1,
@@ -2237,14 +2258,13 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                           step: Math.round((rollAt - rollFirst) / beatLength),
                           steps: rollSteps,
                           label: `Bar ${barOf(rollAt)} of ${barOf(rollEnd)}`,
-                          // The last step is the end, which stays put as the take grows.
                           set: (step: number) => {
-                            const end = step >= rollSteps - 1;
-                            const to = end
-                              ? rollEnd
-                              : rollFirst + step * beatLength;
+                            const to = Math.min(
+                              rollEnd,
+                              rollFirst + step * beatLength,
+                            );
                             scrub.scrollTo(to, rollAt);
-                            setRollPosition(end ? null : to);
+                            setRollPosition(to);
                           },
                         }
                       : view === "tempo"
@@ -2397,8 +2417,9 @@ export function SynthDevice({ className }: SynthDeviceProps) {
         ),
       ],
     },
-    // The meter and grid in the red and blue of the knobs that set them; when
-    // stopped, the bar the green knob scrolled to, in green.
+    // The meter, grid and notes in view, in the colours of the knobs that set
+    // them (Shift turns blue over to the grid); when stopped, the bar the
+    // green knob scrolled to, in green.
     roll: {
       status: (
         <>
@@ -2416,10 +2437,14 @@ export function SynthDevice({ className }: SynthDeviceProps) {
             "Tape"
           )}
           {" · "}
-          <ScreenSelection
-            label={meterLabel(transport.timing.meter)}
-            value={gridLabel(transport.timing)}
-          />
+          <ScreenLevel>{meterLabel(transport.timing.meter)}</ScreenLevel>{" "}
+          {shift ? (
+            <ScreenValue>{gridLabel(transport.timing)}</ScreenValue>
+          ) : (
+            gridLabel(transport.timing)
+          )}
+          {" · "}
+          {shift ? rollRange : <ScreenValue>{rollRange}</ScreenValue>}
         </>
       ),
       footer: ["", ""],
@@ -2657,7 +2682,9 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               barBeats={barBeats}
               getRoll={transport.roll}
               rollPosition={rollScrolls ? rollAt : null}
+              rollLow={rollLow}
               onRollScroll={rollScrolls ? scrollRoll : undefined}
+              onRollPitch={scrollRollPitch}
               beat={
                 tapMode
                   ? transport.tapCount > 0
@@ -2779,7 +2806,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
             <div className={styles.knobColumn}>
               {activeModule ? (
                 renderModuleKnob(activeModule, 2, "var(--synth-red)")
-              ) : shift && trackLoop ? (
+              ) : onTracks && shift && trackLoop ? (
                 <Knob
                   label="Clip start"
                   valueLabel={loopLabel(trackLoop.start)}
@@ -2872,7 +2899,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
               )}
               {activeModule ? (
                 renderModuleKnob(activeModule, 3, "var(--synth-blue)")
-              ) : shift && trackLoop ? (
+              ) : onTracks && shift && trackLoop ? (
                 <Knob
                   label="Clip end"
                   valueLabel={loopLabel(trackLoop.end)}
@@ -2926,7 +2953,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   color="var(--synth-blue)"
                   onChange={setStepResolution}
                 />
-              ) : view === "roll" ? (
+              ) : view === "roll" && shift ? (
                 <Knob
                   label="Grid"
                   valueLabel={gridLabel(transport.timing)}
@@ -2934,6 +2961,15 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   steps={SUBDIVISIONS.length}
                   color="var(--synth-blue)"
                   onChange={transport.setGrid}
+                />
+              ) : view === "roll" ? (
+                <Knob
+                  label="Pitch"
+                  valueLabel={rollRange}
+                  step={rollOctave}
+                  steps={rollOctaves}
+                  color="var(--synth-blue)"
+                  onChange={setRollOctave}
                 />
               ) : (
                 <Knob
@@ -3144,7 +3180,13 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   {trackShift ? <ScissorsLineDashed /> : <Scissors />}
                 </Pad>
                 <Pad
-                  label={view === "tracks" ? "Previous track" : "Up"}
+                  label={
+                    view === "tracks"
+                      ? "Previous track"
+                      : view === "roll"
+                        ? "Up a semitone"
+                        : "Up"
+                  }
                   accent="var(--synth-red)"
                   {...hotkeyProps({ kind: "pick", direction: -1 })}
                   onPress={() => pickRow(-1)}
@@ -3283,7 +3325,13 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   <ArrowLeft />
                 </Pad>
                 <Pad
-                  label={view === "tracks" ? "Next track" : "Down"}
+                  label={
+                    view === "tracks"
+                      ? "Next track"
+                      : view === "roll"
+                        ? "Down a semitone"
+                        : "Down"
+                  }
                   accent="var(--synth-red)"
                   {...hotkeyProps({ kind: "pick", direction: 1 })}
                   onPress={() => pickRow(1)}

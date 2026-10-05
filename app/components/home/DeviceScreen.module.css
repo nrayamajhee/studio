@@ -524,14 +524,15 @@
 }
 
 /* From under the title down to the footer's line, which holds its labels. */
+/* The roll leaves the bottom line to captions and notices. */
 .roll {
   position: absolute;
   top: 30px;
   right: 20px;
-  bottom: 9px;
+  bottom: 23px;
   left: 20px;
   width: calc(100% - 40px);
-  height: calc(100% - 39px);
+  height: calc(100% - 53px);
   color: var(--screen-ink);
 }
 

@@ -790,11 +790,13 @@ export interface DeviceScreenProps {
   trackZoom?: number;
   trackFrom?: number;
   onPanTracks?: (beats: number) => void;
-  // The take for the roll view, read every frame, where it is scrolled to and
-  // wheel scrolling over it (see NoteRoll).
+  // The take for the roll view, read every frame, where it is scrolled to in
+  // time and pitch, and wheel scrolling over it (see NoteRoll).
   getRoll?: () => RollFrame;
   rollPosition?: number | null;
+  rollLow?: number;
   onRollScroll?: (ms: number) => void;
+  onRollPitch?: (semitones: number) => void;
   // The drum sequencer: its rows, its length and grid in steps, the hits as
   // `row:step`, the head (read every frame), and clicking a cell or moving
   // the head with the wheel.
@@ -861,6 +863,7 @@ export function DeviceScreen({
   onPanTracks,
   getRoll = noRoll,
   rollPosition = null,
+  rollLow,
   stepRows = [],
   stepCount = 16,
   stepsPerBeat = 4,
@@ -871,6 +874,7 @@ export function DeviceScreen({
   onToggleStep,
   onMoveStep,
   onRollScroll,
+  onRollPitch,
   overlay,
   className,
 }: DeviceScreenProps) {
@@ -889,10 +893,6 @@ export function DeviceScreen({
     (tilePage + 1) * perPage,
   );
 
-  // The roll's C labels take the footer's line, unless a caption or a notice
-  // is showing there; then the roll makes room above it.
-  const captioned = Boolean(badges) || Boolean(footer[0] || footer[1]);
-  const footerShown = view !== "roll" || captioned;
   return (
     <div className={cn(styles.screen, className)}>
       <div className={styles.glass}>
@@ -1038,8 +1038,9 @@ export function DeviceScreen({
             getFrame={getRoll}
             timing={timing}
             position={rollPosition}
+            low={rollLow}
             onScroll={onRollScroll}
-            labels={!captioned}
+            onScrollPitch={onRollPitch}
           />
         )}
 
@@ -1162,18 +1163,16 @@ export function DeviceScreen({
             ))}
           </div>
         ) : (
-          footerShown && (
-            <div
-              className={cn(
-                styles.readout,
-                styles.readoutBottom,
-                view === "roll" && styles.rollCaption,
-              )}
-            >
-              <span>{footer[0]}</span>
-              <span>{footer[1]}</span>
-            </div>
-          )
+          <div
+            className={cn(
+              styles.readout,
+              styles.readoutBottom,
+              view === "roll" && styles.rollCaption,
+            )}
+          >
+            <span>{footer[0]}</span>
+            <span>{footer[1]}</span>
+          </div>
         )}
 
         {overlay && (

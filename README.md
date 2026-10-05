@@ -68,7 +68,7 @@ The home page (`app/routes/home.tsx`) renders The Device, a digital desktop synt
 | `app/components/home/presetStore.ts`   | Saved presets, pad bindings and edits (`localStorage`)                                 |
 | `app/hooks/useTransport.ts`            | Recording, playback, metronome, tempo and tap tempo                                    |
 | `app/components/home/noteRecorder.ts`  | Takes as played (start, held length, velocity); 16th-step quantizing                   |
-| `app/components/home/NoteRoll.tsx`     | The screen's piano roll: C0–C10 keys, notes rising from them                           |
+| `app/components/home/NoteRoll.tsx`     | The screen's piano roll: keys down the left (C0–C10), notes running out of them        |
 | `app/hooks/useScrub.ts`                | Scrubbing the stopped roll: renders the take, plays it at the scroll's speed           |
 | `app/components/home/tracks.ts`        | Takes kept as tracks: clip, start, repeats, mute, solo, loop and cut                   |
 | `app/components/home/sessionStore.ts`  | The tape's take, and the album: songs of tracks, each with its tempo (`localStorage`)  |

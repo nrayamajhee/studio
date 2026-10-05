@@ -7,68 +7,92 @@ export interface NoteRollProps {
   timing: Timing;
   // The time on the keys line, when scrolled back from the frame's `now`.
   position?: number | null;
-  // Wheel scrolling over the roll, in ms (positive is later).
+  // The lowest note in view; ROLL_LANES semitones show up from it.
+  low?: number;
+  // Sideways wheel scrolling over the roll, in ms (positive is later).
   onScroll?: (ms: number) => void;
-  // Letters each C along the bottom; off while a hint takes that line.
-  labels?: boolean;
+  // Wheel scrolling up and down, in semitones (positive is higher).
+  onScrollPitch?: (semitones: number) => void;
   className?: string;
 }
 
-// C0 to C10, the range of the studio's piano roll.
-const LOW = 12;
-const HIGH = 132;
+// C0 to C10, the range of the studio's piano roll, two octaves of it in view
+// at a time, a lane a semitone.
+export const ROLL_LOW = 12;
+export const ROLL_HIGH = 132;
+export const ROLL_LANES = 25;
+// The highest the view's lowest note goes.
+export const ROLL_TOP = ROLL_HIGH - ROLL_LANES + 1;
+const NAMES = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
 const BLACK = new Set([1, 3, 6, 8, 10]);
 const isBlack = (midi: number) => BLACK.has(midi % 12);
-// White keys below each note, for laying keys and lanes out left to right.
-const WHITES_BELOW: number[] = [];
-for (let midi = LOW, whites = 0; midi <= HIGH; midi++) {
-  WHITES_BELOW[midi] = whites;
-  if (!isBlack(midi)) whites++;
-}
-const WHITE_KEYS = WHITES_BELOW[HIGH] + 1;
-// Two bars of history above the keys.
-export const ROLL_BARS = 2;
+export const rollNote = (midi: number) =>
+  `${NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
+// Two bars of history beside the keys.
+const ROLL_BARS = 2;
 // Grid steps get a line once they are this far apart (CSS px).
 const STEP_LINE_GAP = 6;
-const KEYS_HEIGHT = 14;
-const LABELS_HEIGHT = 14;
+const KEYS_WIDTH = 30;
+// The black keys' share of the keys' width, at the side facing the notes.
+const BLACK_DEPTH = 0.55;
 const LABEL_FONT = "ui-monospace, SFMono-Regular, Menlo, monospace";
 
-// The take as a piano roll lying on its side: the keys run along the bottom,
-// minimal white and black bars labelled at each C, and notes rise out of them
-// as they play, red while recording and green on playback. Lines for the
-// meter scroll with them: bars brightest, then beats, then the grid's steps.
+// The take as a piano roll: the keys stand along the left, high notes at the
+// top, each C named on its key, and the keys are now. Recording, notes run
+// out of them to the right as they are played, in red; otherwise what's
+// coming lies to the right and moves left into them, green as it plays.
+// Lines for the meter scroll with them: bars brightest, then beats, then the
+// grid's steps.
 export function NoteRoll({
   getFrame,
   timing,
   position = null,
+  low = 52,
   onScroll,
-  labels = true,
+  onScrollPitch,
   className,
 }: NoteRollProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const timed = useRef(timing);
   const scrolled = useRef(position);
+  const lowest = useRef(low);
   const scroll = useRef(onScroll);
-  const lettered = useRef(labels);
+  const scrollPitch = useRef(onScrollPitch);
 
   useEffect(() => {
     timed.current = timing;
     scrolled.current = position;
+    lowest.current = low;
     scroll.current = onScroll;
-    lettered.current = labels;
-  }, [timing, position, onScroll, labels]);
+    scrollPitch.current = onScrollPitch;
+  }, [timing, position, low, onScroll, onScrollPitch]);
 
-  // A full roll height of wheel travel scrolls one window. React registers
-  // wheel listeners as passive, so preventDefault needs a native one.
+  // Each wheel move goes the way it mostly points. Sideways (the roll is
+  // stopped), the notes follow it, a roll's width of travel scrolling its
+  // whole span of time; up and
+  // down, a lane of travel moves a semitone, and turning back starts afresh.
+  // React registers wheel listeners as passive, so preventDefault needs a
+  // native one.
   useEffect(() => {
     const element = canvas.current;
     if (!element) return;
+    let travel = 0;
     const onWheel = (event: WheelEvent) => {
-      if (!scroll.current) return;
       event.preventDefault();
-      const span = ROLL_BARS * barMs(timed.current);
-      scroll.current((event.deltaY / element.clientHeight) * span);
+      if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+        const span = ROLL_BARS * barMs(timed.current);
+        const reach = element.clientWidth - KEYS_WIDTH;
+        scroll.current?.((event.deltaX / reach) * span);
+        return;
+      }
+      if (!scrollPitch.current || event.deltaY === 0) return;
+      if (Math.sign(event.deltaY) !== Math.sign(travel)) travel = 0;
+      travel += event.deltaY;
+      const lane = element.clientHeight / ROLL_LANES;
+      const semitones = Math.trunc(travel / lane);
+      if (semitones === 0) return;
+      travel -= semitones * lane;
+      scrollPitch.current(-semitones);
     };
     element.addEventListener("wheel", onWheel, { passive: false });
     return () => element.removeEventListener("wheel", onWheel);
@@ -92,6 +116,7 @@ export function NoteRoll({
       context.clearRect(0, 0, width, height);
       const style = getComputedStyle(element);
       const ink = style.color;
+      const background = style.getPropertyValue("--screen-bg");
       const { now: live, notes, state } = getFrame();
       const now = scrolled.current ?? live;
       const color =
@@ -101,82 +126,91 @@ export function NoteRoll({
             ? style.getPropertyValue("--screen-green")
             : ink;
 
-      const keyWidth = width / WHITE_KEYS;
-      const blackWidth = keyWidth * 0.62;
-      const labelsTop = height - LABELS_HEIGHT * ratio;
-      const keysTop = labelsTop - KEYS_HEIGHT * ratio;
-      const floor = keysTop - 3 * ratio;
+      const bottom = lowest.current;
+      const top = bottom + ROLL_LANES - 1;
+      const lane = height / ROLL_LANES;
+      const laneTop = (midi: number) => height - (midi - bottom + 1) * lane;
+      const keysWidth = KEYS_WIDTH * ratio;
+      const blackLeft = keysWidth * (1 - BLACK_DEPTH);
+      const floor = keysWidth + 3 * ratio;
+      const reach = width - floor;
       const { meter } = timed.current;
       // With no grid, the lines are the beats.
       const perBeat = timed.current.perBeat || 1;
       const step = beatMs(timed.current) / perBeat;
       const span = ROLL_BARS * barMs(timed.current);
-      const yAt = (time: number) => floor - ((now - time) / span) * floor;
-      const lane = (midi: number) =>
-        isBlack(midi)
-          ? [WHITES_BELOW[midi] * keyWidth - blackWidth / 2, blackWidth]
-          : [WHITES_BELOW[midi] * keyWidth + ratio / 2, keyWidth - ratio];
+      const recording = state === "recording";
+      const from = recording ? now - span : now;
+      const to = recording ? now : now + span;
+      const xAt = (time: number) =>
+        floor + ((recording ? now - time : time - now) / span) * reach;
 
       context.fillStyle = ink;
       const steps =
         timed.current.perBeat > 0 &&
-        (step / span) * floor >= STEP_LINE_GAP * ratio;
-      for (let k = Math.ceil((now - span) / step); k * step <= now; k++) {
+        (step / span) * reach >= STEP_LINE_GAP * ratio;
+      for (let k = Math.ceil(from / step); k * step <= to; k++) {
         const bar = k % (meter.beats * perBeat) === 0;
         const beat = k % perBeat === 0;
         if (!bar && !beat && !steps) continue;
         context.globalAlpha = bar ? 0.24 : beat ? 0.09 : 0.035;
-        context.fillRect(0, Math.round(yAt(k * step)), width, ratio);
+        context.fillRect(Math.round(xAt(k * step)), 0, ratio, height);
       }
 
       const sounding = new Set<number>();
       context.fillStyle = color;
       for (const { note, start, duration, velocity } of notes) {
         const end = start + duration;
-        if (note < LOW || note > HIGH || end < now - span || start > now)
-          continue;
+        if (note < bottom || note > top || end < from || start > to) continue;
         if (state !== "stopped" && start <= live && end >= live)
           sounding.add(note);
-        const [x, w] = lane(note);
-        const top = Math.max(0, yAt(start));
-        const bottom = Math.min(floor, yAt(end));
+        const left = Math.max(floor, Math.min(xAt(start), xAt(end)));
+        const right = Math.min(width, Math.max(xAt(start), xAt(end)));
         context.globalAlpha = 0.45 + 0.55 * velocity;
         context.beginPath();
-        context.roundRect(x, top, w, Math.max(ratio, bottom - top), ratio);
+        context.roundRect(
+          left,
+          laneTop(note) + ratio / 2,
+          Math.max(ratio, right - left),
+          lane - ratio,
+          ratio,
+        );
         context.fill();
       }
 
-      for (let midi = LOW; midi <= HIGH; midi++) {
+      // A white key reaches halfway into each black neighbour's lane.
+      for (let midi = bottom - 1; midi <= top + 1; midi++) {
         if (isBlack(midi)) continue;
-        const [x, w] = lane(midi);
+        const upper = isBlack(midi + 1)
+          ? laneTop(midi + 1) + lane / 2
+          : laneTop(midi);
+        const lower = isBlack(midi - 1)
+          ? laneTop(midi - 1) + lane / 2
+          : laneTop(midi) + lane;
         context.globalAlpha = sounding.has(midi) ? 1 : 0.8;
         context.fillStyle = sounding.has(midi) ? color : ink;
-        context.fillRect(x, keysTop, w, KEYS_HEIGHT * ratio);
+        context.fillRect(
+          0,
+          upper + ratio / 2,
+          keysWidth,
+          lower - upper - ratio,
+        );
       }
-      for (let midi = LOW; midi <= HIGH; midi++) {
+      for (let midi = bottom; midi <= top; midi++) {
         if (!isBlack(midi)) continue;
-        const [x, w] = lane(midi);
         context.globalAlpha = 1;
-        context.fillStyle = sounding.has(midi)
-          ? color
-          : style.getPropertyValue("--screen-bg");
-        context.fillRect(x, keysTop, w, KEYS_HEIGHT * 0.6 * ratio);
+        context.fillStyle = sounding.has(midi) ? color : background;
+        context.fillRect(blackLeft, laneTop(midi), keysWidth - blackLeft, lane);
       }
 
-      if (!lettered.current) return;
-      context.globalAlpha = 0.6;
-      context.fillStyle = ink;
-      context.font = `500 ${10 * ratio}px ${LABEL_FONT}`;
-      context.textBaseline = "bottom";
-      for (let midi = LOW; midi <= HIGH; midi += 12) {
-        const x = (WHITES_BELOW[midi] + 0.5) * keyWidth;
-        context.textAlign =
-          midi === LOW ? "left" : midi === HIGH ? "right" : "center";
-        context.fillText(
-          `C${midi / 12 - 1}`,
-          midi === LOW ? 0 : midi === HIGH ? width : x,
-          height,
-        );
+      context.globalAlpha = 0.85;
+      context.fillStyle = background;
+      context.font = `600 ${Math.min(8, (lane / ratio) * 1.1) * ratio}px ${LABEL_FONT}`;
+      context.textAlign = "left";
+      context.textBaseline = "middle";
+      for (let midi = Math.ceil(bottom / 12) * 12; midi <= top; midi += 12) {
+        const middle = laneTop(midi) + lane * 0.25;
+        context.fillText(rollNote(midi), 2 * ratio, middle);
       }
       context.globalAlpha = 1;
     };

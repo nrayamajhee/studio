@@ -32,8 +32,8 @@ export interface RollFrame {
 
 // The roll's source, kept in a ref so it can be read every animation frame:
 // the recording, the playback, or (idle) the whole take. A sequence's playback
-// holds its last loop too, shifted back by a loop, so notes keep scrolling
-// across the seam.
+// holds its last and next loops too, shifted by a loop, so notes keep
+// scrolling across the seam.
 type Display =
   | { kind: "recording"; recorder: NoteRecorder }
   | { kind: "playing"; start: number; notes: readonly PlayedNote[] }
@@ -240,7 +240,13 @@ export function useTransport() {
       display.current = {
         kind: "playing",
         start: startedAt - offset,
-        notes: [...previous, ...notes],
+        notes: [
+          ...previous,
+          ...notes,
+          ...(loops
+            ? notes.map((note) => ({ ...note, start: note.start + span }))
+            : []),
+        ],
       };
       if (!loops) {
         after(span - offset, () => setState("stopped"));
