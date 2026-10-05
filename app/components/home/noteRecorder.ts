@@ -69,6 +69,18 @@ export const beatMs = ({ bpm }: Timing) => 60_000 / bpm;
 export const barMs = (timing: Timing) => timing.meter.beats * beatMs(timing);
 export const stepMs = (timing: Timing) => beatMs(timing) / timing.perBeat;
 
+// A place in a take as bar.beat.step, counting from 1, to the nearest step.
+export const positionLabel = (
+  beats: number,
+  barBeats: number,
+  perBeat: number,
+) => {
+  const steps = Math.round(beats * perBeat);
+  const bar = Math.floor(steps / (barBeats * perBeat));
+  const beat = Math.floor(steps / perBeat) % barBeats;
+  return `${bar + 1}.${beat + 1}.${(steps % perBeat) + 1}`;
+};
+
 // Collects note-ons and note-offs into PlayedNotes. A pitch pressed again
 // while it is still down (a chord pad over a held key) stacks, and each
 // note-off ends the oldest press.

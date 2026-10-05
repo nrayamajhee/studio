@@ -176,6 +176,9 @@ export const PRESET_ICONS: Record<string, ComponentType> = {
 // then moods and things.
 export const ICON_CHOICES = Object.keys(PRESET_ICONS);
 
+export const iconLabel = (icon: string) =>
+  icon.charAt(0).toUpperCase() + icon.slice(1);
+
 // A preset's icon, or the key itself as text when it isn't a known icon.
 export function PresetIcon({ icon }: { icon: string }) {
   const Icon = PRESET_ICONS[icon];

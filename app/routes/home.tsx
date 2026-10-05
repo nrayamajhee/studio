@@ -2,7 +2,6 @@ import { Link } from "react-router";
 import type { Route } from "./+types/home";
 import { useTheme } from "../hooks/useTheme";
 import { Button } from "../components/design-system/Button";
-import { HotkeyProvider } from "../providers/HotkeyProvider";
 import { SynthDevice } from "../components/home/SynthDevice";
 import { Sun, Moon } from "lucide-react";
 
@@ -56,9 +55,7 @@ export default function Home() {
       </div>
 
       <main className="absolute inset-0 z-10 py-20">
-        <HotkeyProvider>
-          <SynthDevice />
-        </HotkeyProvider>
+        <SynthDevice />
       </main>
 
       <footer
