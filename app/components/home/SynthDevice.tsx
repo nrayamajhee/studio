@@ -5,11 +5,14 @@ import {
   useEffectEvent,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
 } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  ArrowBigUp,
+  ArrowDown,
   ArrowUp,
   AudioLines,
   AudioWaveform,
@@ -121,12 +124,16 @@ import {
   resetPads,
   setEdit,
   savePreset,
-  swapPad,
   updatePreset,
   usePresetLibrary,
 } from "./presetStore";
 import { useHotkeyListener, useHotkeys } from "../../providers/HotkeyProvider";
-import { hotkeyLabel, type Control, type Tool } from "./input/keymap";
+import {
+  hotkeyLabel,
+  shiftedNote,
+  type Control,
+  type Tool,
+} from "./input/keymap";
 import { CHORD_PALETTE, chordById } from "./chords";
 import {
   resetChordMacros,
@@ -201,6 +208,9 @@ const INITIAL_VOLUME_STEP = 10;
 const INITIAL_LEVEL_STEP = 8;
 const NOTICE_MS = 1800;
 const OVERLAY_MS = 1200;
+const noSubscribe = () => () => {};
+const isMac = () => /Mac|iPhone|iPad/.test(navigator.platform);
+
 // Where a time signature is in METERS (stored ones are copies).
 const meterIndexOf = ({ beats, unit }: Meter) =>
   Math.max(
@@ -438,6 +448,8 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   const [pendingBind, armBind] = useMomentary<number>(NOTICE_MS);
   const [pendingChord, armChord] = useMomentary<number>(NOTICE_MS);
   const held = useRef(new Map<number, HeldKey>());
+  // The note each held piano key started, by its unshifted semitone.
+  const keyNotes = useRef(new Map<number, number>());
   const transport = useTransport();
   // Each song keeps its tempo and time signature: opening one sets them, and
   // changing them is kept with the song open.
@@ -854,6 +866,12 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     if (view === "revert") setView("scope");
   };
 
+  // A view's own pad opens it, and pressed again goes back to the main screen.
+  const toggleView = (opens: ScreenView) => {
+    leaveRevert();
+    setView((current) => (current === opens ? "scope" : opens));
+  };
+
   const pressKey = (root: number, chordToPlay = activeChord) => {
     if (held.current.has(root)) return;
     leaveRevert();
@@ -921,6 +939,14 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     stopStepPlayer();
     restoreAfterSteps();
   }, [view, stopStepPlayer]);
+
+  // ↑ and ↓ on the tracks pick the row above or below, like the blue knob.
+  const pickRow = (direction: 1 | -1) => {
+    if (view !== "tracks") return;
+    setSelectedIndex((index) =>
+      Math.max(0, Math.min(entries.length - 1, index + direction)),
+    );
+  };
 
   const step = (direction: 1 | -1) => {
     if (view === "synth") {
@@ -1211,13 +1237,13 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   // or the picked track on the tracks view; press again to confirm.
   // Shift + Delete opens Revert from anywhere; there Delete reverts the
   // picked tile (on a second press) and Shift + Delete closes it.
-  const pressTrash = () => {
+  const pressTrash = (revert = shift) => {
     if (view === "revert") {
-      if (shift) setView("scope");
+      if (revert) setView("scope");
       else pressRevert();
       return;
     }
-    if (shift) {
+    if (revert) {
       setShiftLatched(false);
       setView("revert");
       return;
@@ -1278,8 +1304,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   };
 
   // Arms a take, showing the roll, or disarms it; Play then starts it. While
-  // recording it ends the take where it stops. On the tracks, with a track
-  // picked, it is the track's Loop instead (see pressLoop). Each recording replaces the
+  // recording it ends the take where it stops. Each recording replaces the
   // take from the top; the tracks are never touched.
   const pressRecord = () => {
     leaveRevert();
@@ -1287,10 +1312,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     if (view === "steps") {
       if (recordingSteps) stopSteps();
       else playSteps(true);
-      return;
-    }
-    if (track) {
-      pressLoop(track);
       return;
     }
     if (transport.state === "recording") {
@@ -1307,9 +1328,9 @@ export function SynthDevice({ className }: SynthDeviceProps) {
 
   // Like a module pad: it opens the tempo view, and with Shift starts or
   // stops the click without leaving the current view.
-  const pressMetronome = () => {
+  const pressMetronome = (click = shift) => {
     leaveRevert();
-    if (shift) {
+    if (click) {
       deviceEngine.unlock();
       transport.toggleMetronome();
       return;
@@ -1322,10 +1343,16 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     if (pad === "record") pressRecord();
     else if (pad === "play") pressPlay();
     else if (pad === "stop") pressStop();
-    else if (pad === "tracks") pressTracks();
-    else if (pad === "take") pressTake();
+    else if (pad === "tracks") pressTracks(false);
+    else if (pad === "album") pressTracks(true);
+    else if (pad === "take") pressTake(false);
+    else if (pad === "steps") pressTake(true);
     else if (pad === "metronome") pressMetronome();
-    else if (pad === "synth") pressSynth();
+    else if (pad === "synth") pressSynth(false);
+    else if (pad === "params") pressSynth(true);
+    else if (pad === "chords") toggleView("chords");
+    else if (pad === "style") toggleView("chordStyle");
+    else if (pad === "clip") pressClip();
     else if (pad === "save") pressSave();
     else if (pad === "delete") pressTrash();
     else if (pad === "mute") pressMute();
@@ -1339,6 +1366,16 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   });
 
   const toolHotkey = (tool: Tool) => hotkeyProps({ kind: "tool", tool });
+
+  // A pad Shift changes shows its key with ⇧ while Shift is held, in every
+  // view, so its Shift job can be found even where it does nothing; the
+  // track pads only on the tracks, the one view they act in.
+  const shiftHotkey = (control: Control, shifted = shift) => {
+    const props = hotkeyProps(control);
+    return shifted && props.hotkey
+      ? { ...props, hotkey: `⇧${props.hotkey}` }
+      : props;
+  };
 
   const toggleChord = (index: number) =>
     setChord((current) => (current === index ? null : index));
@@ -1362,24 +1399,20 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     toggleChord(index);
   };
 
-  // Mutes the picked track on the tracks; elsewhere it opens the chord
-  // palette, or with Shift how the chords play.
+  // On the tracks, mutes the picked track (with Shift, solos it); elsewhere
+  // it does nothing.
   const pressMute = () => {
-    leaveRevert();
-    if (view === "tracks") {
-      pressTrackSwitch();
-      return;
-    }
-    if (view === "chordStyle") {
-      setView("scope");
-      return;
-    }
-    if (shift) {
-      setShiftLatched(false);
-      setView("chordStyle");
-      return;
-    }
-    setView((current) => (current === "chords" ? "scope" : "chords"));
+    if (!onTracks) return;
+    if (track) pressTrackSwitch();
+    else showPrompt(`Pick a track to ${shift ? "solo" : "mute"}`);
+  };
+
+  // On the tracks, clips the picked track (with Shift, trims it to its clip);
+  // elsewhere it does nothing.
+  const pressClip = () => {
+    if (!onTracks) return;
+    if (track) pressLoop(track);
+    else showPrompt(`Pick a track to ${shift ? "trim" : "clip"}`);
   };
 
   const pickChordStyle = (index: number) =>
@@ -1416,24 +1449,20 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       return;
     }
     selectPreset(bound);
-    // A Shift preset trades places with the pad's own and Shift lets go, so
-    // the pad's light keeps showing what plays.
-    if (shift) {
-      swapPad(pad);
-      setShiftLatched(false);
-    }
+    // A latched Shift lets go once its alternate is picked.
+    if (shift) setShiftLatched(false);
   };
 
   // Either of its views closes on another press, Shift or not.
-  const pressSynth = () => {
+  const pressSynth = (params = shift) => {
     leaveRevert();
-    if (view === "presets" || view === "synth") {
+    if (view === (params ? "synth" : "presets")) {
       setView("scope");
       return;
     }
-    if (shift) {
+    if (params) {
       setParamPage(Math.floor(paramIndex / PARAMS_PER_PAGE));
-      setView((current) => (current === "synth" ? "scope" : "synth"));
+      setView("synth");
       return;
     }
     setPresetIndex(
@@ -1446,23 +1475,16 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   };
 
   // Opens or closes the tracks. While recording it ends the take, like Record.
-  const pressTracks = () => {
+  const pressTracks = (album = shift) => {
     leaveRevert();
     setRollPosition(null);
     if (transport.state === "recording") {
       transport.stop();
       return;
     }
-    if (view === "album") {
-      setView("scope");
-      return;
-    }
-    if (shift) {
-      setShiftLatched(false);
-      setView("album");
-      return;
-    }
-    setView((current) => (current === "tracks" ? "scope" : "tracks"));
+    if (album) setShiftLatched(false);
+    const opens = album ? "album" : "tracks";
+    setView((current) => (current === opens ? "scope" : opens));
   };
 
   // Leaving a song stops its mix and puts the tracks view back at its start.
@@ -1492,7 +1514,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
 
   // Opens or closes the take (record mode), which Record also opens. While
   // recording it ends the take.
-  const pressTake = () => {
+  const pressTake = (steps = shift) => {
     leaveRevert();
     setRollPosition(null);
     if (transport.state === "recording") {
@@ -1500,7 +1522,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       return;
     }
     setShiftLatched(false);
-    if (shift || view === "steps") {
+    if (steps) {
       toggleSteps();
       return;
     }
@@ -1651,24 +1673,32 @@ export function SynthDevice({ className }: SynthDeviceProps) {
   // first the clip spans the whole take. With Shift, while it is clipped, it
   // trims the track for good to its clip in one press, and a latched Shift
   // lets go.
-  const pressLoop = (looping: Track) => {
-    if (!shift || !looping.loop?.on) {
-      updateTrack(looping.id, {
-        loop: looping.loop
-          ? { ...looping.loop, on: !looping.loop.on }
-          : { start: 0, end: takeBeats(looping), on: true },
-      });
-      return;
-    }
-    updateTrack(looping.id, cutToLoop(looping, transport.bpm));
+  const toggleClip = (clipped: Track) =>
+    updateTrack(clipped.id, {
+      loop: clipped.loop
+        ? { ...clipped.loop, on: !clipped.loop.on }
+        : { start: 0, end: takeBeats(clipped), on: true },
+    });
+  const trimToClip = (clipped: Track) => {
+    updateTrack(clipped.id, cutToLoop(clipped, transport.bpm));
     setShiftLatched(false);
-    showNotice(`Trimmed ${looping.name} to its clip`);
+    showNotice(`Trimmed ${clipped.name} to its clip`);
+  };
+  const onTracks = view === "tracks";
+  const trackShift = shift && onTracks;
+  const savesTrack = view === "roll" || view === "steps";
+  const midiSave = shift && !savesTrack;
+
+  const pressLoop = (looping: Track) => {
+    if (!shift) toggleClip(looping);
+    else if (looping.loop?.on) trimToClip(looping);
+    else showPrompt(`Clip ${looping.name} first`);
   };
 
   // The picked track's mute, and with Shift its solo. The take has neither.
-  const pressTrackSwitch = () => {
+  const pressTrackSwitch = (solo = shift) => {
     if (!track) return;
-    if (shift) updateTrack(track.id, { soloed: !track.soloed });
+    if (solo) updateTrack(track.id, { soloed: !track.soloed });
     else updateTrack(track.id, { muted: !track.muted });
   };
 
@@ -1682,20 +1712,23 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       ),
     ].join(" · ");
 
-  // With Shift, while the picked track loops, the Save pad cuts it.
-  const cutPad = shift && trackLoop !== null;
-
   // Shift + Save resets the preset instead. Neither applies to the tempo, so
   // in its view Save switches tap mode, where played notes tap the tempo.
-  const pressSave = () => {
+  // With Shift, saves the tracks as MIDI from any view but the tape and the
+  // sequencer, where Save always keeps what's on them as a track.
+  const pressSave = (midi = shift) => {
     leaveRevert();
+    if (midi && !savesTrack) {
+      void exportMix("midi");
+      return;
+    }
     if (view === "revert") return;
     if (view === "album") {
       startSong();
       return;
     }
     if (view === "tracks") {
-      void exportMix(shift ? "midi" : "audio");
+      void exportMix("audio");
       return;
     }
     // On the roll, Save keeps the take as a track.
@@ -1952,7 +1985,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
         accent="var(--synth-red)"
         lit={view === id}
         indicator={moduleOn[id]}
-        {...toolHotkey(id)}
+        {...shiftHotkey({ kind: "tool", tool: id })}
         onPress={() => pressModule(id)}
       >
         {icon}
@@ -1984,15 +2017,53 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     );
   };
 
+  // ⌘S presses Save and ⌘⌫ Delete (Ctrl off a Mac), each with Shift as on
+  // its pad (⌘⇧⌫ Revert), in place of what the browser would do. ⌘T would be
+  // the trash's letter, but browsers keep it for a new tab.
+  const command = useSyncExternalStore(
+    noSubscribe,
+    () => (isMac() ? "⌘" : "Ctrl "),
+    () => "⌘",
+  );
+  const onCommandKey = useEffectEvent((event: KeyboardEvent) => {
+    if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+    const press =
+      event.code === "KeyS"
+        ? pressSave
+        : event.code === "Backspace"
+          ? pressTrash
+          : null;
+    if (!press) return;
+    event.preventDefault();
+    if (!event.repeat && !exporting.current) press(event.shiftKey || shift);
+  });
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => onCommandKey(event);
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, []);
+
   useHotkeyListener(({ control, down, held: now, ignore }) => {
     if (exporting.current) {
       ignore();
       return;
     }
     switch (control.kind) {
+      // With Shift the home row's last keys play past B4; a key lets go of
+      // whichever note it started, even if Shift is let go first.
       case "note":
-        if (down) pressKey(control.semitone, now.chord ?? chord);
-        else releaseKey(control.semitone);
+        if (down) {
+          const semitone = shift
+            ? shiftedNote(control.semitone)
+            : control.semitone;
+          keyNotes.current.set(control.semitone, semitone);
+          pressKey(semitone, now.chord ?? chord);
+        } else {
+          releaseKey(
+            keyNotes.current.get(control.semitone) ?? control.semitone,
+          );
+          keyNotes.current.delete(control.semitone);
+        }
         return;
       // On a Shift or chord a click latched, the key releases the latch
       // instead of holding it.
@@ -2016,6 +2087,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
         if (!down) return;
         if (control.kind === "preset") pressPresetPad(control.index);
         else if (control.kind === "step") step(control.direction);
+        else if (control.kind === "pick") pickRow(control.direction);
         else pressTool(control.tool);
     }
   });
@@ -2053,8 +2125,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
         };
       })
     : [];
-  // The Synth pad opens the library by default, the parameters with Shift.
-  const synthMode = view === "synth" || shift;
   const padPresets = padBindings.map(
     (id) => presets.find((candidate) => candidate.id === id) ?? null,
   );
@@ -2884,7 +2954,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
             data-focus-order="rows"
           >
             <div className={styles.padRow}>
-              <div className={styles.bank} role="group" aria-label="Tools">
+              <div className={styles.bank} role="group" aria-label="Transport">
                 <Pad
                   label={
                     mixView
@@ -2913,6 +2983,29 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   )}
                 </Pad>
                 <Pad
+                  label={
+                    view === "steps"
+                      ? recordingSteps
+                        ? "Stop recording steps"
+                        : "Record steps"
+                      : transport.state === "recording"
+                        ? "Stop recording"
+                        : recordArmed
+                          ? "Disarm recording"
+                          : "Arm recording"
+                  }
+                  accent="var(--synth-red)"
+                  lit={
+                    transport.state === "recording" ||
+                    recordArmed ||
+                    recordingSteps
+                  }
+                  {...toolHotkey("record")}
+                  onPress={pressRecord}
+                >
+                  <Circle fill="currentColor" />
+                </Pad>
+                <Pad
                   label={view === "tracks" ? "Stop and rewind" : "Stop"}
                   accent="var(--synth-red)"
                   {...toolHotkey("stop")}
@@ -2922,89 +3015,82 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                 </Pad>
                 <Pad
                   label={
-                    cutPad
-                      ? "Trim track to its clip"
-                      : track
-                        ? `Clip ${trackLoop ? "off" : "on"}`
-                        : view === "steps"
-                          ? recordingSteps
-                            ? "Stop recording steps"
-                            : "Record steps"
-                          : transport.state === "recording"
-                            ? "Stop recording"
-                            : recordArmed
-                              ? "Disarm recording"
-                              : "Arm recording"
-                  }
-                  accent="var(--synth-red)"
-                  lit={
-                    track
-                      ? trackLoop !== null
-                      : transport.state === "recording" ||
-                        recordArmed ||
-                        recordingSteps
-                  }
-                  {...toolHotkey("record")}
-                  onPress={pressRecord}
-                >
-                  {cutPad ? (
-                    <ScissorsLineDashed />
-                  ) : track ? (
-                    <Scissors />
-                  ) : (
-                    <Circle fill="currentColor" />
-                  )}
-                </Pad>
-                <Pad
-                  label={
-                    view === "revert"
-                      ? "Save"
-                      : view === "tempo"
-                        ? tapMode
-                          ? "Stop tap tempo"
-                          : "Tap tempo"
-                        : view === "tracks"
-                          ? shift
-                            ? "Save the tracks as MIDI"
-                            : "Save the mix"
-                          : view === "album"
-                            ? "New song"
-                            : view === "roll"
-                              ? "Save tape as a track"
-                              : view === "steps"
-                                ? "Save steps as a track"
-                                : "Save preset"
+                    midiSave
+                      ? "Save the tracks as MIDI"
+                      : view === "revert"
+                        ? "Save"
+                        : view === "tempo"
+                          ? tapMode
+                            ? "Stop tap tempo"
+                            : "Tap tempo"
+                          : view === "tracks"
+                            ? "Save the mix"
+                            : view === "album"
+                              ? "New song"
+                              : view === "roll"
+                                ? "Save tape as a track"
+                                : view === "steps"
+                                  ? "Save steps as a track"
+                                  : "Save preset"
                   }
                   accent="var(--synth-red)"
                   lit={tapMode}
-                  {...toolHotkey("save")}
-                  onPress={pressSave}
+                  hotkey={`${command}${midiSave ? "⇧" : ""}S`}
+                  onPress={() => pressSave()}
                 >
-                  {view === "album" ? (
+                  {midiSave ? (
+                    <FileMusic />
+                  ) : view === "album" ? (
                     <Plus />
                   ) : view === "tempo" ? (
                     <Pointer />
-                  ) : view === "tracks" && shift ? (
-                    <FileMusic />
                   ) : (
                     <Save />
                   )}
                 </Pad>
+              </div>
+              <div className={styles.bank} role="group" aria-label="Views">
+                <Pad
+                  label={view === "album" ? "Close album" : "Album"}
+                  accent="var(--synth-red)"
+                  lit={view === "album"}
+                  {...toolHotkey("album")}
+                  onPress={() => pressTracks(true)}
+                >
+                  <Album />
+                </Pad>
+                <Pad
+                  label={view === "tracks" ? "Close tracks" : "Tracks"}
+                  accent="var(--synth-red)"
+                  lit={view === "tracks"}
+                  {...toolHotkey("tracks")}
+                  onPress={() => pressTracks(false)}
+                >
+                  <ChartNoAxesGantt />
+                </Pad>
+                <Pad
+                  label={view === "roll" ? "Close tape" : "Tape (record mode)"}
+                  accent="var(--synth-red)"
+                  lit={recordMode}
+                  {...toolHotkey("take")}
+                  onPress={() => pressTake(false)}
+                >
+                  <RollIcon />
+                </Pad>
                 <Pad
                   label={
-                    view === "album"
-                      ? "Close album"
-                      : shift
-                        ? "Album"
-                        : "Tracks"
+                    view === "steps" ? "Close drum sequencer" : "Drum sequencer"
                   }
                   accent="var(--synth-red)"
-                  lit={view === "tracks" || view === "album"}
-                  {...toolHotkey("tracks")}
-                  onPress={pressTracks}
+                  lit={view === "steps"}
+                  {...toolHotkey("steps")}
+                  onPress={() => pressTake(true)}
                 >
-                  {shift || view === "album" ? <Album /> : <ChartNoAxesGantt />}
+                  <Grid3x3 />
                 </Pad>
+                {renderModulePad("adsr", <AdsrIcon />)}
+                {renderModulePad("lfo", <WavesHorizontal />)}
+                {renderModulePad("fx", <AudioLines />)}
                 <Pad
                   label={
                     shift
@@ -3014,122 +3100,56 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   accent="var(--synth-green)"
                   lit={view === "tempo"}
                   indicator={transport.metronome}
-                  {...toolHotkey("metronome")}
-                  onPress={pressMetronome}
+                  {...shiftHotkey({ kind: "tool", tool: "metronome" })}
+                  onPress={() => pressMetronome()}
                 >
                   <Metronome />
                 </Pad>
               </div>
-              <div className={styles.bank} role="group" aria-label="Modules">
-                {renderModulePad("adsr", <AdsrIcon />)}
-                <Pad
-                  label={
-                    view === "synth"
-                      ? "Close synth parameters"
-                      : view === "presets"
-                        ? "Close preset library"
-                        : synthMode
-                          ? "Synth parameters"
-                          : "Preset library"
-                  }
-                  accent="var(--synth-red)"
-                  lit={view === "synth" || view === "presets"}
-                  {...toolHotkey("synth")}
-                  onPress={pressSynth}
-                >
-                  {synthMode ? <AudioWaveform /> : <LayoutGrid />}
-                </Pad>
-              </div>
-              <div className={styles.bank} role="group" aria-label="Presets">
-                {padPresets.map((padPreset, pad) => {
-                  const name = padPreset?.name ?? "empty";
-                  const current = padPreset?.id === preset.id;
-                  return (
-                    <Pad
-                      key={pad}
-                      label={
-                        view === "presets"
-                          ? `Bind to ${padName(pad).toLowerCase()} (${name})`
-                          : view === "save"
-                            ? `Save to ${padName(pad).toLowerCase()} (${name})`
-                            : padPreset
-                              ? `${padPreset.name}${current ? " (current)" : ""}`
-                              : `Empty preset pad ${pad + 1}`
-                      }
-                      accent="var(--synth-red)"
-                      indicator={padPreset ? current : undefined}
-                      {...hotkeyProps({ kind: "preset", index: pad })}
-                      onPress={() => pressPresetPad(pad)}
-                    >
-                      {padPreset && <PresetIcon icon={padPreset.icon} />}
-                    </Pad>
-                  );
-                })}
-              </div>
             </div>
             <div className={styles.padRow}>
-              <div className={styles.bank} role="group" aria-label="Transport">
+              <div className={styles.bank} role="group" aria-label="Edit">
                 <Pad
-                  label={shiftLatched ? "Shift (latched)" : "Shift"}
-                  {...hotkeyProps({ kind: "shift" })}
-                  // No colour: a modifier, not a state. Latched, it stays
-                  // pressed in, as it looks while its key is held.
-                  held={shift}
-                  onPress={() => setShiftLatched((on) => !on)}
+                  label={
+                    onTracks && track
+                      ? shift
+                        ? `${track.soloed ? "Unsolo" : "Solo"} ${track.name}`
+                        : `${track.muted ? "Unmute" : "Mute"} ${track.name}`
+                      : trackShift
+                        ? "Solo a track"
+                        : "Mute a track"
+                  }
+                  accent="var(--synth-red)"
+                  lit={
+                    onTracks && Boolean(shift ? track?.soloed : track?.muted)
+                  }
+                  {...shiftHotkey({ kind: "tool", tool: "mute" }, trackShift)}
+                  onPress={pressMute}
+                >
+                  {trackShift ? <Headphones /> : <VolumeX />}
+                </Pad>
+                <Pad
+                  label={
+                    trackShift
+                      ? "Trim track to its clip"
+                      : onTracks && track
+                        ? `Clip ${trackLoop ? "off" : "on"}`
+                        : "Clip a track"
+                  }
+                  accent="var(--synth-red)"
+                  lit={onTracks && trackLoop !== null}
+                  {...shiftHotkey({ kind: "tool", tool: "clip" }, trackShift)}
+                  onPress={pressClip}
+                >
+                  {trackShift ? <ScissorsLineDashed /> : <Scissors />}
+                </Pad>
+                <Pad
+                  label={view === "tracks" ? "Previous track" : "Up"}
+                  accent="var(--synth-red)"
+                  {...hotkeyProps({ kind: "pick", direction: -1 })}
+                  onPress={() => pickRow(-1)}
                 >
                   <ArrowUp />
-                </Pad>
-                <Pad
-                  label={
-                    paging
-                      ? "Previous page"
-                      : view === "tempo"
-                        ? "Slower"
-                        : view === "steps"
-                          ? "Previous step"
-                          : view === "chordStyle"
-                            ? "Previous chord style"
-                            : view === "album"
-                              ? "Previous song"
-                              : view === "tracks"
-                                ? shift
-                                  ? "Repeat track less"
-                                  : "Slide track earlier"
-                                : shift
-                                  ? "Previous preset"
-                                  : "Octave down"
-                  }
-                  accent="var(--synth-red)"
-                  {...hotkeyProps({ kind: "step", direction: -1 })}
-                  onPress={() => step(-1)}
-                >
-                  <ArrowLeft />
-                </Pad>
-                <Pad
-                  label={
-                    paging
-                      ? "Next page"
-                      : view === "tempo"
-                        ? "Faster"
-                        : view === "steps"
-                          ? "Next step"
-                          : view === "chordStyle"
-                            ? "Next chord style"
-                            : view === "album"
-                              ? "Next song"
-                              : view === "tracks"
-                                ? shift
-                                  ? "Repeat track more"
-                                  : "Slide track later"
-                                : shift
-                                  ? "Next preset"
-                                  : "Octave up"
-                  }
-                  accent="var(--synth-red)"
-                  {...hotkeyProps({ kind: "step", direction: 1 })}
-                  onPress={() => step(1)}
-                >
-                  <ArrowRight />
                 </Pad>
                 <Pad
                   label={
@@ -3161,74 +3181,162 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                             ? openSongNow?.id
                             : ""))
                   }
-                  {...toolHotkey("delete")}
-                  onPress={pressTrash}
+                  {...shiftHotkey({ kind: "tool", tool: "delete" })}
+                  onPress={() => pressTrash()}
                 >
                   {view === "revert" || shift ? <RotateCcw /> : <Trash2 />}
                 </Pad>
                 <Pad
                   label={
-                    view === "steps"
-                      ? "Close drum sequencer"
-                      : shift
-                        ? "Drum sequencer"
-                        : "Tape (record mode)"
+                    view === "presets"
+                      ? "Close preset library"
+                      : "Preset library"
                   }
                   accent="var(--synth-red)"
-                  lit={recordMode || view === "steps"}
-                  {...toolHotkey("take")}
-                  onPress={pressTake}
+                  lit={view === "presets"}
+                  {...toolHotkey("synth")}
+                  onPress={() => pressSynth(false)}
                 >
-                  {shift || view === "steps" ? <Grid3x3 /> : <RollIcon />}
+                  <LayoutGrid />
                 </Pad>
-              </div>
-              <div className={styles.bank} role="group" aria-label="Modules">
-                {renderModulePad("lfo", <WavesHorizontal />)}
-                {renderModulePad("fx", <AudioLines />)}
-              </div>
-              <div className={styles.bank} role="group" aria-label="Mute">
                 <Pad
                   label={
-                    view === "tracks" && track
-                      ? `${
-                          shift
-                            ? track.soloed
-                              ? "Unsolo"
-                              : "Solo"
-                            : track.muted
-                              ? "Unmute"
-                              : "Mute"
-                        } ${track.name}`
-                      : view === "tracks"
-                        ? "Mute / Solo"
-                        : view === "chordStyle"
-                          ? "Close chord style"
-                          : shift
-                            ? "Chord style"
-                            : view === "chords"
-                              ? "Close chord palette"
-                              : "Chord palette"
+                    view === "synth"
+                      ? "Close synth parameters"
+                      : "Synth parameters"
                   }
                   accent="var(--synth-red)"
-                  lit={
-                    view === "tracks"
-                      ? Boolean(shift ? track?.soloed : track?.muted)
-                      : view === "chords" || view === "chordStyle"
-                  }
-                  {...toolHotkey("mute")}
-                  onPress={pressMute}
+                  lit={view === "synth"}
+                  {...toolHotkey("params")}
+                  onPress={() => pressSynth(true)}
                 >
-                  {view === "tracks" ? (
-                    shift ? (
-                      <Headphones />
-                    ) : (
-                      <VolumeX />
-                    )
-                  ) : shift || view === "chordStyle" ? (
-                    <ChordStyleIcon pattern={chordStyle.id} />
-                  ) : (
-                    <Music4 />
-                  )}
+                  <AudioWaveform />
+                </Pad>
+              </div>
+              <div className={styles.bank} role="group" aria-label="Presets">
+                {padPresets.map((padPreset, pad) => {
+                  const name = padPreset?.name ?? "empty";
+                  const current = padPreset?.id === preset.id;
+                  // Lit while either of its two presets plays.
+                  const sounding =
+                    library.buttons[pad] === preset.id ||
+                    library.shiftButtons[pad] === preset.id;
+                  return (
+                    <Pad
+                      key={pad}
+                      label={
+                        view === "presets"
+                          ? `Bind to ${padName(pad).toLowerCase()} (${name})`
+                          : view === "save"
+                            ? `Save to ${padName(pad).toLowerCase()} (${name})`
+                            : padPreset
+                              ? `${padPreset.name}${current ? " (current)" : ""}`
+                              : `Empty preset pad ${pad + 1}`
+                      }
+                      accent="var(--synth-red)"
+                      indicator={padPreset ? sounding : undefined}
+                      {...shiftHotkey({ kind: "preset", index: pad })}
+                      onPress={() => pressPresetPad(pad)}
+                    >
+                      {padPreset && <PresetIcon icon={padPreset.icon} />}
+                    </Pad>
+                  );
+                })}
+              </div>
+            </div>
+            <div className={styles.padRow}>
+              <div className={styles.bank} role="group" aria-label="Controls">
+                <Pad
+                  label={shiftLatched ? "Shift (latched)" : "Shift"}
+                  {...hotkeyProps({ kind: "shift" })}
+                  // No colour: a modifier, not a state. Latched, it stays
+                  // pressed in, as it looks while its key is held.
+                  held={shift}
+                  onPress={() => setShiftLatched((on) => !on)}
+                >
+                  <ArrowBigUp />
+                </Pad>
+                <Pad
+                  label={
+                    paging
+                      ? "Previous page"
+                      : view === "tempo"
+                        ? "Slower"
+                        : view === "steps"
+                          ? "Previous step"
+                          : view === "chordStyle"
+                            ? "Previous chord style"
+                            : view === "album"
+                              ? "Previous song"
+                              : view === "tracks"
+                                ? shift
+                                  ? "Repeat track less"
+                                  : "Slide track earlier"
+                                : shift
+                                  ? "Previous preset"
+                                  : "Octave down"
+                  }
+                  accent="var(--synth-red)"
+                  {...shiftHotkey({ kind: "step", direction: -1 })}
+                  onPress={() => step(-1)}
+                >
+                  <ArrowLeft />
+                </Pad>
+                <Pad
+                  label={view === "tracks" ? "Next track" : "Down"}
+                  accent="var(--synth-red)"
+                  {...hotkeyProps({ kind: "pick", direction: 1 })}
+                  onPress={() => pickRow(1)}
+                >
+                  <ArrowDown />
+                </Pad>
+                <Pad
+                  label={
+                    paging
+                      ? "Next page"
+                      : view === "tempo"
+                        ? "Faster"
+                        : view === "steps"
+                          ? "Next step"
+                          : view === "chordStyle"
+                            ? "Next chord style"
+                            : view === "album"
+                              ? "Next song"
+                              : view === "tracks"
+                                ? shift
+                                  ? "Repeat track more"
+                                  : "Slide track later"
+                                : shift
+                                  ? "Next preset"
+                                  : "Octave up"
+                  }
+                  accent="var(--synth-red)"
+                  {...shiftHotkey({ kind: "step", direction: 1 })}
+                  onPress={() => step(1)}
+                >
+                  <ArrowRight />
+                </Pad>
+                <Pad
+                  label={
+                    view === "chords" ? "Close chord palette" : "Chord palette"
+                  }
+                  accent="var(--synth-red)"
+                  lit={view === "chords"}
+                  {...toolHotkey("chords")}
+                  onPress={() => toggleView("chords")}
+                >
+                  <Music4 />
+                </Pad>
+                <Pad
+                  label={
+                    view === "chordStyle" ? "Close chord style" : "Chord style"
+                  }
+                  accent="var(--synth-red)"
+                  lit={view === "chordStyle"}
+                  {...toolHotkey("style")}
+                  onPress={() => toggleView("chordStyle")}
+                >
+                  <ChordStyleIcon pattern={chordStyle.id} />
                 </Pad>
               </div>
               <div

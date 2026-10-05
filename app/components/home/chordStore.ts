@@ -19,9 +19,13 @@ function read(): readonly string[] {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
     if (!Array.isArray(stored)) return DEFAULT_CHORD_MACROS;
+    // Four macros, from before there were six, go on the rightmost four
+    // pads, the most played.
+    const macros: unknown[] =
+      stored.length === 4 ? [undefined, undefined, ...stored] : stored;
     return DEFAULT_CHORD_MACROS.map((fallback, i) =>
-      typeof stored[i] === "string" && known.has(stored[i])
-        ? stored[i]
+      typeof macros[i] === "string" && known.has(macros[i] as string)
+        ? (macros[i] as string)
         : fallback,
     );
   } catch {

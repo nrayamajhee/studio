@@ -106,9 +106,9 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
       if (down) moveFocus(event.shiftKey ? -1 : 1);
       return;
     }
-    if (event.key === "Escape") {
-      if (down && keyboardFocus())
-        (document.activeElement as HTMLElement).blur();
+    // Esc lets go of a focused pad first; otherwise it is a hotkey.
+    if (event.key === "Escape" && keyboardFocus()) {
+      if (down) (document.activeElement as HTMLElement).blur();
       return;
     }
     if (event.code === "Enter" && keyboardFocus()) return;

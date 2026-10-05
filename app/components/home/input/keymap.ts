@@ -5,12 +5,18 @@ export type Tool =
   | "play"
   | "stop"
   | "tracks"
+  | "album"
   | "take"
+  | "steps"
   | "metronome"
   | "synth"
+  | "params"
+  | "chords"
+  | "style"
   | "save"
   | "delete"
   | "mute"
+  | "clip"
   | ModuleId;
 
 // Everything the keyboard can press on the Device.
@@ -20,14 +26,15 @@ export type Control =
   | { kind: "preset"; index: number }
   | { kind: "tool"; tool: Tool }
   | { kind: "step"; direction: -1 | 1 }
+  // ↑ and ↓: the previous or next row, as the blue knob picks a track.
+  | { kind: "pick"; direction: -1 | 1 }
   | { kind: "shift" };
 
 // Indexed by keybed semitone (F3 = 0). The piano takes the home row, as in a
 // DAW's musical typing: white keys F3–B4 along A S D F G H J K L ; ', and
 // each black key on the row above, between its neighbours (W E R, Y U,
-// O P [). The home row runs out at B4, so the top keys carry on above it:
-// C5 on -, C♯5 on =, D5 on ], D♯5 on Backspace and E5 on \ (Enter is left
-// for pressing a focused control).
+// O P [). The home row runs out at B4; held with Shift, its last five keys
+// (L P ; [ ') carry on past it instead, C5 to E5, white keys still on white.
 const NOTE_KEYS = [
   "A",
   "W",
@@ -48,44 +55,60 @@ const NOTE_KEYS = [
   ";",
   "[",
   "'",
-  "-",
-  "=",
-  "]",
-  "⌫",
-  "\\",
 ];
 
-// The pads sit around the piano. The number row picks sounds from its ends:
-// the four preset pads on 1 2 3 4 (with Shift, their alternates) and the four
-// chord pads on 7 8 9 0, with Save on 5 and Delete on 6 between them. The
-// bottom letter row covers the four pad columns from Tracks to Synth, the top
-// pads then the bottom ones, then Record and Stop:
-//   Z Tracks · X Metronome · C ADSR · V Synth
-//   B Take · N LFO · M FX · , Mute
-//   . Record · / Stop
-// Play is Space; Shift and the arrows are their own keys.
-const PRESET_KEYS = ["1", "2", "3", "4"];
-const CHORD_KEYS = ["7", "8", "9", "0"];
+// The notes Shift adds past the home row's last key.
+export const SHIFT_NOTES = 5;
+const SHIFTED_FROM = NOTE_KEYS.length - SHIFT_NOTES;
+
+// The note a piano key plays with Shift held: the last five move up past B4.
+export const shiftedNote = (semitone: number) =>
+  semitone >= SHIFTED_FROM && semitone < NOTE_KEYS.length
+    ? semitone + SHIFT_NOTES
+    : semitone;
+
+// The pads sit around the piano, and a key always presses the same pad,
+// whatever the view. The number row picks sounds: the six preset pads on
+// 1 2 3 4 5 6 (with Shift, their alternates) and the six chord pads on
+// 7 8 9 0 - =, the most played last (- minor, = major). ` opens the synth
+// parameters and Q the instruments, ] the chord palette and \ Chord style.
+// Esc opens the tracks, and the bottom letter row runs along the rest of the
+// views, then Mute, Record and Stop:
+//   Z Album · X Tape · C Drum sequencer · V ADSR · B LFO · N FX
+//   M Tempo (⇧ the click) · , Mute (⇧ Solo) · . Record · / Stop
+// With Shift, V B N turn their effect on or off. T is Clip (⇧ Trim). Play is
+// Space; Shift and the arrows are their own keys (↑ and ↓ pick a track, as the
+// blue knob does). ⌫ is Delete (⇧⌫ Revert), and ⌘S (Ctrl S) is Save.
+const PRESET_KEYS = ["1", "2", "3", "4", "5", "6"];
+const CHORD_KEYS = ["7", "8", "9", "0", "-", "="];
 const TOOL_KEYS: Readonly<Record<Tool, string>> = {
   play: "Space",
   stop: "/",
   record: ".",
-  tracks: "Z",
-  metronome: "X",
-  adsr: "C",
-  synth: "V",
-  take: "B",
-  lfo: "N",
-  fx: "M",
+  synth: "Q",
+  params: "`",
+  chords: "]",
+  style: "\\",
+  tracks: "Esc",
+  album: "Z",
+  take: "X",
+  steps: "C",
+  adsr: "V",
+  lfo: "B",
+  fx: "N",
+  metronome: "M",
   mute: ",",
-  save: "5",
-  delete: "6",
+  clip: "T",
+  save: "",
+  delete: "⌫",
 };
 
 // KeyboardEvent.code for each label that isn't Key<letter> or Digit<n>.
 const CODES: Readonly<Record<string, readonly string[]>> = {
   ",": ["Comma"],
   "-": ["Minus"],
+  "`": ["Backquote"],
+  Esc: ["Escape"],
   ".": ["Period"],
   "/": ["Slash"],
   ";": ["Semicolon"],
@@ -97,6 +120,8 @@ const CODES: Readonly<Record<string, readonly string[]>> = {
   "←": ["ArrowLeft"],
   "⌫": ["Backspace"],
   "→": ["ArrowRight"],
+  "↑": ["ArrowUp"],
+  "↓": ["ArrowDown"],
   "⇧": ["ShiftLeft", "ShiftRight"],
   Tab: ["Tab"],
   Space: ["Space"],
@@ -109,7 +134,9 @@ const codesOf = (label: string) =>
 export function hotkeyLabel(control: Control): string {
   switch (control.kind) {
     case "note":
-      return NOTE_KEYS[control.semitone];
+      return control.semitone < NOTE_KEYS.length
+        ? NOTE_KEYS[control.semitone]
+        : `⇧${NOTE_KEYS[control.semitone - SHIFT_NOTES]}`;
     case "chord":
       return CHORD_KEYS[control.index];
     case "preset":
@@ -118,6 +145,8 @@ export function hotkeyLabel(control: Control): string {
       return TOOL_KEYS[control.tool];
     case "step":
       return control.direction < 0 ? "←" : "→";
+    case "pick":
+      return control.direction < 0 ? "↑" : "↓";
     case "shift":
       return "⇧";
   }
@@ -136,6 +165,8 @@ export function controlId(control: Control): string {
       return `tool:${control.tool}`;
     case "step":
       return `step:${control.direction}`;
+    case "pick":
+      return `pick:${control.direction}`;
     case "shift":
       return "shift";
   }
@@ -151,6 +182,8 @@ const CONTROLS: readonly Control[] = [
   })),
   { kind: "step", direction: -1 },
   { kind: "step", direction: 1 },
+  { kind: "pick", direction: -1 },
+  { kind: "pick", direction: 1 },
   { kind: "shift" },
 ];
 

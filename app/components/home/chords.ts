@@ -178,10 +178,12 @@ export const CHORD_PALETTE: readonly Chord[] = [
 export const chordById = (id: string): Chord =>
   CHORD_PALETTE.find((chord) => chord.id === id) ?? CHORD_PALETTE[0];
 
-// The four macros start on the most used chords, from the right: the right
-// hand rests its pinky on major and ring finger on minor, while the left
-// plays the keys.
+// The six macros start on the most used chords, most used on the right: the
+// right hand rests its pinky on major (=) and ring finger on minor (-), while
+// the left plays the keys.
 export const DEFAULT_CHORD_MACROS: readonly string[] = [
+  "sus4",
+  "maj7",
   "min7",
   "7",
   "min",

@@ -18,9 +18,9 @@
 }
 
 .frame {
-  /* The screen's height plus 438px: 2 gaps, two pad rows, three insets and the
-     key well's 226, less the 21px the screen reaches up into the bezel. */
-  --device-height: calc(621px / var(--screen-aspect) + 438px);
+  /* The screen's height plus 517px: 2 gaps, three pad rows, four insets and
+     the key well's 226, less the 21px the screen reaches up into the bezel. */
+  --device-height: calc(621px / var(--screen-aspect) + 517px);
   /* tan(atan2(a, b)) divides two lengths into a plain number, so the 1001px
      wide device scales to fit its container without JavaScript. */
   --scale: min(
