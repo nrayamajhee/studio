@@ -23,7 +23,7 @@ export function pickTuning(tables: TuningTables, fs: number): KeyTable {
 export type SectionId =
   "exciter" | "resonator" | "body" | "filter" | "envelope" | "space";
 
-export interface ParamSpec {
+export type ParamSpec = {
   id: string;
   label: string;
   section: SectionId;
@@ -35,7 +35,7 @@ export interface ParamSpec {
   primary?: boolean;
   // Named choices for an index param, e.g. the oscillator's wave.
   options?: readonly string[];
-}
+};
 
 export type BodySpec =
   | { type: "none" }
@@ -49,7 +49,7 @@ export type BodySpec =
       presence?: { freq: number; q: number; gainDb: number };
     };
 
-export interface BasePatch {
+export type BasePatch = {
   id: BusId;
   name: string;
   range: readonly [low: number, high: number];
@@ -57,9 +57,9 @@ export interface BasePatch {
   pan: { center: number; spread: number };
   body: BodySpec;
   params: readonly ParamSpec[];
-}
+};
 
-export interface StringPatch extends BasePatch {
+export type StringPatch = {
   id: InstrumentId;
   family: "string";
   exciter: "hammer" | "pick" | "finger";
@@ -82,22 +82,22 @@ export interface StringPatch extends BasePatch {
   // A sitar's jawari bridge: the allpass coefficient while the string touches
   // it (scaled by the Jawari param) and how far the string swings first.
   jawari?: { contact: number; gap: number };
-}
+} & BasePatch;
 
-export interface BorePatch extends BasePatch {
+export type BorePatch = {
   id: InstrumentId;
   family: "bore";
   model: "flute" | "saxophone" | "brass" | "clarinet";
   pressure: readonly [low: number, high: number];
   tuningCents: TuningTables;
-}
+} & BasePatch;
 
-export interface BowedPatch extends BasePatch {
+export type BowedPatch = {
   id: InstrumentId;
   family: "bowed";
   polyphony: number;
   tuningCents: TuningTables;
-}
+} & BasePatch;
 
 export type DrumPieceSpec =
   | {
@@ -163,25 +163,25 @@ export type DrumPieceSpec =
       pan: number;
     };
 
-export interface DrumKitPatch extends BasePatch {
+export type DrumKitPatch = {
   id: KitId;
   family: "drums";
   pieces: Readonly<Partial<Record<DrumPieceId, DrumPieceSpec>>>;
   // The piece each keybed pitch class plays, from C.
   keys: readonly DrumPieceId[];
-}
+} & BasePatch;
 
 // Not a physical model: one or two band-limited oscillators summed through a
 // lowpass and a gate.
-export interface OscillatorPatch extends BasePatch {
+export type OscillatorPatch = {
   id: InstrumentId;
   family: "oscillator";
   polyphony: number;
-}
+} & BasePatch;
 
 // Free reeds (harmonium, harmonica): per key, one or more reed tongues that
 // swing through a slot, driven by bellows or breath pressure.
-export interface ReedPatch extends BasePatch {
+export type ReedPatch = {
   id: InstrumentId;
   family: "reed";
   polyphony: number;
@@ -198,12 +198,12 @@ export interface ReedPatch extends BasePatch {
   // both ways, odd harmonics only; 1 one way only).
   asymmetry: number;
   tuningCents: TuningTables;
-}
+} & BasePatch;
 
 // Tuned percussion (xylophone, steel pan, kalimba): each key a set of modes
 // at fixed ratios to the note, struck by a mallet or plucked by a thumb.
 // Nothing damps them; every note rings until it fades.
-export interface BarPatch extends BasePatch {
+export type BarPatch = {
   id: InstrumentId;
   family: "bar";
   strike: "mallet" | "thumb";
@@ -215,7 +215,7 @@ export interface BarPatch extends BasePatch {
   // How long the mallet or thumb stays on (ms), soft to hard: a shorter
   // contact reaches higher modes.
   contact: readonly [soft: number, hard: number];
-}
+} & BasePatch;
 
 export type Patch =
   | StringPatch

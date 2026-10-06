@@ -14,13 +14,13 @@ const RENDER_TAIL = 2.5;
 
 // An instrument as it was set up to play: which, at what octave, with which
 // params (its own and the master's).
-export interface DeviceSound {
+export type DeviceSound = {
   target: InstrumentId | KitId;
   octave: number;
   overrides: Record<string, Record<string, number>>;
-}
+};
 
-export interface DevicePreset {
+export type DevicePreset = {
   id: string;
   name: string;
   // Key into PRESET_ICONS; anything else is shown on the pad as text.
@@ -35,7 +35,7 @@ export interface DevicePreset {
   // Shift alternate. A pad goes back to it when its saved preset is deleted.
   pad?: number;
   shiftPad?: number;
-}
+};
 
 // The built-in presets, in library order: keys, guitars and bass, bowed and
 // plucked strings, brass, winds, tuned percussion, hand drums and kits, then
@@ -255,7 +255,7 @@ export const KNOB_STEPS = 11;
 
 export type ModuleId = "adsr" | "lfo" | "fx";
 
-export interface ModuleKnob {
+export type ModuleKnob = {
   // A master param, with the Device's label and the knob's starting value as
   // its default. The engine's own default (no effect) is what "off" sends.
   spec: ParamSpec;
@@ -265,15 +265,15 @@ export interface ModuleKnob {
   floor?: number;
   // Named steps, for knobs that pick rather than set (LFO shape and target).
   options?: readonly string[];
-}
+};
 
-export interface DeviceModule {
+export type DeviceModule = {
   id: ModuleId;
   label: string;
   title: string;
   // White, green, red and blue knob, in that order.
   knobs: readonly ModuleKnob[];
-}
+};
 
 function knob(
   id: string,
@@ -402,10 +402,10 @@ export function presetValues(preset: DevicePreset) {
 export const isKit = (target: InstrumentId | KitId): target is KitId =>
   PATCH_BY_ID[target].family === "drums";
 
-interface Held {
+type Held = {
   target: InstrumentId | KitId;
   note: number;
-}
+};
 
 let current: DevicePreset = DEVICE_PRESETS[0];
 const held = new Map<number, Held[]>();

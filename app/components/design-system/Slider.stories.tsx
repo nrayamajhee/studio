@@ -7,7 +7,15 @@ const meta = {
   title: "Design System/Slider",
   component: Slider,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "A range slider in a tone, with a filled track up to its value.",
+      },
+    },
+  },
   args: {
     label: "Volume",
     valueDisplay: "50",
@@ -48,17 +56,17 @@ export const Default: Story = {};
 export const Tones: Story = {
   render: () => (
     <div className="flex w-64 flex-col gap-4">
-      {(
-        ["primary", "info", "blue", "accent", "secondary"] as const
-      ).map((tone) => (
-        <Slider
-          key={tone}
-          label={tone}
-          tone={tone}
-          value={50}
-          onChange={() => {}}
-        />
-      ))}
+      {(["primary", "info", "blue", "accent", "secondary"] as const).map(
+        (tone) => (
+          <Slider
+            key={tone}
+            label={tone}
+            tone={tone}
+            value={50}
+            onChange={() => {}}
+          />
+        ),
+      )}
     </div>
   ),
 };

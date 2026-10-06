@@ -1,13 +1,13 @@
 // The chord palette the macro pads can be set to, most used first. Intervals
 // are semitones from the root, so a chord transposes to whatever key is played.
-export interface Chord {
+export type Chord = {
   id: string;
   // The full name, shown in the palette.
   name: string;
   // The short label, shown on the macro pad.
   label: string;
   intervals: readonly number[];
-}
+};
 
 export const CHORD_PALETTE: readonly Chord[] = [
   { id: "maj", name: "Major", label: "Maj", intervals: [0, 4, 7] },

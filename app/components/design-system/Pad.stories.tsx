@@ -7,7 +7,15 @@ const meta = {
   title: "Design System/Pad",
   component: Pad,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "A square hardware pad with an icon or short label, an accent colour when lit, an LED indicator and a hotkey keycap.",
+      },
+    },
+  },
   args: {
     label: "Piano",
     accent: "#cd5951",

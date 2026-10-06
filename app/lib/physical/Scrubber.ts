@@ -14,11 +14,11 @@ const FADE = 0.008;
 // How far (s) the playhead may drift from the drag before it jumps.
 const DRIFT = 0.12;
 
-interface Head {
+type Head = {
   source: AudioBufferSourceNode;
   gain: GainNode;
   direction: 1 | -1;
-}
+};
 
 export class Scrubber {
   private readonly ctx: AudioContext;

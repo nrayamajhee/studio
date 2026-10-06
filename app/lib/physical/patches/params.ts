@@ -112,7 +112,7 @@ const shared = (send: number): ParamSpec[] => [
   param("output.level", "Level", "space", 0, 2, 1),
 ];
 
-export interface StringDefaults {
+export type StringDefaults = {
   hardness: number;
   position: number;
   bodyMix: number;
@@ -123,7 +123,7 @@ export interface StringDefaults {
   strum?: number;
   // A sitar's jawari: how hard the string buzzes against the bridge.
   jawari?: number;
-}
+};
 
 export function stringParams(d: StringDefaults): ParamSpec[] {
   return [
@@ -208,7 +208,7 @@ export function stringParams(d: StringDefaults): ParamSpec[] {
   ];
 }
 
-export interface BoreDefaults {
+export type BoreDefaults = {
   noise: number;
   vibrato: number;
   vibratoRate: number;
@@ -224,7 +224,7 @@ export interface BoreDefaults {
   release: number;
   cutoff: number;
   send: number;
-}
+};
 
 export function boreParams(d: BoreDefaults): ParamSpec[] {
   return [
@@ -361,7 +361,7 @@ export function bowedParams(
   ];
 }
 
-export interface ReedDefaults {
+export type ReedDefaults = {
   noise: number;
   // The shared swell: a harmonium's bellows, a harmonica player's hand.
   swell: number;
@@ -374,7 +374,7 @@ export interface ReedDefaults {
   release: number;
   cutoff: number;
   send: number;
-}
+};
 
 export function reedParams(d: ReedDefaults): ParamSpec[] {
   return [
@@ -428,13 +428,13 @@ export function reedParams(d: ReedDefaults): ParamSpec[] {
   ];
 }
 
-export interface BarDefaults {
+export type BarDefaults = {
   hardness: number;
   // Only for a patch with a modal body (the kalimba's box).
   bodyMix?: number;
   cutoff: number;
   send: number;
-}
+};
 
 export function barParams(d: BarDefaults): ParamSpec[] {
   return [

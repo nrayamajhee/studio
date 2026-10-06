@@ -25,7 +25,15 @@ const meta = {
   title: "Design System/Typography",
   component: Specimen,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "Text styles: heading, title, subtitle, paragraph, label and caption.",
+      },
+    },
+  },
 } satisfies Meta<typeof Specimen>;
 
 export default meta;

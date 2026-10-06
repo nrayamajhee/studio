@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { keyboardFocus, moveFocus } from "../components/home/input/focus";
@@ -16,15 +17,15 @@ import {
   type Control,
 } from "../components/home/input/keymap";
 
-export interface HeldKeys {
+export type HeldKeys = {
   // Controls whose keys are down, in the order they went down.
   readonly controls: readonly Control[];
   // The chord key pressed most recently that is still down.
   readonly chord: number | null;
   readonly shift: boolean;
-}
+};
 
-export interface HotkeyEvent {
+export type HotkeyEvent = {
   control: Control;
   down: boolean;
   // The keys down at this moment (this one included, on a press), read before
@@ -33,19 +34,19 @@ export interface HotkeyEvent {
   // Stops this key counting as held until it comes up, e.g. when pressing it
   // releases a latch instead.
   ignore: () => void;
-}
+};
 
 type Listener = (event: HotkeyEvent) => void;
 
-interface HotkeyContextValue {
+type HotkeyContextValue = {
   held: HeldKeys;
   subscribe: (listener: Listener) => () => void;
-}
+};
 
-interface Down {
+type Down = {
   control: Control;
   ignored: boolean;
-}
+};
 
 const NO_KEYS: HeldKeys = { controls: [], chord: null, shift: false };
 
@@ -196,4 +197,35 @@ export function useHotkeyListener(handler: (event: HotkeyEvent) => void) {
   const { subscribe } = useHotkeyContext();
   const onEvent = useEffectEvent(handler);
   useEffect(() => subscribe((event) => onEvent(event)), [subscribe]);
+}
+
+const noSubscribe = () => () => {};
+const isMac = () => /Mac|iPhone|iPad/.test(navigator.platform);
+
+// The command key as a keycap shows it: ⌘ on a Mac, Ctrl elsewhere.
+export function useCommandLegend() {
+  return useSyncExternalStore(
+    noSubscribe,
+    () => (isMac() ? "⌘" : "Ctrl "),
+    () => "⌘",
+  );
+}
+
+// ⌘ (Ctrl off a Mac) with the key `code` presses in place of what the
+// browser would do; `shifted` with Shift held too.
+export function useCommandKey(
+  code: string | undefined,
+  press: (shifted: boolean) => void,
+) {
+  const onKey = useEffectEvent((event: KeyboardEvent) => {
+    if (!code || event.code !== code) return;
+    if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+    event.preventDefault();
+    if (!event.repeat) press(event.shiftKey);
+  });
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => onKey(event);
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, []);
 }

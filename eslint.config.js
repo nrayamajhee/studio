@@ -66,6 +66,7 @@ export default tseslint.config(
           ],
         },
       ],
+      "@typescript-eslint/consistent-type-definitions": ["error", "type"],
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {

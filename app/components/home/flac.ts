@@ -145,12 +145,12 @@ function bestRice(sum: number, count: number) {
 
 // `order` -1 is a constant block (all samples equal, e.g. silence), written
 // as its one value.
-interface Plan {
+type Plan = {
   order: number;
   partitionOrder: number;
   params: number[];
   bits: number;
-}
+};
 
 // One channel's block: the fixed order that leaves the least, then the Rice
 // partitioning that codes it in the fewest bits. The finest partitions are

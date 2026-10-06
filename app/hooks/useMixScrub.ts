@@ -9,12 +9,12 @@ const GAP_MS = 250;
 // How much of the mix (ms) either side of the scrub is built at a time.
 const WINDOW_MS = 30_000;
 
-interface Window {
+type Window = {
   key: string;
   start: number;
   end: number;
   scrubber: Scrubber | null;
-}
+};
 
 // Scrubbing the tracks plays the mix like a take, at the drag's speed (see
 // Scrubber). Only a window of it either side of the scrub is built (by

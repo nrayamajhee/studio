@@ -5,7 +5,14 @@ const meta = {
   title: "Design System/Card",
   component: Card,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component: "A surface for grouping content, raised low, mid or high.",
+      },
+    },
+  },
   args: {
     children: "Card content",
     className: "h-32 w-64",

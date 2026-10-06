@@ -7,14 +7,14 @@ import { DEVICE_PRESETS, type DevicePreset } from "./deviceEngine";
 // persisted in localStorage.
 export type PresetEdits = Readonly<Record<string, number>>;
 
-export interface PresetLibrary {
+export type PresetLibrary = {
   instruments: readonly DevicePreset[];
   buttons: readonly string[];
   shiftButtons: readonly string[];
   // Param changes made to each preset since it was picked, by preset id, kept
   // apart from the preset itself so Reset can drop them.
   edits: Readonly<Record<string, PresetEdits>>;
-}
+};
 
 const STORAGE_KEY = "studio.instruments";
 // Pad bindings stored under an older layout are dropped once, so every pad

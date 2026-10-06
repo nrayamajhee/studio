@@ -11,12 +11,12 @@ const approach = (time: number, fs: number) =>
 
 // The four stages every ADSR in the engine is set from: the winds' breath, the
 // violin's bow and the master envelope. Times in seconds, sustain 0–1.
-export interface AdsrStages {
+export type AdsrStages = {
   attack: number;
   decay: number;
   sustain: number;
   release: number;
-}
+};
 
 export class Adsr {
   value = 0;

@@ -19,7 +19,15 @@ const meta = {
   title: "Home/Screen",
   component: DeviceScreen,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "The screen, presentational only: a title and status line, the view's body (scope, params, tiles, roll, steps, tracks or module graphs), a footer or badges, and an overlay for levels and prompts.",
+      },
+    },
+  },
   args: {
     view: "scope",
     title: "Grand Piano",

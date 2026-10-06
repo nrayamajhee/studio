@@ -2,10 +2,10 @@ import React, { forwardRef } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "../../lib/utils";
 
-export interface HeadingProps extends React.HTMLAttributes<HTMLDivElement> {
+export type HeadingProps = {
   asChild?: boolean;
   children?: React.ReactNode;
-}
+} & React.HTMLAttributes<HTMLDivElement>;
 
 export const Heading = forwardRef<HTMLDivElement, HeadingProps>(
   ({ asChild = false, className, children, ...props }, ref) => {
@@ -28,10 +28,10 @@ export const Heading = forwardRef<HTMLDivElement, HeadingProps>(
 
 Heading.displayName = "Heading";
 
-export interface TitleProps extends React.HTMLAttributes<HTMLDivElement> {
+export type TitleProps = {
   asChild?: boolean;
   children?: React.ReactNode;
-}
+} & React.HTMLAttributes<HTMLDivElement>;
 
 export const Title = forwardRef<HTMLDivElement, TitleProps>(
   ({ asChild = false, className, children, ...props }, ref) => {
@@ -54,10 +54,10 @@ export const Title = forwardRef<HTMLDivElement, TitleProps>(
 
 Title.displayName = "Title";
 
-export interface SubtitleProps extends React.HTMLAttributes<HTMLDivElement> {
+export type SubtitleProps = {
   asChild?: boolean;
   children?: React.ReactNode;
-}
+} & React.HTMLAttributes<HTMLDivElement>;
 
 export const Subtitle = forwardRef<HTMLDivElement, SubtitleProps>(
   ({ asChild = false, className, children, ...props }, ref) => {
@@ -79,10 +79,10 @@ export const Subtitle = forwardRef<HTMLDivElement, SubtitleProps>(
 
 Subtitle.displayName = "Subtitle";
 
-export interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
+export type ParagraphProps = {
   asChild?: boolean;
   children?: React.ReactNode;
-}
+} & React.HTMLAttributes<HTMLParagraphElement>;
 
 export const Paragraph = forwardRef<HTMLParagraphElement, ParagraphProps>(
   ({ asChild = false, className, children, ...props }, ref) => {
@@ -104,10 +104,10 @@ export const Paragraph = forwardRef<HTMLParagraphElement, ParagraphProps>(
 
 Paragraph.displayName = "Paragraph";
 
-export interface LabelProps extends React.HTMLAttributes<HTMLDivElement> {
+export type LabelProps = {
   asChild?: boolean;
   children?: React.ReactNode;
-}
+} & React.HTMLAttributes<HTMLDivElement>;
 
 export const Label = forwardRef<HTMLDivElement, LabelProps>(
   ({ asChild = false, className, children, ...props }, ref) => {
@@ -129,10 +129,10 @@ export const Label = forwardRef<HTMLDivElement, LabelProps>(
 
 Label.displayName = "Label";
 
-export interface CaptionProps extends React.HTMLAttributes<HTMLDivElement> {
+export type CaptionProps = {
   asChild?: boolean;
   children?: React.ReactNode;
-}
+} & React.HTMLAttributes<HTMLDivElement>;
 
 export const Caption = forwardRef<HTMLDivElement, CaptionProps>(
   ({ asChild = false, className, children, ...props }, ref) => {

@@ -11,26 +11,26 @@ import type { Track } from "./tracks";
 
 // A song on the album: a set of tracks, with the tempo and time signature
 // they play at.
-export interface Song {
+export type Song = {
   id: string;
   name: string;
   bpm: number;
   meter: Meter;
   tracks: readonly Track[];
-}
+};
 
 // What has been recorded: the working take with its ADSR, LFO and FX, the
 // drum sequencer's pattern, and the album of songs whose tracks were kept
 // from them, persisted in localStorage under their own keys so a reload keeps
 // them. `tracks` are the open song's.
-export interface Session {
+export type Session = {
   take: Take | null;
   modules: ModuleSettings;
   steps: StepPattern;
   songs: readonly Song[];
   song: string;
   tracks: readonly Track[];
-}
+};
 
 const TAKE_KEY = "studio.take";
 const MODULES_KEY = "studio.takeModules";

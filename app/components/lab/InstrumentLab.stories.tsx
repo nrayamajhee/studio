@@ -5,7 +5,15 @@ const meta = {
   title: "Lab/Instrument Lab",
   component: InstrumentLab,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "A dev tool for auditioning and tuning the physical-modeling instruments, with a generated parameter panel and diagnostic sweeps run through the real worklet.",
+      },
+    },
+  },
   args: { initialInstrument: "piano" },
   argTypes: {
     initialInstrument: {

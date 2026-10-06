@@ -7,7 +7,15 @@ const meta = {
   title: "Design System/Button",
   component: Button,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "The base button: solid, outline or ghost, in a tone and size, with optional leading and trailing icons and a loading state.",
+      },
+    },
+  },
   args: {
     children: "Button",
     variant: "solid",

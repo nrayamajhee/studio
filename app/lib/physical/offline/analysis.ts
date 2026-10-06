@@ -37,10 +37,10 @@ export function fft(re: Float64Array, im: Float64Array) {
   }
 }
 
-export interface Spectrum {
+export type Spectrum = {
   magnitudeDb: Float64Array;
   binHz: number;
-}
+};
 
 // Hann-windowed, zero-padded magnitude spectrum of signal[start..end).
 export function spectrum(
@@ -92,10 +92,10 @@ export function peakNear(
   return (best + offset) * spec.binHz;
 }
 
-export interface PitchResult {
+export type PitchResult = {
   hz: number;
   cents: number;
-}
+};
 
 // Measures f0 near `target` from 0.3 s to 1.7 s after `onset` (in samples).
 export function measurePitch(
@@ -166,12 +166,12 @@ export function energyT60(energy: ArrayLike<number>, fs: number): number {
   return slope < 0 ? -60 / slope : NaN;
 }
 
-export interface SignalStats {
+export type SignalStats = {
   peak: number;
   rms: number;
   dc: number;
   finite: boolean;
-}
+};
 
 // DC is the mean over 0.5–1.0 s after onset, trimmed to whole periods when
 // `period` (samples) is known so low notes don't read as offset.

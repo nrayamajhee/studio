@@ -5,11 +5,11 @@ import type { Meter, PlayedNote } from "./noteRecorder";
 
 // A rendered track in the mix: one pass of its audio, laid at each of its
 // starts (ms on the timeline), at its level.
-export interface MixPart {
+export type MixPart = {
   buffer: AudioBuffer;
   starts: readonly number[];
   level: number;
-}
+};
 
 // Adds the parts' audio from `start` ms into `left` and `right`, as far as
 // they reach, at `rate`.
@@ -152,12 +152,12 @@ const GM_DRUMS: Readonly<Record<DrumPieceId, number>> = {
 
 // A track for the MIDI file: its notes as they sound on the timeline (ms),
 // already at their sounding pitch, or as drum pieces for a kit.
-export interface MidiPart {
+export type MidiPart = {
   name: string;
   target: InstrumentId | KitId;
   volume: number;
   notes: readonly (PlayedNote & { piece?: DrumPieceId })[];
-}
+};
 
 const PPQ = 480;
 const DRUM_CHANNEL = 9;

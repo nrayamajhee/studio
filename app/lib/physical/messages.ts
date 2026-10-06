@@ -81,18 +81,18 @@ export type EngineEvent =
   | { type: "allNotesOff" }
   | { type: "panic" };
 
-export interface EngineStats {
+export type EngineStats = {
   activeVoices: number;
   reverbAwake: boolean;
   load?: number;
-}
+};
 
 export type WorkletMessage =
   | { type: "ready"; sampleRate: number }
   | ({ type: "stats" } & EngineStats)
   | { type: "warning"; message: string };
 
-export interface ProcessorOptions {
+export type ProcessorOptions = {
   events?: EngineEvent[];
   overrides?: Partial<Record<ParamTarget, Record<string, number>>>;
-}
+};

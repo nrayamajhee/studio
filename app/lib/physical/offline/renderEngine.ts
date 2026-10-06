@@ -1,18 +1,18 @@
 import { Engine, type Overrides } from "../engine/Engine";
 import type { EngineEvent } from "../messages";
 
-export interface RenderOptions {
+export type RenderOptions = {
   sampleRate: number;
   duration: number;
   overrides?: Overrides;
   blockSize?: number;
-}
+};
 
-export interface RenderResult {
+export type RenderResult = {
   left: Float32Array;
   right: Float32Array;
   engine: Engine;
-}
+};
 
 // Renders an event list with the pure-TS engine (no Web Audio): the same code
 // path the worklet runs, usable from Node and unit tests.

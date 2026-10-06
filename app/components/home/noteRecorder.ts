@@ -4,28 +4,28 @@
 
 // A note as played: MIDI note, when it started and how long it was held (ms
 // from the start of the take), and how hard (0–1, a MIDI velocity / 127).
-export interface PlayedNote {
+export type PlayedNote = {
   note: number;
   start: number;
   duration: number;
   velocity: number;
-}
+};
 
 // A note on the sequencer grid, the piano roll's view of a take: the step it
 // starts on and how many steps it lasts.
-export interface GridNote {
+export type GridNote = {
   note: number;
   step: number;
   length: number;
   velocity: number;
-}
+};
 
 // A time signature: beats to the bar, and the note that gets the beat (4 a
 // quarter, 8 an eighth). The tempo counts these beats.
-export interface Meter {
+export type Meter = {
   beats: number;
   unit: 4 | 8;
-}
+};
 
 export const METERS: readonly Meter[] = [
   { beats: 2, unit: 4 },
@@ -43,11 +43,11 @@ export const METERS: readonly Meter[] = [
 export const SUBDIVISIONS: readonly number[] = [0, 2, 3, 4, 6, 8];
 
 // Where beats, bars and grid steps fall.
-export interface Timing {
+export type Timing = {
   bpm: number;
   meter: Meter;
   perBeat: number;
-}
+};
 
 export const DEFAULT_TIMING: Timing = {
   bpm: 72,
@@ -157,11 +157,11 @@ export const MAX_TAKE_MS = 60 * 60 * 1000;
 // A take as played, with the tempo it was played at. With no grid it plays
 // back once as played, like tape; on a grid it loops, snapped in whole bars
 // of the meter at the tempo, grid and meter set when each loop starts.
-export interface Take {
+export type Take = {
   notes: PlayedNote[];
   length: number;
   bpm: number;
-}
+};
 
 // A take on its own timeline in ms. On a grid it stretches to the tempo,
 // keeping its beats, then snaps in whole bars of the meter.

@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
 
-export interface OscilloscopeProps {
+export type OscilloscopeProps = {
   getAnalyser: () => AnalyserNode | null;
   className?: string;
-}
+};
 
 const GRID_ALPHA = 0.16;
 

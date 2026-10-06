@@ -6,7 +6,15 @@ const meta = {
   title: "Design System/Key",
   component: Key,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "A piano key, white or black, held while pressed by pointer or keyboard. It shows its note (or a drum piece) and its hotkey, and lights while it sounds.",
+      },
+    },
+  },
   args: {
     label: "C 4",
     variant: "white",

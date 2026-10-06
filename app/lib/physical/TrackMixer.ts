@@ -13,13 +13,13 @@ const TOP_UP = 0.25;
 const FADE = 0.01;
 const GLIDE = 0.02;
 
-export interface MixTrack {
+export type MixTrack = {
   id: string;
   buffer: AudioBuffer;
   // Where each pass starts in the arrangement (s).
   starts: readonly number[];
   gain: number;
-}
+};
 
 export class TrackMixer {
   private readonly ctx: AudioContext;

@@ -5,7 +5,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { cn } from "../../lib/utils";
+import { tv } from "../../lib/utils";
 import { Button } from "../design-system/Button";
 import { NoteRoll } from "./NoteRoll";
 import { Oscilloscope } from "./Oscilloscope";
@@ -13,7 +13,6 @@ import { DEFAULT_TIMING, type Timing } from "./noteRecorder";
 import type { TrackClip } from "./tracks";
 import type { RollFrame } from "../../hooks/useTransport";
 import { keepFocus } from "../design-system";
-import styles from "./DeviceScreen.module.css";
 
 export type ScreenView =
   | "scope"
@@ -32,37 +31,61 @@ export type ScreenView =
   | "steps"
   | "tracks";
 
-export interface ScreenParam {
+export type ScreenParam = {
   id: string;
   label: string;
   value: string;
   // The param the red and blue knobs are editing.
   selected?: boolean;
-}
+};
 
-export interface ScreenTile {
+export type ScreenTile = {
   id: string;
   label: string;
   icon: ReactNode;
   // Small caption on the tile, e.g. the pads a preset is bound to.
   badge?: string;
-}
+};
 
 // One module knob's reading, in knob order (white, green, red, blue).
-export interface ScreenReadout {
+export type ScreenReadout = {
   label: string;
   display: string;
   // 0–1: the knob position (the level, for the ADSR's sustain).
   amount: number;
-}
+};
 
 // Module readouts in the colours of the knobs that set them.
 const KNOB_COLORS = [
-  "var(--screen-ink)",
-  "var(--screen-green)",
-  "var(--screen-red)",
-  "var(--screen-blue)",
+  "var(--color-screen-ink)",
+  "var(--color-synth-green)",
+  "var(--color-synth-red)",
+  "var(--color-synth-blue)",
 ];
+
+// The module views' graph over their four readouts. The FX stages are four
+// columns, arrows joining drive, chorus and delay, which run in series; the
+// reverb is fed separately by each instrument's send.
+const moduleView = tv({
+  slots: {
+    graph: "min-h-0 w-full flex-1 overflow-hidden",
+    wave: "animate-[lfo-scroll_var(--lfo-period)_linear_infinite] motion-reduce:animate-none",
+    meters: "grid min-h-0 flex-1 grid-cols-4 gap-[18px]",
+    stage: "relative flex justify-center",
+    track:
+      "relative h-full w-[56px] overflow-hidden rounded-[6px] bg-screen-ink/8",
+    fill: "absolute inset-x-0 bottom-0 rounded-[6px]",
+  },
+  variants: {
+    arrow: {
+      true: {
+        stage:
+          "after:absolute after:top-1/2 after:-right-[14px] after:-translate-y-1/2 after:font-screen after:text-[12px] after:text-screen-ink/30 after:content-['→']",
+      },
+    },
+  },
+});
+const graph = moduleView();
 
 // Drawn across a fixed 100 × 40 box: attack, decay and release widen with their
 // knobs, sustain fills the rest at its level, and decay and release curve like
@@ -89,7 +112,7 @@ function EnvelopeGraph({ stages }: { stages: readonly ScreenReadout[] }) {
   ];
   return (
     <svg
-      className={styles.moduleGraph}
+      className={graph.graph()}
       viewBox="0 0 100 40"
       preserveAspectRatio="none"
       aria-hidden="true"
@@ -97,7 +120,7 @@ function EnvelopeGraph({ stages }: { stages: readonly ScreenReadout[] }) {
       <path
         d={`M${x0} ${bottom} L${x1} ${top} ${decayPath} L${x3} ${level} ${releasePath} Z`}
         style={{
-          fill: "color-mix(in srgb, var(--screen-ink) 8%, transparent)",
+          fill: "color-mix(in srgb, var(--color-screen-ink) 8%, transparent)",
         }}
       />
       {segments.map((d, i) => (
@@ -150,7 +173,7 @@ function LfoGraph({
   }
   return (
     <svg
-      className={styles.moduleGraph}
+      className={graph.graph()}
       viewBox="0 0 100 40"
       preserveAspectRatio="none"
       aria-hidden="true"
@@ -158,13 +181,14 @@ function LfoGraph({
       <path
         d="M0 20 H100"
         style={{
-          stroke: "color-mix(in srgb, var(--screen-ink) 15%, transparent)",
+          stroke:
+            "color-mix(in srgb, var(--color-screen-ink) 15%, transparent)",
         }}
         strokeDasharray="2 3"
         vectorEffect="non-scaling-stroke"
       />
       <path
-        className={styles.lfoWave}
+        className={graph.wave()}
         style={
           {
             "--lfo-period": `${Math.max(1 / rate, 0.1)}s`,
@@ -184,12 +208,12 @@ function LfoGraph({
 // The FX stages left to right, each level as a bar in its knob colour.
 function FxMeters({ stages }: { stages: readonly ScreenReadout[] }) {
   return (
-    <div className={styles.fxMeters} aria-hidden="true">
+    <div className={graph.meters()} aria-hidden="true">
       {stages.map((stage, i) => (
-        <div key={stage.label} className={styles.fxStage}>
-          <div className={styles.fxTrack}>
+        <div key={stage.label} className={moduleView({ arrow: i < 2 }).stage()}>
+          <div className={graph.track()}>
             <div
-              className={styles.fxFill}
+              className={graph.fill()}
               style={{
                 height: `${Math.round(stage.amount * 100)}%`,
                 background: KNOB_COLORS[i],
@@ -204,14 +228,14 @@ function FxMeters({ stages }: { stages: readonly ScreenReadout[] }) {
 
 // A caption along the bottom of the screen; with `on`, a switch's name and
 // then On or Off in a pill.
-export interface ScreenBadge {
+export type ScreenBadge = {
   label: string;
   on?: boolean;
-}
+};
 
 // A row of the tracks view: its take's clip, where it starts on the timeline
 // (beats), and whether it's muted, soloed and heard.
-export interface ScreenTrack {
+export type ScreenTrack = {
   id: string;
   name: string;
   // The preset that plays it.
@@ -229,7 +253,83 @@ export interface ScreenTrack {
   // On the tape's row, the drum sequencer's pattern, drawn over the take
   // from the start: the tape's other half.
   pattern?: TrackClip;
-}
+};
+
+// A track row: its name and flags, its volume strip, then its lane. Blue
+// marks the track the blue knob picked, and keyboard focus is chalk. Muted
+// or left out of a solo, the lane dims.
+const trackRow = tv({
+  slots: {
+    base: "group relative grid min-h-0 cursor-pointer grid-cols-[112px_5px_minmax(0,1fr)] items-stretch justify-center gap-[8px] rounded-[6px] border border-transparent px-[4px] py-[3px] text-center text-sm font-medium text-screen-ink select-none aria-pressed:border-synth-blue focus-visible:border-screen-ink focus-visible:ring-2 focus-visible:ring-font-light focus-visible:ring-offset-2 focus-visible:outline-none aria-pressed:focus-visible:border-screen-ink",
+    label: "flex min-w-0 items-center justify-between gap-[6px] text-left",
+    name: "truncate text-[12px] leading-[15px] font-semibold tracking-[0.06em] uppercase",
+    number: "mr-[5px] text-screen-ink/55",
+    flags: "flex gap-[3px] self-center",
+    volume: "relative overflow-hidden rounded-[3px] bg-screen-ink/12",
+    level: "absolute inset-x-0 bottom-0 rounded-[3px] bg-synth-red",
+  },
+  variants: {
+    // The tape has no volume, but keeps the strip's column so its lane
+    // lines up.
+    potential: { true: { volume: "bg-transparent" } },
+  },
+});
+
+// The studio's mute and solo buttons as pills: filled when on.
+const flag = tv({
+  base: "grid size-[14px] place-items-center rounded-[4px] border border-screen-ink/30 text-[9px] font-bold text-screen-ink/55",
+  variants: {
+    on: { true: "border-screen-ink bg-screen-ink text-screen" },
+  },
+});
+
+// The lane is a window on the timeline; zoomed in (--zoom), its content
+// stretches and slides so the window starts at --from (0–1 of it). A line
+// marks the start of each bar. A clip's edges trim it when dragged: an
+// unmarked strip astride each. A repeat's count is centred over its notes
+// on a chip of the screen's black.
+const trackLane = tv({
+  slots: {
+    base: "relative overflow-hidden rounded-[4px]",
+    content:
+      "absolute top-0 bottom-0 left-[calc(var(--from,0)*var(--zoom,1)*-100%)] w-[calc(var(--zoom,1)*100%)] bg-[linear-gradient(to_right,color-mix(in_srgb,var(--color-screen-ink)_12%,transparent)_1px,transparent_1px)] bg-size-[calc(100%/var(--bars))_100%]",
+    edge: "absolute top-0 bottom-0 z-1 w-[12px] -translate-x-1/2 cursor-ew-resize touch-none",
+    count:
+      "absolute top-1/2 -translate-1/2 rounded-[3px] bg-screen/70 px-[3px] text-[11px] leading-[13px] font-bold",
+  },
+  variants: {
+    quiet: { true: { base: "opacity-30" } },
+  },
+});
+const lane = trackLane();
+
+// Each pass of the take is a clip, with a dark seam before the next. The
+// section a track is trimmed to is outlined in red; the drum pattern on the
+// tape's row is dimmer than the take, in a faint frame, so the two halves
+// read apart.
+const passStyle = tv({
+  base: "absolute top-0 bottom-0 rounded-[4px] border-r-2 border-r-screen",
+  variants: {
+    loop: { true: "shadow-[inset_0_0_0_1.5px_var(--color-synth-red)]" },
+    steps: {
+      true: "rounded-[3px] bg-transparent shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-screen-ink)_22%,transparent)]",
+    },
+  },
+});
+
+const clipNote = tv({
+  base: "absolute h-[3px] min-w-[2px] rounded-[1.5px] opacity-95",
+  variants: {
+    repeat: { true: "opacity-55" },
+    steps: { true: "opacity-45" },
+  },
+});
+
+// Where the mix is, across every lane, in the green of the knob that seeks
+// it; hidden while it is stopped. It starts at the lane's left edge (past
+// the 112px label and 5px volume strip) and spans the lane's width.
+const PLAYHEAD =
+  "absolute top-0 bottom-0 left-[calc(137px_+_var(--playhead,-1)_*_(100%_-_141px))] z-1 w-[2px] bg-synth-green opacity-[clamp(0,calc((var(--playhead,-1)_+_1)_*_1000),1)]";
 
 // Rows the tracks view shows at once; past them the list scrolls a row at a
 // time to keep the picked one in view.
@@ -335,7 +435,7 @@ function TrackList({
       style={{ "--zoom": zoom, "--from": from / span } as CSSProperties}
     >
       {children}
-      <span className={styles.playhead} aria-hidden="true" />
+      <span className={PLAYHEAD} aria-hidden="true" />
     </div>
   );
 }
@@ -380,7 +480,7 @@ function LoopEdge({
   };
   return (
     <span
-      className={styles.loopEdge}
+      className={lane.edge()}
       style={{ left: `${(at / span) * 100}%` }}
       onPointerDown={(event) => {
         event.stopPropagation();
@@ -437,16 +537,18 @@ function TrackLane({
   }
   const percent = (beats: number) => `${(beats / span) * 100}%`;
   return (
-    <span className={styles.lane} aria-hidden="true">
+    <span
+      className={trackLane({ quiet: !track.audible }).base()}
+      aria-hidden="true"
+    >
       <span
-        className={styles.laneContent}
+        className={lane.content()}
         style={{ "--bars": span / barBeats } as CSSProperties}
       >
         {pattern && pattern.length > 0 && (
           <>
             <span
-              className={styles.pass}
-              data-steps
+              className={passStyle({ steps: true })}
               style={{
                 left: 0,
                 width: percent(Math.min(pattern.length, span)),
@@ -457,8 +559,7 @@ function TrackLane({
               .map((note, i) => (
                 <span
                   key={`steps-${i}`}
-                  className={styles.clipNote}
-                  data-steps
+                  className={clipNote({ steps: true })}
                   style={{
                     left: percent(note.start),
                     width: percent(Math.min(note.length, span - note.start)),
@@ -472,8 +573,7 @@ function TrackLane({
         {drawn.map((at, pass) => (
           <span
             key={`pass-${pass}`}
-            className={styles.pass}
-            data-loop={(clip.looped && pass === 0) || undefined}
+            className={passStyle({ loop: clip.looped && pass === 0 })}
             style={{
               left: percent(at),
               width: percent(Math.min(clip.length, span - at)),
@@ -487,8 +587,7 @@ function TrackLane({
             .map((note, i) => (
               <span
                 key={`${pass}-${i}`}
-                className={styles.clipNote}
-                data-repeat={pass > 0 || undefined}
+                className={clipNote({ repeat: pass > 0 })}
                 style={{
                   left: percent(at + note.start),
                   width: percent(
@@ -504,7 +603,7 @@ function TrackLane({
           passes.slice(1).map((at, i) => (
             <span
               key={`count-${i}`}
-              className={styles.passCount}
+              className={lane.count()}
               style={{
                 left: percent(at + Math.min(clip.length, span - at) / 2),
                 color,
@@ -534,7 +633,7 @@ function TrackLane({
         {banded && (
           <>
             <span
-              className={styles.pass}
+              className={passStyle()}
               style={{
                 left: percent(passes[1]),
                 width: percent(bandEnd - passes[1]),
@@ -542,7 +641,7 @@ function TrackLane({
               }}
             />
             <span
-              className={styles.passCount}
+              className={lane.count()}
               style={{ left: percent((passes[1] + bandEnd) / 2), color }}
             >
               ×{passes.length}
@@ -556,11 +655,43 @@ function TrackLane({
 
 // A row of the drum sequencer: a piece of the kit, shown by its icon or, for
 // a hand-drum stroke, its syllable.
-export interface StepRow {
+export type StepRow = {
   id: string;
   label: string;
   icon?: ReactNode;
-}
+};
+
+// The drum sequencer: a row a piece, its icon in a narrow column, then the
+// steps; each beat's first step a little brighter and each bar's set off by
+// a line. The head is a green column over the steps (--head of --columns),
+// red while recording.
+const stepGrid = tv({
+  slots: {
+    row: "grid min-h-0 grid-cols-[30px_repeat(var(--columns),minmax(0,1fr))]",
+    piece:
+      "grid min-h-0 place-items-center overflow-hidden text-[10px] font-semibold tracking-[0.04em] uppercase text-screen-ink/70 [&_svg]:size-[14px]",
+    head: "pointer-events-none absolute -top-[2px] -bottom-[2px] left-[calc(30px_+_var(--head,0)_*_(100%_-_30px)_/_var(--columns))] w-[calc((100%_-_30px)_/_var(--columns))] rounded-[3px] bg-synth-green/30 shadow-[inset_0_0_0_1.5px_var(--color-synth-green)]",
+  },
+  variants: {
+    recording: {
+      true: {
+        head: "bg-synth-red/30 shadow-[inset_0_0_0_1.5px_var(--color-synth-red)]",
+      },
+    },
+  },
+});
+const stepParts = stepGrid();
+
+const stepCell = tv({
+  base: "relative min-h-0 cursor-pointer before:absolute before:inset-px before:rounded-[2px] before:bg-screen-ink/7",
+  variants: {
+    beat: { true: "before:bg-screen-ink/13" },
+    bar: {
+      true: "shadow-[inset_1px_0_color-mix(in_srgb,var(--color-screen-ink)_30%,transparent)]",
+    },
+    hit: { true: "before:bg-screen-ink" },
+  },
+});
 
 // Up to this many steps show at once, in whole bars (or whole beats when a
 // bar alone has more); the page follows the head.
@@ -648,7 +779,7 @@ function StepGrid({
   return (
     <div
       ref={grid}
-      className={styles.steps}
+      className={screenView({ kind: "steps" })}
       role="group"
       aria-label="Drum steps"
       style={
@@ -659,8 +790,8 @@ function StepGrid({
       }
     >
       {rows.map((row, r) => (
-        <div key={row.id} className={styles.stepRow}>
-          <span className={styles.stepPiece} title={row.label}>
+        <div key={row.id} className={stepParts.row()}>
+          <span className={stepParts.piece()} title={row.label}>
             {row.icon ?? row.label}
           </span>
           {Array.from({ length: columns }, (_, c) => {
@@ -668,10 +799,11 @@ function StepGrid({
             return (
               <span
                 key={step}
-                className={styles.stepCell}
-                data-hit={hits.has(`${r}:${step}`) || undefined}
-                data-beat={step % perBeat === 0 || undefined}
-                data-bar={step % barSteps === 0 || undefined}
+                className={stepCell({
+                  hit: hits.has(`${r}:${step}`),
+                  beat: step % perBeat === 0,
+                  bar: step % barSteps === 0,
+                })}
                 onPointerDown={(event) => {
                   event.preventDefault();
                   onToggle?.(r, step);
@@ -681,23 +813,19 @@ function StepGrid({
           })}
         </div>
       ))}
-      <span
-        className={styles.stepHead}
-        data-recording={recording || undefined}
-        aria-hidden="true"
-      />
+      <span className={stepGrid({ recording }).head()} aria-hidden="true" />
     </div>
   );
 }
 
 // A level shown over the current view, e.g. the volume while it changes.
 // Without a value it is a message alone, e.g. asking for a second press.
-export interface ScreenOverlay {
+export type ScreenOverlay = {
   label: string;
   // 0–1
   value?: number;
   display?: string;
-}
+};
 
 // The setting the red knob picked (red) and its value, set by the blue knob
 // (blue), for the footer.
@@ -710,8 +838,8 @@ export function ScreenSelection({
 }) {
   return (
     <>
-      <span className={styles.selectionLabel}>{label}</span>{" "}
-      <span className={styles.selectionValue}>{value}</span>
+      <span className="text-synth-red">{label}</span>{" "}
+      <span className="text-synth-blue">{value}</span>
     </>
   );
 }
@@ -726,7 +854,11 @@ export function ScreenPad({
   children: ReactNode;
 }) {
   return (
-    <span className={styles.padBadge} role="img" aria-label={label}>
+    <span
+      className="mx-[2px] inline-grid h-[15px] place-items-center rounded-[4px] border border-current/45 px-[4px] align-top [&_svg]:size-[10px]"
+      role="img"
+      aria-label={label}
+    >
       {children}
     </span>
   );
@@ -734,20 +866,20 @@ export function ScreenPad({
 
 // Whatever the green knob moves through (a page counter, a param), in green.
 export function ScreenSeek({ children }: { children: ReactNode }) {
-  return <span className={styles.seeking}>{children}</span>;
+  return <span className="text-synth-green">{children}</span>;
 }
 
 // A level the red knob sets, in red.
 export function ScreenLevel({ children }: { children: ReactNode }) {
-  return <span className={styles.selectionLabel}>{children}</span>;
+  return <span className="text-synth-red">{children}</span>;
 }
 
 // A value the blue knob sets, in blue.
 export function ScreenValue({ children }: { children: ReactNode }) {
-  return <span className={styles.selectionValue}>{children}</span>;
+  return <span className="text-synth-blue">{children}</span>;
 }
 
-export interface DeviceScreenProps {
+export type DeviceScreenProps = {
   view?: ScreenView;
   title: string;
   // The preset in the title has edits that aren't saved.
@@ -812,7 +944,7 @@ export interface DeviceScreenProps {
   onMoveStep?: (steps: number) => void;
   overlay?: ScreenOverlay;
   className?: string;
-}
+};
 
 export const PARAMS_PER_PAGE = 15;
 export const TILES_PER_PAGE: Record<string, number> = {
@@ -823,6 +955,149 @@ export const TILES_PER_PAGE: Record<string, number> = {
   album: 8,
   revert: 8,
 };
+
+// The screen: black glass in a pressed-in bezel, as round as the pads so it
+// sits square between the grilles, 2.39:1 unless the Device sets
+// --screen-aspect. A readout line runs along the top and the footer along
+// the bottom; on the roll a caption or notice takes the C labels' place in
+// their type, so the keys stay put when one comes or goes.
+const screen = tv({
+  slots: {
+    base: "aspect-[var(--screen-aspect,2.39)] rounded-[12px] border-t-[1.5px] border-b-[1.5px] border-t-screen-edge border-b-screen-lip bg-screen p-[8px] shadow-screen",
+    glass:
+      "relative flex h-full items-center rounded-[4px] px-[20px] text-screen-ink",
+    readout:
+      "absolute top-[9px] right-[20px] left-[20px] flex justify-between gap-[16px] font-screen text-[12px] leading-[15px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 uppercase",
+    footer:
+      "absolute right-[20px] bottom-[9px] left-[20px] flex justify-between gap-[16px] font-screen text-[12px] leading-[15px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 uppercase",
+    badges:
+      "absolute right-[20px] bottom-[8px] left-[20px] flex justify-center gap-[16px] font-screen text-[12px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 uppercase",
+    title: "flex items-center gap-[8px]",
+    // An outlined pill like Off; the negative margin keeps the readout's
+    // 15px line.
+    unsaved:
+      "-my-px rounded-[999px] border border-screen-ink/30 px-[6px] py-[1px] text-[11px] leading-[13px] font-semibold text-screen-ink/55",
+    scope: "h-[160px] w-full text-screen-ink",
+    // From under the title down to the footer's line, which holds its
+    // labels.
+    roll: "absolute top-[30px] right-[20px] bottom-[23px] left-[20px] h-[calc(100%_-_53px)] w-[calc(100%_-_40px)] text-screen-ink",
+    stages:
+      "grid grid-cols-4 gap-[18px] font-screen text-[13px] leading-[17px]",
+    // Label over value, centred in its column.
+    stage: "flex flex-col items-center whitespace-nowrap",
+    stageLabel: "tracking-[0.06em] uppercase text-screen-ink/55",
+    stageValue: "font-semibold",
+    // The tempo in green, as the green knob sets it, over a light per beat.
+    bpm: "flex items-baseline gap-[10px] text-[72px] leading-none font-semibold tabular-nums",
+    bpmUnit: "text-[15px] tracking-[0.08em] text-screen-ink/55",
+    beats: "flex gap-[16px]",
+    tracksEmpty:
+      "row-span-full self-center justify-self-center text-[12px] tracking-[0.08em] uppercase text-screen-ink/55",
+    switchLabel: "flex items-center gap-[8px]",
+  },
+  variants: {
+    caption: {
+      true: {
+        footer: "bottom-[10px] text-[10px] leading-[10px] tracking-normal",
+        badges: "bottom-[10px] text-[10px] leading-[10px] tracking-normal",
+      },
+    },
+  },
+});
+
+// Views sit in the ~565 × 181 space between the two readouts. The library
+// is two rows of 4 tiles filling it; icons are four rows of 12, 48 a page;
+// tracks are four rows a page, like the studio's track list.
+const screenView = tv({
+  base: "absolute top-[30px] right-[20px] bottom-[30px] left-[20px] m-0",
+  variants: {
+    kind: {
+      params: "grid grid-cols-3 grid-rows-5 gap-x-[18px] gap-y-0 font-screen",
+      tiles: "grid grid-cols-4 grid-rows-2 gap-[6px] overflow-hidden",
+      icons:
+        "grid grid-cols-12 grid-rows-4 justify-items-center gap-[6px] overflow-hidden",
+      module: "flex flex-col gap-[6px]",
+      tempo: "flex flex-col items-center justify-center gap-[18px] font-screen",
+      tracks: "grid grid-rows-4 gap-[4px] font-screen",
+      steps: "grid gap-[2px] font-screen",
+    },
+  },
+});
+
+// A param's name and value: a hairline that turns blue on keyboard focus,
+// like the tiles, its margin keeping the text lined up with the readouts.
+// The red knob picks the selected one and the blue knob sets its value.
+const param = tv({
+  slots: {
+    base: "relative -mx-[7px] flex min-w-0 cursor-pointer items-center justify-between gap-[6px] rounded-[6px] border border-transparent px-[6px] text-center text-[14px] leading-[18px] font-normal text-screen-ink select-none [font-family:inherit] focus-visible:border-synth-blue focus-visible:shadow-[inset_0_0_0_1px_var(--color-synth-blue)] focus-visible:outline-none",
+    label: "truncate tracking-[0.02em] uppercase text-screen-ink/55",
+    value: "font-semibold whitespace-nowrap",
+  },
+  variants: {
+    selected: { true: { label: "text-synth-red", value: "text-synth-blue" } },
+  },
+});
+
+// A tile: green marks the one the green knob is on. Keyboard focus turns
+// its hairline blue rather than drawing a ring, with a second pixel inside
+// so it reads on a green tile too. A name runs to two lines, so "Acoustic
+// Guitar" reads in full on a narrow tile. Icon tiles are squares as tall as
+// a row (~41 px), centred in their columns.
+const tile = tv({
+  slots: {
+    base: "group relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-[4px] rounded-[8px] border border-screen-ink/12 px-[4px] text-center text-sm font-medium text-screen-ink/75 select-none aria-pressed:border-synth-green aria-pressed:bg-synth-green aria-pressed:text-white focus-visible:border-synth-blue focus-visible:shadow-[inset_0_0_0_1px_var(--color-synth-blue)] focus-visible:outline-none aria-pressed:focus-visible:border-synth-blue",
+    icon: "grid place-items-center font-screen text-[11px] font-bold [&_svg]:size-[26px]",
+    name: "line-clamp-2 max-w-full overflow-hidden text-center font-screen text-[12px] leading-[15px] tracking-[0.02em] uppercase",
+    badge:
+      "absolute top-[3px] right-[4px] font-screen text-[8px] leading-[10px] font-bold text-synth-red group-aria-pressed:text-white",
+  },
+  variants: {
+    icons: {
+      true: {
+        base: "aspect-square h-full w-auto p-0",
+        icon: "[&_svg]:size-[22px]",
+      },
+    },
+  },
+});
+
+// Wide enough for "Off", so switching doesn't shift the label.
+const onOff = tv({
+  base: "min-w-[40px] rounded-[999px] border border-screen-ink/30 px-[6px] py-[1px] text-center text-[11px] leading-[13px] font-semibold text-screen-ink/55",
+  variants: {
+    on: { true: "border-screen-ink bg-screen-ink text-screen" },
+  },
+});
+
+const beatLight = tv({
+  base: "size-[10px] rounded-[50%] bg-screen-ink/18",
+  variants: {
+    on: { true: "bg-screen-ink" },
+  },
+});
+
+// A level over the view, or a message alone, inverted white on black so it
+// punches through.
+const overlayMeter = tv({
+  slots: {
+    base: "pointer-events-none absolute inset-0 z-2 grid animate-[overlay-in_120ms_ease-out] place-items-center rounded-[inherit] bg-screen/55",
+    meter:
+      "flex w-[62%] flex-col gap-[10px] rounded-[10px] border border-screen-ink/18 bg-screen/92 px-[18px] pt-[14px] pb-[16px]",
+    label:
+      "flex justify-between font-screen text-[13px] leading-[16px] font-semibold tracking-[0.08em] uppercase",
+    text: "text-center font-screen text-[13px] leading-[18px] font-semibold tracking-[0.08em] text-balance uppercase",
+    track: "relative h-[12px] overflow-hidden rounded-[3px] bg-screen-ink/12",
+    fill: "h-full bg-screen-ink transition-[width] duration-160 ease-[ease-out]",
+  },
+  variants: {
+    alone: {
+      true: {
+        meter:
+          "w-auto max-w-[78%] rounded-[14px] border-transparent bg-screen-ink px-[20px] py-[12px] text-screen",
+      },
+    },
+  },
+});
 
 const noAnalyser = () => null;
 const EMPTY_ROLL: RollFrame = { now: 0, notes: [], state: "stopped" };
@@ -892,21 +1167,25 @@ export function DeviceScreen({
     tilePage * perPage,
     (tilePage + 1) * perPage,
   );
+  const ui = screen();
+  const bottom = screen({ caption: view === "roll" });
+  const tileParts = tile({ icons: view === "save" });
+  const level = overlayMeter({ alone: overlay?.value === undefined });
 
   return (
-    <div className={cn(styles.screen, className)}>
-      <div className={styles.glass}>
-        <div className={styles.readout}>
-          <span className={styles.title}>
+    <div className={ui.base({ className })}>
+      <div className={ui.glass()}>
+        <div className={ui.readout()}>
+          <span className={ui.title()}>
             <span aria-live="polite">{title}</span>
-            {unsaved && <span className={styles.unsaved}>Unsaved</span>}
+            {unsaved && <span className={ui.unsaved()}>Unsaved</span>}
           </span>
           <span>{status}</span>
         </div>
 
         {(view === "adsr" || view === "lfo" || view === "fx") &&
           readouts.length === 4 && (
-            <div className={styles.module}>
+            <div className={screenView({ kind: "module" })}>
               {view === "adsr" && <EnvelopeGraph stages={readouts} />}
               {view === "lfo" && (
                 <LfoGraph
@@ -916,11 +1195,14 @@ export function DeviceScreen({
                 />
               )}
               {view === "fx" && <FxMeters stages={readouts} />}
-              <div className={styles.stages}>
+              <div className={ui.stages()}>
                 {readouts.map((stage, i) => (
-                  <span key={stage.label} className={styles.stage}>
-                    <span>{stage.label}</span>
-                    <span style={{ color: KNOB_COLORS[i] }}>
+                  <span key={stage.label} className={ui.stage()}>
+                    <span className={ui.stageLabel()}>{stage.label}</span>
+                    <span
+                      className={ui.stageValue()}
+                      style={{ color: KNOB_COLORS[i] }}
+                    >
                       {stage.display}
                     </span>
                   </span>
@@ -930,18 +1212,14 @@ export function DeviceScreen({
           )}
 
         {view === "tempo" && (
-          <div className={styles.tempo}>
-            <span className={styles.bpm}>
-              <span className={styles.seeking}>{timing.bpm}</span>
-              <span className={styles.bpmUnit}>BPM</span>
+          <div className={screenView({ kind: "tempo" })}>
+            <span className={ui.bpm()}>
+              <ScreenSeek>{timing.bpm}</ScreenSeek>
+              <span className={ui.bpmUnit()}>BPM</span>
             </span>
-            <span className={styles.beats} aria-hidden="true">
+            <span className={ui.beats()} aria-hidden="true">
               {Array.from({ length: timing.meter.beats }, (_, i) => (
-                <span
-                  key={i}
-                  className={styles.beat}
-                  data-on={beat === i || undefined}
-                />
+                <span key={i} className={beatLight({ on: beat === i })} />
               ))}
             </span>
           </div>
@@ -949,7 +1227,7 @@ export function DeviceScreen({
 
         {view === "tracks" && (
           <TrackList
-            className={styles.tracks}
+            className={screenView({ kind: "tracks" })}
             getPosition={getTrackPosition}
             span={trackSpan}
             zoom={trackZoom}
@@ -962,7 +1240,7 @@ export function DeviceScreen({
             }
           >
             {tracks.length === 0 ? (
-              <span className={styles.tracksEmpty}>
+              <span className={ui.tracksEmpty()}>
                 Save a take in record mode to add a track
               </span>
             ) : (
@@ -970,11 +1248,11 @@ export function DeviceScreen({
                 .slice(trackTop, trackTop + TRACKS_SHOWN)
                 .map((track, i) => {
                   const index = trackTop + i;
+                  const row = trackRow({ potential: track.potential });
                   return (
                     <Button
                       key={track.id}
-                      variant="ghost"
-                      tone="secondary"
+                      unstyled
                       aria-label={
                         track.potential
                           ? `${track.name}, tape`
@@ -985,33 +1263,33 @@ export function DeviceScreen({
                             }`
                       }
                       aria-pressed={index === selected}
-                      className={styles.track}
-                      data-quiet={!track.audible || undefined}
+                      className={row.base()}
                       data-potential={track.potential || undefined}
                       {...keepFocus}
                       onClick={() => onSelect?.(index)}
                     >
-                      <span className={styles.trackLabel} aria-hidden="true">
-                        <span className={styles.trackName}>
+                      <span className={row.label()} aria-hidden="true">
+                        <span className={row.name()}>
                           {!track.potential && (
-                            <span className={styles.trackNumber}>#{index}</span>
+                            <span className={row.number()}>#{index}</span>
                           )}
                           {track.name}
                         </span>
                         {!track.potential && (
-                          <span className={styles.trackFlags}>
-                            <span data-on={track.muted || undefined}>M</span>
-                            <span data-on={track.soloed || undefined}>S</span>
+                          <span className={row.flags()}>
+                            <span className={flag({ on: track.muted })}>M</span>
+                            <span className={flag({ on: track.soloed })}>
+                              S
+                            </span>
                           </span>
                         )}
                       </span>
-                      <span
-                        className={styles.trackVolume}
-                        data-empty={track.potential || undefined}
-                        aria-hidden="true"
-                      >
+                      <span className={row.volume()} aria-hidden="true">
                         {!track.potential && (
-                          <span style={{ height: `${track.volume * 100}%` }} />
+                          <span
+                            className={row.level()}
+                            style={{ height: `${track.volume * 100}%` }}
+                          />
                         )}
                       </span>
                       <TrackLane
@@ -1034,7 +1312,7 @@ export function DeviceScreen({
 
         {view === "roll" && (
           <NoteRoll
-            className={styles.roll}
+            className={ui.roll()}
             getFrame={getRoll}
             timing={timing}
             position={rollPosition}
@@ -1059,31 +1337,34 @@ export function DeviceScreen({
         )}
 
         {view === "scope" && (
-          <Oscilloscope className={styles.scope} getAnalyser={getAnalyser} />
+          <Oscilloscope className={ui.scope()} getAnalyser={getAnalyser} />
         )}
 
         {view === "synth" && (
-          <div className={styles.params} role="group" aria-label="Parameters">
+          <div
+            className={screenView({ kind: "params" })}
+            role="group"
+            aria-label="Parameters"
+          >
             {params
               .slice(page * PARAMS_PER_PAGE, (page + 1) * PARAMS_PER_PAGE)
-              .map((param, i) => (
-                <Button
-                  key={param.id}
-                  variant="ghost"
-                  tone="secondary"
-                  aria-label={`${param.label}: ${param.value}`}
-                  aria-pressed={param.selected ?? false}
-                  className={cn(
-                    styles.param,
-                    param.selected && styles.selected,
-                  )}
-                  {...keepFocus}
-                  onClick={() => onSelectParam?.(page * PARAMS_PER_PAGE + i)}
-                >
-                  <span className={styles.paramLabel}>{param.label}</span>
-                  <span className={styles.paramValue}>{param.value}</span>
-                </Button>
-              ))}
+              .map((entry, i) => {
+                const styles = param({ selected: entry.selected });
+                return (
+                  <Button
+                    key={entry.id}
+                    unstyled
+                    aria-label={`${entry.label}: ${entry.value}`}
+                    aria-pressed={entry.selected ?? false}
+                    className={styles.base()}
+                    {...keepFocus}
+                    onClick={() => onSelectParam?.(page * PARAMS_PER_PAGE + i)}
+                  >
+                    <span className={styles.label()}>{entry.label}</span>
+                    <span className={styles.value()}>{entry.value}</span>
+                  </Button>
+                );
+              })}
           </div>
         )}
 
@@ -1094,7 +1375,9 @@ export function DeviceScreen({
           view === "album" ||
           view === "revert") && (
           <div
-            className={cn(styles.tiles, view === "save" && styles.iconTiles)}
+            className={screenView({
+              kind: view === "save" ? "icons" : "tiles",
+            })}
             role="group"
             aria-label={
               view === "save"
@@ -1110,34 +1393,33 @@ export function DeviceScreen({
                         : "Preset library"
             }
           >
-            {visibleTiles.map((tile, i) => {
+            {visibleTiles.map((entry, i) => {
               const index = tilePage * perPage + i;
               return (
                 <Button
-                  key={tile.id}
-                  variant="ghost"
-                  tone="secondary"
-                  aria-label={tile.label}
+                  key={entry.id}
+                  unstyled
+                  aria-label={entry.label}
                   aria-pressed={index === selected}
-                  className={styles.tile}
+                  className={tileParts.base()}
                   {...keepFocus}
                   onClick={() => onSelect?.(index)}
                 >
-                  <span className={styles.tileIcon} aria-hidden="true">
-                    {tile.icon}
+                  <span className={tileParts.icon()} aria-hidden="true">
+                    {entry.icon}
                   </span>
                   {(view === "presets" ||
                     view === "chords" ||
                     view === "chordStyle" ||
                     view === "album" ||
                     view === "revert") && (
-                    <span className={styles.tileName} aria-hidden="true">
-                      {tile.label}
+                    <span className={tileParts.name()} aria-hidden="true">
+                      {entry.label}
                     </span>
                   )}
-                  {tile.badge && (
-                    <span className={styles.badge} aria-hidden="true">
-                      {tile.badge}
+                  {entry.badge && (
+                    <span className={tileParts.badge()} aria-hidden="true">
+                      {entry.badge}
                     </span>
                   )}
                 </Button>
@@ -1147,29 +1429,18 @@ export function DeviceScreen({
         )}
 
         {badges ? (
-          <div
-            className={cn(styles.badges, view === "roll" && styles.rollCaption)}
-            aria-live="polite"
-          >
+          <div className={bottom.badges()} aria-live="polite">
             {badges.map(({ label, on }) => (
-              <span key={label} className={styles.switchLabel}>
+              <span key={label} className={ui.switchLabel()}>
                 {label}
                 {on !== undefined && (
-                  <span className={styles.switch} data-on={on || undefined}>
-                    {on ? "On" : "Off"}
-                  </span>
+                  <span className={onOff({ on })}>{on ? "On" : "Off"}</span>
                 )}
               </span>
             ))}
           </div>
         ) : (
-          <div
-            className={cn(
-              styles.readout,
-              styles.readoutBottom,
-              view === "roll" && styles.rollCaption,
-            )}
-          >
+          <div className={bottom.footer()}>
             <span>{footer[0]}</span>
             <span>{footer[1]}</span>
           </div>
@@ -1177,25 +1448,22 @@ export function DeviceScreen({
 
         {overlay && (
           <div
-            className={styles.overlay}
+            className={level.base()}
             role={overlay.value === undefined ? "status" : undefined}
             aria-hidden={overlay.value !== undefined || undefined}
           >
-            <div
-              className={styles.meter}
-              data-message={overlay.value === undefined || undefined}
-            >
+            <div className={level.meter()}>
               {overlay.value === undefined ? (
-                <div className={styles.meterMessage}>{overlay.label}</div>
+                <div className={level.text()}>{overlay.label}</div>
               ) : (
                 <>
-                  <div className={styles.meterLabel}>
+                  <div className={level.label()}>
                     <span>{overlay.label}</span>
                     <span>{overlay.display}</span>
                   </div>
-                  <div className={styles.meterTrack}>
+                  <div className={level.track()}>
                     <div
-                      className={styles.meterFill}
+                      className={level.fill()}
                       style={{ width: `${Math.round(overlay.value * 100)}%` }}
                     />
                   </div>

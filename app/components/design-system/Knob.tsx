@@ -1,10 +1,9 @@
 import { useEffect, useEffectEvent, useRef, type CSSProperties } from "react";
 import { Button } from "./Button";
-import { cn } from "../../lib/utils";
+import { tv } from "../../lib/utils";
 import { keepFocus } from "./Pad";
-import styles from "./Knob.module.css";
 
-export interface KnobProps {
+export type KnobProps = {
   label: string;
   valueLabel?: string;
   step: number;
@@ -16,7 +15,7 @@ export interface KnobProps {
   // Continuous: the value is a float over 0..steps-1 and one drag covers the
   // whole range, for scrubbing rather than stepping.
   fine?: boolean;
-}
+};
 
 const TEETH = 36;
 // [radius %, angle offset in degrees] of the four corners of each tooth.
@@ -37,6 +36,20 @@ const GEAR_EDGE = `polygon(${Array.from({ length: TEETH }, (_, tooth) =>
 )
   .flat()
   .join(", ")})`;
+
+// Pad-sized (68px) unless a container sets --knob-size; its parts scale
+// with it. Keyboard focus shows just an outline: it has no box shadow of its
+// own, and drops a soft shadow that follows the gear edge.
+const knob = tv({
+  slots: {
+    base: "group relative inline-flex size-(--size) cursor-ew-resize touch-none items-center justify-center rounded-[50%] drop-shadow-knob select-none [--size:var(--knob-size,68px)] focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-[#2f7de1] focus-visible:outline-solid",
+    cap: "flex size-full items-center justify-center bg-(--knob-color) bg-[radial-gradient(circle,rgb(0_0_0/0)_72%,rgb(0_0_0/0.22)_88%,rgb(0_0_0/0.34)_100%)] transition-transform duration-200 ease-[ease] motion-reduce:transition-none",
+    top: "flex size-[calc(var(--size)*52/68)] justify-center rounded-[50%] bg-(--knob-color) bg-[radial-gradient(circle_at_38%_30%,rgb(255_255_255/0.42),rgb(255_255_255/0)_55%),radial-gradient(circle,rgb(0_0_0/0)_70%,rgb(0_0_0/0.12))] shadow-[0_0_0_1.5px_rgb(0_0_0/0.14),0_1px_2px_rgb(0_0_0/0.25)] group-active:brightness-95",
+    mark: "mt-[calc(var(--size)*5/68)] h-[calc(var(--size)*14/68)] w-[calc(var(--size)*4/68)] rounded-[2px] bg-(--knob-mark)",
+  },
+});
+
+const styles = knob();
 
 // Horizontal drag distance and trackpad scroll distance (px) per detent.
 const DRAG_STEP = 24;
@@ -101,10 +114,9 @@ export function Knob({
   return (
     <Button
       ref={ref}
-      variant="ghost"
-      tone="secondary"
+      unstyled
       aria-label={valueLabel ? `${label}: ${valueLabel}` : label}
-      className={cn(styles.knob, className)}
+      className={styles.base({ className })}
       style={
         { "--knob-color": color, "--knob-mark": markColor } as CSSProperties
       }
@@ -150,11 +162,11 @@ export function Knob({
       }}
     >
       <span
-        className={styles.cap}
+        className={styles.cap()}
         style={{ clipPath: GEAR_EDGE, transform: `rotate(${angle}deg)` }}
       >
-        <span className={styles.top}>
-          <span className={styles.mark} />
+        <span className={styles.top()}>
+          <span className={styles.mark()} />
         </span>
       </span>
     </Button>

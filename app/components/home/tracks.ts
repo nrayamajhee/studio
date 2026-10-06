@@ -12,17 +12,17 @@ import {
 // where it sits on the timeline, as many times as the track repeats; in the
 // take's own beats from its start. It is kept while off, so it comes back as
 // it was.
-export interface TrackLoop {
+export type TrackLoop = {
   start: number;
   end: number;
   on: boolean;
-}
+};
 
 // A take kept on the tracks view, with the sound and preset that played it
 // and the timing it was recorded on (its own tempo, meter and grid). `start`
 // slides it along the timeline, in beats. Its notes are never changed in
 // place, but its ADSR, LFO and FX can be, and its sound renders through them.
-export interface Track {
+export type Track = {
   id: string;
   name: string;
   color: string;
@@ -40,7 +40,7 @@ export interface Track {
   loop?: TrackLoop;
   // How many times the take (or its loop) plays back to back; once if unset.
   repeats?: number;
-}
+};
 
 // Note colours, one per track in turn, bright enough for the black screen.
 export const TRACK_COLORS = [
@@ -91,7 +91,7 @@ export function makeTrack(
   };
 }
 
-export interface TrackClip {
+export type TrackClip = {
   // One pass of the take, in beats.
   length: number;
   // Where the first pass starts after the track's start, in beats: a loop
@@ -102,7 +102,7 @@ export interface TrackClip {
   // The pass is the track's loop.
   looped: boolean;
   notes: readonly { note: number; start: number; length: number }[];
-}
+};
 
 // One of the take's own beats at `bpm`, in ms: a grid take stretches to the
 // tempo, keeping its beats; a free one plays as recorded.

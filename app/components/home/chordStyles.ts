@@ -27,11 +27,11 @@ export const STRUM_GAPS: readonly number[] = [5, 10, 15, 20, 30, 40, 60, 80];
 // before the next.
 const PULSE_GATE = 0.5;
 
-export interface ChordStyle {
+export type ChordStyle = {
   id: ChordStyleId;
   perBeat: number;
   strum: number;
-}
+};
 
 export const DEFAULT_CHORD_STYLE: ChordStyle = {
   id: "block",
@@ -68,10 +68,10 @@ function stepsOf(id: ChordStyleId, count: number): number[][] {
   }
 }
 
-export interface ChordVoice {
+export type ChordVoice = {
   on: (midi: number) => void;
   off: (midi: number) => void;
-}
+};
 
 // Plays `midis` in `style` until the returned function stops it, which
 // releases whatever still sounds. A pattern keeps going round while held,

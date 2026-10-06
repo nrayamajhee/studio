@@ -20,14 +20,14 @@ function positionComb(buffer: Float32Array, length: number, b: number) {
   for (let n = length - 1; n >= b; n--) buffer[n] -= buffer[n - b];
 }
 
-export interface PluckOptions {
+export type PluckOptions = {
   period: number;
   velocity: number;
   hardness: number;
   position: number;
   strength: number;
   finger: boolean;
-}
+};
 
 // Writes one period of pluck excitation; returns its length.
 export function pluck(
@@ -78,7 +78,7 @@ export function pluck(
   return length;
 }
 
-export interface HammerOptions {
+export type HammerOptions = {
   period: number;
   velocity: number;
   hardness: number;
@@ -88,7 +88,7 @@ export interface HammerOptions {
   fs: number;
   // Output: how long the felt stayed in contact with the string.
   contactMs: number;
-}
+};
 
 // Felt stiffness K and string admittance for a C4 contact of ~1 ms at full
 // velocity with a p = 2.5 felt law (T ∝ (m/K)^(1/(p+1))·v0^((1−p)/(p+1))).

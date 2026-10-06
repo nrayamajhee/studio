@@ -95,6 +95,174 @@
     0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
+/* The Device. Two spacings: bezel around the whole device (the page margin
+   is twice it on wide screens, narrowing to half on phones) and inset for
+   everything else. Colours mixed with --theme-mix fade with the page. */
+@theme static {
+  --spacing-bezel: 32px;
+  --spacing-inset: 11px;
+
+  --color-synth-chalk: #f4f3ef;
+  --color-synth-red: #cd5951;
+  --color-synth-green: #4ba078;
+  --color-synth-blue: #2f7de1;
+
+  --color-device: color-mix(in srgb, #d6d5d0, #2a2a2d var(--theme-mix));
+  --shadow-device:
+    0 50px 90px -40px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.45),
+        rgb(0 0 0 / 0.8) var(--theme-mix)
+      ),
+    0 12px 24px -12px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.25),
+        rgb(0 0 0 / 0.6) var(--theme-mix)
+      ),
+    inset 0 2px 0
+      color-mix(
+        in srgb,
+        rgb(255 255 255 / 0.75),
+        rgb(255 255 255 / 0.1) var(--theme-mix)
+      ),
+    inset 0 -3px 0
+      color-mix(in srgb, rgb(0 0 0 / 0.08), rgb(0 0 0 / 0.35) var(--theme-mix));
+
+  /* Each grille hole is dark, shaded inside along its top edge, with a lit
+     lip below where the case catches the light. */
+  --color-grille-hole: color-mix(
+    in srgb,
+    rgb(20 20 19 / 0.5),
+    rgb(0 0 0 / 0.85) var(--theme-mix)
+  );
+  --shadow-grille-hole:
+    inset 0 0.5px 0.75px
+      color-mix(in srgb, rgb(0 0 0 / 0.5), rgb(0 0 0 / 0.95) var(--theme-mix)),
+    0 0.5px 0
+      color-mix(
+        in srgb,
+        rgb(255 255 255 / 0.9),
+        rgb(255 255 255 / 0.14) var(--theme-mix)
+      );
+
+  /* The key well is pressed in: a soft, wide shadow falls from the top edge
+     and both sides into the gutter. */
+  --color-keybed: color-mix(
+    in srgb,
+    rgb(20 20 19 / 0.07),
+    rgb(0 0 0 / 0.28) var(--theme-mix)
+  );
+  --shadow-keybed:
+    inset 0 14px 22px -14px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.22),
+        rgb(0 0 0 / 0.55) var(--theme-mix)
+      ),
+    inset 14px 0 20px -16px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.14),
+        rgb(0 0 0 / 0.4) var(--theme-mix)
+      ),
+    inset -14px 0 20px -16px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.14),
+        rgb(0 0 0 / 0.4) var(--theme-mix)
+      );
+
+  /* The screen's glass stays black with chalk ink in either theme; only the
+     bezel around it follows the page. It is pressed in: a darker top edge, a
+     light lip along the bottom, and a soft shadow falling inside from the
+     top and sides. */
+  --color-screen: #050505;
+  --color-screen-ink: #f4f3ef;
+  --color-screen-edge: color-mix(
+    in srgb,
+    rgb(20 20 19 / 0.3),
+    rgb(0 0 0 / 0.75) var(--theme-mix)
+  );
+  --color-screen-lip: color-mix(
+    in srgb,
+    #ffffff,
+    rgb(255 255 255 / 0.12) var(--theme-mix)
+  );
+  --shadow-screen:
+    inset 0 12px 20px -12px
+      color-mix(in srgb, rgb(20 20 19 / 0.3), rgb(0 0 0 / 0.8) var(--theme-mix)),
+    inset 12px 0 18px -14px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.18),
+        rgb(0 0 0 / 0.6) var(--theme-mix)
+      ),
+    inset -12px 0 18px -14px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.18),
+        rgb(0 0 0 / 0.6) var(--theme-mix)
+      );
+  --font-screen: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* The hardware controls: pads, knobs and keys. Each is lit or pressed by
+   its shadows: a lip below and light above at rest, shading in when held. */
+@theme static {
+  --color-pad: color-mix(in srgb, #eeede9, #3a3a3e var(--theme-mix));
+  --color-pad-ink: color-mix(in srgb, #6b6963, #b9b7b0 var(--theme-mix));
+  --color-pad-held: color-mix(in srgb, #e3e2dd, #333337 var(--theme-mix));
+  --shadow-pad:
+    inset 0 -5px 0 color-mix(in srgb, #b3b1aa, #1c1c1f var(--theme-mix)),
+    inset 0 1px 0
+      color-mix(in srgb, #ffffff, rgb(255 255 255 / 0.1) var(--theme-mix)),
+    0 4px 8px -4px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.35),
+        rgb(0 0 0 / 0.6) var(--theme-mix)
+      );
+  --shadow-pad-held:
+    inset 0 -2px 0 color-mix(in srgb, #b3b1aa, #1c1c1f var(--theme-mix)),
+    inset 0 5px 8px -4px
+      color-mix(in srgb, rgb(0 0 0 / 0.3), rgb(0 0 0 / 0.55) var(--theme-mix));
+  --shadow-pad-lit:
+    inset 0 -2px 0 rgb(0 0 0 / 0.25), inset 0 3px 6px rgb(0 0 0 / 0.2);
+  --shadow-pad-lit-held: inset 0 4px 8px rgb(0 0 0 / 0.3);
+
+  /* The pads' soft drop shadow, as a filter so it follows the gear edge (a
+     drop-shadow has no spread, so a shorter offset and blur stand in for the
+     pads' −4px). */
+  --drop-shadow-knob: 0 3px 3px
+    color-mix(in srgb, rgb(20 20 19 / 0.25), rgb(0 0 0 / 0.5) var(--theme-mix));
+
+  --color-key-white: color-mix(in srgb, #f7f6f2, #e6e4de var(--theme-mix));
+  --color-key-white-lit: color-mix(in srgb, #e4e3de, #cfcdc7 var(--theme-mix));
+  --shadow-key-white:
+    inset 0 -6px 0 color-mix(in srgb, #aeaca5, #9a9891 var(--theme-mix)),
+    inset 0 6px 8px -6px
+      color-mix(in srgb, rgb(0 0 0 / 0.4), rgb(0 0 0 / 0.55) var(--theme-mix));
+  --shadow-key-white-lit:
+    inset 0 -2px 0 color-mix(in srgb, #a3a19a, #8f8d86 var(--theme-mix)),
+    inset 0 6px 10px -4px
+      color-mix(in srgb, rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.45) var(--theme-mix));
+  --color-key-black: color-mix(in srgb, #3d3d41, #232326 var(--theme-mix));
+  --color-key-black-lit: color-mix(in srgb, #4a4a4f, #2e2e32 var(--theme-mix));
+  --shadow-key-black:
+    inset 0 -10px 0 color-mix(in srgb, #19191a, #0c0c0d var(--theme-mix)),
+    inset 0 1px 0
+      color-mix(
+        in srgb,
+        rgb(255 255 255 / 0.08),
+        rgb(255 255 255 / 0.07) var(--theme-mix)
+      ),
+    0 4px 8px
+      color-mix(in srgb, rgb(0 0 0 / 0.45), rgb(0 0 0 / 0.6) var(--theme-mix));
+  --shadow-key-black-lit: inset 0 -3px 0 #121213, 0 2px 4px rgb(0 0 0 / 0.4);
+}
+
 /* 0 in light mode, 1 in dark mode, animated so colors mixed with
    --theme-mix fade in step with the 400ms background cross-fade. */
 @property --theme-dark {
@@ -283,5 +451,19 @@ body {
   .animate-sunset-traverse {
     animation: none;
     transform: translate3d(50vw, 0, 0);
+  }
+}
+
+/* The screen's overlay fades in; the LFO's wave scrolls a cycle (50 of its
+   100-wide box) per period. */
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lfo-scroll {
+  to {
+    transform: translateX(-50px);
   }
 }

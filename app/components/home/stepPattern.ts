@@ -6,19 +6,19 @@ import type { Meter, PlayedNote, Take, Timing } from "./noteRecorder";
 // A hit on the drum sequencer: which piece, how hard (0–1), and where, in
 // beats from the pattern's start. Kept in beats, so a change of resolution
 // moves it to the nearest step without losing where it was.
-export interface StepHit {
+export type StepHit = {
   piece: DrumPieceId;
   beat: number;
   velocity: number;
-}
+};
 
 // A drum pattern: `bars` bars of the meter, on a grid of `perBeat` steps a
 // beat. Hits past its end are kept for when it grows again.
-export interface StepPattern {
+export type StepPattern = {
   perBeat: number;
   bars: number;
   hits: readonly StepHit[];
-}
+};
 
 // Steps a beat the blue knob picks from: eighths to 32nds, and triplets.
 export const STEP_RESOLUTIONS: readonly number[] = [2, 3, 4, 6, 8];

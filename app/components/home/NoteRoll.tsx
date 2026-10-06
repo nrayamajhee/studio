@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { barMs, beatMs, type Timing } from "./noteRecorder";
 import type { RollFrame } from "../../hooks/useTransport";
 
-export interface NoteRollProps {
+export type NoteRollProps = {
   getFrame: () => RollFrame;
   timing: Timing;
   // The time on the keys line, when scrolled back from the frame's `now`.
@@ -14,7 +14,7 @@ export interface NoteRollProps {
   // Wheel scrolling up and down, in semitones (positive is higher).
   onScrollPitch?: (semitones: number) => void;
   className?: string;
-}
+};
 
 // C0 to C10, the range of the studio's piano roll, two octaves of it in view
 // at a time, a lane a semitone.
@@ -116,14 +116,14 @@ export function NoteRoll({
       context.clearRect(0, 0, width, height);
       const style = getComputedStyle(element);
       const ink = style.color;
-      const background = style.getPropertyValue("--screen-bg");
+      const background = style.getPropertyValue("--color-screen");
       const { now: live, notes, state } = getFrame();
       const now = scrolled.current ?? live;
       const color =
         state === "recording"
-          ? style.getPropertyValue("--screen-red")
+          ? style.getPropertyValue("--color-synth-red")
           : state === "playing"
-            ? style.getPropertyValue("--screen-green")
+            ? style.getPropertyValue("--color-synth-green")
             : ink;
 
       const bottom = lowest.current;

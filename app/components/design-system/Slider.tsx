@@ -1,39 +1,34 @@
 import React, { forwardRef, useId } from "react";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "../../lib/utils";
+import type { VariantProps } from "tailwind-variants";
+import { cn, tv } from "../../lib/utils";
 import { Label, Caption } from "./Typography";
 
-export const sliderVariants = cva(
-  "custom-slider appearance-none cursor-pointer transition-all focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
-  {
-    variants: {
-      tone: {
-        primary: "focus-visible:ring-2 focus-visible:ring-stone-400/50",
-        info: "focus-visible:ring-2 focus-visible:ring-info/40",
-        blue: "focus-visible:ring-2 focus-visible:ring-blue/40",
-        accent: "focus-visible:ring-2 focus-visible:ring-[#d4a359]/40",
-        secondary: "focus-visible:ring-2 focus-visible:ring-stone-400/40",
-      },
-      size: {
-        xs: "",
-        sm: "",
-        md: "",
-        lg: "",
-      },
+export const sliderVariants = tv({
+  base: "custom-slider appearance-none cursor-pointer transition-all focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
+  variants: {
+    tone: {
+      primary: "focus-visible:ring-2 focus-visible:ring-stone-400/50",
+      info: "focus-visible:ring-2 focus-visible:ring-info/40",
+      blue: "focus-visible:ring-2 focus-visible:ring-blue/40",
+      accent: "focus-visible:ring-2 focus-visible:ring-[#d4a359]/40",
+      secondary: "focus-visible:ring-2 focus-visible:ring-stone-400/40",
     },
-    defaultVariants: {
-      tone: "primary",
-      size: "sm",
+    size: {
+      xs: "",
+      sm: "",
+      md: "",
+      lg: "",
     },
   },
-);
+  defaultVariants: {
+    tone: "primary",
+    size: "sm",
+  },
+});
 
 export type SliderVariantProps = VariantProps<typeof sliderVariants>;
 
-export interface SliderProps
-  extends
-    Omit<React.InputHTMLAttributes<HTMLInputElement>, "size" | "onChange">,
-    SliderVariantProps {
+export type SliderProps = {
   label?: string;
   valueDisplay?: string | number;
   onChange?: (
@@ -41,7 +36,8 @@ export interface SliderProps
     event: React.ChangeEvent<HTMLInputElement>,
   ) => void;
   showFill?: boolean;
-}
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "size" | "onChange"> &
+  SliderVariantProps;
 
 export const Slider = forwardRef<HTMLInputElement, SliderProps>(
   (
@@ -169,7 +165,9 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
           <div
             className={cn(
               "flex justify-between items-center",
-              size === "xs" ? "text-[9px] mb-0.5 leading-tight" : "text-[10px] mb-1",
+              size === "xs"
+                ? "text-[9px] mb-0.5 leading-tight"
+                : "text-[10px] mb-1",
             )}
           >
             {label && (

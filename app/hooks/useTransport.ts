@@ -24,11 +24,11 @@ export type TransportState = "stopped" | "playing" | "recording";
 
 // What the screen's piano roll draws: the notes on the take's timeline, where
 // `now` is on it, and what the transport is doing.
-export interface RollFrame {
+export type RollFrame = {
   now: number;
   notes: readonly PlayedNote[];
   state: TransportState;
-}
+};
 
 // The roll's source, kept in a ref so it can be read every animation frame:
 // the recording, the playback, or (idle) the whole take. A sequence's playback

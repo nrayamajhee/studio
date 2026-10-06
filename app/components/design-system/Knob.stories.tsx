@@ -7,7 +7,15 @@ const meta = {
   title: "Design System/Knob",
   component: Knob,
   tags: ["autodocs"],
-  parameters: { layout: "centered" },
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "A stepped rotary knob, turned by dragging, scrolling or the arrow keys. Use `fine` for a continuous scrub.",
+      },
+    },
+  },
   args: {
     label: "Waveform",
     step: 0,

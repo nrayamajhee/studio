@@ -22,12 +22,12 @@ import {
 } from "./analysis";
 import { renderEngine } from "./renderEngine";
 
-export interface Rendered {
+export type Rendered = {
   left: Float32Array;
   right: Float32Array;
   activeVoices: number;
   reverbAwake: boolean;
-}
+};
 
 // A renderer: the pure-TS engine in Node, or the real worklet through an
 // OfflineAudioContext in the browser.
@@ -53,13 +53,13 @@ export const engineRenderer: Renderer = async (
   return { left, right, ...stats };
 };
 
-export interface DiagnosticRow {
+export type DiagnosticRow = {
   check: string;
   subject: string;
   measured: string;
   expected: string;
   pass: boolean;
-}
+};
 
 const mono = ({ left, right }: Rendered) => {
   const out = new Float32Array(left.length);

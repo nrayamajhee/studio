@@ -16,10 +16,10 @@ export const MODULE_IDS: readonly ModuleId[] = ["adsr", "lfo", "fx"];
 
 // The ADSR, LFO and FX as the take or a track has them: each on or off, and
 // its knobs' steps, which are kept while it is off.
-export interface ModuleSettings {
+export type ModuleSettings = {
   on: Readonly<Record<ModuleId, boolean>>;
   steps: Readonly<Record<ModuleId, readonly number[]>>;
-}
+};
 
 export const INITIAL_MODULES: ModuleSettings = {
   on: { adsr: false, lfo: false, fx: false },

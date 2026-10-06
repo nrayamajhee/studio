@@ -15,28 +15,28 @@ const LOOKAHEAD = 0.12;
 const TICK_MS = 25;
 const LEAD = 0.05;
 
-export interface StepSource {
+export type StepSource = {
   pattern: StepPattern;
   kit: KitId;
   meter: Meter;
   bpm: number;
-}
+};
 
-interface Scheduled {
+type Scheduled = {
   // The pattern's step, and its count since the loop started.
   step: number;
   count: number;
   time: number;
-}
+};
 
-interface Run {
+type Run = {
   timer: ReturnType<typeof setInterval>;
   next: number;
   nextTime: number;
   recent: Scheduled[];
   // Hits a tap already played, so the loop skips them once: `piece@count`.
   played: Set<string>;
-}
+};
 
 // Plays the drum sequencer's pattern round in a loop, each hit on the audio
 // clock. `source` is read on every top-up, so edits, the tempo and the length

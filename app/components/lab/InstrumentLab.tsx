@@ -48,9 +48,9 @@ import { Slider } from "../design-system/Slider";
 import { Key, Pad } from "../design-system";
 import { Oscilloscope } from "../home/Oscilloscope";
 
-export interface InstrumentLabProps {
+export type InstrumentLabProps = {
   initialInstrument?: BusId;
-}
+};
 
 const SECTIONS: SectionId[] = [
   "exciter",

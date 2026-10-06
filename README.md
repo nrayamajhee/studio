@@ -1,6 +1,6 @@
 > source available. all rights reserved.  
 > this is not open source.  
-> ai use was used and paid for.  
+> AI was used and paid for.  
 > no copyright infringement intended.
 
 # Studio
@@ -60,32 +60,50 @@ npm install
 
 The home page (`app/routes/home.tsx`) renders The Device, a digital desktop synthesizer played through the physical-modeling engine (see [Synth engine](#synth-engine)).
 
-| Path                                   | Purpose                                                                                |
-| -------------------------------------- | -------------------------------------------------------------------------------------- |
-| `app/components/home/SynthDevice.tsx`  | The Device: layout, state, hotkeys                                                     |
-| `app/components/home/DeviceScreen.tsx` | The screen and its views                                                               |
-| `app/components/home/deviceEngine.ts`  | The only audio module the Device imports; built-in presets                             |
-| `app/components/home/presetStore.ts`   | Saved presets, pad bindings and edits (`localStorage`)                                 |
-| `app/hooks/useTransport.ts`            | Recording, playback, metronome, tempo and tap tempo                                    |
-| `app/components/home/noteRecorder.ts`  | Takes as played (start, held length, velocity); 16th-step quantizing                   |
-| `app/components/home/NoteRoll.tsx`     | The screen's piano roll: keys down the left (C0–C10), notes running out of them        |
-| `app/hooks/useScrub.ts`                | Scrubbing the stopped roll: renders the take, plays it at the scroll's speed           |
-| `app/components/home/tracks.ts`        | Takes kept as tracks: clip, start, repeats, mute, solo, loop and cut                   |
-| `app/components/home/sessionStore.ts`  | The tape's take, and the album: songs of tracks, each with its tempo (`localStorage`)  |
-| `app/components/home/modules.ts`       | ADSR, LFO and FX settings, which the tape and each track keep their own of             |
-| `app/components/home/stepPattern.ts`   | The drum sequencer's pattern (Shift + Tape): hits in beats, kit rows, saving as a take |
-| `app/hooks/useStepPlayer.ts`           | Loops the drum pattern on the audio clock; lands recorded taps on the nearest step     |
-| `app/components/home/exportMix.ts`     | Saving the tracks: the mix as FLAC (`flac.ts`), or MIDI                                |
-| `app/components/design-system/`        | Device primitives `Key`, `Knob`, `Pad` and base controls                               |
-| `app/components/lab/`                  | Instrument Lab (Storybook only)                                                        |
+| Path                                   | Purpose                                                                                    |
+| -------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `app/components/home/SynthDevice.tsx`  | The Device: its providers and parts, as JSX                                                |
+| `app/components/home/layout/`          | The case and its grid: `DeviceFrame`, `TopRow`, `KnobColumn`, `PadBanks`, `Bank`…          |
+| `app/components/home/parts/`           | `DeviceKnob`, `DevicePad`, `Display` (the screen as the mode fills it), `Keybed`, `Grille` |
+| `app/components/home/banks/`           | The pad banks: `ControlBank` (4×3), `ViewBank`, `PresetBank`, `ChordBank`                  |
+| `app/components/home/modes/`           | What each control does in each view (see [Modes](#modes)); `base.tsx` is the default       |
+| `app/components/home/DeviceScreen.tsx` | The screen and its views (presentational)                                                  |
+| `app/providers/`                       | The Device's state, one provider per domain, composed by `DeviceProviders`                 |
+| `app/types/`                           | Shared types: `Device` (what modes read) and the bindings modes return                     |
+| `app/components/home/deviceEngine.ts`  | The only audio module the Device imports; built-in presets                                 |
+| `app/components/home/presetStore.ts`   | Saved presets, pad bindings and edits (`localStorage`)                                     |
+| `app/hooks/useTransport.ts`            | Recording, playback, metronome, tempo and tap tempo                                        |
+| `app/components/home/noteRecorder.ts`  | Takes as played (start, held length, velocity); 16th-step quantizing                       |
+| `app/components/home/NoteRoll.tsx`     | The screen's piano roll: keys down the left (C0–C10), notes running out of them            |
+| `app/hooks/useScrub.ts`                | Scrubbing the stopped roll: renders the take, plays it at the scroll's speed               |
+| `app/components/home/tracks.ts`        | Takes kept as tracks: clip, start, repeats, mute, solo, loop and cut                       |
+| `app/components/home/sessionStore.ts`  | The tape's take, and the album: songs of tracks, each with its tempo (`localStorage`)      |
+| `app/components/home/modules.ts`       | ADSR, LFO and FX settings, which the tape and each track keep their own of                 |
+| `app/components/home/stepPattern.ts`   | The drum sequencer's pattern (Shift + Tape): hits in beats, kit rows, saving as a take     |
+| `app/hooks/useStepPlayer.ts`           | Loops the drum pattern on the audio clock; lands recorded taps on the nearest step         |
+| `app/components/home/exportMix.ts`     | Saving the tracks: the mix as FLAC (`flac.ts`), or MIDI                                    |
+| `app/components/design-system/`        | Device primitives `Key`, `Knob`, `Pad` and base controls                                   |
+| `app/components/lab/`                  | Instrument Lab (Storybook only)                                                            |
 
 Design rules:
 
 - The Device has a fixed native size and is scaled uniformly by CSS (`--scale`) to fit. Never reflow or squeeze its parts.
-- Two spacing values: `--gap` for the bezel (and the page margin, from twice it on wide screens down to half on phones), `--inset` for everything else.
-- Theme colours are `color-mix(in srgb, <light>, <dark> var(--theme-mix))` so they fade with the 400 ms theme cross-fade. Keep colour transitions off those elements; their own transitions snap mid-fade.
+- Two spacing values, theme tokens in `app.css`: `bezel` (`p-bezel`; also the page margin, from twice it on wide screens down to half on phones) and `inset` (`gap-inset`) for everything else.
+- Theme colours are `color-mix(in srgb, <light>, <dark> var(--theme-mix))` tokens in `app.css` (`bg-device`, `bg-pad`, `shadow-pad`…) so they fade with the 400 ms theme cross-fade. Keep colour transitions off those elements; their own transitions snap mid-fade.
 - Keyboard hotkeys must never overlap between keys and pads.
 - A pad with nothing bound to it (an empty preset pad) stays blank. A pad that does nothing in the current view keeps its icon.
+
+### Architecture
+
+The Device's hardware is fixed; each view is a **mode** that rebinds it.
+
+- **Providers** (`app/providers/`), outermost first, each reading only those above it: `Hotkey` (in the route) → `Feedback` (notices, prompts, overlays, second-press `confirm`, busy while the mix saves) → `Shift` → `View` → `Transport` → `Output` (volume, level) → `Sound` (preset, params, octave) → `Performance` (held keys, chords) → `Lanes` (the tape and the open song's tracks, the focused lane and its modules) → `Steps` → `Tracks` (timeline and track edits) → `Mix` (playback, scrub, export) → `Tape` (the roll) → `Mode`. `DeviceProviders` composes them. Persisted data stays in the stores (`sessionStore`, `presetStore`, `chordStore`); providers hold only live and view state.
+- **Modes** (`app/components/home/modes/`): `baseBindings(device)` says what every knob, pad and the screen do by default, and each view's mode (`MODES[view]`) returns only what it changes. Modes are plain functions of the `Device` (`app/types/device.ts`), so they hold no hooks; `ModeProvider` resolves them and parts read their binding with `useBindings()`.
+- **Parts** own their DOM and their keys: `DevicePad` presses its binding from a click, its hotkey or a ⌘ shortcut, so a key always does what clicking its pad does. `Keybed`, `ChordBank` and `ShiftProvider` handle the note, chord and Shift keys.
+
+### Modes
+
+To change what a control does in a view, edit that view's mode; to add a view, add a mode and register it in `modes/index.ts`. Cross-domain commands (keeping the tape or a pattern as a track, the album's songs, Revert's options) live in the mode that uses them.
 
 ## Synth engine
 
@@ -114,8 +132,8 @@ Around the voices: per-instrument buses with a modal or radiation body and drive
 
 Stories are colocated with their components (`Component.stories.tsx`) and organized under three top-level titles.
 
-- **`Design System/*`** — `Key`, `Knob`, `Pad`.
-- **`Home/*`** — `Device` (`SynthDevice`), `Screen` (`DeviceScreen`).
+- **`Design System/*`** — `Key`, `Knob`, `Pad` and the base controls.
+- **`Home/*`** — `Device` (`SynthDevice`), `Screen` (`DeviceScreen`), `Layout`, `Parts/*` (`Device Knob`, `Device Pad`, `Display`, `Keybed`, `Grille`) and `Banks/*`.
 - **`Lab/*`** — `Instrument Lab` (dev tool; not mounted in any route).
 
 Setup conventions:
@@ -123,6 +141,8 @@ Setup conventions:
 - Every component starts with a `Default` story that binds cleanly to its props so Autodocs and the Controls panel work out of the box.
 - Components use the `autodocs` tag and `layout: "centered"` (or `"padded"` for surfaces).
 - The Device story renders over the `.home-background` gradient via a decorator.
+- Parts and banks that read the Device's state use the `withDevice` decorator (`app/components/home/storybook/`), which supplies only its providers; `parameters.device.view` opens a view. Stories show the component alone, without decoration.
+- Every component's meta carries a one- or two-line `docs.description.component`.
 - Light/dark coverage comes from the theme addon (`@storybook/addon-themes`); components must be correct in both modes.
 
 ## Agent Guidelines
@@ -136,12 +156,18 @@ Setup conventions:
   - For example, in a button states story (like disabled or loading states), do not add leading/trailing icons or subtitles if they are irrelevant to demonstrating the state, since layout combinations are already covered elsewhere.
   - Similarly, in a title-with-subtitle story, leave out extraneous icons unless specifically showcasing full anatomy.
 
-### 2. Comment Removal & Clean Code Policy
+### 2. Styling & Types
+
+- **Tailwind only**: no CSS modules. Style with Tailwind classes; use `tv` (from `app/lib/utils`, which shares `cn`'s merge config) for variants and multi-part components. Add new theme values as tokens in `app.css` (`@theme static`) and register custom shadow or spacing names in `lib/utils.ts` so merging handles them.
+- Controls that draw themselves use `<Button unstyled>`.
+- **Types, never interfaces** (enforced by ESLint). Shared types go in `app/types/`.
+
+### 3. Comment Removal & Clean Code Policy
 
 - **Strip Thinking/Scratch Comments**: After code has been generated, all comments that were part of the thinking process, section dividers, or obvious restatements of code must be removed.
 - **Preserve Only Critical Comments**: Only keep essential comments such as `TODO`, `FIXME`, and explanations of non-obvious tricky logic or magic numbers.
 
-### 3. Testing Guidelines
+### 4. Testing Guidelines
 
 - **No Automatic Interaction Tests**: Do not generate interaction tests (such as Storybook `play` functions or automated interaction suites) during initial component and story code generation.
 - **Prompt the User First**: Always ask the user in a follow-up question whether interaction or unit tests should be added.
