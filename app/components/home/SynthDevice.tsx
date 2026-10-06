@@ -20,7 +20,7 @@ import {
   ChartNoAxesGantt,
   Circle,
   Layers,
-  Album,
+  DiscAlbum,
   Disc3,
   Grid3x3,
   Plus,
@@ -81,7 +81,7 @@ import {
   AdsrIcon,
   ChordStyleIcon,
   DRUM_PIECES,
-  RollIcon,
+  TracksIcon,
 } from "./instrumentIcons";
 import {
   CHORD_RATES,
@@ -958,7 +958,15 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     setRollLow(clampRollLow(rollLow + 12 * (step - rollOctave)));
 
   // On the tracks ↑ and ↓ pick a row; on the roll they move it a semitone.
+  // On the tempo, ↓ (between Slower and Faster) switches tap mode, where
+  // played notes tap the tempo.
   const pickRow = (direction: 1 | -1) => {
+    if (view === "tempo") {
+      if (direction !== 1) return;
+      if (transport.tapping) transport.stopTapping();
+      else transport.startTapping();
+      return;
+    }
     if (view === "roll") {
       scrollRollPitch(-direction);
       return;
@@ -1733,8 +1741,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
       ),
     ].join(" · ");
 
-  // Shift + Save resets the preset instead. Neither applies to the tempo, so
-  // in its view Save switches tap mode, where played notes tap the tempo.
   // With Shift, saves the tracks as MIDI from any view but the tape and the
   // sequencer, where Save always keeps what's on them as a track.
   const pressSave = (midi = shift) => {
@@ -1755,11 +1761,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
     // On the roll, Save keeps the take as a track.
     if (view === "roll") {
       saveTrack();
-      return;
-    }
-    if (view === "tempo") {
-      if (transport.tapping) transport.stopTapping();
-      else transport.startTapping();
       return;
     }
     if (view === "steps") {
@@ -3055,22 +3056,17 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                       ? "Save the tracks as MIDI"
                       : view === "revert"
                         ? "Save"
-                        : view === "tempo"
-                          ? tapMode
-                            ? "Stop tap tempo"
-                            : "Tap tempo"
-                          : view === "tracks"
-                            ? "Save the mix"
-                            : view === "album"
-                              ? "New song"
-                              : view === "roll"
-                                ? "Save tape as a track"
-                                : view === "steps"
-                                  ? "Save steps as a track"
-                                  : "Save preset"
+                        : view === "tracks"
+                          ? "Save the mix"
+                          : view === "album"
+                            ? "New song"
+                            : view === "roll"
+                              ? "Save tape as a track"
+                              : view === "steps"
+                                ? "Save steps as a track"
+                                : "Save preset"
                   }
                   accent="var(--synth-red)"
-                  lit={tapMode}
                   hotkey={`${command}${midiSave ? "⇧" : ""}S`}
                   onPress={() => pressSave()}
                 >
@@ -3078,8 +3074,6 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                     <FileMusic />
                   ) : view === "album" ? (
                     <Plus />
-                  ) : view === "tempo" ? (
-                    <Pointer />
                   ) : (
                     <Save />
                   )}
@@ -3093,7 +3087,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   {...toolHotkey("album")}
                   onPress={() => pressTracks(true)}
                 >
-                  <Album />
+                  <DiscAlbum />
                 </Pad>
                 <Pad
                   label={view === "tracks" ? "Close tracks" : "Tracks"}
@@ -3102,7 +3096,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   {...toolHotkey("tracks")}
                   onPress={() => pressTracks(false)}
                 >
-                  <ChartNoAxesGantt />
+                  <TracksIcon />
                 </Pad>
                 <Pad
                   label={view === "roll" ? "Close tape" : "Tape (record mode)"}
@@ -3111,7 +3105,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                   {...toolHotkey("take")}
                   onPress={() => pressTake(false)}
                 >
-                  <RollIcon />
+                  <ChartNoAxesGantt />
                 </Pad>
                 <Pad
                   label={
@@ -3326,17 +3320,22 @@ export function SynthDevice({ className }: SynthDeviceProps) {
                 </Pad>
                 <Pad
                   label={
-                    view === "tracks"
-                      ? "Next track"
-                      : view === "roll"
-                        ? "Down a semitone"
-                        : "Down"
+                    view === "tempo"
+                      ? tapMode
+                        ? "Stop tap tempo"
+                        : "Tap tempo"
+                      : view === "tracks"
+                        ? "Next track"
+                        : view === "roll"
+                          ? "Down a semitone"
+                          : "Down"
                   }
                   accent="var(--synth-red)"
+                  lit={tapMode}
                   {...hotkeyProps({ kind: "pick", direction: 1 })}
                   onPress={() => pickRow(1)}
                 >
-                  <ArrowDown />
+                  {view === "tempo" ? <Pointer /> : <ArrowDown />}
                 </Pad>
                 <Pad
                   label={

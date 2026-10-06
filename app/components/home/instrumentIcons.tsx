@@ -253,14 +253,14 @@ export function KalimbaIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-// The take: notes falling down the piano roll out of step, the tracks icon's
-// staggered bars stood on end.
-export function RollIcon(props: SVGProps<SVGSVGElement>) {
+// Lucide's chart-bar-stacked without its axes, centred: two lanes of clips.
+export function TracksIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...base} {...props}>
-      <path d="M5 6v12" />
-      <path d="M12 4v10" />
-      <path d="M19 12v8" />
+      <rect x="4" y="5" width="16" height="5" rx="1" />
+      <rect x="4" y="14" width="12" height="5" rx="1" />
+      <path d="M15 5v5" />
+      <path d="M9 14v5" />
     </svg>
   );
 }
