@@ -1,5 +1,4 @@
 import {
-  useCallback,
   useEffect,
   useEffectEvent,
   useRef,
@@ -56,11 +55,7 @@ function useStepsValue() {
     meter,
     bpm: transport.bpm,
   }));
-  const stepPosition = stepPlayer.position;
-  const getStepHead = useCallback(
-    () => stepPosition() ?? stepHeadRef.current,
-    [stepPosition],
-  );
+  const getStepHead = () => stepPlayer.position() ?? stepHeadRef.current;
   const stepsRunning = view === "steps" && stepPlayer.running;
   const recordingSteps = stepsRunning && stepRecording;
   const stepHits = new Set(
@@ -98,17 +93,15 @@ function useStepsValue() {
   // The instrument the sequencer swapped for a drum kit, put back when it
   // closes, so the tape and keys don't stay on drums.
   const beforeSteps = useRef<DevicePreset | null>(null);
-  const stopStepPlayer = stepPlayer.stop;
-  const restoreAfterSteps = useEffectEvent(() => {
+  const leaveSteps = useEffectEvent(() => {
+    stepPlayer.stop();
     const before = beforeSteps.current;
     beforeSteps.current = null;
     if (before) selectPreset(before);
   });
   useEffect(() => {
-    if (view === "steps") return;
-    stopStepPlayer();
-    restoreAfterSteps();
-  }, [view, stopStepPlayer]);
+    if (view !== "steps") leaveSteps();
+  }, [view]);
 
   // A key in the sequencer: recording, it lands on the nearest step;
   // stopped, it sets or clears its piece at the head; playing, it only plays.

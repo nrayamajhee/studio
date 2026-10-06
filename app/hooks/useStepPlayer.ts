@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { KitId } from "../lib/physical";
 import { deviceEngine } from "../components/home/deviceEngine";
 import type { Meter } from "../components/home/noteRecorder";
@@ -49,7 +49,7 @@ export function useStepPlayer(source: () => StepSource) {
     read.current = source;
   });
 
-  const topUp = useCallback(() => {
+  const topUp = () => {
     const current = run.current;
     if (!current) return;
     const { pattern, kit, meter, bpm } = read.current();
@@ -73,38 +73,36 @@ export function useStepPlayer(source: () => StepSource) {
       current.nextTime += stepTime;
     }
     current.recent = current.recent.filter(({ time }) => time > now - 1);
-  }, []);
+  };
 
-  const stop = useCallback(() => {
+  const stop = () => {
     if (run.current) clearInterval(run.current.timer);
     run.current = null;
     setRunning(false);
-  }, []);
+  };
 
   // Starts the loop at `step`.
-  const start = useCallback(
-    (step: number) => {
-      stop();
-      deviceEngine.unlock();
-      run.current = {
-        timer: setInterval(topUp, TICK_MS),
-        next: step,
-        nextTime: deviceEngine.now() + LEAD,
-        recent: [],
-        played: new Set(),
-      };
-      setRunning(true);
-      topUp();
-    },
-    [stop, topUp],
-  );
+  const start = (step: number) => {
+    stop();
+    deviceEngine.unlock();
+    run.current = {
+      timer: setInterval(topUp, TICK_MS),
+      next: step,
+      nextTime: deviceEngine.now() + LEAD,
+      recent: [],
+      played: new Set(),
+    };
+    setRunning(true);
+    topUp();
+  };
 
-  useEffect(() => stop, [stop]);
+  const stopOnUnmount = useEffectEvent(stop);
+  useEffect(() => () => stopOnUnmount(), []);
 
   // The step playing now on the audio clock, or null while stopped. Like the
   // other playheads it isn't held back for the output latency browsers
   // report, which some (Firefox) overstate, leaving it behind the sound.
-  const position = useCallback(() => {
+  const position = () => {
     const current = run.current;
     if (!current) return null;
     const now = deviceEngine.now();
@@ -112,7 +110,7 @@ export function useStepPlayer(source: () => StepSource) {
     for (const scheduled of current.recent)
       if (scheduled.time <= now) at = scheduled;
     return at?.step ?? current.recent[0]?.step ?? null;
-  }, []);
+  };
 
   // The step nearest a tap made now: a tap a little early lands on the coming
   // step, which then doesn't play it again.

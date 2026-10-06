@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MIX_LEAD } from "../lib/physical/TrackMixer";
 import { deviceEngine } from "../components/home/deviceEngine";
 import {
@@ -114,27 +114,27 @@ export function useTrackMix(
   };
 
   // Holds the mix where it is, so Play resumes there.
-  const pause = useCallback(() => {
+  const pause = () => {
     run.current++;
     const at = mixer.current?.stop();
     if (at !== undefined) paused.current = at / beatSeconds.current;
     setPlaying(false);
-  }, []);
+  };
 
   // Stops and rewinds to the top, so Play starts over.
-  const stop = useCallback(() => {
+  const stop = () => {
     run.current++;
     mixer.current?.stop();
     paused.current = 0;
     setPlaying(false);
-  }, []);
+  };
 
   // Where the mix is (beats); read every frame. Stopped, it holds the paused
   // position so the playhead stays put instead of disappearing.
-  const position = useCallback(() => {
+  const position = () => {
     const at = mixer.current?.position();
     return at == null ? paused.current : at / beatSeconds.current;
-  }, []);
+  };
 
   const arrangement = JSON.stringify([
     bpm,
@@ -177,11 +177,11 @@ export function useTrackMix(
 
   // Moves the play position (beats) without starting, so Play begins there;
   // while it plays, it carries on from the new place.
-  const seek = useCallback((beat: number) => {
+  const seek = (beat: number) => {
     paused.current = Math.max(0, beat);
     if (isPlaying.current)
       void restart.current(paused.current, looping.current);
-  }, []);
+  };
 
   // One pass of a track as the mix plays it, rendered once and cached; the
   // scrubbed mix is built from these too.

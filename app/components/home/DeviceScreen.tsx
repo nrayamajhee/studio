@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useEffectEvent,
   useRef,
   useState,
   type CSSProperties,
@@ -375,6 +376,7 @@ function TrackList({
   children: ReactNode;
 }) {
   const list = useRef<HTMLDivElement>(null);
+  const readPosition = useEffectEvent(getPosition);
   const step = useRef(onStep);
   const pan = useRef<(pixels: number) => void>(undefined);
   useEffect(() => {
@@ -416,7 +418,7 @@ function TrackList({
     let frame = 0;
     const draw = () => {
       frame = requestAnimationFrame(draw);
-      const at = getPosition();
+      const at = readPosition();
       const shown = at === null ? -1 : ((at - from) / span) * zoom;
       element.style.setProperty(
         "--playhead",
@@ -425,7 +427,7 @@ function TrackList({
     };
     draw();
     return () => cancelAnimationFrame(frame);
-  }, [getPosition, span, zoom, from]);
+  }, [span, zoom, from]);
   return (
     <div
       ref={list}
@@ -735,6 +737,7 @@ function StepGrid({
   useEffect(() => {
     move.current = onMove;
   }, [onMove]);
+  const readHead = useEffectEvent(getHead);
 
   useEffect(() => {
     const element = grid.current;
@@ -742,14 +745,14 @@ function StepGrid({
     let frame = 0;
     const draw = () => {
       frame = requestAnimationFrame(draw);
-      const head = getHead();
+      const head = readHead();
       const at = Math.floor(head / pageSteps);
       setPage(at);
       element.style.setProperty("--head", String(head - at * pageSteps));
     };
     draw();
     return () => cancelAnimationFrame(frame);
-  }, [getHead, pageSteps]);
+  }, [pageSteps]);
 
   // Sideways (or up and down) the wheel moves the head a step a notch.
   useEffect(() => {

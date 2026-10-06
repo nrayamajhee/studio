@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useState, type ReactNode } from "react";
 import { deviceEngine } from "../components/home/deviceEngine";
 import { F3_MIDI } from "../components/home/deviceMath";
 import {
@@ -70,10 +70,10 @@ function useTapeValue() {
       return { notes, length: now };
     },
   );
-  const stopScrub = scrub.stop;
+  const stopScrub = useEffectEvent(scrub.stop);
   useEffect(() => {
     if (!rollScrolls) stopScrub();
-  }, [rollScrolls, stopScrub]);
+  }, [rollScrolls]);
 
   // Starts the armed take. The tracks play along from the top, lined up
   // with it.

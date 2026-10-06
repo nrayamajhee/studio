@@ -1,15 +1,14 @@
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useEffectEvent,
-  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { createEmitter } from "../lib/emitter";
 import { keyboardFocus, moveFocus } from "../components/home/input/focus";
 import {
   KEYMAP,
@@ -36,11 +35,9 @@ export type HotkeyEvent = {
   ignore: () => void;
 };
 
-type Listener = (event: HotkeyEvent) => void;
-
 type HotkeyContextValue = {
   held: HeldKeys;
-  subscribe: (listener: Listener) => () => void;
+  subscribe: (listener: (event: HotkeyEvent) => void) => () => void;
 };
 
 type Down = {
@@ -76,20 +73,18 @@ const typing = (event: KeyboardEvent) =>
 // rendering, and tells listeners about each press and release as it happens.
 export function HotkeyProvider({ children }: { children: ReactNode }) {
   const keys = useRef(new Map<string, Down>());
-  const listeners = useRef(new Set<Listener>());
+  const [events] = useState(() => createEmitter<HotkeyEvent>());
   const [held, setHeld] = useState<HeldKeys>(NO_KEYS);
 
-  const emit = (control: Control, down: boolean, entry: Down) => {
-    const event: HotkeyEvent = {
+  const emit = (control: Control, down: boolean, entry: Down) =>
+    events.emit({
       control,
       down,
       held: summarize(keys.current),
       ignore: () => {
         entry.ignored = true;
       },
-    };
-    for (const listener of listeners.current) listener(event);
-  };
+    });
 
   // Lets go of everything, telling listeners, so no note is left sounding.
   const releaseAll = () => {
@@ -163,16 +158,10 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const subscribe = useCallback((listener: Listener) => {
-    listeners.current.add(listener);
-    return () => {
-      listeners.current.delete(listener);
-    };
-  }, []);
-
-  const value = useMemo(() => ({ held, subscribe }), [held, subscribe]);
   return (
-    <HotkeyContext.Provider value={value}>{children}</HotkeyContext.Provider>
+    <HotkeyContext value={{ held, subscribe: events.subscribe }}>
+      {children}
+    </HotkeyContext>
   );
 }
 
@@ -185,7 +174,7 @@ function useHotkeyContext() {
 // The keys held right now, for rendering.
 export function useHotkeys() {
   const { held } = useHotkeyContext();
-  const ids = useMemo(() => new Set(held.controls.map(controlId)), [held]);
+  const ids = new Set(held.controls.map(controlId));
   return {
     ...held,
     isHeld: (control: Control) => ids.has(controlId(control)),

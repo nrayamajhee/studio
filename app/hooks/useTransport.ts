@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useEffectEvent,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { deviceEngine } from "../components/home/deviceEngine";
 import { setTake, useSession } from "../components/home/sessionStore";
 import {
@@ -336,8 +330,8 @@ export function useTransport() {
     else recorder.noteOff(note);
   };
 
-  // Stable, and reads only refs, for the roll's animation loop.
-  const roll = useCallback((): RollFrame => {
+  // Reads only refs, for the roll's animation loop.
+  const roll = (): RollFrame => {
     const shown = display.current;
     const now = performance.now();
     if (shown.kind === "recording")
@@ -350,7 +344,7 @@ export function useTransport() {
       return { now: now - shown.start, notes: shown.notes, state: "playing" };
     const { length, notes } = timeline(takeRef.current, timingRef.current);
     return { now: length, notes, state: "stopped" };
-  }, []);
+  };
 
   return {
     state,

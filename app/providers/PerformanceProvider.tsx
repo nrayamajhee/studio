@@ -1,5 +1,4 @@
 import {
-  useCallback,
   useEffect,
   useEffectEvent,
   useRef,
@@ -20,6 +19,7 @@ import {
   useChordStyle,
 } from "../components/home/chordStore";
 import { beatMs } from "../components/home/noteRecorder";
+import { createEmitter } from "../lib/emitter";
 import { createStrictContext } from "./createStrictContext";
 import { useHotkeys } from "./HotkeyProvider";
 import { useSound } from "./SoundProvider";
@@ -48,7 +48,7 @@ function usePerformanceValue() {
     () => new Set(),
   );
   const held = useRef(new Map<number, HeldKey>());
-  const noteListeners = useRef(new Set<NoteListener>());
+  const [notesPlayed] = useState(() => createEmitter<readonly number[]>());
   const macroChords = chordMacros.map(chordById);
   const activeChord = keys.chord ?? chord;
 
@@ -114,15 +114,8 @@ function usePerformanceValue() {
     );
     held.current.set(root, { semitones, midis, stop });
     syncLitNotes();
-    for (const listener of noteListeners.current) listener(midis);
+    notesPlayed.emit(midis);
   };
-
-  const subscribeNotes = useCallback((listener: NoteListener) => {
-    noteListeners.current.add(listener);
-    return () => {
-      noteListeners.current.delete(listener);
-    };
-  }, []);
 
   return {
     litNotes,
@@ -157,7 +150,7 @@ function usePerformanceValue() {
         id: CHORD_STYLES[Math.max(0, Math.min(index, CHORD_STYLES.length - 1))]
           .id,
       }),
-    subscribeNotes,
+    subscribeNotes: notesPlayed.subscribe,
   };
 }
 

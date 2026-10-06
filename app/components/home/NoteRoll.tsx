@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import { barMs, beatMs, type Timing } from "./noteRecorder";
 import type { RollFrame } from "../../hooks/useTransport";
 
@@ -58,6 +58,7 @@ export function NoteRoll({
   const lowest = useRef(low);
   const scroll = useRef(onScroll);
   const scrollPitch = useRef(onScrollPitch);
+  const readFrame = useEffectEvent(getFrame);
 
   useEffect(() => {
     timed.current = timing;
@@ -117,7 +118,7 @@ export function NoteRoll({
       const style = getComputedStyle(element);
       const ink = style.color;
       const background = style.getPropertyValue("--color-screen");
-      const { now: live, notes, state } = getFrame();
+      const { now: live, notes, state } = readFrame();
       const now = scrolled.current ?? live;
       const color =
         state === "recording"
@@ -216,7 +217,7 @@ export function NoteRoll({
     };
     draw();
     return () => cancelAnimationFrame(frame);
-  }, [getFrame]);
+  }, []);
 
   return <canvas ref={canvas} className={className} aria-hidden="true" />;
 }

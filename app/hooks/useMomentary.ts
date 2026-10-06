@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // A value that shows for `ms` after the last show(), e.g. a footer notice or
 // the level overlay while a knob turns.
@@ -8,19 +8,16 @@ export function useMomentary<T>(ms: number) {
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  const show = useCallback(
-    (next: T) => {
-      clearTimeout(timer.current);
-      setValue(next);
-      timer.current = setTimeout(() => setValue(null), ms);
-    },
-    [ms],
-  );
+  const show = (next: T) => {
+    clearTimeout(timer.current);
+    setValue(next);
+    timer.current = setTimeout(() => setValue(null), ms);
+  };
 
-  const hide = useCallback(() => {
+  const hide = () => {
     clearTimeout(timer.current);
     setValue(null);
-  }, []);
+  };
 
   return [value, show, hide] as const;
 }

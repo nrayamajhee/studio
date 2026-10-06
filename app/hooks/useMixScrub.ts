@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { deviceEngine } from "../components/home/deviceEngine";
 
 type Scrubber = NonNullable<ReturnType<typeof deviceEngine.scrubber>>;
@@ -67,7 +67,7 @@ export function useMixScrub(
     );
   };
 
-  const stop = useCallback(() => rendered.current?.scrubber?.stop(), []);
+  const stop = () => rendered.current?.scrubber?.stop();
 
   const from = (at: number) =>
     performance.now() - lastMove.current < GAP_MS ? cursor.current : at;

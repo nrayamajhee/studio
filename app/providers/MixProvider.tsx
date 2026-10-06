@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useState, type ReactNode } from "react";
 import { PATCH_BY_ID } from "../lib/physical/patches";
 import { foldNote } from "../lib/physical/dsp/math";
 import { deviceEngine, isKit, keyPiece } from "../components/home/deviceEngine";
@@ -173,10 +173,10 @@ function useMixValue() {
     view === "tracks" ||
     view === "album" ||
     (isModuleView(view) && !isTape(focusedLane));
-  const pauseMix = mix.pause;
+  const pauseMix = useEffectEvent(mix.pause);
   useEffect(() => {
     if (!mixView && !transport.recording) pauseMix();
-  }, [mixView, transport.recording, pauseMix]);
+  }, [mixView, transport.recording]);
 
   const rewind = () => {
     setScrubbedTo(null);
