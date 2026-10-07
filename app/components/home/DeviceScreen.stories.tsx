@@ -262,7 +262,7 @@ export const SaveIconPicker: Story = {
 export const Presets: Story = {
   args: {
     view: "presets",
-    status: "Presets",
+    status: "Instruments",
     footer: ["Highlight a preset", "Press a pad to bind"],
     selected: 0,
     tiles: DEVICE_PRESETS.map((preset, i) => ({

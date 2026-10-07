@@ -142,7 +142,7 @@ export function usePresetLibrary() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-// Every preset by family, each family's built-ins before its saved ones.
+// Every preset by family, then the saved ones.
 export const allPresets = (current: PresetLibrary): readonly DevicePreset[] => {
   const all = [...DEVICE_PRESETS, ...current.instruments];
   return PRESET_CATEGORIES.flatMap((category) =>

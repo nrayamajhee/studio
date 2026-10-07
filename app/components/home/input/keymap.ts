@@ -68,36 +68,37 @@ export const shiftedNote = (semitone: number) =>
     : semitone;
 
 // The pads sit around the piano, and a key always presses the same pad,
-// whatever the view. The number row picks sounds: the six preset pads on
+// whatever the view. The number row picks sounds: the six instrument pads on
 // 1 2 3 4 5 6 (with Shift, their alternates) and the six chord pads on
-// 7 8 9 0 - =, the most played last (- minor, = major). The bottom letter row
-// opens the views, the modules together in their pads' order:
-//   Z Album · X Preset library · C Chord palette · V Piano roll · B Drum grid
-//   N ADSR · M LFO · , FX (⇧ each on or off) · . Chord style · / Clip (⇧ Trim)
-// T is Tempo (⇧ the click), ` the synth parameters and Esc the tracks. Play is
-// Space, Q Record, ] Stop and \ Mute (⇧ Solo). Shift and the arrows are their
-// own keys (↑ and ↓ pick a track, as the blue knob does). ⌫ is Delete (⇧⌫
-// Revert), and ⌘S (Ctrl S) is Save.
+// 7 8 9 0 - =, the most played last (- minor, = major). The letters the piano
+// leaves free:
+//   Q Play style · T Synth parameters · I Instruments · ] LFO · \ FX
+//   Z Albums · X Clip (⇧ Trim) · C Chord palette · V Piano roll
+//   B Drum grid · N ADSR · M Metronome (Tempo; ⇧ the click)
+//   , Mute (⇧ Solo) · . Record
+// ADSR, LFO and FX switch on or off with Shift. Play is Space, ` Stop and Esc
+// the tracks. Shift and the arrows are their own keys (↑ and ↓ pick a track,
+// as the blue knob does). ⌫ is Delete (⇧⌫ Revert), and ⌘S (Ctrl S) is Save.
 const PRESET_KEYS = ["1", "2", "3", "4", "5", "6"];
 const CHORD_KEYS = ["7", "8", "9", "0", "-", "="];
 const TOOL_KEYS: Readonly<Record<Tool, string>> = {
   play: "Space",
-  stop: "]",
-  record: "Q",
-  synth: "X",
-  params: "`",
+  stop: "`",
+  record: ".",
+  synth: "I",
+  params: "T",
   chords: "C",
-  style: ".",
+  style: "Q",
   tracks: "Esc",
   album: "Z",
   take: "V",
   steps: "B",
   adsr: "N",
-  lfo: "M",
-  fx: ",",
-  metronome: "T",
-  mute: "\\",
-  clip: "/",
+  lfo: "]",
+  fx: "\\",
+  metronome: "M",
+  mute: ",",
+  clip: "X",
   save: "",
   delete: "⌫",
 };

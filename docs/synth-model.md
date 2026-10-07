@@ -351,7 +351,7 @@ The bow sits on the string, splitting it into a neck side and a bridge side. At 
 - The body filter was designed at 44.1 kHz. Its pole/zero pairs are rescaled to the actual sample rate so the resonances stay put.
 - The **cello** runs the same loop an octave and a fifth lower. The violin's filter would put its resonances in the wrong place, so the cello uses the bus's modal body instead (air and wood modes near 100 and 200 Hz); its Body knob is that body's mix.
 
-### 5.4 Drums: Drum Kit, Rock Kit, Jazz Kit, 808 Kit, Madal and Tabla
+### 5.4 Drums: Drum Kit, Rock Kit, Jazz Kit, 808 Kit, 909 Kit, Madal and Tabla
 
 Drums use **modal synthesis**: the resonator is a bank of decaying sine waves, one per vibration mode. Each mode is a two-pole resonator:
 
@@ -394,9 +394,9 @@ Each piece is one voice: hitting it again restarts it. The kits differ only in t
 
 The **metronome** is a separate two-mode woodblock (1.9/2.9 kHz, higher when accented) that goes straight to the master, dry.
 
-### 5.5 Free reeds: harmonium and harmonica (`models/ReedInstrument.ts`)
+### 5.5 Free reeds: harmonium, harmonica and accordion (`models/ReedInstrument.ts`)
 
-A free reed is a brass tongue that swings through a slot. Each swing it lets a pulse of air past, and that pulsing flow is the sound; unlike the sax's reed, no tube sets the pitch, so the tongue's own frequency does.
+A free reed is a brass tongue that swings through a slot. Each swing it lets a pulse of air past, and that pulsing flow is the sound; unlike the sax's reed, no tube sets the pitch, so the tongue's own frequency does. A key can have several reeds: the harmonium's second sits a few cents sharp and beats against the first, and the accordion's musette has three, one in tune and one either side of it.
 
 ```text
    pressure = ADSR x drive x (1 + swell)          swell: bellows (harmonium), hand tremolo (harmonica)
@@ -583,7 +583,7 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
   |   |-- exciters.ts        hammer, pluck, stick
   |   |-- StringInstrument.ts piano, guitars, ukulele, banjo, basses, harp, sitar
   |   |-- BoreInstrument.ts  flute, sax, clarinet, brass
-  |   |-- ReedInstrument.ts  harmonium, harmonica (free reeds)
+  |   |-- ReedInstrument.ts  harmonium, harmonica, accordion (free reeds)
   |   |-- BarInstrument.ts   xylophone, steel pan, kalimba (modal)
   |   |-- BowedInstrument.ts violin
   |   |-- DrumKit.ts         drum kits + metronome woodblock

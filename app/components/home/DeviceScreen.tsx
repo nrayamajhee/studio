@@ -1396,16 +1396,16 @@ export function DeviceScreen({
             role="group"
             aria-label={
               view === "save"
-                ? "Preset icon"
+                ? "Instrument icon"
                 : view === "chords"
                   ? "Chord palette"
                   : view === "chordStyle"
-                    ? "Chord style"
+                    ? "Play style"
                     : view === "album"
-                      ? "Album"
+                      ? "Albums"
                       : view === "revert"
                         ? "Revert"
-                        : "Preset library"
+                        : "Instruments"
             }
           >
             {visibleTiles.map((entry, i) => {

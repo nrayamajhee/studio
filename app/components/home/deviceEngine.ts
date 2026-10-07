@@ -218,6 +218,13 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     octave: 12,
   },
   {
+    id: "accordion",
+    icon: "accordion",
+    name: "Accordion",
+    target: "accordion",
+    octave: 0,
+  },
+  {
     id: "xylophone",
     icon: "xylophone",
     name: "Xylophone",
@@ -271,6 +278,13 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     pad: 4,
   },
   {
+    id: "drums909",
+    icon: "drum909",
+    name: "909 Kit",
+    target: "drums909",
+    octave: 0,
+  },
+  {
     id: "madal",
     icon: "madal",
     name: "Madal",
@@ -296,9 +310,8 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   },
 ];
 
-// The library is grouped by the engine's models, in this order: a preset sits
-// with the others its instrument's model plays, a saved one with its
-// instrument's.
+// The library is grouped by the engine's models, in this order: a built-in
+// preset sits with the others its instrument's model plays.
 const MODEL_NAMES: Readonly<Record<Patch["family"], string>> = {
   string: "Struck & plucked",
   bowed: "Bowed",
@@ -309,10 +322,11 @@ const MODEL_NAMES: Readonly<Record<Patch["family"], string>> = {
   oscillator: "Oscillator",
 };
 
-export const PRESET_CATEGORIES = Object.values(MODEL_NAMES);
+// Saved presets come last, in a group of their own.
+export const PRESET_CATEGORIES = [...Object.values(MODEL_NAMES), "Saved"];
 
-export const presetCategory = ({ target }: DevicePreset) =>
-  MODEL_NAMES[PATCH_BY_ID[target].family];
+export const presetCategory = ({ target, user }: DevicePreset) =>
+  user ? "Saved" : MODEL_NAMES[PATCH_BY_ID[target].family];
 
 export const KNOB_STEPS = 11;
 

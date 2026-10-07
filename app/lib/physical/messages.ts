@@ -16,6 +16,7 @@ export type InstrumentId =
   | "trombone"
   | "harmonium"
   | "harmonica"
+  | "accordion"
   | "sitar"
   | "ukulele"
   | "banjo"
@@ -25,7 +26,13 @@ export type InstrumentId =
   | "oscillator";
 
 export type KitId =
-  "drums" | "rockDrums" | "jazzDrums" | "drums808" | "madal" | "tabla";
+  | "drums"
+  | "rockDrums"
+  | "jazzDrums"
+  | "drums808"
+  | "drums909"
+  | "madal"
+  | "tabla";
 
 export type DrumPieceId =
   | "kick"

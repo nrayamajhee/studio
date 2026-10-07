@@ -30,6 +30,8 @@ const meta = {
         "rockDrums",
         "jazzDrums",
         "drums808",
+        "drums909",
+        "accordion",
       ],
     },
   },

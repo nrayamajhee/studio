@@ -1,10 +1,11 @@
 import type { BusId } from "../messages";
+import { accordion } from "./accordion";
 import { banjo } from "./banjo";
 import { bass } from "./bass";
 import { bassTrumpet } from "./bassTrumpet";
 import { cello } from "./cello";
 import { clarinet } from "./clarinet";
-import { drums, drums808, jazzDrums, rockDrums } from "./drums";
+import { drums, drums808, drums909, jazzDrums, rockDrums } from "./drums";
 import { electricGuitar } from "./electricGuitar";
 import { flute } from "./flute";
 import { guitar } from "./guitar";
@@ -50,6 +51,7 @@ export const PATCHES: readonly Patch[] = [
   flute,
   harmonium,
   harmonica,
+  accordion,
   xylophone,
   steelPan,
   kalimba,
@@ -57,6 +59,7 @@ export const PATCHES: readonly Patch[] = [
   rockDrums,
   jazzDrums,
   drums808,
+  drums909,
   madal,
   tabla,
   oscillator,

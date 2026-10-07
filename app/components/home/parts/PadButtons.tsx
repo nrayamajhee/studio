@@ -10,9 +10,9 @@ import { DevicePad } from "./DevicePad";
 const RED = "var(--color-synth-red)";
 
 // Every pad, three rows of twelve in reading order:
-//   Play  Stop Record Mute   Album   Tracks Params ADSR LFO FX Style Tempo
-//   Save  Clip ↑      Delete Library Roll   preset 1–3      chord 1–3
-//   Shift ←    ↓      →      Chords  Grid   preset 4–6      chord 4–6
+//   Play  Stop  Record Save   Albums Params ADSR LFO FX Chords Style Tempo
+//   Clip  Mute  ↑      Delete Tracks Roll   preset 1–3      chord 1–3
+//   Shift ←     ↓      →      Instr. Grid   preset 4–6      chord 4–6
 // Play, Stop and Record act on whatever the mode plays: the piano roll, the
 // drum grid or the mix. The presets are three instruments over three kits.
 export function PadButtons() {
@@ -70,22 +70,22 @@ export function PadButtons() {
       {tool("play")}
       {tool("stop", RED)}
       {tool("record", RED)}
-      {tool("mute", RED)}
-      {tool("album", RED)}
-      {tool("tracks", RED)}
-      {tool("params", RED)}
-      {tool("adsr", RED)}
-      {tool("lfo", RED)}
-      {tool("fx", RED)}
-      {tool("style", RED)}
-      {tool("metronome", "var(--color-synth-green)")}
-
       <DevicePad
         binding={pads.save}
         command={{ code: "KeyS", legend: "S" }}
         accent={RED}
       />
+      {tool("album", RED)}
+      {tool("params", RED)}
+      {tool("adsr", RED)}
+      {tool("lfo", RED)}
+      {tool("fx", RED)}
+      {tool("chords", RED)}
+      {tool("style", RED)}
+      {tool("metronome", "var(--color-synth-green)")}
+
       {tool("clip", RED)}
+      {tool("mute", RED)}
       <DevicePad
         binding={pads.up}
         control={{ kind: "pick", direction: -1 }}
@@ -97,7 +97,7 @@ export function PadButtons() {
         command={{ code: "Backspace", legend: "⌫" }}
         accent={RED}
       />
-      {tool("synth", RED)}
+      {tool("tracks", RED)}
       {tool("take", RED)}
       {preset(0)}
       {preset(1)}
@@ -131,7 +131,7 @@ export function PadButtons() {
         control={{ kind: "step", direction: 1 }}
         accent={RED}
       />
-      {tool("chords", RED)}
+      {tool("synth", RED)}
       {tool("steps", RED)}
       {preset(3)}
       {preset(4)}

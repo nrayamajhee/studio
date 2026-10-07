@@ -265,8 +265,8 @@ export function TracksIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-// How a chord style plays, as a little piano roll: a bar a note, time to
-// the right and pitch upwards, [from, to, height].
+// How a play style plays a chord, as a little piano roll: a bar a note, time
+// to the right and pitch upwards, [from, to, height].
 const STYLE_NOTES: Readonly<Record<ChordStyleId, readonly number[][]>> = {
   block: [
     [5, 19, 17],
@@ -287,6 +287,43 @@ const STYLE_NOTES: Readonly<Record<ChordStyleId, readonly number[][]>> = {
     [x, x + 6, 17],
     [x + 2, x + 6, 12],
     [x + 4, x + 6, 7],
+  ]),
+  downUp: [
+    [3, 10, 17],
+    [5, 10, 12],
+    [7, 10, 7],
+    [13, 20, 7],
+    [15, 20, 12],
+    [17, 20, 17],
+  ],
+  roll: [
+    [3, 20, 19],
+    [7, 20, 14.5],
+    [11, 20, 10],
+    [15, 20, 5.5],
+  ],
+  offbeat: [7.5, 16.5].flatMap((x) => [
+    [x, x + 3, 17],
+    [x, x + 3, 12],
+    [x, x + 3, 7],
+  ]),
+  tresillo: [
+    [3, 7.5],
+    [10, 14.5],
+    [17, 20],
+  ].flatMap(([from, to]) => [
+    [from, to, 17],
+    [from, to, 12],
+    [from, to, 7],
+  ]),
+  gallop: [
+    [3, 10],
+    [12.5, 15],
+    [17.5, 20],
+  ].flatMap(([from, to]) => [
+    [from, to, 17],
+    [from, to, 12],
+    [from, to, 7],
   ]),
   up: [
     [4, 8, 17],
@@ -351,6 +388,30 @@ export function MadalIcon(props: SVGProps<SVGSVGElement>) {
       <path d="M4.5 7.5c5-1.4 10-1.4 15 .7" />
       <path d="M4.5 16.5c5 1.4 10 1.4 15-.7" />
       <path d="m7.5 7.6 2.5 8.8 2.5-8.8 2.5 8.8 2.5-8.6" />
+    </svg>
+  );
+}
+
+// A drum with a square wave round its shell: the other electronic kit.
+export function Drum909Icon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <ellipse cx="12" cy="7" rx="10" ry="4" />
+      <path d="M2 7v10a10 4 0 0 0 20 0V7" />
+      <path d="M5 16.5h2.5v-4h3.5v4h3.5v-4h3.5v4H20" />
+    </svg>
+  );
+}
+
+// An accordion: the keyboard and button ends, the bellows folded between.
+export function AccordionIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="2" y="4" width="5" height="16" rx="1" />
+      <path d="M2 8h5M2 12h5M2 16h5" />
+      <path d="M7 4l2.5 16L12 4l2.5 16L17 4" />
+      <path d="M7 4h10M7 20h10" />
+      <rect x="17" y="4" width="5" height="16" rx="1" />
     </svg>
   );
 }

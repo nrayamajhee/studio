@@ -56,14 +56,14 @@ const revertOptions = ({
     {
       id: "sounds",
       label: "All sounds",
-      detail: "Every preset's settings",
+      detail: "Every instrument's settings",
       icon: <Layers />,
       run: sound.revertAllSounds,
     },
     {
       id: "pads",
-      label: "Preset pads",
-      detail: "The built-in presets on the pads",
+      label: "Instrument pads",
+      detail: "The built-in instruments on the pads",
       icon: <LayoutGrid />,
       run: resetPads,
     },
@@ -189,6 +189,7 @@ export const revertMode: Mode = (device, base) => {
     chordPad: (index) => closing(base.chordPad(index)),
     screen: {
       title: "Revert",
+      unsaved: false,
       status: (
         <>
           <ScreenPad label="Shift">

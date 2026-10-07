@@ -211,6 +211,7 @@ const DIAGNOSTICS: {
           "flute",
           "harmonium",
           "harmonica",
+          "accordion",
           "xylophone",
           "steelPan",
           "kalimba",

@@ -15,8 +15,9 @@ import {
 import type { Mode } from "../../../types/bindings";
 
 // The preset library, by model: the red knob (or ← →) picks a model and the
-// blue one a preset it plays, and pressing a pad twice binds it there. Delete
-// removes a highlighted saved preset; built-in ones can't be deleted.
+// blue one a preset it plays, and pressing a pad twice binds it there and
+// closes the library. Delete removes a highlighted saved preset; built-in
+// ones can't be deleted.
 export const presetsMode: Mode = (device, base) => {
   const { sound, browse, feedback, shift } = device;
   const { presets } = sound;
@@ -81,9 +82,12 @@ export const presetsMode: Mode = (device, base) => {
           return;
         bindPad(pad, chosen.id, shift);
         feedback.showNotice(`${padName(device, pad)} → ${chosen.name}`);
+        device.views.setView("scope");
       },
     }),
     screen: {
+      title: "Instruments",
+      unsaved: false,
       status: (
         <ScreenLevel>
           {shelf.name} {at + 1}/{shelves.length}

@@ -7,7 +7,8 @@ import type { Mode } from "../../../types/bindings";
 const SHELVES = shelvesOf(CHORD_PALETTE, chordGroup);
 
 // The chord palette, by kind: the red knob (or ← →) picks a kind and the blue
-// one a chord in it, and pressing a chord pad twice sets it to that chord.
+// one a chord in it, and pressing a chord pad twice sets it to that chord and
+// closes the palette.
 export const chordsMode: Mode = (device, base) => {
   const { browse, feedback } = device;
   const { chordIndex } = browse;
@@ -42,10 +43,12 @@ export const chordsMode: Mode = (device, base) => {
           return;
         setChordMacro(index, chosen.id);
         feedback.showNotice(`Chord ${index + 1} → ${chosen.name}`);
+        device.views.setView("scope");
       },
     }),
     screen: {
       title: "Chords",
+      unsaved: false,
       status: (
         <ScreenLevel>
           {shelf.name} {at + 1}/{SHELVES.length}

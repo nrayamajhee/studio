@@ -468,11 +468,11 @@ export function baseBindings(device: Device): Bindings {
         : views.mainView === "steps"
           ? stepPads(device)
           : {}),
-      save: savePad(device, { label: "Save preset" }),
+      save: savePad(device, { label: "Save instrument" }),
       album: viewPad(
         device,
         "album",
-        ["Album", "Close album"],
+        ["Albums", "Close albums"],
         <DiscAlbum />,
         () => openTracks(device, true),
       ),
@@ -509,7 +509,7 @@ export function baseBindings(device: Device): Bindings {
       synth: viewPad(
         device,
         "presets",
-        ["Preset library", "Close preset library"],
+        ["Instruments", "Close instruments"],
         <LayoutGrid />,
         () => openSynth(device, false),
       ),
@@ -530,14 +530,14 @@ export function baseBindings(device: Device): Bindings {
       style: viewPad(
         device,
         "chordStyle",
-        ["Chord style", "Close chord style"],
+        ["Play style", "Close play style"],
         <ChordStyleIcon pattern={performance.chordStyle.id} />,
         () => views.toggleView("chordStyle"),
       ),
       ...arrowPads(
         device,
         shift
-          ? ["Previous preset", "Next preset"]
+          ? ["Previous instrument", "Next instrument"]
           : ["Octave down", "Octave up"],
         (direction) =>
           shift ? sound.stepPreset(direction) : sound.shiftOctave(direction),
@@ -549,7 +549,7 @@ export function baseBindings(device: Device): Bindings {
       return {
         label: bound
           ? `${bound.name}${current ? " (current)" : ""}`
-          : `Empty preset pad ${pad + 1}`,
+          : `Empty instrument pad ${pad + 1}`,
         icon: bound && <PresetIcon icon={bound.icon} />,
         // Lit while either of its two presets plays.
         indicator: bound

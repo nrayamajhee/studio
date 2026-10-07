@@ -22,7 +22,7 @@ export const synthMode: Mode = (device) => {
     },
     pads: {
       save: savePad(device, {
-        label: "Save preset",
+        label: "Save instrument",
         onPress: () => {
           browse.setIconIndex(
             Math.max(0, ICON_CHOICES.indexOf(sound.preset.icon)),

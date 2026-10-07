@@ -3,7 +3,14 @@ import { plural } from "../deviceMath";
 import { ScreenPad, ScreenSeek } from "../DeviceScreen";
 import { meterLabel } from "../noteRecorder";
 import { deleteSong, newSong, openSong } from "../sessionStore";
-import { arrowPads, deletePad, mixPads, savePad, seekKnob } from "./base";
+import {
+  arrowPads,
+  deletePad,
+  idleKnob,
+  mixPads,
+  savePad,
+  seekKnob,
+} from "./base";
 import type { Mode } from "../../../types/bindings";
 import type { Device } from "../../../types/device";
 
@@ -24,10 +31,10 @@ const pickSong = (device: Device, index: number) => {
   device.transport.applySongTiming(next);
 };
 
-// The album, a song a tile: the green knob and the arrows open a song, Play
-// plays its tracks, Save starts an empty song at the tempo playing now and
-// Delete removes the open one.
-export const albumMode: Mode = (device) => {
+// The album, a song a tile: the green knob and the arrows open a song (the
+// red and blue knobs set nothing here), Play plays its tracks, Save starts an
+// empty song at the tempo playing now and Delete removes the open one.
+export const albumMode: Mode = (device, base) => {
   const { lanes, transport, feedback } = device;
   const { songs, songIndex, currentSong } = lanes;
   const pick = (index: number) => pickSong(device, index);
@@ -39,6 +46,8 @@ export const albumMode: Mode = (device) => {
         Math.max(2, songs.length),
         pick,
       ),
+      red: idleKnob(base.knobs.red),
+      blue: idleKnob(base.knobs.blue),
     },
     pads: {
       ...mixPads(device),
@@ -70,7 +79,8 @@ export const albumMode: Mode = (device) => {
       ),
     },
     screen: {
-      title: "Album",
+      title: "Albums",
+      unsaved: false,
       status: (
         <ScreenSeek>
           {songIndex + 1}/{songs.length}

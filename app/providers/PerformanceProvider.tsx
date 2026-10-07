@@ -9,14 +9,16 @@ import { deviceEngine } from "../components/home/deviceEngine";
 import { F3_MIDI, KEY_VELOCITY } from "../components/home/deviceMath";
 import { chordById } from "../components/home/chords";
 import {
-  CHORD_STYLES,
   DEFAULT_CHORD_STYLE,
   playChord,
+  playStyles,
+  styleEdited,
 } from "../components/home/chordStyles";
 import {
   setChordStyle,
   useChordMacros,
   useChordStyle,
+  useSavedChordStyles,
 } from "../components/home/chordStore";
 import { beatMs } from "../components/home/noteRecorder";
 import { createEmitter } from "../lib/emitter";
@@ -42,6 +44,16 @@ function usePerformanceValue() {
   const { octave } = useSound();
   const chordMacros = useChordMacros();
   const chordStyle = useChordStyle();
+  const styles = playStyles(useSavedChordStyles());
+  // The play style picked: the saved one it was picked as, or (if that's
+  // gone) its built-in pattern.
+  const savedIndex = styles.findIndex(({ id }) => id === chordStyle.saved);
+  const chordStyleIndex = Math.max(
+    0,
+    savedIndex >= 0
+      ? savedIndex
+      : styles.findIndex(({ id }) => id === chordStyle.id),
+  );
   // A chord latches on a click; its hotkey holds it while down.
   const [chord, setChord] = useState<number | null>(null);
   const [litNotes, setLitNotes] = useState<ReadonlySet<number>>(
@@ -94,7 +106,7 @@ function usePerformanceValue() {
       chordToPlay === null ? [0] : macroChords[chordToPlay].intervals;
     const semitones = intervals.map((interval) => root + interval);
     const midis = semitones.map((semitone) => F3_MIDI + semitone + 12 * octave);
-    // A chord plays in the chord style; the sequencer takes it as a block.
+    // A chord plays in the play style; the sequencer takes it as a block.
     const stop = playChord(
       midis,
       chordToPlay === null || view === "steps"
@@ -123,10 +135,10 @@ function usePerformanceValue() {
     activeChord,
     macroChords,
     chordStyle,
-    chordStyleIndex: Math.max(
-      0,
-      CHORD_STYLES.findIndex(({ id }) => id === chordStyle.id),
-    ),
+    playStyles: styles,
+    chordStyleIndex,
+    // The rate or strum moved off what the picked play style plays.
+    chordStyleEdited: styleEdited(chordStyle, styles[chordStyleIndex]),
     pressKey,
     releaseKey: (root: number) => {
       const entry = held.current.get(root);
@@ -145,11 +157,11 @@ function usePerformanceValue() {
     toggleChord: (index: number) =>
       setChord((current) => (current === index ? null : index)),
     dropChord: () => setChord(null),
-    pickChordStyle: (index: number) =>
-      setChordStyle({
-        id: CHORD_STYLES[Math.max(0, Math.min(index, CHORD_STYLES.length - 1))]
-          .id,
-      }),
+    // Picking a play style plays it at its own rate and strum.
+    pickChordStyle: (index: number) => {
+      const { style } = styles[Math.max(0, Math.min(index, styles.length - 1))];
+      setChordStyle({ ...style, saved: style.saved });
+    },
     subscribeNotes: notesPlayed.subscribe,
   };
 }
@@ -168,7 +180,7 @@ export function useNotePlayed(handler: NoteListener) {
 }
 
 // Playing the keybed: held keys and the notes they light, and the chord pads
-// that turn a key into a chord in the chord style.
+// that turn a key into a chord in the play style.
 export function PerformanceProvider({ children }: { children: ReactNode }) {
   return (
     <PerformanceContext value={usePerformanceValue()}>

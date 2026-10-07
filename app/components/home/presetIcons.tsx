@@ -63,11 +63,13 @@ import {
   Zap,
 } from "lucide-react";
 import {
+  AccordionIcon,
   BanjoIcon,
   BassTrumpetIcon,
   CelloIcon,
   ClarinetIcon,
   Drum808Icon,
+  Drum909Icon,
   ElectricGuitarIcon,
   HarmonicaIcon,
   HarmoniumIcon,
@@ -110,6 +112,7 @@ export const PRESET_ICONS: Record<string, ComponentType> = {
   sitar: SitarIcon,
   harmonium: HarmoniumIcon,
   harmonica: HarmonicaIcon,
+  accordion: AccordionIcon,
   ukulele: UkuleleIcon,
   banjo: BanjoIcon,
   xylophone: XylophoneIcon,
@@ -120,6 +123,7 @@ export const PRESET_ICONS: Record<string, ComponentType> = {
   rock: RockKitIcon,
   jazz: JazzKitIcon,
   drum808: Drum808Icon,
+  drum909: Drum909Icon,
   // The Synth pad shows lucide's AudioWaveform, so presets get their own.
   waveform: OscillatorIcon,
   waves: Waves,

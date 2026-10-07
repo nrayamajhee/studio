@@ -11,7 +11,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Every pad, three rows of twelve: transport and the arrows at the left, the views along the top, then the library, piano roll, chord palette and drum grid beside six presets (instruments over kits) and six chords. Shift picks a preset pad's alternate and swaps it to the front.",
+          "Every pad, three rows of twelve: transport and the arrows at the left, the views along the top, then the tracks and instruments, the piano roll and the drum grid beside six instrument pads (instruments over kits) and six chords. Shift picks an instrument pad's alternate and swaps it to the front.",
       },
     },
   },
@@ -29,7 +29,7 @@ export const Library: Story = {
     docs: {
       description: {
         story:
-          "In the library, pressing a preset pad twice binds the highlighted preset to it.",
+          "In the library, pressing an instrument pad twice binds the highlighted instrument to it.",
       },
     },
   },

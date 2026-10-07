@@ -53,7 +53,7 @@ export const Lit: Story = {
 
 export const CommandKey: Story = {
   args: {
-    binding: { label: "Save preset", icon: <Save />, onPress: fn() },
+    binding: { label: "Save instrument", icon: <Save />, onPress: fn() },
     control: undefined,
     command: { code: "KeyS", legend: "S" },
   },

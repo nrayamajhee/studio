@@ -62,7 +62,7 @@ export const saveMode: Mode = (device, base) => {
     },
     pads: {
       save: savePad(device, {
-        label: "Save preset",
+        label: "Save instrument",
         onPress: () => {
           const saved = savePreset(
             sound.preset,

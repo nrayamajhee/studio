@@ -119,6 +119,7 @@ const GM_PROGRAMS: Readonly<Record<InstrumentId, number>> = {
   flute: 73,
   harmonium: 20,
   harmonica: 22,
+  accordion: 21,
   xylophone: 13,
   steelPan: 114,
   kalimba: 108,
