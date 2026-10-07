@@ -33,6 +33,7 @@ const keepTape = ({
     deviceEngine.sound(),
     lanes.tapeModules,
     { ...transport.timing, bpm: recorded.bpm },
+    "roll",
   );
   lanes.addTrack(kept);
   setTake(null);

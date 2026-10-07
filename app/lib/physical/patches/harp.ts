@@ -58,6 +58,7 @@ export const harp: StringPatch = {
   damperT60: [[24, 1]],
   noDamperAbove: 23,
   params: stringParams({
+    pluck: "finger",
     hardness: 0.3,
     position: 0.4,
     bodyMix: 0.4,

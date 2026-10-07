@@ -175,7 +175,6 @@ export class StringInstrument extends Instrument {
     super(patch, fs, overrides);
     this.patch = patch;
     this.hammerOptions.fs = fs;
-    this.pluckOptions.finger = patch.exciter === "finger";
     const loops =
       patch.allocation === "key" ? MAX_UNISON : patch.polarization ? 2 : 1;
     const hammerSize = Math.ceil(0.014 * fs);
@@ -217,6 +216,9 @@ export class StringInstrument extends Instrument {
     this.attack = p.get("envelope.attack");
     this.release = p.get("envelope.release");
     this.strum = p.has("exciter.strum") ? p.get("exciter.strum") : 0;
+    this.pluckOptions.finger = p.has("exciter.pluck")
+      ? p.get("exciter.pluck") >= 0.5
+      : this.patch.exciter === "finger";
     this.jawari = p.has("resonator.jawari") ? p.get("resonator.jawari") : 0;
     for (let i = 0; i < this.voices.length; i++) {
       const voice = this.voices[i];

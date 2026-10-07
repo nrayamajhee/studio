@@ -91,6 +91,9 @@ const isTrack = (value: unknown): value is Track => {
     isNumber(track.sound.octave) &&
     typeof track.sound.overrides === "object" &&
     (track.modules === undefined || isModules(track.modules)) &&
+    (track.source === undefined ||
+      track.source === "roll" ||
+      track.source === "steps") &&
     isTake(track.take) &&
     isNumber(track.timing?.bpm) &&
     isNumber(track.timing.meter?.beats) &&

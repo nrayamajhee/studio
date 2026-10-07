@@ -37,6 +37,8 @@ import { ScreenSeek, ScreenValue } from "../DeviceScreen";
 import { AdsrIcon, ChordStyleIcon, TracksIcon } from "../instrumentIcons";
 import { MODULE_IDS } from "../modules";
 import { PresetIcon } from "../presetIcons";
+import { swapPad } from "../presetStore";
+import { trackSource } from "../tracks";
 import type {
   Bindings,
   KnobBinding,
@@ -83,6 +85,72 @@ export const paramKnob = ({ sound }: Device): KnobBinding => ({
   onChange: (index) =>
     sound.selectParam(Math.min(index, sound.specs.length - 1)),
 });
+
+// A knob with nothing to set in this view: it stays where it is, so it
+// doesn't jump, and turning it does nothing.
+export const idleKnob = ({ step, steps }: KnobBinding): KnobBinding => ({
+  label: "Not used here",
+  step,
+  steps,
+  onChange: noop,
+});
+
+// A list's runs of one category, in order: each one's name, where it starts
+// and how many it holds.
+export type Shelf = { name: string; start: number; count: number };
+
+export function shelvesOf<T>(
+  items: readonly T[],
+  categoryOf: (item: T) => string,
+): Shelf[] {
+  const shelves: Shelf[] = [];
+  items.forEach((item, index) => {
+    const name = categoryOf(item);
+    const last = shelves.at(-1);
+    if (last?.name === name) last.count++;
+    else shelves.push({ name, start: index, count: 1 });
+  });
+  return shelves;
+}
+
+// The shelf holding `index`, and its place among the shelves.
+export function shelfAt(shelves: readonly Shelf[], index: number) {
+  const at = Math.max(
+    0,
+    shelves.findIndex(
+      ({ start, count }) => index >= start && index < start + count,
+    ),
+  );
+  return { shelf: shelves[at] ?? { name: "", start: 0, count: 0 }, at };
+}
+
+// Browsing a list by category: the red knob steps through the categories,
+// landing on each one's first, and the blue one through what is in the
+// current one.
+export function shelfKnobs(
+  shelves: readonly Shelf[],
+  index: number,
+  name: string,
+  select: (index: number) => void,
+) {
+  const { shelf, at } = shelfAt(shelves, index);
+  const red: KnobBinding = {
+    label: "Category",
+    valueLabel: shelf.name || undefined,
+    step: at,
+    steps: Math.max(2, shelves.length),
+    onChange: (step) =>
+      select(shelves[Math.min(step, shelves.length - 1)]?.start ?? 0),
+  };
+  const blue: KnobBinding = {
+    label: "Pick",
+    valueLabel: name || undefined,
+    step: index - shelf.start,
+    steps: Math.max(2, shelf.count),
+    onChange: (step) => select(shelf.start + Math.min(step, shelf.count - 1)),
+  };
+  return { red, blue };
+}
 
 // The green knob scrolling whatever the screen lists.
 export const seekKnob = (
@@ -164,6 +232,33 @@ export const deletePad = (
   },
 });
 
+// Play and Stop for the drum pattern.
+export const stepPads = ({ steps }: Device) => {
+  const playing = steps.stepsRunning && !steps.recordingSteps;
+  return {
+    play: {
+      label: playing ? "Stop the steps" : "Play the steps",
+      icon: playing ? (
+        <Pause fill="currentColor" />
+      ) : (
+        <Play fill="currentColor" />
+      ),
+      onPress: () => {
+        if (playing) steps.stopSteps();
+        else steps.playSteps(false);
+      },
+    },
+    stop: {
+      label: "Stop",
+      icon: <Square fill="currentColor" />,
+      onPress: () => {
+        if (steps.stepsRunning) steps.stopSteps();
+        else steps.moveStepHead(0);
+      },
+    },
+  };
+};
+
 // Play and Stop for the tracks: the mix, from the top.
 export const mixPads = ({ mix }: Device, stopLabel = "Stop") => ({
   play: {
@@ -198,13 +293,25 @@ const openTracks = ({ transport, latch, views }: Device, album: boolean) => {
 // the picked track onto it; with `steps` the drum sequencer. While recording
 // it ends the take.
 const openTape = (device: Device, steps: boolean) => {
-  const { transport, latch, views, lanes } = device;
+  const { transport, latch, views, lanes, feedback } = device;
   transport.setRollPosition(null);
   if (transport.recording) {
     transport.stop();
     return;
   }
   latch.release();
+  // A track opens only where it was made: a played take on the tape, a drawn
+  // pattern in the sequencer.
+  const where = steps ? "steps" : "roll";
+  const track = isTape(lanes.focusedLane) ? null : lanes.focusedLane;
+  if (device.view !== where && track && trackSource(track) !== where) {
+    feedback.showPrompt(
+      steps
+        ? "Open this track in the piano roll"
+        : "Open this track in the drum grid",
+    );
+    return;
+  }
   if (steps) {
     device.steps.toggleSteps();
     return;
@@ -354,6 +461,13 @@ export function baseBindings(device: Device): Bindings {
         icon: <Square fill="currentColor" />,
         onPress: tape.stop,
       },
+      // Every other view shows over the main one, so Play and Stop act on
+      // what it plays: the tracks, the pattern, or (as above) the tape.
+      ...(views.mainView === "tracks"
+        ? mixPads(device)
+        : views.mainView === "steps"
+          ? stepPads(device)
+          : {}),
       save: savePad(device, { label: "Save preset" }),
       album: viewPad(
         device,
@@ -372,14 +486,14 @@ export function baseBindings(device: Device): Bindings {
       take: viewPad(
         device,
         "roll",
-        ["Tape (record mode)", "Close tape"],
+        ["Piano roll", "Close piano roll"],
         <ChartNoAxesGantt />,
         () => openTape(device, false),
       ),
       steps: viewPad(
         device,
         "steps",
-        ["Drum sequencer", "Close drum sequencer"],
+        ["Drum grid", "Close drum grid"],
         <Grid3x3 />,
         () => openTape(device, true),
       ),
@@ -446,8 +560,11 @@ export function baseBindings(device: Device): Bindings {
         onPress: () => {
           if (!bound) return;
           sound.selectPreset(bound);
-          // A latched Shift lets go once its alternate is picked.
-          if (shift) device.latch.release();
+          if (!shift) return;
+          // The alternate comes up to the pad's first layer, and a latched
+          // Shift lets go once it's picked.
+          swapPad(pad);
+          device.latch.release();
         },
       };
     },

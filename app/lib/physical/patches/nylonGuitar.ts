@@ -54,6 +54,7 @@ export const nylonGuitar: StringPatch = {
   dispersionCoef: [[40, -0.08]],
   damperT60: [[40, 0.12]],
   params: stringParams({
+    pluck: "finger",
     hardness: 0.3,
     position: 0.2,
     bodyMix: 0.55,

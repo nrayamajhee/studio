@@ -1,4 +1,4 @@
-import { Circle, Pause, Play, Save, Square } from "lucide-react";
+import { Circle, Save } from "lucide-react";
 import { deviceEngine, isKit } from "../deviceEngine";
 import { plural, positionLabel } from "../deviceMath";
 import {
@@ -11,7 +11,7 @@ import { DRUM_PIECES } from "../instrumentIcons";
 import { gridLabel } from "../noteRecorder";
 import { MAX_STEP_BARS, STEP_RESOLUTIONS, patternTake } from "../stepPattern";
 import { makeTrack } from "../tracks";
-import { arrowPads, deletePad, padPreset, seekKnob } from "./base";
+import { arrowPads, deletePad, padPreset, seekKnob, stepPads } from "./base";
 import type { Mode } from "../../../types/bindings";
 import type { Device } from "../../../types/device";
 
@@ -36,6 +36,7 @@ const keepPattern = (device: Device) => {
     deviceEngine.sound(),
     lanes.tapeModules,
     { ...timing, perBeat: lanes.stepPattern.perBeat },
+    "steps",
   );
   lanes.addTrack(saved);
   mix.rewind();
@@ -43,7 +44,7 @@ const keepPattern = (device: Device) => {
   feedback.showNotice(`Saved ${saved.name}`);
 };
 
-// The drum sequencer (Shift + Tape): the green knob moves the head, the red
+// The drum sequencer: the green knob moves the head, the red
 // one sets the length and the blue one the resolution. Stopped, keys set or
 // clear their piece at the head; Play loops the pattern, and Record loops it
 // and lands each tap on the nearest step.
@@ -51,7 +52,6 @@ export const stepsMode: Mode = (device, base) => {
   const { sound, transport, lanes, steps, feedback } = device;
   const { stepPattern } = lanes;
   const { stepHead, stepCount, stepsRunning, recordingSteps } = steps;
-  const playing = stepsRunning && !recordingSteps;
   const resolution = gridLabel({
     ...transport.timing,
     perBeat: stepPattern.perBeat,
@@ -81,18 +81,7 @@ export const stepsMode: Mode = (device, base) => {
       },
     },
     pads: {
-      play: {
-        label: playing ? "Stop the steps" : "Play the steps",
-        icon: playing ? (
-          <Pause fill="currentColor" />
-        ) : (
-          <Play fill="currentColor" />
-        ),
-        onPress: () => {
-          if (playing) steps.stopSteps();
-          else steps.playSteps(false);
-        },
-      },
+      ...stepPads(device),
       record: {
         label: recordingSteps ? "Stop recording steps" : "Record steps",
         icon: <Circle fill="currentColor" />,
@@ -101,14 +90,6 @@ export const stepsMode: Mode = (device, base) => {
           deviceEngine.unlock();
           if (recordingSteps) steps.stopSteps();
           else steps.playSteps(true);
-        },
-      },
-      stop: {
-        label: "Stop",
-        icon: <Square fill="currentColor" />,
-        onPress: () => {
-          if (stepsRunning) steps.stopSteps();
-          else steps.moveStepHead(0);
         },
       },
       save: {
@@ -139,7 +120,7 @@ export const stepsMode: Mode = (device, base) => {
         onPress: () => {
           const bound = padPreset(device, pad);
           if (bound && !isKit(bound.target)) {
-            feedback.showPrompt("The sequencer plays drum kits");
+            feedback.showPrompt("The drum grid plays drum kits");
             return;
           }
           own.onPress();

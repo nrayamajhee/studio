@@ -197,7 +197,7 @@ export const Tracks: Story = {
     view: "tracks",
     title: "Tracks",
     status: "Track 1/2",
-    footer: ["Starts bar 1", "←→ slide · X mute · ⇧X solo"],
+    footer: ["Starts bar 1", "←→ slide · \\ mute · ⇧\\ solo"],
     selected: 0,
     trackSpan: 16,
     tracks: [

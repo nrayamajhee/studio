@@ -42,6 +42,7 @@ export const electricGuitar: StringPatch = {
   damperT60: [[40, 0.1]],
   pickup: 0.12,
   params: stringParams({
+    pluck: "pick",
     hardness: 0.65,
     position: 0.15,
     bodyMix: 0,

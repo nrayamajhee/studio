@@ -6,7 +6,7 @@ import { Svf } from "../dsp/Svf";
 import { Instrument } from "../engine/Instrument";
 import { RELEASED, Voice } from "../engine/Voice";
 import type { DrumPieceId } from "../messages";
-import type { DrumKitPatch, DrumPieceSpec } from "../patches/types";
+import type { DrumBrush, DrumKitPatch, DrumPieceSpec } from "../patches/types";
 import { stick, velocityGain } from "./exciters";
 
 // Every piece in a fixed order: it sets each voice's noise seed and the order
@@ -32,6 +32,8 @@ const PIECE_ORDER: readonly DrumPieceId[] = [
   "ka",
   "dha",
   "dhin",
+  "ride",
+  "sweep",
 ];
 
 // The pieces a kit can play, in a stable order.
@@ -49,6 +51,10 @@ const MEMBRANE_M = [0, 1, 2, 0, 3, 1, 4, 2, 0, 5];
 const PITCH_UPDATE = 32;
 const CHOKE_T60 = 0.03;
 const LN_1000 = 6.907755278982137;
+// A brush's bristles land within about a millisecond, and push the head with
+// a fraction of a stick's weight.
+const BRUSH_RISE = 0.0015;
+const BRUSH_PUSH = 0.35;
 
 class DrumVoice extends Voice {
   readonly spec: VoiceSpec;
@@ -62,6 +68,7 @@ class DrumVoice extends Voice {
   private readonly clickFilter = new OnePoleHighpass();
   private readonly noiseFilter = new OnePoleHighpass();
   private readonly wiresFilter = new OnePoleHighpass();
+  private readonly hissFilter = new OnePoleHighpass();
   private readonly follower: Follower;
   private readonly bandpass = new Svf("bandpass");
   private readonly bursts: Float64Array;
@@ -84,6 +91,14 @@ class DrumVoice extends Voice {
   private burstSamples = 1;
   private tailStart = 0;
   private tailCoef = 0;
+  private swell = 0;
+  private brushPos = 0;
+  private brushLength = 0;
+  private brushRise = 1;
+  private brushEnv = 0;
+  private brushCoef = 0;
+  private brushScale = 0;
+  private hissLevel = 0;
 
   constructor(spec: VoiceSpec, fs: number, seed: number) {
     super(fs);
@@ -149,6 +164,9 @@ class DrumVoice extends Voice {
       }
       if (spec.noise) this.noiseFilter.setCutoff(spec.noise.highpass, fs);
     }
+    if ((spec.model === "membrane" || spec.model === "metal") && spec.brush) {
+      this.hissFilter.setCutoff(spec.brush.highpass, fs);
+    }
 
     this.bursts = new Float64Array(
       spec.model === "noise" ? spec.bursts.length : 0,
@@ -162,6 +180,7 @@ class DrumVoice extends Voice {
       this.burstSamples = (spec.burstLength / 1000) * fs;
       this.tailStart = (spec.tailStart / 1000) * fs;
       this.tailCoef = Math.exp(-LN_1000 / ((spec.tailDecay / 1000) * fs));
+      if (spec.swell) this.swell = this.tailStart;
       this.bandpass.set(spec.bandpass[0], spec.bandpass[1], fs);
     }
   }
@@ -169,6 +188,7 @@ class DrumVoice extends Voice {
   reset() {
     this.bank.clear();
     this.pulsePos = this.pulseLength = 0;
+    this.brushPos = this.brushLength = 0;
     this.clickRemaining = 0;
     this.noiseEnv = 0;
     this.clapLevel = 0;
@@ -215,10 +235,13 @@ class DrumVoice extends Voice {
     this.elapsed = 0;
     if (spec.model !== "noise") {
       const [soft, hard] = spec.stick;
-      const seconds = lerp(soft, hard, hardness * velocity) / 1000;
-      this.pulseLength = stick(this.pulse, seconds, 1, fs);
+      const force = hardness * velocity;
+      const seconds = lerp(soft, hard, force) / 1000;
+      const brush = spec.model === "loaded" ? undefined : spec.brush;
+      this.pulseLength = stick(this.pulse, seconds, brush ? BRUSH_PUSH : 1, fs);
       this.pulsePos = 0;
       this.bank.scaleDecay(this.decayScale);
+      if (brush) this.startBrush(brush, force);
     }
     if (spec.model === "membrane") {
       this.drop = spec.pitchDrop * velocity * dropScale;
@@ -249,6 +272,23 @@ class DrumVoice extends Voice {
     }
   }
 
+  // Harder strokes land the bristles closer together. The burst is scaled to
+  // unit energy (its envelope's square integrates to 3/8 of the rise plus
+  // half the decay's time constant), so its length changes the hiss, not how
+  // hard the modes are driven.
+  private startBrush(brush: DrumBrush, force: number) {
+    const fs = this.fs;
+    const length = (brush.length / 1000) * lerp(1.3, 0.75, force) * fs;
+    this.brushRise = Math.max(1, Math.round(BRUSH_RISE * fs));
+    this.brushLength = Math.max(this.brushRise + 1, Math.round(length));
+    const tau = (this.brushLength - this.brushRise) / LN_1000;
+    this.brushCoef = Math.exp(-1 / tau);
+    this.brushScale = 1 / Math.sqrt(0.375 * this.brushRise + 0.5 * tau);
+    this.brushEnv = 1;
+    this.brushPos = 0;
+    this.hissLevel = brush.level;
+  }
+
   choke() {
     if (!this.busy) return;
     let longest = 0;
@@ -268,6 +308,8 @@ class DrumVoice extends Voice {
     for (let i = start; i < end; i++) {
       let x = 0;
       if (this.pulsePos < this.pulseLength) x = this.pulse[this.pulsePos++];
+      const bristles = this.brushPos < this.brushLength ? this.bristle() : 0;
+      x += bristles * this.brushScale;
       if (membrane && this.drop > 0 && this.elapsed % PITCH_UPDATE === 0) {
         // Tension modulation: pitch starts high and settles.
         bank.scaleFrequencies(
@@ -276,6 +318,8 @@ class DrumVoice extends Voice {
         );
       }
       let y = bank.count > 0 ? bank.process(x) : 0;
+      if (bristles !== 0)
+        y += this.hissFilter.process(bristles) * this.hissLevel;
 
       if (this.clickRemaining > 0) {
         y +=
@@ -308,7 +352,17 @@ class DrumVoice extends Voice {
     this.track(peak, end - start);
   }
 
-  // Short noise bursts, then a decaying tail, all through a bandpass.
+  private bristle() {
+    const n = this.brushPos++;
+    const env =
+      n < this.brushRise
+        ? 0.5 - 0.5 * Math.cos((Math.PI * n) / this.brushRise)
+        : (this.brushEnv *= this.brushCoef);
+    return this.noise.next() * env;
+  }
+
+  // Short noise bursts, then a decaying tail (or one swelling in to its
+  // start), all through a bandpass.
   private clapSample() {
     const t = this.elapsed;
     let env = 0;
@@ -320,6 +374,8 @@ class DrumVoice extends Voice {
     }
     if (t >= this.tailStart) {
       env += 0.6 * this.tailCoef ** (t - this.tailStart);
+    } else if (this.swell > 0) {
+      env += 0.3 - 0.3 * Math.cos((Math.PI * t) / this.swell);
     }
     if (t > this.tailStart && env < 1e-5) this.clapLevel = 0;
     return this.bandpass.process(this.noise.next()) * env * 2;

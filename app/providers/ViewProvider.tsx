@@ -6,15 +6,34 @@ import { createStrictContext } from "./createStrictContext";
 export const isModuleView = (view: ScreenView): view is ModuleId =>
   view === "adsr" || view === "lfo" || view === "fx";
 
+// The views that play something of their own: the tracks (and the album), the
+// tape's roll and the drum sequencer.
+export type MainView = "tracks" | "roll" | "steps";
+
+const mainOf = (view: ScreenView): MainView | null =>
+  view === "tracks" || view === "album"
+    ? "tracks"
+    : view === "roll" || view === "steps"
+      ? view
+      : null;
+
 function useViewValue(initialView: ScreenView) {
   const [view, setView] = useState<ScreenView>(initialView);
   // Where closing a module view goes back to.
   const [moduleReturn, setModuleReturn] = useState<ScreenView>("scope");
+  // The main screen is only what shows between views, so what the last main
+  // view plays carries on there, and its Play and Stop act on it.
+  const [mainView, setMainView] = useState<MainView>(
+    mainOf(initialView) ?? "roll",
+  );
+  const main = mainOf(view);
+  if (main && main !== mainView) setMainView(main);
 
   return {
     view,
     setView,
     activeModule: isModuleView(view) ? view : null,
+    mainView,
     // A view's own pad opens it, and pressed again goes back to the main
     // screen.
     toggleView: (opens: ScreenView) =>

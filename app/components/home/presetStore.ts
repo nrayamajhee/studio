@@ -1,6 +1,11 @@
 import { useSyncExternalStore } from "react";
 import { PATCH_BY_ID } from "../../lib/physical/patches";
-import { DEVICE_PRESETS, type DevicePreset } from "./deviceEngine";
+import {
+  DEVICE_PRESETS,
+  PRESET_CATEGORIES,
+  presetCategory,
+  type DevicePreset,
+} from "./deviceEngine";
 
 // Saved presets (`instruments`) and which preset each of the six preset pads
 // plays (`buttons`) and plays with Shift held (`shiftButtons`), "" for none,
@@ -18,8 +23,8 @@ export type PresetLibrary = {
 
 const STORAGE_KEY = "studio.instruments";
 // Pad bindings stored under an older layout are dropped once, so every pad
-// starts on its built-in pair (Shift used to swap the pair, scrambling them).
-const PADS_VERSION = 2;
+// starts on its built-in pair (the last three pads became kits).
+const PADS_VERSION = 3;
 export const PRESET_PADS = 6;
 
 // What the pads play at first, and with Shift a relative from the same family,
@@ -137,10 +142,13 @@ export function usePresetLibrary() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-export const allPresets = (current: PresetLibrary): readonly DevicePreset[] => [
-  ...DEVICE_PRESETS,
-  ...current.instruments,
-];
+// Every preset by family, each family's built-ins before its saved ones.
+export const allPresets = (current: PresetLibrary): readonly DevicePreset[] => {
+  const all = [...DEVICE_PRESETS, ...current.instruments];
+  return PRESET_CATEGORIES.flatMap((category) =>
+    all.filter((preset) => presetCategory(preset) === category),
+  );
+};
 
 // `name`, or with a number when another preset already has it.
 function freeName(name: string, except?: string) {
@@ -246,6 +254,17 @@ export function bindPad(pad: number, presetId: string, shift = false) {
   update((lib) => ({
     ...lib,
     [field]: lib[field].map((id, i) => (i === pad ? presetId : id)),
+  }));
+}
+
+// Swaps a pad's preset and its Shift alternate, so the alternate shows first.
+export function swapPad(pad: number) {
+  update((lib) => ({
+    ...lib,
+    buttons: lib.buttons.map((id, i) => (i === pad ? lib.shiftButtons[i] : id)),
+    shiftButtons: lib.shiftButtons.map((id, i) =>
+      i === pad ? lib.buttons[i] : id,
+    ),
   }));
 }
 

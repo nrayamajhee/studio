@@ -27,6 +27,8 @@ const meta = {
         "saxophone",
         "flute",
         "drums",
+        "rockDrums",
+        "jazzDrums",
         "drums808",
       ],
     },

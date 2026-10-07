@@ -126,7 +126,8 @@ const GM_PROGRAMS: Readonly<Record<InstrumentId, number>> = {
 };
 
 // General MIDI percussion keys for each drum piece; the hand-drum bols take
-// the conga and bongo keys nearest their sound.
+// the conga and bongo keys nearest their sound, and the brush sweep the
+// brush kits' swirl.
 const GM_DRUMS: Readonly<Record<DrumPieceId, number>> = {
   kick: 36,
   snare: 38,
@@ -137,6 +138,8 @@ const GM_DRUMS: Readonly<Record<DrumPieceId, number>> = {
   highTom: 50,
   cowbell: 56,
   crash: 49,
+  ride: 51,
+  sweep: 40,
   na: 63,
   ta: 62,
   tin: 60,

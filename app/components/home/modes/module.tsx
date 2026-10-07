@@ -1,15 +1,13 @@
 import { DEVICE_MODULES, type ModuleId } from "../deviceEngine";
 import { knobDisplay, knobValue } from "../modules";
-import { mixPads } from "./base";
 import type { KnobBinding, Mode } from "../../../types/bindings";
 
 // The ADSR, LFO or FX of the focused lane: the four knobs set its params, in
-// knob order, switching it on. On a track's, Play plays the tracks, so each
-// turn of a knob is heard on the track itself.
+// knob order, switching it on.
 export const moduleMode =
   (id: ModuleId): Mode =>
   (device) => {
-    const { lanes, mix } = device;
+    const { lanes } = device;
     const { modules, modulesOwner, setModuleStep } = lanes;
     const module = DEVICE_MODULES[id];
     const knob = (index: number): KnobBinding => {
@@ -25,7 +23,6 @@ export const moduleMode =
     };
     return {
       knobs: { chalk: knob(0), green: knob(1), red: knob(2), blue: knob(3) },
-      pads: mix.mixView ? mixPads(device) : {},
       screen: {
         title: `${module.label} · ${modulesOwner}`,
         unsaved: false,

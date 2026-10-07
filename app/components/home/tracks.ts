@@ -1,4 +1,4 @@
-import type { DeviceSound } from "./deviceEngine";
+import { isKit, type DeviceSound } from "./deviceEngine";
 import { modulesOf, withModules, type ModuleSettings } from "./modules";
 import {
   MAX_TAKE_MS,
@@ -18,6 +18,10 @@ export type TrackLoop = {
   on: boolean;
 };
 
+// Where a track was made, and so the one place it opens again: the tape's
+// piano roll, or the drum sequencer.
+export type TrackSource = "roll" | "steps";
+
 // A take kept on the tracks view, with the sound and preset that played it
 // and the timing it was recorded on (its own tempo, meter and grid). `start`
 // slides it along the timeline, in beats. Its notes are never changed in
@@ -30,6 +34,8 @@ export type Track = {
   sound: DeviceSound;
   // Missing on tracks saved before they kept their own; see `trackModules`.
   modules?: ModuleSettings;
+  // Missing on tracks saved before they kept it; see `trackSource`.
+  source?: TrackSource;
   take: Take;
   timing: Timing;
   start: number;
@@ -56,15 +62,32 @@ export const TRACK_COLORS = [
 export const trackModules = (track: Track) =>
   track.modules ?? modulesOf(track.sound);
 
+// Where a track was made, or for an older track where it must have been: the
+// sequencer keeps a pattern as a kit's take with every note on the grid, one
+// step long.
+export function trackSource(track: Track): TrackSource {
+  if (track.source) return track.source;
+  const { perBeat } = track.timing;
+  if (!isKit(track.sound.target) || perBeat === 0) return "roll";
+  const step = 60_000 / track.take.bpm / perBeat;
+  const near = (a: number, b: number) => Math.abs(a - b) < 1e-6 * step;
+  const onGrid = track.take.notes.every(
+    ({ start, duration }) =>
+      near(start, Math.round(start / step) * step) && near(duration, step),
+  );
+  return onGrid ? "steps" : "roll";
+}
+
 // The change that gives a track `modules`, and renders it through them.
 export const modulesChange = (track: Track, modules: ModuleSettings) => ({
   modules,
   sound: withModules(track.sound, modules),
 });
 
-// The next track from a take: named for its instrument, coloured in turn,
-// unmuted, at the top of the timeline. It keeps its own copy of the take and
-// its effects, so later takes on the take leave it alone.
+// The next track from a take, played on the tape or drawn in the sequencer:
+// named for its instrument, coloured in turn, unmuted, at the top of the
+// timeline. It keeps its own copy of the take and its effects, so later takes
+// on the take leave it alone.
 export function makeTrack(
   count: number,
   name: string,
@@ -73,6 +96,7 @@ export function makeTrack(
   sound: DeviceSound,
   modules: ModuleSettings,
   timing: Timing,
+  source: TrackSource,
 ): Track {
   return {
     id: `track-${Date.now().toString(36)}`,
@@ -81,6 +105,7 @@ export function makeTrack(
     presetId,
     sound: withModules(structuredClone(sound), modules),
     modules: structuredClone(modules),
+    source,
     take: structuredClone(take),
     timing,
     start: 0,

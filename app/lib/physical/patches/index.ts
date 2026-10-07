@@ -4,7 +4,7 @@ import { bass } from "./bass";
 import { bassTrumpet } from "./bassTrumpet";
 import { cello } from "./cello";
 import { clarinet } from "./clarinet";
-import { drums, drums808 } from "./drums";
+import { drums, drums808, jazzDrums, rockDrums } from "./drums";
 import { electricGuitar } from "./electricGuitar";
 import { flute } from "./flute";
 import { guitar } from "./guitar";
@@ -54,6 +54,8 @@ export const PATCHES: readonly Patch[] = [
   steelPan,
   kalimba,
   drums,
+  rockDrums,
+  jazzDrums,
   drums808,
   madal,
   tabla,

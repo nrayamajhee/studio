@@ -283,6 +283,11 @@ const STYLE_NOTES: Readonly<Record<ChordStyleId, readonly number[][]>> = {
     [8, 19, 12],
     [12, 19, 7],
   ],
+  strumPulse: [3, 12].flatMap((x) => [
+    [x, x + 6, 17],
+    [x + 2, x + 6, 12],
+    [x + 4, x + 6, 7],
+  ]),
   up: [
     [4, 8, 17],
     [10, 14, 12],
@@ -346,6 +351,45 @@ export function MadalIcon(props: SVGProps<SVGSVGElement>) {
       <path d="M4.5 7.5c5-1.4 10-1.4 15 .7" />
       <path d="M4.5 16.5c5 1.4 10 1.4 15-.7" />
       <path d="m7.5 7.6 2.5 8.8 2.5-8.8 2.5 8.8 2.5-8.6" />
+    </svg>
+  );
+}
+
+// A kick drum on its legs, a cymbal on its stand beside it.
+export function RockKitIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="9" cy="14" r="6" />
+      <circle cx="9" cy="14" r="1.5" />
+      <path d="m5 19-2 3M13 19l2 3" />
+      <path d="M14 4.5c2.5-1.3 5.5-1.3 8 0" />
+      <path d="M18 4v18" />
+    </svg>
+  );
+}
+
+// A snare played with brushes, their wires fanned out.
+export function JazzKitIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M2 2l4 4" />
+      <path d="M6 6l.8 4.2L10.2 7z" />
+      <path d="M22 2l-4 4" />
+      <path d="M18 6l-.8 4.2L13.8 7z" />
+      <ellipse cx="12" cy="12" rx="10" ry="3.5" />
+      <path d="M2 12v6a10 3.5 0 0 0 20 0v-6" />
+      <path d="M7 15.3v6M12 15.5v6.5M17 15.3v6" />
+    </svg>
+  );
+}
+
+// A drum with a waveform round its shell: an electronic kit.
+export function Drum808Icon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <ellipse cx="12" cy="7" rx="10" ry="4" />
+      <path d="M2 7v10a10 4 0 0 0 20 0V7" />
+      <path d="M5 15c1.2-2 2.3-2 3.5 0s2.3 2 3.5 0 2.3-2 3.5 0 2.3 2 3.5 0" />
     </svg>
   );
 }
@@ -447,6 +491,31 @@ export function CrashIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// A ride: a wide, flat cymbal with a raised bell, on its stand.
+export function RideIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M2 10.5c3-1.6 17-1.6 20 0" />
+      <path d="M9.5 9.3c0-1.6 5-1.6 5 0" />
+      <path d="M12 10.5V21" />
+      <path d="M8 21h8" />
+    </svg>
+  );
+}
+
+// A brush's wires fanned out, stirring a curve across the head.
+export function SweepIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 3l7 7" />
+      <path d="M10 10l1 5" />
+      <path d="M10 10l3 3" />
+      <path d="M10 10l5 1" />
+      <path d="M4 20c4 1.5 12 1.5 16-3" />
+    </svg>
+  );
+}
+
 // What each key shows when a kit is selected: an icon, or for hand-drum
 // strokes their syllable.
 export const DRUM_PIECES: Readonly<
@@ -458,6 +527,8 @@ export const DRUM_PIECES: Readonly<
   highTom: { name: "High tom", Icon: HighTomIcon },
   clap: { name: "Clap", Icon: Hand },
   crash: { name: "Crash", Icon: CrashIcon },
+  ride: { name: "Ride", Icon: RideIcon },
+  sweep: { name: "Brush sweep", Icon: SweepIcon },
   cowbell: { name: "Cowbell", Icon: Bell },
   closedHat: { name: "Closed hat", Icon: ClosedHatIcon },
   openHat: { name: "Open hat", Icon: OpenHatIcon },

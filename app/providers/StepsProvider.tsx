@@ -14,7 +14,11 @@ import {
   type DevicePreset,
 } from "../components/home/deviceEngine";
 import { KEY_VELOCITY, meterIndexOf } from "../components/home/deviceMath";
-import { setSteps, setTake } from "../components/home/sessionStore";
+import {
+  setSteps,
+  setTake,
+  setTakeModules,
+} from "../components/home/sessionStore";
 import {
   STEP_RESOLUTIONS,
   addHit,
@@ -26,6 +30,7 @@ import {
   takePattern,
   toggleHit,
 } from "../components/home/stepPattern";
+import { trackModules, trackSource } from "../components/home/tracks";
 import { useStepPlayer } from "../hooks/useStepPlayer";
 import { createStrictContext } from "./createStrictContext";
 import { isTape, useLanes } from "./LanesProvider";
@@ -35,7 +40,7 @@ import { useDeviceTransport } from "./TransportProvider";
 import { useView } from "./ViewProvider";
 
 function useStepsValue() {
-  const { view, setView } = useView();
+  const { view, setView, mainView } = useView();
   const transport = useDeviceTransport();
   const { stepKit, preset, presets, selectPreset } = useSound();
   const { stepPattern, focusedLane } = useLanes();
@@ -56,7 +61,10 @@ function useStepsValue() {
     bpm: transport.bpm,
   }));
   const getStepHead = () => stepPlayer.position() ?? stepHeadRef.current;
-  const stepsRunning = view === "steps" && stepPlayer.running;
+  // The pattern stays live while the sequencer is the main view, whatever
+  // shows over it.
+  const stepsLive = mainView === "steps";
+  const stepsRunning = stepsLive && stepPlayer.running;
   const recordingSteps = stepsRunning && stepRecording;
   const stepHits = new Set(
     stepPattern.hits.flatMap((hit) => {
@@ -99,9 +107,11 @@ function useStepsValue() {
     beforeSteps.current = null;
     if (before) selectPreset(before);
   });
+  // Keys land in the pattern only in the sequencer.
+  if (view !== "steps" && stepRecording) setStepRecording(false);
   useEffect(() => {
-    if (view !== "steps") leaveSteps();
-  }, [view]);
+    if (!stepsLive) leaveSteps();
+  }, [stepsLive]);
 
   // A key in the sequencer: recording, it lands on the nearest step;
   // stopped, it sets or clears its piece at the head; playing, it only plays.
@@ -185,15 +195,17 @@ function useStepsValue() {
       setSteps((current) => ({ ...current, bars })),
     clearSteps: () => setSteps((current) => ({ ...current, hits: [] })),
     // Opens the sequencer on a kit: the one playing, or the drum kit. With a
-    // drum track picked it loads the track, kit, grid and time signature, and
-    // saving the pattern then updates the track.
+    // track it made picked it loads the track onto the tape: its pattern, kit,
+    // ADSR, LFO and FX, grid and time signature.
     toggleSteps: () => {
       if (view === "steps") {
         setView("scope");
         return;
       }
       const loading =
-        !isTape(focusedLane) && isKit(focusedLane.sound.target)
+        !isTape(focusedLane) &&
+        trackSource(focusedLane) === "steps" &&
+        isKit(focusedLane.sound.target)
           ? focusedLane
           : null;
       const kit = loading
@@ -211,6 +223,7 @@ function useStepsValue() {
           takePattern(loading.take, loading.sound.target, loading.timing),
         );
         setTake(null);
+        setTakeModules(trackModules(loading));
         transport.setMeter(meterIndexOf(loading.timing.meter));
         setStepCursor(0);
       }

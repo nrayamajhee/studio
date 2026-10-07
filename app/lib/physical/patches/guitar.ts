@@ -54,6 +54,7 @@ export const guitar: StringPatch = {
   dispersionCoef: [[40, -0.15]],
   damperT60: [[40, 0.12]],
   params: stringParams({
+    pluck: "pick",
     hardness: 0.6,
     position: 0.18,
     bodyMix: 0.5,

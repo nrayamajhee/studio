@@ -44,6 +44,7 @@ export const bass: StringPatch = {
   damperT60: [[28, 0.08]],
   pickup: 0.15,
   params: stringParams({
+    pluck: "finger",
     hardness: 0.35,
     position: 0.2,
     bodyMix: 0,

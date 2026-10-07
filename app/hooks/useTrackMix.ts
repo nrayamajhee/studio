@@ -57,14 +57,16 @@ export function useTrackMix(
   };
 
   // `from` is where to start (beats), or, once the tracks have rendered, a
-  // function that says where.
+  // function that says where. `playing` is the tracks as they are about to
+  // be, when a change to them hasn't rendered yet.
   const start = async (
     from: number | ((beat: number) => number),
     loop = true,
+    playing = tracks,
   ) => {
     const ticket = ++run.current;
     deviceEngine.unlock();
-    const buffers = await Promise.all(tracks.map(render));
+    const buffers = await Promise.all(playing.map(render));
     if (ticket !== run.current) return;
     mixer.current ??= deviceEngine.mixer();
     if (!mixer.current) return;
@@ -73,7 +75,7 @@ export function useTrackMix(
     const at = typeof from === "function" ? from(beat) : from;
     looping.current = loop;
     mixer.current.play(
-      tracks.flatMap((track, i) => {
+      playing.flatMap((track, i) => {
         const buffer = buffers[i];
         if (!buffer) return [];
         const starts = startsOf(track, passOf(track, bpm), bpm, span);
@@ -82,7 +84,7 @@ export function useTrackMix(
             id: track.id,
             buffer,
             starts: starts.map((ms) => ms / 1000),
-            gain: levelOf(track, tracks),
+            gain: levelOf(track, playing),
           },
         ];
       }),
@@ -92,9 +94,9 @@ export function useTrackMix(
     );
   };
 
-  const play = () => {
+  const play = (playing = tracks) => {
     setPlaying(true);
-    void start(paused.current);
+    void start(paused.current, true, playing);
   };
 
   // Plays the timeline once through from the top at `origin`

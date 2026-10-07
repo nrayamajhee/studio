@@ -99,6 +99,11 @@ export type BowedPatch = {
   tuningCents: TuningTables;
 } & BasePatch;
 
+// Wire brushes instead of a stick: the bristles land as a burst of noise that
+// dies away over `length` ms, driving the modes, and `level` of it, highpassed,
+// is heard as the brush's hiss.
+export type DrumBrush = { length: number; highpass: number; level: number };
+
 export type DrumPieceSpec =
   | {
       model: "membrane";
@@ -111,6 +116,7 @@ export type DrumPieceSpec =
       click?: { highpass: number; length: number; level: number };
       wires?: { level: number; highpass: number; release: number };
       shell?: readonly [freq: number, t60: number, amp: number];
+      brush?: DrumBrush;
       level: number;
       pan: number;
     }
@@ -128,6 +134,7 @@ export type DrumPieceSpec =
       t60: number;
       noise?: { highpass: number; decay: number; level: number };
       stick: readonly [soft: number, hard: number];
+      brush?: DrumBrush;
       chokes?: readonly DrumPieceId[];
       level: number;
       pan: number;
@@ -158,6 +165,9 @@ export type DrumPieceSpec =
       burstLength: number;
       tailStart: number;
       tailDecay: number;
+      // The tail swells in from silence until tailStart instead of starting
+      // there, as a brush stirred across a head does.
+      swell?: boolean;
       bandpass: readonly [freq: number, q: number];
       level: number;
       pan: number;

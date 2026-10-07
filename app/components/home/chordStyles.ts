@@ -1,7 +1,15 @@
 // How a held chord sounds: all at once, strummed, or as a pattern of its
 // notes in time with the tempo.
 export type ChordStyleId =
-  "block" | "pulse" | "strum" | "up" | "down" | "upDown" | "broken" | "alberti";
+  | "block"
+  | "pulse"
+  | "strum"
+  | "strumPulse"
+  | "up"
+  | "down"
+  | "upDown"
+  | "broken"
+  | "alberti";
 
 export const CHORD_STYLES: readonly {
   id: ChordStyleId;
@@ -11,6 +19,11 @@ export const CHORD_STYLES: readonly {
   { id: "block", name: "Block", detail: "Every note at once" },
   { id: "pulse", name: "Pulse", detail: "Short strikes, a gap apart" },
   { id: "strum", name: "Strum", detail: "Low to high, a sweep apart" },
+  {
+    id: "strumPulse",
+    name: "Strum pulse",
+    detail: "A strum on every strike",
+  },
   { id: "up", name: "Arp up", detail: "One at a time, low to high" },
   { id: "down", name: "Arp down", detail: "One at a time, high to low" },
   { id: "upDown", name: "Up-down", detail: "Up, then back down" },
@@ -99,12 +112,21 @@ export function playChord(
 
   if (style.id === "block" || notes.length < 2) {
     notes.forEach(on);
-  } else if (style.id === "pulse") {
+  } else if (style.id === "pulse" || style.id === "strumPulse") {
+    // A strum pulse sweeps each strike low to high, a strum's gap apart; the
+    // strike's end cuts off any note still to come.
+    const gap = style.id === "strumPulse" ? style.strum : 0;
     let next = performance.now();
     const strike = () => {
       const step = stepMs();
-      notes.forEach(on);
-      timers[1] = setTimeout(() => notes.forEach(off), step * PULSE_GATE);
+      notes.forEach((midi, i) => {
+        if (i === 0 || gap === 0) on(midi);
+        else timers[1 + i] = setTimeout(() => on(midi), i * gap);
+      });
+      timers[1] = setTimeout(() => {
+        timers.slice(2).forEach(clearTimeout);
+        notes.forEach(off);
+      }, step * PULSE_GATE);
       // After a stall (a hidden tab) carry on from now rather than catch up.
       next = Math.max(next + step, performance.now());
       timers[0] = setTimeout(strike, next - performance.now());

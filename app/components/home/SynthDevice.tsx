@@ -1,19 +1,10 @@
 import { DeviceProviders } from "../../providers/DeviceProviders";
-import { ChordBank } from "./banks/ChordBank";
-import { ControlBank } from "./banks/ControlBank";
-import { PresetBank } from "./banks/PresetBank";
-import { ViewBank } from "./banks/ViewBank";
-import {
-  BankColumn,
-  DeviceFrame,
-  KnobColumn,
-  PadBanks,
-  TopRow,
-} from "./layout/DeviceLayout";
+import { DeviceFrame, KnobColumn, TopRow } from "./layout/DeviceLayout";
 import { DeviceKnob } from "./parts/DeviceKnob";
 import { Display } from "./parts/Display";
 import { Grille } from "./parts/Grille";
 import { Keybed } from "./parts/Keybed";
+import { PadButtons } from "./parts/PadButtons";
 
 export type SynthDeviceProps = {
   className?: string;
@@ -38,14 +29,7 @@ export function SynthDevice({ className }: SynthDeviceProps) {
             <DeviceKnob slot="blue" />
           </KnobColumn>
         </TopRow>
-        <PadBanks>
-          <ControlBank />
-          <BankColumn>
-            <ViewBank />
-            <PresetBank />
-            <ChordBank />
-          </BankColumn>
-        </PadBanks>
+        <PadButtons />
         <Keybed />
       </DeviceFrame>
     </DeviceProviders>

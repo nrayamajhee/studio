@@ -123,7 +123,11 @@ export type StringDefaults = {
   strum?: number;
   // A sitar's jawari: how hard the string buzzes against the bridge.
   jawari?: number;
+  // A plucked string's default pluck, which the Pluck param can switch.
+  pluck?: "pick" | "finger";
 };
+
+export const PLUCKS = ["Pick", "Finger"] as const;
 
 export function stringParams(d: StringDefaults): ParamSpec[] {
   return [
@@ -138,6 +142,19 @@ export function stringParams(d: StringDefaults): ParamSpec[] {
       primary,
     ),
     param("exciter.strength", "Strength", "exciter", 0, 1, 0.8, primary),
+    ...(d.pluck === undefined
+      ? []
+      : [
+          param(
+            "exciter.pluck",
+            "Pluck",
+            "exciter",
+            0,
+            1,
+            d.pluck === "finger" ? 1 : 0,
+            { options: PLUCKS, primary: true },
+          ),
+        ]),
     ...(d.strum === undefined
       ? []
       : [

@@ -16,22 +16,22 @@ import { useMixScrub } from "../hooks/useMixScrub";
 import { useTrackMix } from "../hooks/useTrackMix";
 import { createStrictContext } from "./createStrictContext";
 import { useFeedback } from "./FeedbackProvider";
-import { isTape, useLanes } from "./LanesProvider";
+import { useLanes } from "./LanesProvider";
 import { usePerformance } from "./PerformanceProvider";
 import { useTracks } from "./TracksProvider";
 import { useDeviceTransport } from "./TransportProvider";
-import { isModuleView, useView } from "./ViewProvider";
+import { useView } from "./ViewProvider";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const fileName = (now: Date) =>
   `studio-${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}-${pad2(now.getHours())}${pad2(now.getMinutes())}`;
 
 function useMixValue() {
-  const { view } = useView();
+  const { mainView } = useView();
   const feedback = useFeedback();
   const transport = useDeviceTransport();
   const { releaseAll } = usePerformance();
-  const { tracks, focusedLane } = useLanes();
+  const { tracks, lanes, stepPattern, updateTrack } = useLanes();
   const { trackSpan } = useTracks();
   const { bpm, timing } = transport;
   // The tape is only an indicator; the mix plays the kept tracks.
@@ -166,13 +166,10 @@ function useMixValue() {
   // drag rather than snapping to a grid.
   const mixSteps = Math.max(2, Math.round(trackSpan * beatMs(timing)));
 
-  // The mix plays on the tracks view, the album and a track's effects, so
-  // each turn of a knob is heard on the track itself, and under a take
-  // while it records.
-  const mixView =
-    view === "tracks" ||
-    view === "album" ||
-    (isModuleView(view) && !isTape(focusedLane));
+  // The mix plays while the tracks (or the album) are the main view, whatever
+  // shows over them, so each turn of a knob is heard on the track itself; and
+  // under a take while it records.
+  const mixView = mainView === "tracks";
   const pauseMix = useEffectEvent(mix.pause);
   useEffect(() => {
     if (!mixView && !transport.recording) pauseMix();
@@ -201,14 +198,34 @@ function useMixValue() {
     },
     getTrackPosition: () =>
       scrubbedTo !== null ? scrubbedTo / beatMs(timing) : mix.position(),
+    // The tape only shows on the tracks, so with nothing kept there is
+    // nothing to play.
     togglePlay: () => {
       setScrubbedTo(null);
       if (mix.playing) {
         mix.pause();
         return;
       }
+      if (tracks.length === 0) {
+        const taped =
+          lanes[0].take.notes.length > 0 || stepPattern.hits.length > 0;
+        feedback.showPrompt(
+          taped ? "Save the tape as a track first" : "No tracks to play",
+        );
+        return;
+      }
+      // Playing leaves clip mode: every track plays whole again, its clip
+      // kept for when it's turned back on.
+      const whole = tracks.map((track) =>
+        track.loop?.on
+          ? { ...track, loop: { ...track.loop, on: false } }
+          : track,
+      );
+      whole.forEach((track, i) => {
+        if (track !== tracks[i]) updateTrack(track.id, { loop: track.loop });
+      });
       transport.pauseTape();
-      mix.play();
+      mix.play(whole);
     },
     // Stops the mix and rewinds it to the very start.
     rewind,

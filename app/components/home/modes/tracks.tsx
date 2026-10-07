@@ -234,7 +234,7 @@ export const tracksMode: Mode = (device) => {
             <ScreenLevel>Vol {Math.round(track.volume * 100)}%</ScreenLevel>
           </>
         ) : (
-          "Tape · record and save it in the tape view"
+          "Tape · record in the piano roll or drum grid, then save it"
         ),
         <>
           {(shift || track) && (

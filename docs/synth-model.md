@@ -245,6 +245,7 @@ The exciter writes a short burst into a buffer, and the loop adds it in sample b
 ```
 
 - **Hammer.** A small physics simulation: a felt hammer (stiffness exponent 2.5) hits a string. Faster hammers and harder felt give a shorter contact, and a shorter contact means a brighter tone. Hammer mass follows the key: heavy in the bass, light in the treble.
+- **Pick or finger.** Each plucked string starts on its instrument's usual pluck, and its **Pluck** param switches it: a pick displaces the string into a triangle with the scrape of the pick as noise, a fingertip into a soft raised-cosine bump. A strum plays the same pluck on each string, so the Picked and Fingerstyle Guitar presets strum the same way they pick.
 - **Pluck position.** Plucking or striking a string at 1/β of its length silences every β-th harmonic. A comb `e[n] - e[n - b]` removes those harmonics (the pick's triangle already has the notches built in).
 - **Velocity** blends between "ignore velocity" and `velocity^curve` through the Strength parameter.
 
@@ -350,7 +351,7 @@ The bow sits on the string, splitting it into a neck side and a bridge side. At 
 - The body filter was designed at 44.1 kHz. Its pole/zero pairs are rescaled to the actual sample rate so the resonances stay put.
 - The **cello** runs the same loop an octave and a fifth lower. The violin's filter would put its resonances in the wrong place, so the cello uses the bus's modal body instead (air and wood modes near 100 and 200 Hz); its Body knob is that body's mix.
 
-### 5.4 Drums: Drum Kit, 808 Kit, Madal and Tabla
+### 5.4 Drums: Drum Kit, Rock Kit, Jazz Kit, 808 Kit, Madal and Tabla
 
 Drums use **modal synthesis**: the resonator is a bank of decaying sine waves, one per vibration mode. Each mode is a two-pole resonator:
 
@@ -364,6 +365,7 @@ Drums use **modal synthesis**: the resonator is a bank of decaying sine waves, o
 
 ```text
   stick pulse: half-sine, soft..hard ms   (harder hit = shorter pulse = brighter)
+    or brush: a light push + a burst of bristle noise (unit energy, length ms)
         |
         v
   +---------------------------------------+
@@ -373,19 +375,22 @@ Drums use **modal synthesis**: the resonator is a bank of decaying sine waves, o
         |   + click   : highpassed noise, a few ms  (beater)
         |   + wires   : highpassed noise x envelope of the drum itself (snare)
         |   + sizzle  : highpassed decaying noise (hats, cymbals)
+        |   + hiss    : the brush's bristle burst, highpassed (brushed pieces)
         v
    x level x velocity  ->  pan  ->  kit bus
 ```
 
-| Piece model                      | How it's built                                                                                                                                                                                                                                                                                          |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **membrane** (kick, snare, toms) | Ideal circular-membrane ratios 1, 1.593, 2.136, 2.295, 2.653, …. **Position** blends center hits (only the symmetric modes) toward edge hits (all modes). Optional shell mode.                                                                                                                          |
-| **metal** (hats, cowbell, crash) | Either a table of modes or a seeded log-spread set: `T60_i = T60 (f_lo / f_i)^0.3`, amplitude `1/sqrt(i+1)` ± 30 %. A closed hat **chokes** the open hat (30 ms).                                                                                                                                       |
-| **noise** (clap)                 | Several short noise bursts a few ms apart (slightly jittered), then a decaying tail, all through a bandpass.                                                                                                                                                                                            |
-| **loaded** (madal, tabla)        | A head loaded with paste (syahi, kharee) has near-harmonic modes, so each stroke lists its own partials (ratio, T60, amp). Open strokes ring (Tun, Ta), rim strokes damp the fundamental (Na, Tin), closed strokes are short slaps (Te, Ke, Ti, Ka), and Ge settles in pitch as the bayan head relaxes. |
-| **combo** (Dha, Dhin)            | Strokes played together (Dha = Na + Ge), scaled to peak like a single stroke.                                                                                                                                                                                                                           |
+| Piece model                            | How it's built                                                                                                                                                                                                                                                                                          |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **membrane** (kick, snare, toms)       | Ideal circular-membrane ratios 1, 1.593, 2.136, 2.295, 2.653, …. **Position** blends center hits (only the symmetric modes) toward edge hits (all modes). Optional shell mode.                                                                                                                          |
+| **metal** (hats, cowbell, crash, ride) | Either a table of modes or a seeded log-spread set: `T60_i = T60 (f_lo / f_i)^0.3`, amplitude `1/sqrt(i+1)` ± 30 %. A closed hat **chokes** the open hat (30 ms).                                                                                                                                       |
+| **noise** (clap, brush sweep)          | Several short noise bursts a few ms apart (slightly jittered), then a decaying tail, all through a bandpass. The sweep has no bursts: its tail swells in from silence (a raised cosine) before it decays, as a brush stirred across the head does.                                                      |
+| **loaded** (madal, tabla)              | A head loaded with paste (syahi, kharee) has near-harmonic modes, so each stroke lists its own partials (ratio, T60, amp). Open strokes ring (Tun, Ta), rim strokes damp the fundamental (Na, Tin), closed strokes are short slaps (Te, Ke, Ti, Ka), and Ge settles in pitch as the bayan head relaxes. |
+| **combo** (Dha, Dhin)                  | Strokes played together (Dha = Na + Ge), scaled to peak like a single stroke.                                                                                                                                                                                                                           |
 
-Each piece is one voice: hitting it again restarts it. The kits differ only in their constants (`patches/drums.ts`, `patches/handDrums.ts`), and each maps the 12 pitch classes to its own pieces (`keys`), which the Device plays from the keybed (on the drum kits, F kick, G snare, …; on the hand drums, keys show the stroke's syllable).
+**Brushes** (the Jazz Kit) replace the stick on the membranes and metals: the stick pulse lands at about a third of its weight, and the wires add a noise burst that rises in 1.5 ms and dies away over the piece's brush length (shorter on a harder stroke). The burst is scaled to unit energy, so it drives every mode about as hard as a stick's impulse whatever its length, and part of it, highpassed, is heard directly as the brush's hiss. On the snare the hiss and the head's own motion set the wires buzzing.
+
+Each piece is one voice: hitting it again restarts it. The kits differ only in their constants (`patches/drums.ts`, `patches/handDrums.ts`), and each maps the 12 pitch classes to its own pieces (`keys`), which the Device plays from the keybed (on the drum kits, F kick, G snare, …, with C the clap or the ride and E the cowbell or the brush sweep; on the hand drums, keys show the stroke's syllable).
 
 The **metronome** is a separate two-mode woodblock (1.9/2.9 kHz, higher when accented) that goes straight to the master, dry.
 

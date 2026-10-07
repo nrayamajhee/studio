@@ -1,30 +1,32 @@
-import { CHORD_PALETTE } from "../chords";
+import { CHORD_PALETTE, chordGroup } from "../chords";
 import { setChordMacro } from "../chordStore";
-import { turnPage } from "../deviceMath";
-import { ScreenSeek, TILES_PER_PAGE } from "../DeviceScreen";
-import { arrowPads, seekKnob } from "./base";
+import { ScreenLevel, ScreenValue } from "../DeviceScreen";
+import { arrowPads, idleKnob, shelfAt, shelfKnobs, shelvesOf } from "./base";
 import type { Mode } from "../../../types/bindings";
 
-// The chord palette: the green knob highlights a chord, and pressing a chord
-// pad twice sets it to that chord.
+const SHELVES = shelvesOf(CHORD_PALETTE, chordGroup);
+
+// The chord palette, by kind: the red knob (or ← →) picks a kind and the blue
+// one a chord in it, and pressing a chord pad twice sets it to that chord.
 export const chordsMode: Mode = (device, base) => {
   const { browse, feedback } = device;
-  const perPage = TILES_PER_PAGE.chords;
   const { chordIndex } = browse;
   const chosen = CHORD_PALETTE[chordIndex];
+  const { shelf, at } = shelfAt(SHELVES, chordIndex);
   return {
     knobs: {
-      green: seekKnob(
-        chosen?.name ?? "",
+      green: idleKnob(base.knobs.green),
+      ...shelfKnobs(
+        SHELVES,
         chordIndex,
-        Math.max(2, CHORD_PALETTE.length),
-        (index) =>
-          browse.setChordIndex(Math.min(index, CHORD_PALETTE.length - 1)),
+        chosen?.name ?? "",
+        browse.setChordIndex,
       ),
     },
-    pads: arrowPads(device, ["Previous page", "Next page"], (direction) =>
-      browse.setChordIndex((index) =>
-        turnPage(index, direction, perPage, CHORD_PALETTE.length),
+    pads: arrowPads(device, ["Previous kind", "Next kind"], (direction) =>
+      browse.setChordIndex(
+        SHELVES[Math.max(0, Math.min(SHELVES.length - 1, at + direction))]
+          .start,
       ),
     ),
     chordPad: (index) => ({
@@ -45,19 +47,24 @@ export const chordsMode: Mode = (device, base) => {
     screen: {
       title: "Chords",
       status: (
-        <ScreenSeek>
-          Chords {Math.floor(chordIndex / perPage) + 1}/
-          {Math.max(1, Math.ceil(CHORD_PALETTE.length / perPage))}
-        </ScreenSeek>
+        <ScreenLevel>
+          {shelf.name} {at + 1}/{SHELVES.length}
+        </ScreenLevel>
       ),
-      footer: [chosen?.name ?? "", "Press a chord pad twice to set"],
-      tiles: CHORD_PALETTE.map((chord) => ({
-        id: chord.id,
-        label: chord.name,
-        icon: <span>{chord.label}</span>,
-      })),
-      selected: chordIndex,
-      onSelect: browse.setChordIndex,
+      footer: [
+        <ScreenValue key="chosen">{chosen?.name ?? ""}</ScreenValue>,
+        "Press a chord pad twice to set",
+      ],
+      tiles: CHORD_PALETTE.slice(shelf.start, shelf.start + shelf.count).map(
+        (chord) => ({
+          id: chord.id,
+          label: chord.name,
+          icon: <span>{chord.label}</span>,
+        }),
+      ),
+      selected: chordIndex - shelf.start,
+      selectedBy: "blue",
+      onSelect: (index) => browse.setChordIndex(shelf.start + index),
     },
   };
 };

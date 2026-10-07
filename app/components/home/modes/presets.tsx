@@ -1,29 +1,39 @@
-import { DEVICE_PRESETS } from "../deviceEngine";
-import { turnPage } from "../deviceMath";
-import { ScreenSeek, TILES_PER_PAGE } from "../DeviceScreen";
+import { DEVICE_PRESETS, presetCategory } from "../deviceEngine";
+import { ScreenLevel, ScreenValue } from "../DeviceScreen";
 import { PresetIcon } from "../presetIcons";
 import { bindPad, deletePreset } from "../presetStore";
-import { arrowPads, deletePad, padName, padPreset, seekKnob } from "./base";
+import {
+  arrowPads,
+  deletePad,
+  idleKnob,
+  padName,
+  padPreset,
+  shelfAt,
+  shelfKnobs,
+  shelvesOf,
+} from "./base";
 import type { Mode } from "../../../types/bindings";
 
-// The preset library: the green knob highlights a preset, and pressing a pad
-// twice binds it there. Delete removes a highlighted saved preset; built-in
-// ones can't be deleted.
+// The preset library, by model: the red knob (or ← →) picks a model and the
+// blue one a preset it plays, and pressing a pad twice binds it there. Delete
+// removes a highlighted saved preset; built-in ones can't be deleted.
 export const presetsMode: Mode = (device, base) => {
   const { sound, browse, feedback, shift } = device;
   const { presets } = sound;
-  const perPage = TILES_PER_PAGE.presets;
   const { presetIndex } = browse;
   const chosen = presets[presetIndex];
   const trash = chosen?.user ? chosen : null;
+  const shelves = shelvesOf(presets, presetCategory);
+  const { shelf, at } = shelfAt(shelves, presetIndex);
 
   return {
     knobs: {
-      green: seekKnob(
-        chosen?.name ?? "",
+      green: idleKnob(base.knobs.green),
+      ...shelfKnobs(
+        shelves,
         presetIndex,
-        Math.max(2, presets.length),
-        (index) => browse.setPresetIndex(Math.min(index, presets.length - 1)),
+        chosen?.name ?? "",
+        browse.setPresetIndex,
       ),
     },
     pads: {
@@ -51,9 +61,10 @@ export const presetsMode: Mode = (device, base) => {
             }
           : undefined,
       ),
-      ...arrowPads(device, ["Previous page", "Next page"], (direction) =>
-        browse.setPresetIndex((index) =>
-          turnPage(index, direction, perPage, presets.length),
+      ...arrowPads(device, ["Previous model", "Next model"], (direction) =>
+        browse.setPresetIndex(
+          shelves[Math.max(0, Math.min(shelves.length - 1, at + direction))]
+            .start,
         ),
       ),
     },
@@ -74,30 +85,35 @@ export const presetsMode: Mode = (device, base) => {
     }),
     screen: {
       status: (
-        <ScreenSeek>
-          Presets {Math.floor(presetIndex / perPage) + 1}/
-          {Math.max(1, Math.ceil(presets.length / perPage))}
-        </ScreenSeek>
+        <ScreenLevel>
+          {shelf.name} {at + 1}/{shelves.length}
+        </ScreenLevel>
       ),
-      footer: [chosen?.name ?? "", "Press a pad twice to bind"],
-      tiles: presets.map((candidate) => {
-        const bound = [
-          ...sound.library.buttons.map((id, pad) =>
-            id === candidate.id ? `${pad + 1}` : "",
-          ),
-          ...sound.library.shiftButtons.map((id, pad) =>
-            id === candidate.id ? `⇧${pad + 1}` : "",
-          ),
-        ].filter(Boolean);
-        return {
-          id: candidate.id,
-          label: candidate.name,
-          icon: <PresetIcon icon={candidate.icon} />,
-          badge: bound.length > 0 ? bound.join(" ") : undefined,
-        };
-      }),
-      selected: presetIndex,
-      onSelect: browse.setPresetIndex,
+      footer: [
+        <ScreenValue key="chosen">{chosen?.name ?? ""}</ScreenValue>,
+        "Press a pad twice to bind",
+      ],
+      tiles: presets
+        .slice(shelf.start, shelf.start + shelf.count)
+        .map((candidate) => {
+          const bound = [
+            ...sound.library.buttons.map((id, pad) =>
+              id === candidate.id ? `${pad + 1}` : "",
+            ),
+            ...sound.library.shiftButtons.map((id, pad) =>
+              id === candidate.id ? `⇧${pad + 1}` : "",
+            ),
+          ].filter(Boolean);
+          return {
+            id: candidate.id,
+            label: candidate.name,
+            icon: <PresetIcon icon={candidate.icon} />,
+            badge: bound.length > 0 ? bound.join(" ") : undefined,
+          };
+        }),
+      selected: presetIndex - shelf.start,
+      selectedBy: "blue",
+      onSelect: (index) => browse.setPresetIndex(shelf.start + index),
     },
   };
 };

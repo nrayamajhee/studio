@@ -61,6 +61,7 @@ export const sitar: StringPatch = {
   damperT60: [[48, 0.4]],
   jawari: { contact: 0.6, gap: 0.004 },
   params: stringParams({
+    pluck: "pick",
     hardness: 0.85,
     position: 0.1,
     bodyMix: 0.6,

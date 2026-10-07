@@ -53,6 +53,7 @@ export const banjo: StringPatch = {
   dispersionCoef: [[50, -0.12]],
   damperT60: [[50, 0.15]],
   params: stringParams({
+    pluck: "pick",
     hardness: 0.85,
     position: 0.1,
     bodyMix: 0.7,

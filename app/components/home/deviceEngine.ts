@@ -6,7 +6,11 @@ import {
   type KitId,
 } from "../../lib/physical";
 import { MASTER_PARAMS, PATCH_BY_ID } from "../../lib/physical/patches";
-import type { DrumKitPatch, ParamSpec } from "../../lib/physical/patches/types";
+import type {
+  DrumKitPatch,
+  ParamSpec,
+  Patch,
+} from "../../lib/physical/patches/types";
 import type { PlayedNote } from "./noteRecorder";
 
 // Rendered past a take's end, so its last notes and the reverb ring out (s).
@@ -32,14 +36,14 @@ export type DevicePreset = {
   octave: number;
   overrides?: Record<string, number>;
   // The preset pad (0–5) a built-in starts on, and the one it starts on as a
-  // Shift alternate. A pad goes back to it when its saved preset is deleted.
+  // Shift alternate: instruments on 0–2, kits on 3–5. A pad goes back to it
+  // when its saved preset is deleted.
   pad?: number;
   shiftPad?: number;
 };
 
-// The built-in presets, in library order: keys, guitars and bass, bowed and
-// plucked strings, brass, winds, tuned percussion, hand drums and kits, then
-// the oscillator.
+// The built-in presets. The library groups them by model (see
+// PRESET_CATEGORIES), keeping this order within each.
 export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "piano",
@@ -59,18 +63,44 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "electricGuitar",
     icon: "electric",
-    name: "Electric Guitar",
+    name: "Picked Electric",
     target: "electricGuitar",
     octave: 0,
-    shiftPad: 1,
+  },
+  // Fingertips on the electric: warmer and rounder through the pickup.
+  {
+    id: "electricFinger",
+    icon: "electric",
+    name: "Fingerstyle Electric",
+    target: "electricGuitar",
+    octave: 0,
+    overrides: {
+      "exciter.pluck": 1,
+      "exciter.hardness": 0.35,
+      "exciter.position": 0.22,
+    },
   },
   {
     id: "guitar",
     icon: "guitar",
-    name: "Acoustic Guitar",
+    name: "Picked Guitar",
     target: "guitar",
     octave: 0,
-    pad: 1,
+    pad: 2,
+  },
+  // The same steel strings plucked with the fingertips: softer, rounder and
+  // over the soundhole. Strums brush the strings rather than pick them.
+  {
+    id: "guitarFinger",
+    icon: "guitar",
+    name: "Fingerstyle Guitar",
+    target: "guitar",
+    octave: 0,
+    overrides: {
+      "exciter.pluck": 1,
+      "exciter.hardness": 0.35,
+      "exciter.position": 0.22,
+    },
   },
   {
     id: "bass",
@@ -78,7 +108,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Bass Guitar",
     target: "bass",
     octave: -24,
-    pad: 2,
+    shiftPad: 2,
   },
   {
     id: "nylonGuitar",
@@ -107,7 +137,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Violin",
     target: "violin",
     octave: 0,
-    shiftPad: 3,
+    pad: 1,
   },
   {
     id: "cello",
@@ -115,7 +145,6 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Cello",
     target: "cello",
     octave: -12,
-    pad: 3,
   },
   {
     id: "uprightBass",
@@ -123,7 +152,6 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Upright Bass",
     target: "uprightBass",
     octave: -24,
-    shiftPad: 2,
   },
   {
     id: "harp",
@@ -166,7 +194,6 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Flute",
     target: "flute",
     octave: 12,
-    shiftPad: 4,
   },
   {
     id: "clarinet",
@@ -174,6 +201,14 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Clarinet",
     target: "clarinet",
     octave: 0,
+  },
+  {
+    id: "saxophone",
+    icon: "sax",
+    name: "Alto Sax",
+    target: "saxophone",
+    octave: 0,
+    shiftPad: 1,
   },
   {
     id: "harmonica",
@@ -204,10 +239,34 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     octave: 0,
   },
   {
-    id: "saxophone",
-    icon: "sax",
-    name: "Alto Sax",
-    target: "saxophone",
+    id: "drums",
+    icon: "drum",
+    name: "Drum Kit",
+    target: "drums",
+    octave: 0,
+    pad: 3,
+  },
+  {
+    id: "rockDrums",
+    icon: "rock",
+    name: "Rock Kit",
+    target: "rockDrums",
+    octave: 0,
+    shiftPad: 3,
+  },
+  {
+    id: "jazzDrums",
+    icon: "jazz",
+    name: "Jazz Kit",
+    target: "jazzDrums",
+    octave: 0,
+    shiftPad: 4,
+  },
+  {
+    id: "drums808",
+    icon: "drum808",
+    name: "808 Kit",
+    target: "drums808",
     octave: 0,
     pad: 4,
   },
@@ -217,27 +276,13 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Madal",
     target: "madal",
     octave: 0,
+    pad: 5,
   },
   {
     id: "tabla",
     icon: "tabla",
     name: "Tabla",
     target: "tabla",
-    octave: 0,
-  },
-  {
-    id: "drums",
-    icon: "drum",
-    name: "Drum Kit",
-    target: "drums",
-    octave: 0,
-    pad: 5,
-  },
-  {
-    id: "drums808",
-    icon: "keys",
-    name: "808 Kit",
-    target: "drums808",
     octave: 0,
     shiftPad: 5,
   },
@@ -250,6 +295,24 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     shiftPad: 0,
   },
 ];
+
+// The library is grouped by the engine's models, in this order: a preset sits
+// with the others its instrument's model plays, a saved one with its
+// instrument's.
+const MODEL_NAMES: Readonly<Record<Patch["family"], string>> = {
+  string: "Struck & plucked",
+  bowed: "Bowed",
+  bore: "Blown",
+  reed: "Free reeds",
+  bar: "Tuned percussion",
+  drums: "Drums",
+  oscillator: "Oscillator",
+};
+
+export const PRESET_CATEGORIES = Object.values(MODEL_NAMES);
+
+export const presetCategory = ({ target }: DevicePreset) =>
+  MODEL_NAMES[PATCH_BY_ID[target].family];
 
 export const KNOB_STEPS = 11;
 

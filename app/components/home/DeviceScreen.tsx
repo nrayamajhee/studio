@@ -896,6 +896,8 @@ export type DeviceScreenProps = {
   page?: number;
   tiles?: readonly ScreenTile[];
   selected?: number;
+  // The knob that picks a tile, colouring the picked one; green unless set.
+  selectedBy?: "green" | "blue";
   onSelect?: (index: number) => void;
   // Dragging a track's loop edge on the tracks view: which row, which edge
   // and where on the timeline (beats).
@@ -1041,14 +1043,14 @@ const param = tv({
   },
 });
 
-// A tile: green marks the one the green knob is on. Keyboard focus turns
-// its hairline blue rather than drawing a ring, with a second pixel inside
-// so it reads on a green tile too. A name runs to two lines, so "Acoustic
+// A tile: the picked one fills with the colour of the knob that picks it.
+// Keyboard focus turns its hairline blue rather than drawing a ring, with a
+// second pixel inside so it reads on a green tile too (on a blue one, ink). A name runs to two lines, so "Acoustic
 // Guitar" reads in full on a narrow tile. Icon tiles are squares as tall as
 // a row (~41 px), centred in their columns.
 const tile = tv({
   slots: {
-    base: "group relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-[4px] rounded-[8px] border border-screen-ink/12 px-[4px] text-center text-sm font-medium text-screen-ink/75 select-none aria-pressed:border-synth-green aria-pressed:bg-synth-green aria-pressed:text-white focus-visible:border-synth-blue focus-visible:shadow-[inset_0_0_0_1px_var(--color-synth-blue)] focus-visible:outline-none aria-pressed:focus-visible:border-synth-blue",
+    base: "group relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-[4px] rounded-[8px] border border-screen-ink/12 px-[4px] text-center text-sm font-medium text-screen-ink/75 select-none aria-pressed:text-white focus-visible:border-synth-blue focus-visible:shadow-[inset_0_0_0_1px_var(--color-synth-blue)] focus-visible:outline-none",
     icon: "grid place-items-center font-screen text-[11px] font-bold [&_svg]:size-[26px]",
     name: "line-clamp-2 max-w-full overflow-hidden text-center font-screen text-[12px] leading-[15px] tracking-[0.02em] uppercase",
     badge:
@@ -1061,7 +1063,16 @@ const tile = tv({
         icon: "[&_svg]:size-[22px]",
       },
     },
+    selectedBy: {
+      green: {
+        base: "aria-pressed:border-synth-green aria-pressed:bg-synth-green aria-pressed:focus-visible:border-synth-blue",
+      },
+      blue: {
+        base: "aria-pressed:border-synth-blue aria-pressed:bg-synth-blue aria-pressed:focus-visible:border-screen-ink aria-pressed:focus-visible:shadow-[inset_0_0_0_1px_var(--color-screen-ink)]",
+      },
+    },
   },
+  defaultVariants: { selectedBy: "green" },
 });
 
 // Wide enough for "Off", so switching doesn't shift the label.
@@ -1123,6 +1134,7 @@ export function DeviceScreen({
   page = 0,
   tiles = [],
   selected = 0,
+  selectedBy,
   onSelect,
   onLoopEdge,
   onLoopEdgeDrag,
@@ -1172,7 +1184,7 @@ export function DeviceScreen({
   );
   const ui = screen();
   const bottom = screen({ caption: view === "roll" });
-  const tileParts = tile({ icons: view === "save" });
+  const tileParts = tile({ icons: view === "save", selectedBy });
   const level = overlayMeter({ alone: overlay?.value === undefined });
 
   return (

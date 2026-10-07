@@ -45,6 +45,7 @@ export const ukulele: StringPatch = {
   dispersionCoef: [[60, 0]],
   damperT60: [[60, 0.12]],
   params: stringParams({
+    pluck: "finger",
     hardness: 0.3,
     position: 0.22,
     bodyMix: 0.55,

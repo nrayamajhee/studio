@@ -24,7 +24,8 @@ export type InstrumentId =
   | "kalimba"
   | "oscillator";
 
-export type KitId = "drums" | "drums808" | "madal" | "tabla";
+export type KitId =
+  "drums" | "rockDrums" | "jazzDrums" | "drums808" | "madal" | "tabla";
 
 export type DrumPieceId =
   | "kick"
@@ -36,6 +37,9 @@ export type DrumPieceId =
   | "highTom"
   | "cowbell"
   | "crash"
+  | "ride"
+  // A brush stirred across the snare head rather than struck.
+  | "sweep"
   // Hand-drum strokes (bols), by syllable; each kit defines its own sounds.
   | "na"
   | "ta"
