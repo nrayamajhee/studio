@@ -22,6 +22,8 @@ function useModeValue(): Bindings {
   const [iconIndex, setIconIndex] = useState(0);
   const [presetIndex, setPresetIndex] = useState(0);
   const [chordIndex, setChordIndex] = useState(0);
+  const [progressionIndex, setProgressionIndex] = useState(0);
+  const [beatIndex, setBeatIndex] = useState(0);
   const [revertIndex, setRevertIndex] = useState(0);
   const [idleSeek, setIdleSeek] = useState(0);
   const device: Device = {
@@ -46,6 +48,10 @@ function useModeValue(): Bindings {
       setPresetIndex,
       chordIndex,
       setChordIndex,
+      progressionIndex,
+      setProgressionIndex,
+      beatIndex,
+      setBeatIndex,
       revertIndex,
       setRevertIndex,
       idleSeek,

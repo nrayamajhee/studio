@@ -22,6 +22,10 @@ export type Browse = {
   setPresetIndex: Dispatch<SetStateAction<number>>;
   chordIndex: number;
   setChordIndex: Dispatch<SetStateAction<number>>;
+  progressionIndex: number;
+  setProgressionIndex: Dispatch<SetStateAction<number>>;
+  beatIndex: number;
+  setBeatIndex: Dispatch<SetStateAction<number>>;
   revertIndex: number;
   setRevertIndex: Dispatch<SetStateAction<number>>;
   idleSeek: number;

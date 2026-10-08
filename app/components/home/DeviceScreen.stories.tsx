@@ -203,8 +203,8 @@ export const Tracks: Story = {
     tracks: [
       {
         id: "arpeggio",
-        name: "Track 1",
-        detail: "Grand piano",
+        name: "Picked guitar",
+        detail: "Picked guitar",
         color: "#f2884b",
         start: 0,
         clip: {
@@ -225,8 +225,8 @@ export const Tracks: Story = {
       },
       {
         id: "chord",
-        name: "Track 2",
-        detail: "Violin",
+        name: "Fingerstyle electric",
+        detail: "Fingerstyle electric",
         color: "#2f7de1",
         start: 4,
         clip: {

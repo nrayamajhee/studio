@@ -5,7 +5,10 @@
 
 # Studio
 
-Studio is a browser-based instrument. The home page hosts **The Device**: a digital version of a physical desktop synthesizer. The app is built with React Router (v8), React 19, Tailwind CSS v4, and Storybook 10.
+Studio is a browser-based instrument. The home page hosts **The Device**: a digital version of a physical desktop synthesizer.
+
+<img width="1063" height="824" alt="Screenshot 2026-10-08 at 12 01 51 AM" src="https://github.com/user-attachments/assets/30e26a96-e715-4254-996f-dcb6f0f1b6f4" />
+
 
 ## Installation
 
@@ -78,7 +81,9 @@ The home page (`app/routes/home.tsx`) renders The Device, a digital desktop synt
 | `app/components/home/tracks.ts`        | Takes kept as tracks: clip, start, repeats, mute, solo, loop and cut, and whether each was played on the tape or drawn in the sequencer (the one place it opens) |
 | `app/components/home/sessionStore.ts`  | The tape's take, and the album: songs of tracks, each with its tempo (`localStorage`)                                                                            |
 | `app/components/home/modules.ts`       | ADSR, LFO and FX settings, which the tape and each track keep their own of                                                                                       |
+| `app/components/home/progressions.ts`  | Common chord progressions (Shift + Piano roll), put onto the tape on a home note played after Save                                                               |
 | `app/components/home/stepPattern.ts`   | The drum grid's pattern: hits in beats, kit rows, saving as a take                                                                                               |
+| `app/components/home/drumBeats.ts`     | Preset beats by style (Shift + Drum grid), each on the kit that suits it, loaded into the drum grid on Save                                                      |
 | `app/hooks/useStepPlayer.ts`           | Loops the drum pattern on the audio clock; lands recorded taps on the nearest step                                                                               |
 | `app/components/home/exportMix.ts`     | Saving the tracks: the mix as FLAC (`flac.ts`), or MIDI                                                                                                          |
 | `app/components/design-system/`        | Device primitives `Key`, `Knob`, `Pad` and base controls                                                                                                         |

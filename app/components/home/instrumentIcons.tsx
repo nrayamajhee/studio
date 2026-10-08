@@ -296,6 +296,11 @@ const STYLE_NOTES: Readonly<Record<ChordStyleId, readonly number[][]>> = {
     [15, 20, 12],
     [17, 20, 17],
   ],
+  rollPulse: [3, 12].flatMap((x) => [
+    [x, x + 7, 17],
+    [x + 2.5, x + 7, 12],
+    [x + 5, x + 7, 7],
+  ]),
   roll: [
     [3, 20, 19],
     [7, 20, 14.5],

@@ -3,10 +3,12 @@ import type { Bindings, Mode } from "../../../types/bindings";
 import type { Device } from "../../../types/device";
 import { albumMode } from "./album";
 import { baseBindings } from "./base";
+import { beatsMode } from "./beats";
 import { chordStyleMode } from "./chordStyle";
 import { chordsMode } from "./chords";
 import { moduleMode } from "./module";
 import { presetsMode } from "./presets";
+import { progressionsMode } from "./progressions";
 import { revertMode } from "./revert";
 import { saveMode } from "./save";
 import { scopeMode } from "./scope";
@@ -25,6 +27,8 @@ const MODES: Readonly<Record<ScreenView, Mode>> = {
   presets: presetsMode,
   chords: chordsMode,
   chordStyle: chordStyleMode,
+  progressions: progressionsMode,
+  beats: beatsMode,
   album: albumMode,
   revert: revertMode,
   adsr: moduleMode("adsr"),

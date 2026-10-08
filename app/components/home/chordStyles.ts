@@ -5,6 +5,7 @@ export type ChordStyleId =
   | "pulse"
   | "strum"
   | "strumPulse"
+  | "rollPulse"
   | "downUp"
   | "roll"
   | "offbeat"
@@ -65,6 +66,13 @@ export const CHORD_STYLES: readonly {
     detail: "A strum on every strike",
     group: "Rhythm",
     settings: ["rate", "strum"],
+  },
+  {
+    id: "rollPulse",
+    name: "Roll pulse",
+    detail: "Rolled up a step apart, again and again",
+    group: "Rhythm",
+    settings: ["rate"],
   },
   {
     id: "downUp",
@@ -283,6 +291,67 @@ function stepsOf(id: ChordStyleId, count: number): number[][] {
   }
 }
 
+// A held chord in `style` as notes laid out ahead (ms from its start), as
+// playChord would play it held for `length` at a step of `stepMs`: for
+// writing a chord onto the tape rather than playing it live.
+export function chordNotes(
+  midis: readonly number[],
+  style: ChordStyle,
+  stepMs: number,
+  length: number,
+  velocity: number,
+): { note: number; start: number; duration: number; velocity: number }[] {
+  const notes = [...midis].sort((a, b) => a - b);
+  const out: {
+    note: number;
+    start: number;
+    duration: number;
+    velocity: number;
+  }[] = [];
+  const add = (note: number, start: number, end: number) => {
+    if (start < length && end > start)
+      out.push({
+        note,
+        start,
+        duration: Math.min(end, length) - start,
+        velocity,
+      });
+  };
+  const rhythm = RHYTHMS[style.id];
+  if (style.id === "block" || notes.length < 2) {
+    notes.forEach((note) => add(note, 0, length));
+  } else if (rhythm) {
+    for (let count = 0; count * stepMs < length; count++) {
+      const at = count % rhythm.cycle;
+      const start = count * stepMs;
+      for (const { at: hit, hold, sweep } of rhythm.strikes) {
+        if (hit !== at) continue;
+        const order = sweep === "falling" ? [...notes].reverse() : notes;
+        const gap = sweep ? style.strum : 0;
+        const end = start + hold * stepMs;
+        order.forEach((note, i) => add(note, start + i * gap, end));
+      }
+    }
+  } else if (style.id === "rollPulse") {
+    for (let count = 0; count * stepMs < length; count++) {
+      const at = count % notes.length;
+      const start = count * stepMs;
+      add(notes[at], start, start + (notes.length - at) * stepMs);
+    }
+  } else if (style.id === "strum" || style.id === "roll") {
+    const gap = style.id === "roll" ? stepMs : style.strum;
+    notes.forEach((note, i) => add(note, i * gap, length));
+  } else {
+    const steps = stepsOf(style.id, notes.length);
+    for (let count = 0; count * stepMs < length; count++) {
+      const start = count * stepMs;
+      for (const index of steps[count % steps.length])
+        add(notes[index], start, start + stepMs);
+    }
+  }
+  return out;
+}
+
 export type ChordVoice = {
   on: (midi: number) => void;
   off: (midi: number) => void;
@@ -342,6 +411,19 @@ export function playChord(
       for (const hit of rhythm.strikes) if (hit.at === at) strike(hit, step);
       // After a stall (a hidden tab) carry on from now rather than catch up.
       next = Math.max(next + step, performance.now());
+      timers[0] = setTimeout(tick, next - performance.now());
+    };
+    tick();
+  } else if (style.id === "rollPulse") {
+    // Rolls up a note a step and holds them, then lets go and rolls again.
+    let count = 0;
+    let next = performance.now();
+    const tick = () => {
+      const at = count++ % notes.length;
+      if (at === 0) [...sounding].forEach(off);
+      on(notes[at]);
+      // After a stall (a hidden tab) carry on from now rather than catch up.
+      next = Math.max(next + stepMs(), performance.now());
       timers[0] = setTimeout(tick, next - performance.now());
     };
     tick();

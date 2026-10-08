@@ -73,12 +73,13 @@ export const shiftedNote = (semitone: number) =>
 // 7 8 9 0 - =, the most played last (- minor, = major). The letters the piano
 // leaves free:
 //   Q Play style · T Synth parameters · I Instruments · ] LFO · \ FX
-//   Z Albums · X Clip (⇧ Trim) · C Chord palette · V Piano roll
-//   B Drum grid · N ADSR · M Metronome (Tempo; ⇧ the click)
-//   , Mute (⇧ Solo) · . Record
+//   Z Albums · X Clip (⇧ Trim) · C Chord palette
+//   V Piano roll (⇧ progressions) · B Drum grid (⇧ beats) · N ADSR
+//   M Metronome (Tempo; ⇧ the click) · , Mute (⇧ Solo) · . Record
 // ADSR, LFO and FX switch on or off with Shift. Play is Space, ` Stop and Esc
-// the tracks. Shift and the arrows are their own keys (↑ and ↓ move the
-// octave; on the tracks they pick a track, as the blue knob does). ⌫ is Delete (⇧⌫ Revert), and ⌘S (Ctrl S) is Save.
+// the tracks. Shift and the arrows are their own keys: ↑ and ↓ move the
+// octave (on the tracks they pick a track, as the blue knob does). ⌫ is
+// Delete (⇧⌫ Revert), and ⌘S (Ctrl S) is Save.
 const PRESET_KEYS = ["1", "2", "3", "4", "5", "6"];
 const CHORD_KEYS = ["7", "8", "9", "0", "-", "="];
 const TOOL_KEYS: Readonly<Record<Tool, string>> = {

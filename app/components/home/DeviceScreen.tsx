@@ -23,6 +23,8 @@ export type ScreenView =
   | "presets"
   | "chords"
   | "chordStyle"
+  | "progressions"
+  | "beats"
   | "album"
   | "revert"
   | "adsr"
@@ -262,9 +264,9 @@ export type ScreenTrack = {
 // or left out of a solo, the lane dims.
 const trackRow = tv({
   slots: {
-    base: "group relative grid min-h-0 cursor-pointer grid-cols-[112px_5px_minmax(0,1fr)] items-stretch justify-center gap-[8px] rounded-[6px] border border-transparent px-[4px] py-[3px] text-center text-sm font-medium text-screen-ink select-none aria-pressed:border-synth-blue focus-visible:border-screen-ink focus-visible:ring-2 focus-visible:ring-font-light focus-visible:ring-offset-2 focus-visible:outline-none aria-pressed:focus-visible:border-screen-ink",
+    base: "group relative grid min-h-0 cursor-pointer grid-cols-[168px_5px_minmax(0,1fr)] items-stretch justify-center gap-[8px] rounded-[6px] border border-transparent px-[4px] py-[3px] text-center text-screen-ink select-none aria-pressed:border-synth-blue focus-visible:border-screen-ink focus-visible:ring-2 focus-visible:ring-font-light focus-visible:ring-offset-2 focus-visible:outline-none aria-pressed:focus-visible:border-screen-ink",
     label: "flex min-w-0 items-center justify-between gap-[6px] text-left",
-    name: "truncate text-[14px] leading-[18px] font-semibold tracking-[0.06em] first-letter:uppercase",
+    name: "truncate text-[12px] leading-[15px] font-semibold tracking-[0.02em] first-letter:uppercase",
     number: "mr-[5px] text-screen-ink/55",
     flags: "flex gap-[3px] self-center",
     volume: "relative overflow-hidden rounded-[3px] bg-screen-ink/12",
@@ -279,7 +281,7 @@ const trackRow = tv({
 
 // The studio's mute and solo buttons as pills: filled when on.
 const flag = tv({
-  base: "grid size-[18px] place-items-center rounded-[4px] border border-screen-ink/30 text-[12px] font-bold text-screen-ink/55",
+  base: "grid size-[18px] place-items-center rounded-[4px] border border-screen-ink/30 text-[12px] leading-none font-bold text-screen-ink/55",
   variants: {
     on: { true: "border-screen-ink bg-screen-ink text-screen" },
   },
@@ -329,9 +331,9 @@ const clipNote = tv({
 
 // Where the mix is, across every lane, in the green of the knob that seeks
 // it; hidden while it is stopped. It starts at the lane's left edge (past
-// the 112px label and 5px volume strip) and spans the lane's width.
+// the 168px label and 5px volume strip) and spans the lane's width.
 const PLAYHEAD =
-  "absolute top-0 bottom-0 left-[calc(137px_+_var(--playhead,-1)_*_(100%_-_141px))] z-1 w-[2px] bg-synth-green opacity-[clamp(0,calc((var(--playhead,-1)_+_1)_*_1000),1)]";
+  "absolute top-0 bottom-0 left-[calc(193px_+_var(--playhead,-1)_*_(100%_-_197px))] z-1 w-[2px] bg-synth-green opacity-[clamp(0,calc((var(--playhead,-1)_+_1)_*_1000),1)]";
 
 // Rows the tracks view shows at once; past them the list scrolls a row at a
 // time to keep the picked one in view.
@@ -348,9 +350,9 @@ const wheelPixels = (event: WheelEvent, delta: number, page: number) =>
       ? delta * page
       : delta;
 
-// The lanes' share of a row: everything but the 112px name, the 5px volume
+// The lanes' share of a row: everything but the 168px name, the 5px volume
 // strip, their gaps and the row's padding.
-const LANE_INSET = 141;
+const LANE_INSET = 197;
 
 // The tracks' rows, with the mix's playhead: each frame sets --playhead (0–1
 // across the lanes, or -1 while stopped or out of view) for the lanes'
@@ -672,7 +674,7 @@ const stepGrid = tv({
   slots: {
     row: "grid min-h-0 grid-cols-[30px_repeat(var(--columns),minmax(0,1fr))]",
     piece:
-      "grid min-h-0 place-items-center overflow-hidden text-[10px] font-semibold tracking-[0.04em] first-letter:uppercase text-screen-ink/70 [&_svg]:size-[14px]",
+      "grid min-h-0 place-items-center overflow-hidden text-[10px] leading-none font-semibold tracking-[0.04em] first-letter:uppercase text-screen-ink/70 [&_svg]:size-[14px]",
     head: "pointer-events-none absolute -top-[2px] -bottom-[2px] left-[calc(30px_+_var(--head,0)_*_(100%_-_30px)_/_var(--columns))] w-[calc((100%_-_30px)_/_var(--columns))] rounded-[3px] bg-synth-green/30 shadow-[inset_0_0_0_1.5px_var(--color-synth-green)]",
   },
   variants: {
@@ -921,6 +923,8 @@ export type DeviceScreenProps = {
   // The knob that picks a tile, colouring the picked one; green unless set.
   selectedBy?: "green" | "blue";
   onSelect?: (index: number) => void;
+  // A tile double-clicked: does what Save would with it.
+  onActivate?: (index: number) => void;
   // Dragging a track's loop edge on the tracks view: which row, which edge
   // and where on the timeline (beats).
   onLoopEdge?: (index: number, edge: "start" | "end", beats: number) => void;
@@ -938,6 +942,8 @@ export type DeviceScreenProps = {
   // is stopped.
   timing?: Timing;
   beat?: number | null;
+  // The tempo view's BPM dragged like a knob or typed in.
+  onBpm?: (bpm: number) => void;
   // The tracks view's rows, and its timeline's length and bar, in beats; and
   // where the mix is playing (beats, or null), read every frame.
   tracks?: readonly ScreenTrack[];
@@ -979,6 +985,8 @@ export const TILES_PER_PAGE: Record<string, number> = {
   presets: 8,
   chords: 8,
   chordStyle: 8,
+  progressions: 8,
+  beats: 8,
   album: 8,
   revert: 8,
 };
@@ -986,11 +994,11 @@ export const TILES_PER_PAGE: Record<string, number> = {
 // The screen: black glass in a pressed-in bezel, as round as the pads so it
 // sits square between the grilles, 2.39:1 unless the Device sets
 // --screen-aspect. A readout line runs along the top and the footer along
-// the bottom; on the roll a caption or notice takes the C labels' place in
-// their type, so the keys stay put when one comes or goes.
+// the bottom; on the roll the footer's line tightens to fit under the keys,
+// so they stay put when a notice comes or goes.
 // A paged view's tabs: the page it is on filled in the colour of the knob
 // that turns the pages, the ones either side dim, to step to, filling grey
-// under the pointer. Their negative margin keeps the readout's 15px line.
+// under the pointer. Their negative margin keeps the readout's 18px line.
 const pageTab = tv({
   base: "-my-[4px] shrink-0 cursor-pointer rounded-[10px] px-[8px] py-[3px] font-screen text-[14px] leading-[18px] font-semibold tracking-[0.04em] text-screen-ink/45 first-letter:uppercase [corner-shape:squircle] hover:bg-screen-ink/15 hover:text-screen-ink active:bg-screen-ink/75 active:text-screen",
   variants: {
@@ -1010,9 +1018,9 @@ const screen = tv({
     readout:
       "absolute top-[9px] right-[20px] left-[20px] flex justify-between gap-[16px] font-screen text-[14px] leading-[18px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase",
     footer:
-      "absolute right-[20px] bottom-[9px] left-[20px] flex justify-between gap-[16px] font-screen text-[10px] leading-[13px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase",
+      "absolute right-[20px] bottom-[9px] left-[20px] flex justify-between gap-[16px] font-screen text-[12px] leading-[15px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase",
     badges:
-      "absolute right-[20px] bottom-[8px] left-[20px] flex justify-center gap-[16px] font-screen text-[10px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase",
+      "absolute right-[20px] bottom-[9px] left-[20px] flex justify-center gap-[16px] font-screen text-[12px] leading-[15px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase",
     title: "flex items-center gap-[8px]",
     // An asterisk after the title, as editors mark a file with changes.
     unsaved:
@@ -1034,21 +1042,21 @@ const screen = tv({
       "grid grid-cols-4 gap-[18px] font-screen text-[14px] leading-[18px]",
     // Label over value, centred in its column.
     stage: "flex flex-col items-center whitespace-nowrap",
-    stageLabel: "tracking-[0.06em] first-letter:uppercase text-screen-ink/55",
+    stageLabel: "tracking-[0.02em] first-letter:uppercase text-screen-ink/55",
     stageValue: "font-semibold",
     // The tempo in green, as the green knob sets it, over a light per beat.
     bpm: "flex items-baseline gap-[10px] text-[72px] leading-none font-semibold tabular-nums",
     bpmUnit: "text-[14px] tracking-[0.08em] text-screen-ink/55",
     beats: "flex gap-[16px]",
     tracksEmpty:
-      "row-span-full self-center justify-self-center text-[14px] tracking-[0.08em] first-letter:uppercase text-screen-ink/55",
+      "row-span-full self-center justify-self-center text-[14px] leading-[18px] tracking-[0.08em] first-letter:uppercase text-screen-ink/55",
     switchLabel: "flex items-center gap-[8px]",
   },
   variants: {
     caption: {
       true: {
-        footer: "bottom-[10px] text-[10px] leading-[10px] tracking-normal",
-        badges: "bottom-[10px] text-[10px] leading-[10px] tracking-normal",
+        footer: "bottom-[10px] leading-[12px]",
+        badges: "bottom-[10px] leading-[12px]",
       },
     },
   },
@@ -1080,7 +1088,7 @@ const screenView = tv({
 // The green knob picks the selected one and the blue knob sets its value.
 const param = tv({
   slots: {
-    base: "relative -mx-[7px] flex min-w-0 cursor-pointer items-center justify-between gap-[6px] rounded-[6px] border border-transparent px-[6px] text-center text-[14px] leading-[20px] font-normal text-screen-ink select-none [font-family:inherit] focus-visible:border-synth-blue focus-visible:shadow-[inset_0_0_0_1px_var(--color-synth-blue)] focus-visible:outline-none",
+    base: "relative -mx-[7px] flex min-w-0 cursor-pointer items-center justify-between gap-[6px] rounded-[6px] border border-transparent px-[6px] text-center text-[14px] leading-[18px] font-normal text-screen-ink select-none [font-family:inherit] focus-visible:border-synth-blue focus-visible:shadow-[inset_0_0_0_1px_var(--color-synth-blue)] focus-visible:outline-none",
     label:
       "truncate tracking-[0.02em] first-letter:uppercase text-screen-ink/55",
     value: "font-semibold whitespace-nowrap",
@@ -1101,10 +1109,10 @@ const param = tv({
 const tile = tv({
   slots: {
     base: "group relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-[4px] rounded-[8px] border border-screen-ink/12 px-[4px] text-center text-[12px] font-medium text-screen-ink/75 select-none aria-pressed:text-white focus-visible:border-synth-blue focus-visible:shadow-[inset_0_0_0_1px_var(--color-synth-blue)] focus-visible:outline-none",
-    icon: "grid place-items-center font-screen text-[14px] font-bold [&_svg]:size-[26px]",
+    icon: "grid place-items-center font-screen text-[14px] leading-[18px] font-bold [&_svg]:size-[26px]",
     name: "line-clamp-2 max-w-full overflow-hidden text-center font-screen text-[12px] leading-[15px] tracking-[0.02em] first-letter:uppercase",
     badge:
-      "absolute top-[3px] right-[5px] font-screen text-[12px] leading-[14px] font-bold text-synth-red group-aria-pressed:text-white",
+      "absolute top-[3px] right-[5px] font-screen text-[12px] leading-[15px] font-bold text-synth-red group-aria-pressed:text-white",
   },
   variants: {
     icons: {
@@ -1127,7 +1135,7 @@ const tile = tv({
 
 // Wide enough for "Off", so switching doesn't shift the label.
 const onOff = tv({
-  base: "min-w-[40px] rounded-[999px] border border-screen-ink/30 px-[5px] py-0 text-center text-[10px] leading-[12px] font-semibold text-screen-ink/55",
+  base: "min-w-[40px] rounded-[999px] border border-screen-ink/30 px-[5px] py-0 text-center text-[12px] leading-[13px] font-semibold text-screen-ink/55",
   variants: {
     on: { true: "border-screen-ink bg-screen-ink text-screen" },
   },
@@ -1163,6 +1171,112 @@ const overlayMeter = tv({
   },
 });
 
+const bpmField = tv({
+  base: "-my-[8px] h-[88px] w-[calc(3ch_+_28px)] rounded-[18px] border-2 border-transparent px-[12px] text-center text-synth-green tabular-nums outline-none [corner-shape:squircle]",
+  variants: {
+    editing: {
+      true: "border-synth-green",
+      false: "cursor-ew-resize hover:border-screen-ink/20",
+    },
+  },
+});
+
+// Pixels of sideways drag per beat per minute.
+const BPM_DRAG = 4;
+
+// The tempo view's BPM in green: dragged sideways like the knob, or clicked
+// to type it in. Enter or a click away sets it; Esc leaves it as it was.
+// Both states share a fixed height, as Chrome won't set an input's
+// line-height below normal, so clicking it never moves the lights.
+function BpmField({
+  bpm,
+  onBpm,
+}: {
+  bpm: number;
+  onBpm?: (bpm: number) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const drag = useRef<{ pointerId: number; x: number; bpm: number } | null>(
+    null,
+  );
+  const dragged = useRef(false);
+  const cancelled = useRef(false);
+  const input = useRef<HTMLInputElement>(null);
+  const editing = draft !== null;
+
+  useEffect(() => {
+    if (!editing) return;
+    input.current?.focus();
+    input.current?.select();
+  }, [editing]);
+
+  if (!onBpm) return <ScreenSeek>{bpm}</ScreenSeek>;
+
+  if (draft !== null)
+    return (
+      <input
+        className={bpmField({ editing: true })}
+        aria-label="Tempo in BPM"
+        inputMode="numeric"
+        maxLength={3}
+        ref={input}
+        value={draft}
+        onChange={(event) =>
+          setDraft(event.currentTarget.value.replace(/\D/g, ""))
+        }
+        onKeyDown={(event) => {
+          if (event.key === "Escape") cancelled.current = true;
+          if (event.key === "Enter" || event.key === "Escape")
+            event.currentTarget.blur();
+        }}
+        onBlur={() => {
+          const typed = Number.parseInt(draft, 10);
+          if (!cancelled.current && Number.isFinite(typed)) onBpm(typed);
+          setDraft(null);
+        }}
+      />
+    );
+
+  return (
+    <Button
+      unstyled
+      aria-label={`Tempo: ${bpm} BPM`}
+      className={bpmField({ editing: false })}
+      {...keepFocus}
+      onPointerDown={(event) => {
+        if (event.button !== 0) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        drag.current = { pointerId: event.pointerId, x: event.clientX, bpm };
+        dragged.current = false;
+      }}
+      onPointerMove={(event) => {
+        const start = drag.current;
+        if (!start || start.pointerId !== event.pointerId) return;
+        const distance = event.clientX - start.x;
+        if (Math.abs(distance) >= 4) dragged.current = true;
+        const next = start.bpm + Math.trunc(distance / BPM_DRAG);
+        if (dragged.current && next !== bpm) onBpm(next);
+      }}
+      onPointerUp={() => {
+        drag.current = null;
+      }}
+      onPointerCancel={() => {
+        drag.current = null;
+      }}
+      onClick={() => {
+        if (dragged.current) {
+          dragged.current = false;
+          return;
+        }
+        cancelled.current = false;
+        setDraft(String(bpm));
+      }}
+    >
+      <span>{bpm}</span>
+    </Button>
+  );
+}
+
 const noAnalyser = () => null;
 const EMPTY_ROLL: RollFrame = { now: 0, notes: [], state: "stopped" };
 const noRoll = () => EMPTY_ROLL;
@@ -1187,6 +1301,7 @@ export function DeviceScreen({
   selected = 0,
   selectedBy,
   onSelect,
+  onActivate,
   onLoopEdge,
   onLoopEdgeDrag,
   onSelectParam,
@@ -1195,6 +1310,7 @@ export function DeviceScreen({
   lfoRate = 1,
   timing = DEFAULT_TIMING,
   beat = null,
+  onBpm,
   tracks = [],
   getTrackPosition = noPosition,
   trackSpan = 16,
@@ -1343,7 +1459,14 @@ export function DeviceScreen({
         {view === "tempo" && (
           <div className={screenView({ kind: "tempo" })}>
             <span className={ui.bpm()}>
-              <ScreenSeek>{timing.bpm}</ScreenSeek>
+              {/* Mirrors the unit, so the number centres over the lights. */}
+              <span
+                className={ui.bpmUnit({ class: "invisible" })}
+                aria-hidden="true"
+              >
+                BPM
+              </span>
+              <BpmField bpm={timing.bpm} onBpm={onBpm} />
               <span className={ui.bpmUnit()}>BPM</span>
             </span>
             <span className={ui.beats()} aria-hidden="true">
@@ -1501,6 +1624,8 @@ export function DeviceScreen({
           view === "presets" ||
           view === "chords" ||
           view === "chordStyle" ||
+          view === "progressions" ||
+          view === "beats" ||
           view === "album" ||
           view === "revert") && (
           <div
@@ -1516,11 +1641,15 @@ export function DeviceScreen({
                   ? "Chord palette"
                   : view === "chordStyle"
                     ? "Play style"
-                    : view === "album"
-                      ? "Albums"
-                      : view === "revert"
-                        ? "Revert"
-                        : "Instruments"
+                    : view === "progressions"
+                      ? "Progressions"
+                      : view === "beats"
+                        ? "Beats"
+                        : view === "album"
+                          ? "Albums"
+                          : view === "revert"
+                            ? "Revert"
+                            : "Instruments"
             }
           >
             {visibleTiles.map((entry, i) => {
@@ -1534,6 +1663,7 @@ export function DeviceScreen({
                   className={tileParts.base()}
                   {...keepFocus}
                   onClick={() => onSelect?.(index)}
+                  onDoubleClick={() => onActivate?.(index)}
                 >
                   <span className={tileParts.icon()} aria-hidden="true">
                     {entry.icon}
@@ -1541,6 +1671,8 @@ export function DeviceScreen({
                   {(view === "presets" ||
                     view === "chords" ||
                     view === "chordStyle" ||
+                    view === "progressions" ||
+                    view === "beats" ||
                     view === "album" ||
                     view === "revert") && (
                     <span className={tileParts.name()} aria-hidden="true">

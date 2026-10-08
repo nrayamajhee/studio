@@ -5,8 +5,9 @@ import { arrowPads, seekKnob } from "./base";
 import type { Mode } from "../../../types/bindings";
 
 // The tempo: the green knob and the arrows set it, a beat per minute at a
-// time, and ↓ (between Slower and Faster) switches tap mode, where played
-// notes tap the tempo.
+// time, as does dragging the number on the screen, or clicking it to type
+// one; ↓ (between Slower and Faster) switches tap mode, where played notes
+// tap the tempo.
 export const tempoMode: Mode = (device) => {
   const { transport } = device;
   const { bpm, setBpm, tapMode, tapCount, barBeats } = transport;
@@ -40,6 +41,7 @@ export const tempoMode: Mode = (device) => {
       unsaved: false,
       status: meterLabel(transport.timing.meter),
       timing: transport.timing,
+      onBpm: setBpm,
       beat: tapMode
         ? tapCount > 0
           ? (tapCount - 1) % barBeats

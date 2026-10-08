@@ -137,12 +137,18 @@ const KEEPS_REVERT: ReadonlySet<PadSlot> = new Set([
 ]);
 
 // Shift + Delete opens Revert from anywhere: the green knob picks what to
-// put back, and Delete puts it back on a second press. Any other pad closes
-// it first, then does what it does.
+// put back, and Delete puts it back on a second press, as does a tile
+// double-clicked, and Revert closes. Any other pad closes it first, then
+// does what it does.
 export const revertMode: Mode = (device, base) => {
   const { shift, views, browse, feedback } = device;
   const options = revertOptions(device);
   const option = options[browse.revertIndex];
+  const revert = (chosen: RevertOption) => {
+    chosen.run();
+    feedback.showNotice(`Reverted ${chosen.label.toLowerCase()}`);
+    views.leaveRevert();
+  };
   const closing = (pad: PadBinding): PadBinding => ({
     ...pad,
     onPress: (shifted) => {
@@ -179,16 +185,13 @@ export const revertMode: Mode = (device, base) => {
             views.setView("scope");
             return;
           }
-          const label = option.label.toLowerCase();
           if (
-            !feedback.confirm(
+            feedback.confirm(
               `revert:${option.id}`,
-              `Press Revert again to revert ${label}`,
+              `Press Revert again to revert ${option.label.toLowerCase()}`,
             )
           )
-            return;
-          option.run();
-          feedback.showNotice(`Reverted ${label}`);
+            revert(option);
         },
       },
       ...arrowPads(device, ["Previous page", "Next page"], (direction) =>
@@ -226,6 +229,10 @@ export const revertMode: Mode = (device, base) => {
       tiles: options.map(({ id, label, icon }) => ({ id, label, icon })),
       selected: browse.revertIndex,
       onSelect: browse.setRevertIndex,
+      onActivate: (index) => {
+        browse.setRevertIndex(index);
+        revert(options[index]);
+      },
     },
   };
 };

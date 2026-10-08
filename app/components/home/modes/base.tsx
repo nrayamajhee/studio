@@ -9,10 +9,12 @@ import {
   ChartNoAxesGantt,
   Circle,
   DiscAlbum,
+  Activity,
   FileMusic,
   Grid3x3,
   LayoutGrid,
   Metronome,
+  ListMusic,
   Music4,
   Pause,
   Play,
@@ -506,20 +508,47 @@ export function baseBindings(device: Device): Bindings {
         <TracksIcon />,
         () => openTracks(device, false),
       ),
-      take: viewPad(
-        device,
-        "roll",
-        ["Piano roll", "Close piano roll"],
-        <ChartNoAxesGantt />,
-        () => openTape(device, false),
-      ),
-      steps: viewPad(
-        device,
-        "steps",
-        ["Drum grid", "Close drum grid"],
-        <Grid3x3 />,
-        () => openTape(device, true),
-      ),
+      // With Shift, the chord progressions.
+      take: shift
+        ? {
+            label:
+              device.view === "progressions"
+                ? "Close progressions"
+                : "Chord progressions",
+            icon: <ListMusic />,
+            lit: device.view === "progressions",
+            shiftLegend: true,
+            onPress: () => {
+              device.latch.release();
+              views.toggleView("progressions");
+            },
+          }
+        : viewPad(
+            device,
+            "roll",
+            ["Piano roll", "Close piano roll"],
+            <ChartNoAxesGantt />,
+            () => openTape(device, false),
+          ),
+      // With Shift, the drum beats.
+      steps: shift
+        ? {
+            label: device.view === "beats" ? "Close beats" : "Drum beats",
+            icon: <Activity />,
+            lit: device.view === "beats",
+            shiftLegend: true,
+            onPress: () => {
+              device.latch.release();
+              views.toggleView("beats");
+            },
+          }
+        : viewPad(
+            device,
+            "steps",
+            ["Drum grid", "Close drum grid"],
+            <Grid3x3 />,
+            () => openTape(device, true),
+          ),
       adsr: modulePad(device, "adsr", <AdsrIcon />),
       lfo: modulePad(device, "lfo", <WavesHorizontal />),
       fx: modulePad(device, "fx", <AudioLines />),
@@ -551,6 +580,7 @@ export function baseBindings(device: Device): Bindings {
         <AudioWaveform />,
         () => openSynth(device, true),
       ),
+      // With Shift, the chord progressions.
       chords: viewPad(
         device,
         "chords",

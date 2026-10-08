@@ -21,8 +21,14 @@ import {
   useSavedChordStyles,
 } from "../components/home/chordStore";
 import { beatMs } from "../components/home/noteRecorder";
+import {
+  progressionTake,
+  type Progression,
+} from "../components/home/progressions";
+import { setTake } from "../components/home/sessionStore";
 import { createEmitter } from "../lib/emitter";
 import { createStrictContext } from "./createStrictContext";
+import { useFeedback } from "./FeedbackProvider";
 import { useHotkeys } from "./HotkeyProvider";
 import { useSound } from "./SoundProvider";
 import { useDeviceTransport } from "./TransportProvider";
@@ -39,7 +45,8 @@ type NoteListener = (midis: readonly number[]) => void;
 
 function usePerformanceValue() {
   const keys = useHotkeys();
-  const { view, leaveRevert } = useView();
+  const { view, setView, leaveRevert } = useView();
+  const feedback = useFeedback();
   const transport = useDeviceTransport();
   const { octave } = useSound();
   const chordMacros = useChordMacros();
@@ -97,6 +104,18 @@ function usePerformanceValue() {
       new Set([...held.current.values()].flatMap(({ semitones }) => semitones)),
     );
 
+  // A progression waiting for its home note: the next key played sets it,
+  // and the progression goes onto the tape in the play style. Leaving the
+  // view lets it go.
+  const [homeFor, setHomeFor] = useState<Progression | null>(null);
+  if (homeFor && view !== "progressions") setHomeFor(null);
+  const writeProgression = (progression: Progression, home: number) => {
+    setHomeFor(null);
+    setTake(progressionTake(progression, home, transport.timing, chordStyle));
+    setView("roll");
+    feedback.showNotice(`${progression.name} on the tape`);
+  };
+
   const pressKey = (root: number, chordToPlay = activeChord) => {
     if (held.current.has(root)) return;
     leaveRevert();
@@ -106,6 +125,7 @@ function usePerformanceValue() {
       chordToPlay === null ? [0] : macroChords[chordToPlay].intervals;
     const semitones = intervals.map((interval) => root + interval);
     const midis = semitones.map((semitone) => F3_MIDI + semitone + 12 * octave);
+    if (homeFor) writeProgression(homeFor, F3_MIDI + root + 12 * octave);
     // A chord plays in the play style; the sequencer takes it as a block.
     const stop = playChord(
       midis,
@@ -140,6 +160,8 @@ function usePerformanceValue() {
     // The rate or strum moved off what the picked play style plays.
     chordStyleEdited: styleEdited(chordStyle, styles[chordStyleIndex]),
     pressKey,
+    homeFor,
+    awaitHome: setHomeFor,
     releaseKey: (root: number) => {
       const entry = held.current.get(root);
       if (!entry) return;

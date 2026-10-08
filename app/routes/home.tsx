@@ -84,6 +84,15 @@ export default function Home() {
           >
             Docs
           </Link>
+          {" | "}
+          <Link
+            to="https://github.com/nrayamajhee/studio"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
+          >
+            GitHub
+          </Link>
         </span>
         <Link
           to="https://buymeacoffee.com/nrayamajhee"
