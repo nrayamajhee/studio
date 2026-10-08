@@ -47,6 +47,12 @@ export type DrumPieceId =
   | "ride"
   // A brush stirred across the snare head rather than struck.
   | "sweep"
+  // The stick laid across the snare, its shaft clicking on the rim (a drum
+  // machine's rim shot).
+  | "stick"
+  // The ride struck on its raised bell.
+  | "bell"
+  | "tambourine"
   // Hand-drum strokes (bols), by syllable; each kit defines its own sounds.
   | "na"
   | "ta"

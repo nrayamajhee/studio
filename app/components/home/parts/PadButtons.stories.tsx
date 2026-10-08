@@ -11,7 +11,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Every pad, three rows of twelve: transport and the arrows at the left, the views along the top, then the tracks and instruments, the piano roll and the drum grid beside six instrument pads (instruments over kits) and six chords. Shift picks an instrument pad's alternate and swaps it to the front.",
+          "Every pad, three rows of twelve: transport and the arrows at the left, the views along the top, then the piano roll and drum grid, the instruments and the synth parameters beside six instrument pads (instruments over kits) and six chords. Shift picks an instrument pad's alternate and swaps it to the front.",
       },
     },
   },

@@ -6,6 +6,7 @@ import {
   bandpass,
   measurePitch,
   measureT60,
+  momentaryLoudness,
   signalStats,
   windowRms,
 } from "./offline/analysis";
@@ -206,15 +207,15 @@ describe("instruments", () => {
     }
   });
 
-  it("play mezzo-forte C4 near −18 dBFS RMS", async () => {
+  it("play mezzo-forte C4 at −14 LUFS momentary", async () => {
     for (const id of [...strings, ...others]) {
       expect((await loudness(engineRenderer, id, 48000)).pass).toBe(true);
     }
   });
 
-  it("play every oscillator wave in tune near −18 dBFS RMS", () => {
+  it("play every oscillator wave in tune at −14 LUFS momentary", () => {
     for (let wave = 0; wave < 4; wave++) {
-      const { left } = renderEngine(
+      const { left, right } = renderEngine(
         [
           {
             type: "noteOn",
@@ -236,8 +237,9 @@ describe("instruments", () => {
       expect(
         Math.abs(measurePitch(left, 48000, midiToHz(60)).cents),
       ).toBeLessThan(1);
-      const db = gainToDb(windowRms(left, 48000, 0, 0, 1));
-      expect(Math.abs(db + 18)).toBeLessThan(1);
+      expect(Math.abs(momentaryLoudness(left, right, 48000) + 14)).toBeLessThan(
+        1,
+      );
     }
   });
 

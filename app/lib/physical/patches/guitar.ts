@@ -4,7 +4,7 @@ import type { StringPatch } from "./types";
 // Acoustic steel-string guitar.
 export const guitar: StringPatch = {
   id: "guitar",
-  name: "Acoustic Guitar",
+  name: "Acoustic guitar",
   family: "string",
   exciter: "pick",
   allocation: "string",
@@ -12,8 +12,8 @@ export const guitar: StringPatch = {
   openStrings: [40, 45, 50, 55, 59, 64],
   maxFret: 20,
   range: [40, 84],
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 0.9,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 0.7782,
   pan: { center: 0, spread: 0.2 },
   // (Hz, T60 s, amp): air, top plate and upper plate modes.
   body: {

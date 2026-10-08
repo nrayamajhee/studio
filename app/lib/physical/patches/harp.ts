@@ -11,8 +11,8 @@ export const harp: StringPatch = {
   allocation: "key",
   polyphony: 24,
   range: [24, 103],
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 0.804,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 0.7327,
   pan: { center: 0, spread: 0.4 },
   // (Hz, T60 s, amp): soundbox air and soundboard modes.
   body: {

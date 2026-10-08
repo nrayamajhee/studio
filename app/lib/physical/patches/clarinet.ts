@@ -15,8 +15,8 @@ export const clarinet: BorePatch = {
     44100: [[50, 0]],
     48000: [[50, 0]],
   },
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 0.525,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 0.4876,
   pan: { center: 0, spread: 0 },
   body: {
     type: "radiation",

@@ -1,4 +1,4 @@
-import { Pointer } from "lucide-react";
+import { ArrowUp, Pointer } from "lucide-react";
 import { MAX_BPM, MIN_BPM } from "../../../hooks/useTransport";
 import { meterLabel } from "../noteRecorder";
 import { arrowPads, seekKnob } from "./base";
@@ -23,6 +23,8 @@ export const tempoMode: Mode = (device) => {
       ...arrowPads(device, ["Slower", "Faster"], (direction) =>
         setBpm(bpm + direction),
       ),
+      // ↓ has a job of its own here, so ↑ leaves the octave alone.
+      up: { label: "Up", icon: <ArrowUp />, onPress: () => {} },
       down: {
         label: tapMode ? "Stop tap tempo" : "Tap tempo",
         icon: <Pointer />,

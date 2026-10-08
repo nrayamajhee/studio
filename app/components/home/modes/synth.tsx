@@ -1,24 +1,27 @@
 import { formatParam } from "../../../lib/physical/patches/format";
 import { ICON_CHOICES } from "../presetIcons";
-import { ScreenSeek } from "../DeviceScreen";
 import { turnPage } from "../deviceMath";
-import { arrowPads, savePad, seekKnob, soundName } from "./base";
+import { arrowPads, paramKnob, savePad, soundName } from "./base";
 import type { Mode } from "../../../types/bindings";
 
-// The synth parameters, a page at a time: the green knob turns the pages,
-// the red one picks a param and the blue one sets it. Save picks an icon to
-// save the sound as a preset.
+// The synth parameters, a page at a time: the red knob (or ← →) turns the
+// pages, and as on the main screen the green one picks a param and the blue
+// one sets it. Save picks an icon to save the sound as a preset.
 export const synthMode: Mode = (device) => {
   const { sound, views, browse } = device;
   const { paramPage, pages } = sound;
+  const turn = (direction: -1 | 1) =>
+    sound.showParamPage(turnPage(paramPage, direction, 1, pages));
   return {
     knobs: {
-      green: seekKnob(
-        `Page ${paramPage + 1} of ${pages}`,
-        paramPage,
-        Math.max(2, pages),
-        sound.showParamPage,
-      ),
+      green: paramKnob(device),
+      red: {
+        label: "Page",
+        valueLabel: `Page ${paramPage + 1} of ${pages}`,
+        step: paramPage,
+        steps: Math.max(2, pages),
+        onChange: (page) => sound.showParamPage(Math.min(page, pages - 1)),
+      },
     },
     pads: {
       save: savePad(device, {
@@ -30,20 +33,18 @@ export const synthMode: Mode = (device) => {
           views.setView("save");
         },
       }),
-      ...arrowPads(device, ["Previous page", "Next page"], (direction) =>
-        sound.showParamPage(turnPage(paramPage, direction, 1, pages)),
-      ),
+      ...arrowPads(device, ["Previous page", "Next page"], turn),
     },
     screen: {
-      status: sound.octaveLabel,
-      // The highlighted row shows the selection, so the footer shows the
-      // page.
-      footer: [
-        soundName(device),
-        <ScreenSeek key="page">
-          Params {paramPage + 1}/{pages}
-        </ScreenSeek>,
-      ],
+      // The pages in the red of the knob that turns them; the highlighted
+      // row shows the selection.
+      pager: {
+        pages: Array.from({ length: pages }, (_, i) => `Page ${i + 1}`),
+        at: paramPage,
+        color: "red",
+        onPick: sound.showParamPage,
+      },
+      footer: [soundName(device), sound.octaveLabel],
       params: sound.specs.map((spec) => ({
         id: spec.id,
         label: spec.label,

@@ -43,8 +43,8 @@ export const cello: BowedPatch = {
       [81, -11.4],
     ],
   },
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 7.6,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 7.775,
   pan: { center: -0.1, spread: 0.1 },
   body: {
     type: "modal",

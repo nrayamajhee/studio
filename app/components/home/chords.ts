@@ -38,7 +38,7 @@ export const CHORD_GROUPS: readonly {
       { id: "maj7", name: "Major 7", label: "Maj7", intervals: [0, 4, 7, 11] },
       {
         id: "m7b5",
-        name: "Half Diminished",
+        name: "Half diminished",
         label: "m7♭5",
         intervals: [0, 3, 6, 10],
       },
@@ -50,7 +50,7 @@ export const CHORD_GROUPS: readonly {
       },
       {
         id: "minMaj7",
-        name: "Minor Major 7",
+        name: "Minor major 7",
         label: "mMaj7",
         intervals: [0, 3, 7, 11],
       },
@@ -68,7 +68,7 @@ export const CHORD_GROUPS: readonly {
       },
       {
         id: "dimMaj7",
-        name: "Diminished Major 7",
+        name: "Diminished major 7",
         label: "DimMaj7",
         intervals: [0, 3, 6, 11],
       },
@@ -82,21 +82,21 @@ export const CHORD_GROUPS: readonly {
       { id: "add9", name: "Add 9", label: "Add9", intervals: [0, 4, 7, 14] },
       {
         id: "minAdd9",
-        name: "Minor Add 9",
+        name: "Minor add 9",
         label: "mAdd9",
         intervals: [0, 3, 7, 14],
       },
-      { id: "69", name: "Six Nine", label: "6/9", intervals: [0, 4, 7, 9, 14] },
+      { id: "69", name: "Six nine", label: "6/9", intervals: [0, 4, 7, 9, 14] },
       {
         id: "min69",
-        name: "Minor Six Nine",
+        name: "Minor six nine",
         label: "m6/9",
         intervals: [0, 3, 7, 9, 14],
       },
       { id: "add11", name: "Add 11", label: "Add11", intervals: [0, 4, 7, 17] },
       {
         id: "sus4add9",
-        name: "Suspended 4 Add 9",
+        name: "Suspended 4 add 9",
         label: "Sus4♭9",
         intervals: [0, 5, 7, 14],
       },
@@ -120,7 +120,7 @@ export const CHORD_GROUPS: readonly {
       },
       {
         id: "minMaj9",
-        name: "Minor Major 9",
+        name: "Minor major 9",
         label: "mMaj9",
         intervals: [0, 3, 7, 11, 14],
       },

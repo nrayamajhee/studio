@@ -1,5 +1,5 @@
 import { DEVICE_PRESETS, presetCategory } from "../deviceEngine";
-import { ScreenLevel, ScreenValue } from "../DeviceScreen";
+import { ScreenValue } from "../DeviceScreen";
 import { PresetIcon } from "../presetIcons";
 import { bindPad, deletePreset } from "../presetStore";
 import {
@@ -9,6 +9,8 @@ import {
   padName,
   padPreset,
   shelfAt,
+  shelfPager,
+  shelfStep,
   shelfKnobs,
   shelvesOf,
 } from "./base";
@@ -62,11 +64,10 @@ export const presetsMode: Mode = (device, base) => {
             }
           : undefined,
       ),
-      ...arrowPads(device, ["Previous model", "Next model"], (direction) =>
-        browse.setPresetIndex(
-          shelves[Math.max(0, Math.min(shelves.length - 1, at + direction))]
-            .start,
-        ),
+      ...arrowPads(
+        device,
+        ["Previous model", "Next model"],
+        shelfStep(shelves, at, browse.setPresetIndex),
       ),
     },
     presetPad: (pad) => ({
@@ -88,11 +89,7 @@ export const presetsMode: Mode = (device, base) => {
     screen: {
       title: "Instruments",
       unsaved: false,
-      status: (
-        <ScreenLevel>
-          {shelf.name} {at + 1}/{shelves.length}
-        </ScreenLevel>
-      ),
+      pager: shelfPager(shelves, at, browse.setPresetIndex),
       footer: [
         <ScreenValue key="chosen">{chosen?.name ?? ""}</ScreenValue>,
         "Press a pad twice to bind",

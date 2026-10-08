@@ -5,7 +5,7 @@ import type { BorePatch } from "./types";
 // bore and a darker bell with its presence near 800 Hz.
 export const bassTrumpet: BorePatch = {
   id: "bassTrumpet",
-  name: "Bass Trumpet",
+  name: "Bass trumpet",
   family: "bore",
   model: "brass",
   range: [40, 72],
@@ -25,8 +25,8 @@ export const bassTrumpet: BorePatch = {
       [72, -45.6],
     ],
   },
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 2.018,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 2.281,
   pan: { center: 0, spread: 0 },
   body: {
     type: "radiation",

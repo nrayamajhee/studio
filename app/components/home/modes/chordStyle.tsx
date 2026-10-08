@@ -5,7 +5,7 @@ import {
   setChordStyle,
   updateChordStyle,
 } from "../chordStore";
-import { ScreenLevel, ScreenSeek, ScreenValue } from "../DeviceScreen";
+import { ScreenSeek, ScreenValue } from "../DeviceScreen";
 import { ChordStyleIcon } from "../instrumentIcons";
 import { gridLabel } from "../noteRecorder";
 import {
@@ -14,6 +14,8 @@ import {
   idleKnob,
   savePad,
   shelfAt,
+  shelfPager,
+  shelfStep,
   shelfKnobs,
   shelvesOf,
 } from "./base";
@@ -103,21 +105,16 @@ export const chordStyleMode: Mode = (device, base) => {
             }
           : undefined,
       ),
-      ...arrowPads(device, ["Previous group", "Next group"], (direction) =>
-        pickChordStyle(
-          groups[Math.max(0, Math.min(groups.length - 1, at + direction))]
-            .start,
-        ),
+      ...arrowPads(
+        device,
+        ["Previous group", "Next group"],
+        shelfStep(groups, at, pickChordStyle),
       ),
     },
     screen: {
       title: "Play style",
       unsaved: chordStyleEdited,
-      status: (
-        <ScreenLevel>
-          {group.name} {at + 1}/{groups.length}
-        </ScreenLevel>
-      ),
+      pager: shelfPager(groups, at, pickChordStyle),
       // What the green knob sets, in green; nothing for a style that has
       // nothing to set.
       footer: [

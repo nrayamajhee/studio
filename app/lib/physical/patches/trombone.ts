@@ -28,8 +28,8 @@ export const trombone: BorePatch = {
       [77, -38.2],
     ],
   },
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 1.663,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 1.877,
   pan: { center: 0, spread: 0 },
   body: {
     type: "radiation",

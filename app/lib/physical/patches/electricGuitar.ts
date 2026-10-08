@@ -5,7 +5,7 @@ import type { StringPatch } from "./types";
 // acoustic, a bridge pickup comb in place of a body, and a little amp drive.
 export const electricGuitar: StringPatch = {
   id: "electricGuitar",
-  name: "Electric Guitar",
+  name: "Electric guitar",
   family: "string",
   exciter: "pick",
   allocation: "string",
@@ -13,8 +13,8 @@ export const electricGuitar: StringPatch = {
   openStrings: [40, 45, 50, 55, 59, 64],
   maxFret: 22,
   range: [40, 86],
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 0.525,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 0.5172,
   pan: { center: 0, spread: 0.15 },
   body: { type: "none" },
   unison: [[0, 1]],

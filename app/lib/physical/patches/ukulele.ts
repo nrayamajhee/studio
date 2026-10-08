@@ -13,8 +13,8 @@ export const ukulele: StringPatch = {
   openStrings: [67, 60, 64, 69],
   maxFret: 15,
   range: [60, 84],
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 1,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 0.8101,
   pan: { center: 0, spread: 0.15 },
   // (Hz, T60 s, amp): a small box's air and top modes, higher than a guitar's.
   body: {

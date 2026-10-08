@@ -564,6 +564,43 @@ export function RideIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// A ride's raised bell, struck where it pings.
+export function RideBellIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M2 12.5c3-1.6 17-1.6 20 0" />
+      <path d="M8.5 11.3c0-3.2 7-3.2 7 0" />
+      <path d="M12 12.5V21" />
+      <path d="M8 21h8" />
+      <path d="M17 4.5l2-2M19.5 7.5H22" />
+    </svg>
+  );
+}
+
+// A tambourine: a hoop with its jingles.
+export function TambourineIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="3.5" r="1.5" />
+      <circle cx="20.5" cy="12" r="1.5" />
+      <circle cx="12" cy="20.5" r="1.5" />
+      <circle cx="3.5" cy="12" r="1.5" />
+    </svg>
+  );
+}
+
+// A stick laid across a snare, its shaft over the rim.
+export function StickIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <ellipse cx="12" cy="15" rx="9" ry="3.5" />
+      <path d="M3 15v3a9 3.5 0 0 0 18 0v-3" />
+      <path d="M5 6l14 9" />
+    </svg>
+  );
+}
+
 // A brush's wires fanned out, stirring a curve across the head.
 export function SweepIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -590,6 +627,9 @@ export const DRUM_PIECES: Readonly<
   crash: { name: "Crash", Icon: CrashIcon },
   ride: { name: "Ride", Icon: RideIcon },
   sweep: { name: "Brush sweep", Icon: SweepIcon },
+  stick: { name: "Side stick", Icon: StickIcon },
+  bell: { name: "Ride bell", Icon: RideBellIcon },
+  tambourine: { name: "Tambourine", Icon: TambourineIcon },
   cowbell: { name: "Cowbell", Icon: Bell },
   closedHat: { name: "Closed hat", Icon: ClosedHatIcon },
   openHat: { name: "Open hat", Icon: OpenHatIcon },

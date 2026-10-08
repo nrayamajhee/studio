@@ -23,8 +23,8 @@ export const kalimba: BarPatch = {
     [88, 0.8],
   ],
   contact: [4, 1.5],
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 1.318,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 1.136,
   pan: { center: 0, spread: 0.25 },
   // (Hz, T60 s, amp): the box's air and its thin top.
   body: {

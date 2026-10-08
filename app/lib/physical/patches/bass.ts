@@ -4,7 +4,7 @@ import type { StringPatch } from "./types";
 // Four-string fingered electric bass: pickup comb, no acoustic body.
 export const bass: StringPatch = {
   id: "bass",
-  name: "Electric Bass",
+  name: "Electric bass",
   family: "string",
   exciter: "finger",
   allocation: "string",
@@ -12,8 +12,8 @@ export const bass: StringPatch = {
   openStrings: [28, 33, 38, 43],
   maxFret: 24,
   range: [28, 67],
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 0.54,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 0.4625,
   pan: { center: 0, spread: 0 },
   body: { type: "none" },
   unison: [[0, 1]],

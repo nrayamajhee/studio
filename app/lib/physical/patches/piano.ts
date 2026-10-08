@@ -16,14 +16,14 @@ const soundboard = Array.from({ length: 20 }, (_, i) => {
 
 export const piano: StringPatch = {
   id: "piano",
-  name: "Grand Piano",
+  name: "Grand piano",
   family: "string",
   exciter: "hammer",
   allocation: "key",
   polyphony: 24,
   range: [21, 108],
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 1.2,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 1.089,
   pan: { center: 0, spread: 0.35 },
   body: { type: "modal", modes: soundboard },
   unison: [

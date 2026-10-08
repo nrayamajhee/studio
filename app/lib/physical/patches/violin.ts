@@ -53,8 +53,8 @@ export const violin: BowedPatch = {
       [100, -4.5],
     ],
   },
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 0.89,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 0.9751,
   pan: { center: 0.1, spread: 0.1 },
   body: { type: "none" },
   // A finger sliding along the string between legato notes.

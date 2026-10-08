@@ -7,7 +7,7 @@ import type { BarPatch } from "./types";
 // sticks, C4 to E6.
 export const steelPan: BarPatch = {
   id: "steelPan",
-  name: "Steel Pan",
+  name: "Steel pan",
   family: "bar",
   strike: "mallet",
   polyphony: 12,
@@ -27,8 +27,8 @@ export const steelPan: BarPatch = {
     [88, 0.7],
   ],
   contact: [3, 0.8],
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 0.891,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 0.6632,
   pan: { center: 0, spread: 0.3 },
   body: { type: "none" },
   params: barParams({ hardness: 0.5, cutoff: 12000, send: 0.3 }),

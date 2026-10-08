@@ -17,8 +17,8 @@ import {
   findOnset,
   measurePitch,
   measureT60,
+  momentaryLoudness,
   signalStats,
-  windowRms,
 } from "./analysis";
 import { renderEngine } from "./renderEngine";
 
@@ -255,8 +255,9 @@ export async function stabilitySweep(
   return rows;
 }
 
-// Mezzo-forte C4 (or the nearest in-range note) should sit near −18 dBFS RMS
-// over its first second so switching instruments keeps the level.
+// Mezzo-forte C4 (or the nearest in-range note) should read −14 LUFS
+// momentary, so every instrument sounds as loud as the others: a pluck that
+// strikes and fades as loud as a bow that swells and holds.
 export async function loudness(
   render: Renderer,
   id: InstrumentId,
@@ -267,15 +268,14 @@ export async function loudness(
   const events: EngineEvent[] = [
     { type: "noteOn", instrument: id, note, velocity: 0.7, time: 0 },
   ];
-  const out = mono(await render(events, sampleRate, 1.2, dry(id)));
-  const onset = Math.max(0, findOnset(out));
-  const db = gainToDb(windowRms(out, sampleRate, onset, 0, 1));
+  const { left, right } = await render(events, sampleRate, 1.5, dry(id));
+  const lufs = momentaryLoudness(left, right, sampleRate);
   return {
     check: "Loudness",
     subject: id,
-    measured: `${fmt(db)} dBFS RMS`,
-    expected: "−18 ± 2",
-    pass: Math.abs(db + 18) <= 2,
+    measured: `${fmt(lufs)} LUFS`,
+    expected: "−14 ± 1",
+    pass: Math.abs(lufs + 14) <= 1,
   };
 }
 

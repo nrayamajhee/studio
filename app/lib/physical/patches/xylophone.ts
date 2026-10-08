@@ -24,8 +24,8 @@ export const xylophone: BarPatch = {
     [108, 0.45],
   ],
   contact: [1.2, 0.25],
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 1.349,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 1.002,
   pan: { center: 0, spread: 0.45 },
   body: { type: "none" },
   params: barParams({ hardness: 0.7, cutoff: 16000, send: 0.3 }),

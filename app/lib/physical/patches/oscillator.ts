@@ -9,9 +9,9 @@ export const oscillator: OscillatorPatch = {
   family: "oscillator",
   range: [12, 127],
   polyphony: 8,
-  // A sine at velocity 0.7 is 0.7/√2 RMS, then −3 dB from the centre pan:
-  // 0.1259 / (0.7 · 0.7071 · 0.7071) puts C4 at −18 dBFS RMS.
-  outputGain: 0.36,
+  // Puts a C4 sine at velocity 0.7 at −14 LUFS momentary, as loud as every
+  // other instrument.
+  outputGain: 0.4431,
   pan: { center: 0, spread: 0 },
   body: { type: "none" },
   params: oscillatorParams(0.2, 0.05),

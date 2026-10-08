@@ -23,8 +23,8 @@ export const trumpet: BorePatch = {
       [84, -34.6],
     ],
   },
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 2.163,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 2.421,
   pan: { center: 0, spread: 0 },
   body: {
     type: "radiation",

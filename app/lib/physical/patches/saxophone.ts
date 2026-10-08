@@ -4,7 +4,7 @@ import type { BorePatch } from "./types";
 // Alto saxophone (STK Saxofony loop).
 export const saxophone: BorePatch = {
   id: "saxophone",
-  name: "Alto Sax",
+  name: "Alto sax",
   family: "bore",
   model: "saxophone",
   range: [49, 80],
@@ -26,8 +26,8 @@ export const saxophone: BorePatch = {
       [80, 1.7],
     ],
   },
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 0.52,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 0.5719,
   pan: { center: 0, spread: 0 },
   body: {
     type: "radiation",

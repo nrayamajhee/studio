@@ -38,8 +38,8 @@ export const flute: BorePatch = {
       [96, -45.4],
     ],
   },
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 1.04,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 1.158,
   pan: { center: 0, spread: 0 },
   body: { type: "radiation", highpass: 250 },
   params: boreParams({

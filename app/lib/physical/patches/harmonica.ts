@@ -30,8 +30,8 @@ export const harmonica: ReedPatch = {
       [96, -3.1],
     ],
   },
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 1.241,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 1.309,
   pan: { center: 0, spread: 0 },
   body: {
     type: "radiation",

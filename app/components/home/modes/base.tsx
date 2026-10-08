@@ -33,7 +33,7 @@ import {
   engineName,
   type ModuleId,
 } from "../deviceEngine";
-import { ScreenSeek, ScreenValue } from "../DeviceScreen";
+import { ScreenSeek, ScreenValue, type ScreenPager } from "../DeviceScreen";
 import { AdsrIcon, ChordStyleIcon, TracksIcon } from "../instrumentIcons";
 import { MODULE_IDS } from "../modules";
 import { PresetIcon } from "../presetIcons";
@@ -123,6 +123,29 @@ export function shelfAt(shelves: readonly Shelf[], index: number) {
   );
   return { shelf: shelves[at] ?? { name: "", start: 0, count: 0 }, at };
 }
+
+// Turning a list's category pages, from ← → or the screen's arrows: to the
+// next category's first, stopping at either end.
+export const shelfStep =
+  (shelves: readonly Shelf[], at: number, select: (index: number) => void) =>
+  (direction: -1 | 1) =>
+    select(
+      shelves[Math.max(0, Math.min(shelves.length - 1, at + direction))]
+        ?.start ?? 0,
+    );
+
+// The screen's pager for a list by category, in the red of the knob that
+// picks the category.
+export const shelfPager = (
+  shelves: readonly Shelf[],
+  at: number,
+  select: (index: number) => void,
+): ScreenPager => ({
+  pages: shelves.map(({ name }) => name),
+  at,
+  color: "red",
+  onPick: (page) => select(shelves[page]?.start ?? 0),
+});
 
 // Browsing a list by category: the red knob steps through the categories,
 // landing on each one's first, and the blue one through what is in the
@@ -400,8 +423,8 @@ const viewPad = (
 });
 
 // What every control does unless a mode rebinds it: the knobs set the
-// volume and the selected param, the arrows move the octave (with Shift,
-// the preset) and the pads open their views.
+// volume and the selected param, ↑ and ↓ move the octave (so do ← and →,
+// which with Shift step the preset) and the pads open their views.
 export function baseBindings(device: Device): Bindings {
   const { shift, views, output, transport, sound, performance, tape, browse } =
     device;
@@ -503,8 +526,16 @@ export function baseBindings(device: Device): Bindings {
       metronome: metronomePad(device),
       mute: { label: "Mute a track", icon: <VolumeX />, onPress: noop },
       clip: { label: "Clip a track", icon: <Scissors />, onPress: noop },
-      up: { label: "Up", icon: <ArrowUp />, onPress: noop },
-      down: { label: "Down", icon: <ArrowDown />, onPress: noop },
+      up: {
+        label: "Octave up",
+        icon: <ArrowUp />,
+        onPress: () => sound.shiftOctave(1),
+      },
+      down: {
+        label: "Octave down",
+        icon: <ArrowDown />,
+        onPress: () => sound.shiftOctave(-1),
+      },
       delete: deletePad(device),
       synth: viewPad(
         device,

@@ -34,6 +34,9 @@ const PIECE_ORDER: readonly DrumPieceId[] = [
   "dhin",
   "ride",
   "sweep",
+  "stick",
+  "bell",
+  "tambourine",
 ];
 
 // The pieces a kit can play, in a stable order.

@@ -35,8 +35,8 @@ export const harmonium: ReedPatch = {
       [84, -2.1],
     ],
   },
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 0.942,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 0.9826,
   pan: { center: 0, spread: 0.2 },
   // (Hz, T60 s, amp): the case's air and panel modes.
   body: {

@@ -15,8 +15,8 @@ export const banjo: StringPatch = {
   openStrings: [50, 55, 59, 62, 67],
   maxFret: 22,
   range: [50, 86],
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 1.122,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 0.8871,
   pan: { center: 0, spread: 0.15 },
   // (Hz, T60 s, amp): the head's membrane modes.
   body: {

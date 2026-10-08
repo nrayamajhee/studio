@@ -1,7 +1,15 @@
 import { CHORD_PALETTE, chordGroup } from "../chords";
 import { setChordMacro } from "../chordStore";
-import { ScreenLevel, ScreenValue } from "../DeviceScreen";
-import { arrowPads, idleKnob, shelfAt, shelfKnobs, shelvesOf } from "./base";
+import { ScreenValue } from "../DeviceScreen";
+import {
+  arrowPads,
+  idleKnob,
+  shelfAt,
+  shelfKnobs,
+  shelfPager,
+  shelfStep,
+  shelvesOf,
+} from "./base";
 import type { Mode } from "../../../types/bindings";
 
 const SHELVES = shelvesOf(CHORD_PALETTE, chordGroup);
@@ -24,11 +32,10 @@ export const chordsMode: Mode = (device, base) => {
         browse.setChordIndex,
       ),
     },
-    pads: arrowPads(device, ["Previous kind", "Next kind"], (direction) =>
-      browse.setChordIndex(
-        SHELVES[Math.max(0, Math.min(SHELVES.length - 1, at + direction))]
-          .start,
-      ),
+    pads: arrowPads(
+      device,
+      ["Previous kind", "Next kind"],
+      shelfStep(SHELVES, at, browse.setChordIndex),
     ),
     chordPad: (index) => ({
       ...base.chordPad(index),
@@ -49,11 +56,7 @@ export const chordsMode: Mode = (device, base) => {
     screen: {
       title: "Chords",
       unsaved: false,
-      status: (
-        <ScreenLevel>
-          {shelf.name} {at + 1}/{SHELVES.length}
-        </ScreenLevel>
-      ),
+      pager: shelfPager(SHELVES, at, browse.setChordIndex),
       footer: [
         <ScreenValue key="chosen">{chosen?.name ?? ""}</ScreenValue>,
         "Press a chord pad twice to set",

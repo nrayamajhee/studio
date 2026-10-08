@@ -18,8 +18,8 @@ export const sitar: StringPatch = {
   allocation: "key",
   polyphony: 6,
   range: [48, 84],
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 1.175,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 0.883,
   pan: { center: 0, spread: 0.15 },
   // (Hz, T60 s, amp): the gourd and the top's modes, then the taraf.
   body: {

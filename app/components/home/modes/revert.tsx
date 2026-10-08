@@ -37,6 +37,20 @@ type RevertOption = {
   run: () => void;
 };
 
+// Everything the Device keeps (songs and tracks, the tape, saved instruments
+// and play styles, pad and chord bindings) is dropped, and the page starts
+// over as new. The page's theme is its own, and stays.
+const eraseEverything = () => {
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith("studio.")) localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage can be unavailable (private mode); starting over still resets.
+  }
+  window.location.reload();
+};
+
 // What Revert can put back, a tile each: the sounds' edits, the pads and
 // chords as built in, and the modules, tempo and levels as they start.
 const revertOptions = ({
@@ -105,21 +119,19 @@ const revertOptions = ({
     {
       id: "everything",
       label: "Everything",
-      detail: "All of the above",
+      detail: "Erases songs, saved sounds and settings",
       icon: <RotateCcw />,
-      run: () => options.forEach((option) => option.run()),
+      run: eraseEverything,
     },
   ];
 };
 
-// Pads that keep Revert open: its own (Delete and the arrows) and those
+// Pads that keep Revert open: its own (Delete, ← and →) and those
 // that do nothing here.
 const KEEPS_REVERT: ReadonlySet<PadSlot> = new Set([
   "delete",
   "left",
   "right",
-  "up",
-  "down",
   "mute",
   "clip",
 ]);

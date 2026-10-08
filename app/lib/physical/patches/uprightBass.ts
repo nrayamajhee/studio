@@ -5,7 +5,7 @@ import type { StringPatch } from "./types";
 // wooden body with low air and plate modes.
 export const uprightBass: StringPatch = {
   id: "uprightBass",
-  name: "Upright Bass",
+  name: "Upright bass",
   family: "string",
   exciter: "finger",
   allocation: "string",
@@ -13,8 +13,8 @@ export const uprightBass: StringPatch = {
   openStrings: [28, 33, 38, 43],
   maxFret: 24,
   range: [28, 67],
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 1.02,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 1.002,
   pan: { center: 0, spread: 0 },
   body: {
     type: "modal",

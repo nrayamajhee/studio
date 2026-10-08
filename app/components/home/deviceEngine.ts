@@ -48,7 +48,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "piano",
     icon: "piano",
-    name: "Grand Piano",
+    name: "Grand piano",
     target: "piano",
     octave: 0,
     pad: 0,
@@ -63,7 +63,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "electricGuitar",
     icon: "electric",
-    name: "Picked Electric",
+    name: "Picked electric",
     target: "electricGuitar",
     octave: 0,
   },
@@ -71,7 +71,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "electricFinger",
     icon: "electric",
-    name: "Fingerstyle Electric",
+    name: "Fingerstyle electric",
     target: "electricGuitar",
     octave: 0,
     overrides: {
@@ -83,7 +83,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "guitar",
     icon: "guitar",
-    name: "Picked Guitar",
+    name: "Picked guitar",
     target: "guitar",
     octave: 0,
     pad: 2,
@@ -93,7 +93,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "guitarFinger",
     icon: "guitar",
-    name: "Fingerstyle Guitar",
+    name: "Fingerstyle guitar",
     target: "guitar",
     octave: 0,
     overrides: {
@@ -105,7 +105,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "bass",
     icon: "bass",
-    name: "Bass Guitar",
+    name: "Bass guitar",
     target: "bass",
     octave: -24,
     shiftPad: 2,
@@ -113,7 +113,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "nylonGuitar",
     icon: "nylon",
-    name: "Nylon Guitar",
+    name: "Nylon guitar",
     target: "nylonGuitar",
     octave: 0,
   },
@@ -149,7 +149,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "uprightBass",
     icon: "upright",
-    name: "Upright Bass",
+    name: "Upright bass",
     target: "uprightBass",
     octave: -24,
   },
@@ -177,7 +177,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "bassTrumpet",
     icon: "bassTrumpet",
-    name: "Bass Trumpet",
+    name: "Bass trumpet",
     target: "bassTrumpet",
     octave: -12,
   },
@@ -205,7 +205,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "saxophone",
     icon: "sax",
-    name: "Alto Sax",
+    name: "Alto sax",
     target: "saxophone",
     octave: 0,
     shiftPad: 1,
@@ -234,7 +234,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "steelPan",
     icon: "steelPan",
-    name: "Steel Pan",
+    name: "Steel pan",
     target: "steelPan",
     octave: 0,
   },
@@ -248,31 +248,30 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "drums",
     icon: "drum",
-    name: "Drum Kit",
+    name: "Drum kit",
     target: "drums",
     octave: 0,
-    pad: 3,
   },
   {
     id: "rockDrums",
     icon: "rock",
-    name: "Rock Kit",
+    name: "Rock kit",
     target: "rockDrums",
     octave: 0,
-    shiftPad: 3,
+    pad: 3,
   },
   {
     id: "jazzDrums",
     icon: "jazz",
-    name: "Jazz Kit",
+    name: "Jazz kit",
     target: "jazzDrums",
     octave: 0,
-    shiftPad: 4,
+    shiftPad: 3,
   },
   {
     id: "drums808",
     icon: "drum808",
-    name: "808 Kit",
+    name: "808 kit",
     target: "drums808",
     octave: 0,
     pad: 4,
@@ -280,9 +279,10 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
   {
     id: "drums909",
     icon: "drum909",
-    name: "909 Kit",
+    name: "909 kit",
     target: "drums909",
     octave: 0,
+    shiftPad: 4,
   },
   {
     id: "madal",

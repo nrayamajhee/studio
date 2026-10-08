@@ -30,7 +30,7 @@ const meta = {
   },
   args: {
     view: "scope",
-    title: "Grand Piano",
+    title: "Grand piano",
     status: "OCT ±0",
     footer: ["Hammer", "Hardness 50%"],
     onSelect: fn(),
@@ -169,7 +169,7 @@ const kitPieces = ["closedHat", "kick", "snare"] as const;
 export const Steps: Story = {
   args: {
     view: "steps",
-    title: "Drum Kit",
+    title: "Drum kit",
     status: "1.2.1 · 1 bar 1/16",
     footer: ["", "Keys set hits at the head"],
     stepRows: kitPieces.map((piece) => {
@@ -204,7 +204,7 @@ export const Tracks: Story = {
       {
         id: "arpeggio",
         name: "Track 1",
-        detail: "Grand Piano",
+        detail: "Grand piano",
         color: "#f2884b",
         start: 0,
         clip: {

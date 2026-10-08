@@ -74,8 +74,8 @@ export const accordion: ReedPatch = {
       [89, -2.1],
     ],
   },
-  // Calibrated so a mezzo-forte C4 (or nearest note) is −18 dBFS RMS.
-  outputGain: 1.12,
+  // Calibrated so a mezzo-forte C4 (or nearest note) is −14 LUFS momentary.
+  outputGain: 1.143,
   pan: { center: 0, spread: 0.2 },
   // (Hz, T60 s, amp): the box's air and the reed blocks.
   body: {

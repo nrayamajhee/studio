@@ -223,6 +223,76 @@ export function windowRms(
   return Math.sqrt(sum / Math.max(1, end - start));
 }
 
+// One biquad, run over a whole signal (direct form I).
+function biquad(
+  signal: ArrayLike<number>,
+  [b0, b1, b2, a1, a2]: readonly number[],
+) {
+  const out = new Float64Array(signal.length);
+  let x1 = 0;
+  let x2 = 0;
+  let y1 = 0;
+  let y2 = 0;
+  for (let i = 0; i < signal.length; i++) {
+    const x = signal[i];
+    const y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+    x2 = x1;
+    x1 = x;
+    y2 = y1;
+    y1 = y;
+    out[i] = y;
+  }
+  return out;
+}
+
+// The K-weighting of ITU-R BS.1770 at any sample rate: a high shelf for the
+// head's presence boost, then a highpass for the ear's bass roll-off.
+function kWeight(signal: ArrayLike<number>, fs: number) {
+  const shelf = (() => {
+    const K = Math.tan((Math.PI * 1681.974450955533) / fs);
+    const Q = 0.7071752369554196;
+    const Vh = 10 ** (3.999843853973347 / 20);
+    const Vb = Vh ** 0.4996667741545416;
+    const a0 = 1 + K / Q + K * K;
+    return [
+      (Vh + (Vb * K) / Q + K * K) / a0,
+      (2 * (K * K - Vh)) / a0,
+      (Vh - (Vb * K) / Q + K * K) / a0,
+      (2 * (K * K - 1)) / a0,
+      (1 - K / Q + K * K) / a0,
+    ];
+  })();
+  const highpass = (() => {
+    const K = Math.tan((Math.PI * 38.13547087602444) / fs);
+    const Q = 0.5003270373238773;
+    const a0 = 1 + K / Q + K * K;
+    return [1, -2, 1, (2 * (K * K - 1)) / a0, (1 - K / Q + K * K) / a0];
+  })();
+  return biquad(biquad(signal, shelf), highpass);
+}
+
+// Momentary loudness (LUFS), as EBU R128 meters it: the loudest 400 ms
+// window, stepped every 100 ms, of the K-weighted channels summed. Equal
+// momentary loudness is what sounds equally loud, whether a note strikes
+// and fades or swells and holds.
+export function momentaryLoudness(
+  left: ArrayLike<number>,
+  right: ArrayLike<number>,
+  fs: number,
+) {
+  const l = kWeight(left, fs);
+  const r = kWeight(right, fs);
+  const size = Math.round(0.4 * fs);
+  const step = Math.round(0.1 * fs);
+  let loudest = 0;
+  for (let start = 0; start + size <= l.length; start += step) {
+    let sum = 0;
+    for (let i = start; i < start + size; i++) sum += l[i] * l[i] + r[i] * r[i];
+    loudest = Math.max(loudest, sum / size);
+  }
+  return -0.691 + 10 * Math.log10(loudest || 1e-12);
+}
+
 // Band around f0 (Simper SVF bandpass), to follow one partial's decay.
 export function bandpass(
   signal: ArrayLike<number>,
