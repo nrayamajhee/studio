@@ -1,5 +1,4 @@
-> source available. all rights reserved.  
-> this is not open source.  
+> source available. all rights reserved.
 > AI was used and paid for.  
 > no copyright infringement intended.
 
