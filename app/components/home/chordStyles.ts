@@ -228,8 +228,14 @@ export const isSavedChordStyle = (value: unknown): value is SavedChordStyle => {
   );
 };
 
-// A play style as the view lists it: the built-in ones at the default rate
-// and strum, then the saved ones, each at its own, in a group of their own.
+// The rate a built-in style starts at: Pulse a strike a beat, the other
+// rhythms and arpeggios in eighths, and a roll in sixteenths.
+const startingRate = (id: ChordStyleId, group: ChordStyleGroup) =>
+  id === "pulse" ? 1 : group === "Held" ? DEFAULT_CHORD_STYLE.perBeat : 2;
+
+// A play style as the view lists it: the built-in ones at their starting
+// rate and the default strum, then the saved ones, each at its own, in a
+// group of their own.
 export type PlayStyle = {
   id: string;
   name: string;
@@ -248,7 +254,7 @@ export function playStyles(saved: readonly SavedChordStyle[]): PlayStyle[] {
       name,
       group,
       settings,
-      style: { ...DEFAULT_CHORD_STYLE, id },
+      style: { ...DEFAULT_CHORD_STYLE, id, perBeat: startingRate(id, group) },
     })),
     ...saved.map(({ id, name, pattern, perBeat, strum }) => ({
       id,

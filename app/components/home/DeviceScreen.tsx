@@ -880,6 +880,11 @@ export function ScreenLevel({ children }: { children: ReactNode }) {
   return <span className="text-synth-red">{children}</span>;
 }
 
+// What to press, a little dimmer than the readings beside it.
+export function ScreenHint({ children }: { children: ReactNode }) {
+  return <span className="text-screen-ink/45">{children}</span>;
+}
+
 // A value the blue knob sets, in blue.
 export function ScreenValue({ children }: { children: ReactNode }) {
   return <span className="text-synth-blue">{children}</span>;
@@ -894,29 +899,34 @@ export type ScreenPager = {
   onPick: (page: number) => void;
 };
 
-// Three tabs at a time, the one the view is on among them: in the middle, or
-// at the end of the row when it is the first or last page.
-const TABS_SHOWN = 3;
-const tabWindow = ({ pages, at }: ScreenPager) => {
-  const start = Math.max(0, Math.min(at - 1, pages.length - TABS_SHOWN));
-  return pages
-    .slice(start, start + TABS_SHOWN)
-    .map((name, i) => ({ name, page: start + i }));
-};
+// Three tabs in three equal columns: the page the view is on always in the
+// middle, the one before it against ‹ and the one after it against ›, so
+// paging never shifts them. Past the first or last page a column is empty.
+const TAB_PLACES = ["start", "center", "end"] as const;
+const tabWindow = ({ pages, at }: ScreenPager) =>
+  TAB_PLACES.map((place, i) => {
+    const page = at - 1 + i;
+    return { place, page, name: pages[page] as string | undefined };
+  });
 
 export type DeviceScreenProps = {
   view?: ScreenView;
+  // Leads the top line, or the footer where a pager or `statusLeft` holds the
+  // top's left.
   title: string;
   // The preset in the title has edits that aren't saved.
   unsaved?: boolean;
+  // Along the top: the status on the right, and on the left what it sets
+  // apart (the scope's octave).
   status: ReactNode;
+  statusLeft?: ReactNode;
   footer: readonly [left: ReactNode, right: ReactNode];
   // Centred along the bottom in place of the footer.
   badges?: readonly ScreenBadge[];
   getAnalyser?: () => AnalyserNode | null;
   params?: readonly ScreenParam[];
   page?: number;
-  // Turns the readout into the view's pager: ‹ title [page] ›.
+  // Turns the readout into the view's pager: ‹ [page] ›.
   pager?: ScreenPager;
   tiles?: readonly ScreenTile[];
   selected?: number;
@@ -982,26 +992,31 @@ export type DeviceScreenProps = {
 export const PARAMS_PER_PAGE = 15;
 export const TILES_PER_PAGE: Record<string, number> = {
   save: 48,
-  presets: 8,
-  chords: 8,
-  chordStyle: 8,
-  progressions: 8,
-  beats: 8,
-  album: 8,
-  revert: 8,
+  presets: 12,
+  chords: 12,
+  chordStyle: 12,
+  progressions: 12,
+  beats: 12,
+  album: 12,
+  revert: 12,
 };
 
 // The screen: black glass in a pressed-in bezel, as round as the pads so it
 // sits square between the grilles, 2.39:1 unless the Device sets
 // --screen-aspect. A readout line runs along the top and the footer along
-// the bottom; on the roll the footer's line tightens to fit under the keys,
+// the bottom, the title leading one of them; on the roll the footer's line tightens to fit under the keys,
 // so they stay put when a notice comes or goes.
 // A paged view's tabs: the page it is on filled in the colour of the knob
 // that turns the pages, the ones either side dim, to step to, filling grey
 // under the pointer. Their negative margin keeps the readout's 18px line.
 const pageTab = tv({
-  base: "-my-[4px] shrink-0 cursor-pointer rounded-[10px] px-[8px] py-[3px] font-screen text-[14px] leading-[18px] font-semibold tracking-[0.04em] text-screen-ink/45 first-letter:uppercase [corner-shape:squircle] hover:bg-screen-ink/15 hover:text-screen-ink active:bg-screen-ink/75 active:text-screen",
+  base: "-my-[4px] max-w-full cursor-pointer truncate rounded-[10px] px-[7px] py-[3px] font-screen text-[14px] leading-[18px] font-semibold tracking-[0.02em] text-screen-ink/45 first-letter:uppercase [corner-shape:squircle] hover:bg-screen-ink/15 hover:text-screen-ink active:bg-screen-ink/75 active:text-screen",
   variants: {
+    place: {
+      start: "justify-self-start",
+      center: "justify-self-stretch text-center",
+      end: "justify-self-end",
+    },
     current: {
       red: "cursor-default bg-synth-red text-white hover:bg-synth-red hover:text-white active:bg-synth-red active:text-white",
       green:
@@ -1016,22 +1031,23 @@ const screen = tv({
     glass:
       "relative flex h-full items-center rounded-[4px] px-[20px] text-screen-ink",
     readout:
-      "absolute top-[9px] right-[20px] left-[20px] flex justify-between gap-[16px] font-screen text-[14px] leading-[18px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase",
+      "absolute top-[9px] right-[20px] left-[20px] flex items-baseline justify-between gap-[16px] font-screen text-[14px] leading-[18px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase",
     footer:
-      "absolute right-[20px] bottom-[9px] left-[20px] flex justify-between gap-[16px] font-screen text-[12px] leading-[15px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase",
+      "absolute right-[20px] bottom-[9px] left-[20px] flex items-baseline justify-between gap-[16px] font-screen text-[12px] leading-[15px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase",
     badges:
       "absolute right-[20px] bottom-[9px] left-[20px] flex justify-center gap-[16px] font-screen text-[12px] leading-[15px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase",
-    title: "flex items-center gap-[8px]",
+    // A line's left side gives way to its right, cutting short rather than
+    // running under it.
+    lead: "min-w-0 truncate",
+    trail: "shrink-0",
     // An asterisk after the title, as editors mark a file with changes.
     unsaved:
-      "inline-grid place-items-center text-screen-ink/75 [&_svg]:size-[14px]",
-    // A paged view: its title larger, and an arrow at either end, a touch
-    // target each that fills grey under the pointer; at the first or last
-    // page one fades.
+      "ml-[2px] inline-grid place-items-center align-top text-screen-ink/75 [&_svg]:size-[0.9em]",
+    // A paged view: an arrow at either end, a touch target each that fills
+    // grey under the pointer; at the first or last page one fades.
     pager:
-      "absolute top-[9px] right-[20px] left-[20px] flex items-center gap-[10px] font-screen text-[14px] leading-[18px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase",
-    pageTitle: "flex shrink-0 items-center gap-[8px]",
-    pageTabs: "flex min-w-0 flex-1 items-center justify-center gap-[8px]",
+      "absolute top-[9px] right-[20px] left-[20px] flex items-center gap-[6px] font-screen text-[14px] leading-[18px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase",
+    pageTabs: "grid min-w-0 flex-1 grid-cols-3 items-center",
     pageArrow:
       "-my-[6px] grid size-[27px] shrink-0 cursor-pointer place-items-center rounded-[11px] text-screen-ink/70 [corner-shape:squircle] hover:bg-screen-ink/15 hover:text-screen-ink active:bg-screen-ink/75 active:text-screen disabled:cursor-default disabled:bg-transparent disabled:text-screen-ink/60 disabled:opacity-25 [&_svg]:size-[18px]",
     scope: "h-[160px] w-full text-screen-ink",
@@ -1063,14 +1079,14 @@ const screen = tv({
 });
 
 // Views sit in the ~565 × 181 space between the two readouts. The library
-// is two rows of 4 tiles filling it; icons are four rows of 12, 48 a page;
+// is two rows of 6 tiles filling it, near square; icons are four rows of 12, 48 a page;
 // tracks are four rows a page, like the studio's track list.
 const screenView = tv({
   base: "absolute top-[30px] right-[20px] bottom-[30px] left-[20px] m-0",
   variants: {
     kind: {
       params: "grid grid-cols-3 grid-rows-5 gap-x-[18px] gap-y-0 font-screen",
-      tiles: "grid grid-cols-4 grid-rows-2 gap-[6px] overflow-hidden",
+      tiles: "grid grid-cols-6 grid-rows-2 gap-[6px] overflow-hidden",
       icons:
         "grid grid-cols-12 grid-rows-4 justify-items-center gap-[6px] overflow-hidden",
       module: "flex flex-col gap-[6px]",
@@ -1108,11 +1124,17 @@ const param = tv({
 // columns.
 const tile = tv({
   slots: {
-    base: "group relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-[4px] rounded-[8px] border border-screen-ink/12 px-[4px] text-center text-[12px] font-medium text-screen-ink/75 select-none aria-pressed:text-white focus-visible:border-synth-blue focus-visible:shadow-[inset_0_0_0_1px_var(--color-synth-blue)] focus-visible:outline-none",
-    icon: "grid place-items-center font-screen text-[14px] leading-[18px] font-bold [&_svg]:size-[26px]",
-    name: "line-clamp-2 max-w-full overflow-hidden text-center font-screen text-[12px] leading-[15px] tracking-[0.02em] first-letter:uppercase",
+    base: "group relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-[4px] rounded-[8px] border border-screen-ink/12 px-[6px] text-center text-[11px] font-medium text-screen-ink/75 select-none aria-pressed:text-white focus-visible:border-synth-blue focus-visible:shadow-[inset_0_0_0_1px_var(--color-synth-blue)] focus-visible:outline-none",
+    // The icon and the name each keep two lines' room, their content centred
+    // in it, so icons line up along a row whatever the names' lengths. A
+    // text icon (a chord's symbol, a progression's numerals) wraps evenly,
+    // cut short with an ellipsis past two lines.
+    icon: "flex h-[26px] max-w-full items-center justify-center overflow-hidden font-screen text-[11px] leading-[13px] font-bold text-balance [&_svg]:size-[24px] [&>span]:line-clamp-2",
+    name: "flex h-[26px] w-full items-center justify-center",
+    nameText:
+      "line-clamp-2 overflow-hidden font-screen text-[11px] leading-[13px] text-balance wrap-break-word first-letter:uppercase",
     badge:
-      "absolute top-[3px] right-[5px] font-screen text-[12px] leading-[15px] font-bold text-synth-red group-aria-pressed:text-white",
+      "absolute top-[3px] right-[4px] font-screen text-[11px] leading-[13px] font-bold text-synth-red group-aria-pressed:text-white",
   },
   variants: {
     icons: {
@@ -1291,6 +1313,7 @@ export function DeviceScreen({
   title,
   unsaved = false,
   status,
+  statusLeft,
   footer,
   badges,
   getAnalyser = noAnalyser,
@@ -1351,6 +1374,20 @@ export function DeviceScreen({
   );
   const ui = screen();
   const bottom = screen({ caption: view === "roll" });
+  // The title leads the top line, unless the pager's tabs or the left status
+  // hold it; then it leads the footer.
+  const titleBelow = pager !== undefined || statusLeft !== undefined;
+  const titled = (
+    <>
+      <span aria-live="polite">{title}</span>
+      {unsaved && (
+        <span className={ui.unsaved()} title="Unsaved changes">
+          <Asterisk aria-hidden="true" />
+          <span className="sr-only">Unsaved</span>
+        </span>
+      )}
+    </>
+  );
   const tileParts = tile({ icons: view === "save", selectedBy });
   const level = overlayMeter({ alone: overlay?.value === undefined });
 
@@ -1359,15 +1396,6 @@ export function DeviceScreen({
       <div className={ui.glass()}>
         {pager ? (
           <div className={ui.pager()}>
-            <span className={ui.pageTitle()}>
-              {title}
-              {unsaved && (
-                <span className={ui.unsaved()} title="Unsaved changes">
-                  <Asterisk aria-hidden="true" />
-                  <span className="sr-only">Unsaved</span>
-                </span>
-              )}
-            </span>
             <Button
               unstyled
               aria-label="Back a page"
@@ -1379,21 +1407,23 @@ export function DeviceScreen({
               <ChevronLeft />
             </Button>
             <span className={ui.pageTabs()}>
-              {tabWindow(pager).map(({ name, page }) =>
-                page === pager.at ? (
+              {tabWindow(pager).map(({ place, page, name }) =>
+                name === undefined ? (
+                  <span key={place} />
+                ) : page === pager.at ? (
                   <span
-                    key={name}
-                    className={pageTab({ current: pager.color })}
+                    key={place}
+                    className={pageTab({ place, current: pager.color })}
                     aria-live="polite"
                   >
                     {name}
                   </span>
                 ) : (
                   <Button
-                    key={name}
+                    key={place}
                     unstyled
                     aria-label={`Go to ${name}`}
-                    className={pageTab()}
+                    className={pageTab({ place })}
                     {...keepFocus}
                     onClick={() => pager.onPick(page)}
                   >
@@ -1415,16 +1445,10 @@ export function DeviceScreen({
           </div>
         ) : (
           <div className={ui.readout()}>
-            <span className={ui.title()}>
-              <span aria-live="polite">{title}</span>
-              {unsaved && (
-                <span className={ui.unsaved()} title="Unsaved changes">
-                  <Asterisk aria-hidden="true" />
-                  <span className="sr-only">Unsaved</span>
-                </span>
-              )}
+            <span className={ui.lead()}>
+              {titleBelow ? statusLeft : titled}
             </span>
-            <span>{status}</span>
+            <span className={ui.trail()}>{status}</span>
           </div>
         )}
 
@@ -1676,7 +1700,9 @@ export function DeviceScreen({
                     view === "album" ||
                     view === "revert") && (
                     <span className={tileParts.name()} aria-hidden="true">
-                      {entry.label}
+                      <span className={tileParts.nameText()}>
+                        {entry.label}
+                      </span>
                     </span>
                   )}
                   {entry.badge && (
@@ -1690,7 +1716,17 @@ export function DeviceScreen({
           </div>
         )}
 
-        {badges ? (
+        {(titleBelow || !badges) && (
+          <div className={bottom.footer()}>
+            <span className={ui.lead()}>
+              {titleBelow && titled}
+              {titleBelow && !badges && footer[0] ? " · " : null}
+              {!badges && footer[0]}
+            </span>
+            {!badges && <span className={ui.trail()}>{footer[1]}</span>}
+          </div>
+        )}
+        {badges && (
           <div className={bottom.badges()} aria-live="polite">
             {badges.map(({ label, on }) => (
               <span key={label} className={ui.switchLabel()}>
@@ -1700,11 +1736,6 @@ export function DeviceScreen({
                 )}
               </span>
             ))}
-          </div>
-        ) : (
-          <div className={bottom.footer()}>
-            <span>{footer[0]}</span>
-            <span>{footer[1]}</span>
           </div>
         )}
 

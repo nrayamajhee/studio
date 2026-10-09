@@ -284,6 +284,29 @@ export const stepPads = ({ steps }: Device) => {
   };
 };
 
+// Play and Stop in a picker, for its preview: Play plays the picked one
+// (`play`) or pauses it, picking up where it paused, and Stop lets it go.
+export const previewPads = (
+  { preview }: Device,
+  name: string,
+  play: () => void,
+) => ({
+  play: {
+    label: preview.playing ? "Pause the preview" : `Play ${name}`,
+    icon: preview.playing ? (
+      <Pause fill="currentColor" />
+    ) : (
+      <Play fill="currentColor" />
+    ),
+    onPress: preview.playing ? preview.pause : play,
+  },
+  stop: {
+    label: "Stop the preview",
+    icon: <Square fill="currentColor" />,
+    onPress: preview.stop,
+  },
+});
+
 // Play and Stop for the tracks: the mix, from the top.
 export const mixPads = ({ mix }: Device, stopLabel = "Stop") => ({
   play: {

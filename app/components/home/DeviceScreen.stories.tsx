@@ -3,7 +3,7 @@ import { fn } from "storybook/test";
 import { PATCH_BY_ID } from "../../lib/physical/patches";
 import { formatParam } from "../../lib/physical/patches/format";
 import { DEVICE_PRESETS } from "./deviceEngine";
-import { DeviceScreen } from "./DeviceScreen";
+import { DeviceScreen, ScreenHint, ScreenValue } from "./DeviceScreen";
 import { DEFAULT_TIMING } from "./noteRecorder";
 import { DRUM_PIECES } from "./instrumentIcons";
 import { ICON_CHOICES, PresetIcon } from "./presetIcons";
@@ -24,14 +24,15 @@ const meta = {
     docs: {
       description: {
         component:
-          "The screen, presentational only: a title and status line, the view's body (scope, params, tiles, roll, steps, tracks or module graphs), a footer or badges, and an overlay for levels and prompts.",
+          "The screen, presentational only: a status line, the view's body (scope, params, tiles, roll, steps, tracks or module graphs), a footer or badges, and an overlay for levels and prompts. The title leads the status line, or the footer where a pager or a left status takes its place.",
       },
     },
   },
   args: {
     view: "scope",
     title: "Grand piano",
-    status: "OCT ±0",
+    statusLeft: "OCT ±0",
+    status: "Level 80%",
     footer: ["Hammer", "Hardness 50%"],
     onSelect: fn(),
     className: "w-[621px]",
@@ -262,8 +263,17 @@ export const SaveIconPicker: Story = {
 export const Presets: Story = {
   args: {
     view: "presets",
-    status: "Instruments",
-    footer: ["Highlight a preset", "Press a pad to bind"],
+    title: "Instruments",
+    pager: {
+      pages: ["Struck & plucked", "Bowed", "Blown"],
+      at: 0,
+      color: "red",
+      onPick: fn(),
+    },
+    footer: [
+      <ScreenValue key="chosen">Grand piano</ScreenValue>,
+      <ScreenHint key="hint">Press a pad twice to bind</ScreenHint>,
+    ],
     selected: 0,
     tiles: DEVICE_PRESETS.map((preset, i) => ({
       id: preset.id,

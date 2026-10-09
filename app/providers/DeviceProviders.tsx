@@ -6,6 +6,7 @@ import { MixProvider } from "./MixProvider";
 import { ModeProvider } from "./ModeProvider";
 import { OutputProvider } from "./OutputProvider";
 import { PerformanceProvider } from "./PerformanceProvider";
+import { PreviewProvider } from "./PreviewProvider";
 import { ShiftProvider } from "./ShiftProvider";
 import { SoundProvider } from "./SoundProvider";
 import { StepsProvider } from "./StepsProvider";
@@ -36,7 +37,9 @@ export function DeviceProviders({
                       <TracksProvider>
                         <MixProvider>
                           <TapeProvider>
-                            <ModeProvider>{children}</ModeProvider>
+                            <PreviewProvider>
+                              <ModeProvider>{children}</ModeProvider>
+                            </PreviewProvider>
                           </TapeProvider>
                         </MixProvider>
                       </TracksProvider>

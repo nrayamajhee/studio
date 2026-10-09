@@ -25,6 +25,7 @@ const twMergeConfig = {
         "key-black",
         "key-black-lit",
         "screen",
+        "paper",
       ],
       "drop-shadow": ["knob"],
     },

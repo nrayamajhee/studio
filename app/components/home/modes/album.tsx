@@ -1,6 +1,6 @@
 import { Disc3, Plus } from "lucide-react";
 import { plural } from "../deviceMath";
-import { ScreenPad, ScreenSeek } from "../DeviceScreen";
+import { ScreenHint, ScreenPad, ScreenSeek } from "../DeviceScreen";
 import { meterLabel } from "../noteRecorder";
 import { deleteSong, newSong, openSong } from "../sessionStore";
 import {
@@ -90,12 +90,12 @@ export const albumMode: Mode = (device, base) => {
         currentSong
           ? `${plural(currentSong.tracks.length, "track")} · ${currentSong.bpm} BPM · ${meterLabel(currentSong.meter)}`
           : "",
-        <>
+        <ScreenHint key="hint">
           <ScreenPad label="Save">
             <Plus />
           </ScreenPad>{" "}
           new song
-        </>,
+        </ScreenHint>,
       ],
       tiles: songs.map(({ id, name }) => ({
         id,

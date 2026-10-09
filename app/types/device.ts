@@ -5,6 +5,7 @@ import type { LanesValue } from "../providers/LanesProvider";
 import type { MixValue } from "../providers/MixProvider";
 import type { OutputValue } from "../providers/OutputProvider";
 import type { PerformanceValue } from "../providers/PerformanceProvider";
+import type { PreviewValue } from "../providers/PreviewProvider";
 import type { ShiftValue } from "../providers/ShiftProvider";
 import type { SoundValue } from "../providers/SoundProvider";
 import type { StepsValue } from "../providers/StepsProvider";
@@ -49,5 +50,6 @@ export type Device = {
   tracks: TracksValue;
   mix: MixValue;
   tape: TapeValue;
+  preview: PreviewValue;
   browse: Browse;
 };

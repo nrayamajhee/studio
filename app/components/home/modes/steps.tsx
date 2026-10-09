@@ -2,6 +2,7 @@ import { Circle, Save } from "lucide-react";
 import { deviceEngine, isKit } from "../deviceEngine";
 import { plural, positionLabel } from "../deviceMath";
 import {
+  ScreenHint,
   ScreenLevel,
   ScreenPad,
   ScreenSeek,
@@ -150,19 +151,21 @@ export const stepsMode: Mode = (device, base) => {
         </>
       ),
       footer: [
-        sound.stepKit ? "" : "Pick a drum kit",
-        recordingSteps ? (
-          "Tap keys in time"
-        ) : stepsRunning ? (
-          <>
-            <ScreenPad label="Record">
-              <Circle fill="currentColor" />
-            </ScreenPad>{" "}
-            to tap hits in
-          </>
-        ) : (
-          "Keys set hits at the head"
-        ),
+        sound.stepKit ? "" : <ScreenHint key="kit">Pick a drum kit</ScreenHint>,
+        <ScreenHint key="hint">
+          {recordingSteps ? (
+            "Tap keys in time"
+          ) : stepsRunning ? (
+            <>
+              <ScreenPad label="Record">
+                <Circle fill="currentColor" />
+              </ScreenPad>{" "}
+              to tap hits in
+            </>
+          ) : (
+            "Keys set hits at the head"
+          )}
+        </ScreenHint>,
       ],
       stepRows: steps.stepRows.map((piece) => {
         const { name, Icon } = DRUM_PIECES[piece];

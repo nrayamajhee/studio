@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { resetChordMacros } from "../chordStore";
 import { turnPage } from "../deviceMath";
-import { ScreenPad, TILES_PER_PAGE } from "../DeviceScreen";
+import { ScreenHint, ScreenPad, TILES_PER_PAGE } from "../DeviceScreen";
 import { AdsrIcon } from "../instrumentIcons";
 import { INITIAL_MODULES } from "../modules";
 import {
@@ -206,7 +206,7 @@ export const revertMode: Mode = (device, base) => {
       title: "Revert",
       unsaved: false,
       status: (
-        <>
+        <ScreenHint>
           <ScreenPad label="Shift">
             <ArrowUp />
           </ScreenPad>
@@ -214,17 +214,17 @@ export const revertMode: Mode = (device, base) => {
             <RotateCcw />
           </ScreenPad>{" "}
           to close
-        </>
+        </ScreenHint>
       ),
       footer: [
         option.detail,
-        <>
+        <ScreenHint key="hint">
           Press{" "}
           <ScreenPad label="Delete">
             <RotateCcw />
           </ScreenPad>{" "}
           twice to revert
-        </>,
+        </ScreenHint>,
       ],
       tiles: options.map(({ id, label, icon }) => ({ id, label, icon })),
       selected: browse.revertIndex,

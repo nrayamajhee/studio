@@ -1,6 +1,6 @@
 import React from "react";
 import type { Route } from "./+types/storybook";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Button } from "../components/design-system/Button";
 import { ArrowLeft } from "lucide-react";
 
@@ -15,7 +15,11 @@ export function meta(): Route.MetaDescriptors {
   ];
 }
 
+// `?path=/docs/<story id>` passes through to Storybook, so a link can open
+// a component's page.
 export default function StorybookRoute() {
+  const { search } = useLocation();
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-white dark:bg-surface-dark text-stone-900 dark:text-stone-100 flex flex-col font-sans transition-colors duration-200">
       <header className="h-12 border-b border-stone-200 dark:border-stone-800/80 bg-stone-100/90 dark:bg-stone-900/90 backdrop-blur-md px-3 sm:px-4 flex items-center z-20 flex-shrink-0">
@@ -34,7 +38,7 @@ export default function StorybookRoute() {
 
       <main className="flex-1 w-full h-full relative overflow-hidden bg-white dark:bg-surface-dark">
         <iframe
-          src="/storybook-static/index.html"
+          src={`/storybook-static/index.html${search}`}
           title="Studio Storybook"
           className="w-full h-full border-0 absolute inset-0"
           allow="clipboard-write"

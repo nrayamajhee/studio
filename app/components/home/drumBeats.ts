@@ -1,6 +1,6 @@
 import type { DrumPieceId, KitId } from "../../lib/physical";
-import type { Meter } from "./noteRecorder";
-import type { StepHit, StepPattern } from "./stepPattern";
+import type { Meter, Take } from "./noteRecorder";
+import { patternTake, type StepHit, type StepPattern } from "./stepPattern";
 
 export type BeatStyle =
   | "Rock"
@@ -12,8 +12,9 @@ export type BeatStyle =
   | "Electronic"
   | "South Asian";
 
-// A drum beat for the drum grid, on the kit that suits it: each row a piece,
-// a character a step (X accented, x played, o a ghost note, . rest; spaces
+// A drum beat for the drum grid, on the kit and at the tempo that suit it
+// (`bpm` counts the meter's beats, so an eighth in 6/8): each row a piece, a
+// character a step (X accented, x played, o a ghost note, . rest; spaces
 // only mark the beats), in `meter` at `perBeat` steps a beat, over as many
 // bars as the rows run.
 export type DrumBeat = {
@@ -21,6 +22,7 @@ export type DrumBeat = {
   name: string;
   style: BeatStyle;
   kit: KitId;
+  bpm: number;
   meter: Meter;
   perBeat: number;
   rows: Partial<Record<DrumPieceId, string>>;
@@ -30,6 +32,8 @@ type BeatSpec = Omit<DrumBeat, "style" | "meter" | "perBeat"> &
   Partial<Pick<DrumBeat, "meter" | "perBeat">>;
 
 const FOUR: Meter = { beats: 4, unit: 4 };
+// A preview plays the beat round until it has run this many bars.
+const PREVIEW_BARS = 4;
 const VELOCITY: Readonly<Record<string, number>> = { X: 1, x: 0.8, o: 0.45 };
 
 // A style's beats, in 4/4 at four steps a beat unless they say otherwise.
@@ -52,6 +56,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "rock",
       name: "Rock",
+      bpm: 116,
       kit: "rockDrums",
       rows: {
         crash: "X... .... .... ....",
@@ -63,6 +68,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "hardRock",
       name: "Hard rock",
+      bpm: 110,
       kit: "rockDrums",
       rows: {
         kick: "x.x. .... x.x. ....",
@@ -73,6 +79,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "punk",
       name: "Punk",
+      bpm: 180,
       kit: "rockDrums",
       rows: {
         crash: "X... .... .... ....",
@@ -84,6 +91,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "halfTime",
       name: "Half-time",
+      bpm: 130,
       kit: "rockDrums",
       rows: {
         kick: "x... .... ..x. ....",
@@ -94,6 +102,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "tomGroove",
       name: "Tom groove",
+      bpm: 108,
       kit: "rockDrums",
       rows: {
         kick: "x... ..x. ..x. ....",
@@ -105,6 +114,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "cowbell",
       name: "More cowbell",
+      bpm: 112,
       kit: "rockDrums",
       rows: {
         kick: "x... .... x.x. ....",
@@ -117,6 +127,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "pop",
       name: "Pop",
+      bpm: 110,
       kit: "drums",
       rows: {
         kick: "x... .... x.x. ....",
@@ -128,6 +139,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "disco",
       name: "Disco",
+      bpm: 120,
       kit: "drums",
       rows: {
         kick: "x... x... x... x...",
@@ -139,6 +151,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "motown",
       name: "Motown",
+      bpm: 128,
       kit: "drums",
       rows: {
         kick: "x... .... x.x. ....",
@@ -150,6 +163,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "popBallad",
       name: "Pop ballad",
+      bpm: 72,
       kit: "drums",
       rows: {
         kick: "x... .... ..x. ....",
@@ -160,6 +174,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "shuffle",
       name: "Shuffle",
+      bpm: 104,
       kit: "drums",
       perBeat: 3,
       rows: {
@@ -173,6 +188,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "funk",
       name: "Funk",
+      bpm: 100,
       kit: "drums",
       rows: {
         kick: "x..x ..x. ..x. .x..",
@@ -184,6 +200,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       // No two pieces at once.
       id: "linearFunk",
       name: "Linear funk",
+      bpm: 96,
       kit: "drums",
       rows: {
         kick: "x... ..x. .x.. ....",
@@ -194,6 +211,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "purdie",
       name: "Purdie shuffle",
+      bpm: 96,
       kit: "drums",
       perBeat: 3,
       rows: {
@@ -205,6 +223,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "neoSoul",
       name: "Neo soul",
+      bpm: 84,
       kit: "drums",
       rows: {
         kick: "x... ...x ..x. ....",
@@ -220,6 +239,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "swing",
       name: "Swing",
+      bpm: 150,
       kit: "jazzDrums",
       perBeat: 3,
       rows: {
@@ -231,6 +251,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "twoFeel",
       name: "Two-feel",
+      bpm: 120,
       kit: "jazzDrums",
       perBeat: 3,
       rows: {
@@ -244,6 +265,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       // Comping: snare on the offbeats and a bomb from the kick.
       id: "bebop",
       name: "Bebop",
+      bpm: 220,
       kit: "jazzDrums",
       perBeat: 3,
       rows: {
@@ -256,6 +278,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "brushSwing",
       name: "Brush swing",
+      bpm: 120,
       kit: "jazzDrums",
       perBeat: 3,
       rows: {
@@ -268,6 +291,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "brushBallad",
       name: "Brush ballad",
+      bpm: 64,
       kit: "jazzDrums",
       perBeat: 3,
       rows: {
@@ -280,6 +304,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "waltz",
       name: "Jazz waltz",
+      bpm: 160,
       kit: "jazzDrums",
       meter: { beats: 3, unit: 4 },
       perBeat: 3,
@@ -292,6 +317,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "jazzShuffle",
       name: "Jazz shuffle",
+      bpm: 120,
       kit: "jazzDrums",
       perBeat: 3,
       rows: {
@@ -304,6 +330,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "secondLine",
       name: "Second line",
+      bpm: 104,
       kit: "jazzDrums",
       rows: {
         kick: "x... ..x. ..x. ....",
@@ -317,6 +344,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       // The Brazilian clave on the rim, over two bars.
       id: "bossa",
       name: "Bossa nova",
+      bpm: 132,
       kit: "jazzDrums",
       rows: {
         kick: "x..x x... x..x x... x..x x... x..x x...",
@@ -327,6 +355,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "samba",
       name: "Samba",
+      bpm: 100,
       kit: "drums",
       rows: {
         kick: "x..x X..x x..x X..x",
@@ -337,6 +366,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "chaCha",
       name: "Cha-cha",
+      bpm: 120,
       kit: "drums",
       rows: {
         cowbell: "x... x... x... x...",
@@ -349,6 +379,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       // The son clave, 3-2, and the bass's tumbao on the kick.
       id: "mambo",
       name: "Mambo",
+      bpm: 108,
       kit: "drums",
       rows: {
         cowbell: "x... x... x... x...",
@@ -360,6 +391,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       // The bembé bell, its twelve pulses spaced by the dotted quarter.
       id: "afroCuban",
       name: "Afro-Cuban 6/8",
+      bpm: 300,
       kit: "jazzDrums",
       meter: { beats: 12, unit: 8 },
       perBeat: 2,
@@ -373,6 +405,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       // Dembow.
       id: "reggaeton",
       name: "Reggaeton",
+      bpm: 95,
       kit: "drums808",
       rows: {
         kick: "x... x... x... x...",
@@ -383,6 +416,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "oneDrop",
       name: "One drop",
+      bpm: 76,
       kit: "drums",
       perBeat: 3,
       rows: {
@@ -396,6 +430,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "boomBap",
       name: "Boom bap",
+      bpm: 90,
       kit: "drums",
       rows: {
         kick: "x..x .... ..x. ....",
@@ -406,6 +441,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "trap",
       name: "Trap",
+      bpm: 140,
       kit: "drums808",
       rows: {
         kick: "x... ...x ..x. ....",
@@ -418,6 +454,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       // Lazy, swung sixteenths on a sextuplet grid.
       id: "loFi",
       name: "Lo-fi",
+      bpm: 80,
       kit: "drums",
       perBeat: 6,
       rows: {
@@ -429,6 +466,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "drill",
       name: "Drill",
+      bpm: 142,
       kit: "drums808",
       perBeat: 6,
       rows: {
@@ -440,6 +478,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "miami",
       name: "Miami bass",
+      bpm: 128,
       kit: "drums808",
       rows: {
         kick: "x... ..x. ..x. ..x.",
@@ -453,6 +492,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "house",
       name: "House",
+      bpm: 124,
       kit: "drums909",
       rows: {
         kick: "x... x... x... x...",
@@ -463,6 +503,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "techno",
       name: "Techno",
+      bpm: 132,
       kit: "drums909",
       rows: {
         kick: "x... x... x... x...",
@@ -474,6 +515,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "garage",
       name: "UK garage",
+      bpm: 132,
       kit: "drums909",
       rows: {
         kick: "x... .... ..x. ....",
@@ -484,6 +526,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "breakbeat",
       name: "Breakbeat",
+      bpm: 130,
       kit: "drums909",
       rows: {
         kick: "x... .... ..x. ....",
@@ -494,6 +537,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "electro",
       name: "Electro",
+      bpm: 125,
       kit: "drums808",
       rows: {
         kick: "x... ..x. ..x. ....",
@@ -507,6 +551,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "teentaal",
       name: "Teentaal",
+      bpm: 120,
       kit: "tabla",
       perBeat: 2,
       rows: strokes(
@@ -534,6 +579,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "keherwa",
       name: "Keherwa",
+      bpm: 96,
       kit: "tabla",
       perBeat: 2,
       rows: strokes(["dha", "ge", "na", "te", "na", "ke", "dhin", "na"], 1),
@@ -541,6 +587,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "dadra",
       name: "Dadra",
+      bpm: 200,
       kit: "tabla",
       meter: { beats: 6, unit: 8 },
       perBeat: 2,
@@ -549,6 +596,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "rupak",
       name: "Rupak",
+      bpm: 180,
       kit: "tabla",
       meter: { beats: 7, unit: 8 },
       perBeat: 2,
@@ -557,6 +605,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "jhaptaal",
       name: "Jhaptaal",
+      bpm: 132,
       kit: "tabla",
       meter: { beats: 5, unit: 4 },
       perBeat: 2,
@@ -568,6 +617,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "jhyaure",
       name: "Jhyaure",
+      bpm: 210,
       kit: "madal",
       meter: { beats: 6, unit: 8 },
       perBeat: 2,
@@ -576,6 +626,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
     {
       id: "madalFour",
       name: "Folk four",
+      bpm: 110,
       kit: "madal",
       perBeat: 2,
       rows: {
@@ -609,5 +660,23 @@ export function beatPattern(beat: DrumBeat): StepPattern {
     perBeat: beat.perBeat,
     bars: Math.max(1, Math.ceil(length / stepsPerBar(beat))),
     hits,
+  };
+}
+
+// The beat as the drum grid will play it, on its kit at its tempo, played
+// round for PREVIEW_BARS: what the preview tape auditions.
+export function beatPreview(beat: DrumBeat): Take {
+  const pattern = beatPattern(beat);
+  const pass = patternTake(pattern, beat.kit, beat.meter, beat.bpm);
+  const times = Math.ceil(PREVIEW_BARS / pattern.bars);
+  return {
+    notes: Array.from({ length: times }, (_, time) =>
+      pass.notes.map((note) => ({
+        ...note,
+        start: note.start + time * pass.length,
+      })),
+    ).flat(),
+    length: times * pass.length,
+    bpm: beat.bpm,
   };
 }

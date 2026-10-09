@@ -1,6 +1,6 @@
 import type { DevicePreset } from "../deviceEngine";
 import { iconLabel, turnPage } from "../deviceMath";
-import { ScreenSeek, TILES_PER_PAGE } from "../DeviceScreen";
+import { ScreenHint, ScreenSeek, TILES_PER_PAGE } from "../DeviceScreen";
 import { ICON_CHOICES, PresetIcon } from "../presetIcons";
 import { bindPad, clearEdits, savePreset, updatePreset } from "../presetStore";
 import {
@@ -92,7 +92,10 @@ export const saveMode: Mode = (device, base) => {
           {Math.ceil(ICON_CHOICES.length / perPage)}
         </ScreenSeek>
       ),
-      footer: ["Pick an icon", "Press a pad to save"],
+      footer: [
+        <ScreenHint key="pick">Pick an icon</ScreenHint>,
+        <ScreenHint key="save">Press a pad to save</ScreenHint>,
+      ],
       tiles: ICON_CHOICES.map((icon) => ({
         id: icon,
         label: iconLabel(icon),

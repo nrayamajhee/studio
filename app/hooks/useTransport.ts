@@ -33,8 +33,8 @@ type Display =
   | { kind: "playing"; start: number; notes: readonly PlayedNote[] }
   | { kind: "idle" };
 
-export const MIN_BPM = 40;
-export const MAX_BPM = 240;
+export const MIN_BPM = 1;
+export const MAX_BPM = 999;
 const DEFAULT_METER = METERS.indexOf(DEFAULT_TIMING.meter);
 const DEFAULT_GRID = SUBDIVISIONS.indexOf(DEFAULT_TIMING.perBeat);
 // Tap tempo is first set this long after the first tap, then follows each

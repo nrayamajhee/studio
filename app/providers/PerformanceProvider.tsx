@@ -104,9 +104,9 @@ function usePerformanceValue() {
       new Set([...held.current.values()].flatMap(({ semitones }) => semitones)),
     );
 
-  // A progression waiting for its home note: the next key played sets it,
-  // and the progression goes onto the tape in the play style. Leaving the
-  // view lets it go.
+  // A progression waiting for its home note: the next key played sets it
+  // (its note, not its octave), and the progression goes onto the tape in
+  // the play style. Leaving the view lets it go.
   const [homeFor, setHomeFor] = useState<Progression | null>(null);
   if (homeFor && view !== "progressions") setHomeFor(null);
   const writeProgression = (progression: Progression, home: number) => {

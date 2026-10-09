@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { KNOB_STEPS } from "../deviceEngine";
 import {
+  ScreenHint,
   ScreenLevel,
   ScreenSeek,
   ScreenSelection,
@@ -234,9 +235,14 @@ export const tracksMode: Mode = (device) => {
             <ScreenLevel>Vol {Math.round(track.volume * 100)}%</ScreenLevel>
           </>
         ) : (
-          "Tape · record in the piano roll or drum grid, then save it"
+          <>
+            Tape ·{" "}
+            <ScreenHint>
+              record in the piano roll or drum grid, then save it
+            </ScreenHint>
+          </>
         ),
-        <>
+        <ScreenHint key="knobs">
           {(shift || track) && (
             <>
               <ScreenLevel>
@@ -250,7 +256,7 @@ export const tracksMode: Mode = (device) => {
           <ScreenValue>
             {shift ? (trackLoop ? "Clip end" : "Scroll") : "Track"}
           </ScreenValue>
-        </>,
+        </ScreenHint>,
       ],
       tracks: rows.map((lane, i) => ({
         id: lane.id,

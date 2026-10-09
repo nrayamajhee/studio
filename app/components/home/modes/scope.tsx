@@ -19,12 +19,8 @@ export const scopeMode: Mode = (device) => {
       },
     },
     screen: {
-      status: (
-        <>
-          {sound.octaveLabel} ·{" "}
-          <ScreenLevel>Level {output.levelStep * 10}%</ScreenLevel>
-        </>
-      ),
+      statusLeft: sound.octaveLabel,
+      status: <ScreenLevel>Level {output.levelStep * 10}%</ScreenLevel>,
       footer: [soundName(device), selection(device)],
       getAnalyser: deviceEngine.getAnalyser,
     },

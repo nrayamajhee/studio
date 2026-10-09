@@ -5,5 +5,6 @@ const isDev =
 
 export default [
   index("routes/home.tsx"),
+  route("docs/*", "routes/docs.tsx"),
   ...(!isDev ? [route("storybook", "routes/storybook.tsx")] : []),
 ] satisfies RouteConfig;

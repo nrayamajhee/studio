@@ -536,9 +536,33 @@ export const deviceEngine = {
     physicalSynth.hit(kit, piece, velocity, time);
   },
 
+  // A keybed note on `sound`'s instrument rather than the current preset's,
+  // at `time` on the audio clock: struck with a velocity, or let go with
+  // null. A kit hits the note's piece and ignores the let-go.
+  noteAt(
+    { target, octave }: Pick<DeviceSound, "target" | "octave">,
+    midi: number,
+    velocity: number | null,
+    time: number,
+  ) {
+    if (isKit(target)) {
+      if (velocity !== null)
+        physicalSynth.hit(target, keyPiece(target, midi), velocity, time);
+    } else if (velocity === null) {
+      physicalSynth.noteOff(target, midi + octave, time);
+    } else {
+      physicalSynth.noteOn(target, midi + octave, velocity, time);
+    }
+  },
+
   // The audio clock (s), which timed hits are scheduled on.
   now() {
     return physicalSynth.now();
+  },
+
+  // Whether the engine is running, so timed events land when they say.
+  ready() {
+    return physicalSynth.ready;
   },
 
   noteOff(midi: number) {

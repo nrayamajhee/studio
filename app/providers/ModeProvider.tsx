@@ -8,6 +8,7 @@ import { useLanes } from "./LanesProvider";
 import { useMix } from "./MixProvider";
 import { useOutput } from "./OutputProvider";
 import { usePerformance } from "./PerformanceProvider";
+import { usePreview } from "./PreviewProvider";
 import { useShift } from "./ShiftProvider";
 import { useSound } from "./SoundProvider";
 import { useSteps } from "./StepsProvider";
@@ -41,6 +42,7 @@ function useModeValue(): Bindings {
     tracks: useTracks(),
     mix: useMix(),
     tape: useTape(),
+    preview: usePreview(),
     browse: {
       iconIndex,
       setIconIndex,

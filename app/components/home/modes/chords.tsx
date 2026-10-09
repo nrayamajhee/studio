@@ -1,6 +1,6 @@
 import { CHORD_PALETTE, chordGroup } from "../chords";
 import { setChordMacro } from "../chordStore";
-import { ScreenValue } from "../DeviceScreen";
+import { ScreenHint, ScreenValue } from "../DeviceScreen";
 import {
   arrowPads,
   idleKnob,
@@ -59,7 +59,7 @@ export const chordsMode: Mode = (device, base) => {
       pager: shelfPager(SHELVES, at, browse.setChordIndex),
       footer: [
         <ScreenValue key="chosen">{chosen?.name ?? ""}</ScreenValue>,
-        "Press a chord pad twice to set",
+        <ScreenHint key="hint">Press a chord pad twice to set</ScreenHint>,
       ],
       tiles: CHORD_PALETTE.slice(shelf.start, shelf.start + shelf.count).map(
         (chord) => ({

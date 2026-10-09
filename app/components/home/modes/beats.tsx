@@ -1,11 +1,12 @@
 import { DEVICE_PRESETS } from "../deviceEngine";
-import { ScreenValue } from "../DeviceScreen";
-import { beatPattern, DRUM_BEATS } from "../drumBeats";
+import { ScreenHint, ScreenValue } from "../DeviceScreen";
+import { beatPattern, beatPreview, DRUM_BEATS } from "../drumBeats";
 import { METERS, meterLabel } from "../noteRecorder";
 import { setSteps } from "../sessionStore";
 import {
   arrowPads,
   idleKnob,
+  previewPads,
   savePad,
   shelfAt,
   shelfKnobs,
@@ -21,17 +22,34 @@ const kitPreset = (kit: string) =>
 const SHELVES = shelvesOf(DRUM_BEATS, ({ style }) => style);
 
 // Drum beats (Shift + Drum grid), by style: the red knob (or ← →) picks a
-// style and the blue one a beat. Save loads it into the drum grid on the kit
-// that suits it and in its time signature, and opens the grid to play or
-// keep it; so does a tile double-clicked.
+// style and the blue one a beat. A tile tapped, or Play, plays it on the
+// preview tape, on its kit at its tempo; Play again pauses it. Save loads it
+// into the drum grid on that kit, setting the tempo and time signature to
+// its own, and opens the grid to play or keep it; so does a tile
+// double-clicked.
 export const beatsMode: Mode = (device, base) => {
-  const { browse, sound, transport, views, feedback } = device;
-  const { beatIndex, setBeatIndex } = browse;
+  const { browse, sound, transport, views, feedback, preview } = device;
+  const { beatIndex } = browse;
   const chosen = DRUM_BEATS[beatIndex];
   const { shelf, at } = shelfAt(SHELVES, beatIndex);
+  const select = browse.setBeatIndex;
+  const audition = (index: number) => {
+    const beat = DRUM_BEATS[index];
+    preview.play(beat.id, beatPreview(beat), {
+      target: beat.kit,
+      octave: 0,
+    });
+  };
+  // A tile tapped plays, or pauses, as Play does.
+  const tap = (index: number) => {
+    select(index);
+    if (preview.playing && preview.cued === DRUM_BEATS[index].id)
+      preview.pause();
+    else audition(index);
+  };
   const load = (index: number) => {
     const beat = DRUM_BEATS[index];
-    setBeatIndex(index);
+    browse.setBeatIndex(index);
     const kit = kitPreset(beat.kit);
     if (sound.preset.id !== kit.id) sound.selectPreset(kit);
     setSteps(beatPattern(beat));
@@ -40,6 +58,7 @@ export const beatsMode: Mode = (device, base) => {
         beats === beat.meter.beats && unit === beat.meter.unit,
     );
     if (meter >= 0) transport.setMeter(meter);
+    transport.setBpm(beat.bpm);
     views.setView("steps");
     feedback.showNotice(`${beat.name} in the drum grid`);
   };
@@ -47,40 +66,47 @@ export const beatsMode: Mode = (device, base) => {
   return {
     knobs: {
       green: idleKnob(base.knobs.green),
-      ...shelfKnobs(SHELVES, beatIndex, chosen.name, setBeatIndex),
+      ...shelfKnobs(SHELVES, beatIndex, chosen.name, select),
     },
     pads: {
       save: savePad(device, {
         label: `Load ${chosen.name} into the drum grid`,
         onPress: () => load(beatIndex),
       }),
+      ...previewPads(device, chosen.name, () => audition(beatIndex)),
       ...arrowPads(
         device,
         ["Previous style", "Next style"],
-        shelfStep(SHELVES, at, setBeatIndex),
+        shelfStep(SHELVES, at, select),
       ),
     },
     screen: {
       title: "Beats",
       unsaved: false,
-      pager: shelfPager(SHELVES, at, setBeatIndex),
+      pager: shelfPager(SHELVES, at, select),
       footer: [
         <span key="chosen">
           <ScreenValue>{chosen.name}</ScreenValue> on the{" "}
           {kitPreset(chosen.kit).name}
         </span>,
-        "Save to load it into the drum grid",
+        <ScreenHint key="hint">Save to load it into the drum grid</ScreenHint>,
       ],
       tiles: DRUM_BEATS.slice(shelf.start, shelf.start + shelf.count).map(
         (beat) => ({
           id: beat.id,
           label: beat.name,
-          icon: <span>{meterLabel(beat.meter)}</span>,
+          icon: (
+            <span>
+              {meterLabel(beat.meter)}
+              <br />
+              {beat.bpm} BPM
+            </span>
+          ),
         }),
       ),
       selected: beatIndex - shelf.start,
       selectedBy: "blue",
-      onSelect: (index) => setBeatIndex(shelf.start + index),
+      onSelect: (index) => tap(shelf.start + index),
       onActivate: (index) => load(shelf.start + index),
     },
   };

@@ -227,6 +227,10 @@ function useMixValue() {
       transport.pauseTape();
       mix.play(whole);
     },
+    // Holds the mix where it is, if it is playing, so Play resumes there.
+    pause: () => {
+      if (mix.playing) mix.pause();
+    },
     // Stops the mix and rewinds it to the very start.
     rewind,
   };

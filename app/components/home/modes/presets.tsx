@@ -1,5 +1,5 @@
 import { DEVICE_PRESETS, presetCategory } from "../deviceEngine";
-import { ScreenValue } from "../DeviceScreen";
+import { ScreenHint, ScreenValue } from "../DeviceScreen";
 import { PresetIcon } from "../presetIcons";
 import { bindPad, deletePreset } from "../presetStore";
 import {
@@ -92,7 +92,7 @@ export const presetsMode: Mode = (device, base) => {
       pager: shelfPager(shelves, at, browse.setPresetIndex),
       footer: [
         <ScreenValue key="chosen">{chosen?.name ?? ""}</ScreenValue>,
-        "Press a pad twice to bind",
+        <ScreenHint key="hint">Press a pad twice to bind</ScreenHint>,
       ],
       tiles: presets
         .slice(shelf.start, shelf.start + shelf.count)
