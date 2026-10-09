@@ -1,7 +1,8 @@
 import { useEffect, useEffectEvent, useState, type ReactNode } from "react";
 import { PATCH_BY_ID } from "../lib/physical/patches";
 import { foldNote } from "../lib/physical/dsp/math";
-import { deviceEngine, isKit, keyPiece } from "../components/home/deviceEngine";
+import { deviceEngine, isKit } from "../components/home/deviceEngine";
+import { notePiece } from "../components/home/stepPattern";
 import {
   download,
   mixInto,
@@ -92,7 +93,7 @@ function useMixValue() {
               note: isKit(target)
                 ? note.note
                 : foldNote(note.note + octave, low, high),
-              piece: isKit(target) ? keyPiece(target, note.note) : undefined,
+              piece: isKit(target) ? notePiece(note.note) : undefined,
             })),
           ),
         };

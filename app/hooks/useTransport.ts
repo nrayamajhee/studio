@@ -205,7 +205,7 @@ export function useTransport() {
       duration: number,
     ) => {
       after(start, () => {
-        deviceEngine.noteOn(note, velocity);
+        deviceEngine.playNote(note, velocity);
         voices.set(note, (voices.get(note) ?? 0) + 1);
       });
       after(start + duration, () => {

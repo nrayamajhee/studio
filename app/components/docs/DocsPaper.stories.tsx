@@ -34,5 +34,5 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const WithSource: Story = {
-  args: { source: "docs/project/synth-model.md" },
+  args: { source: "docs/project/synth-engine.md" },
 };

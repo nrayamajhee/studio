@@ -12,6 +12,7 @@ import type {
   Patch,
 } from "../../lib/physical/patches/types";
 import type { PlayedNote } from "./noteRecorder";
+import { notePiece, PIECE_NOTES } from "./stepPattern";
 
 // Rendered past a take's end, so its last notes and the reverb ring out (s).
 const RENDER_TAIL = 2.5;
@@ -531,12 +532,28 @@ export const deviceEngine = {
     else physicalSynth.noteOn(target, note, velocity);
   },
 
+  // The note a take keeps for a keybed key: on a kit, the piece's own note
+  // (see PIECE_NOTES), whichever key it sits on; anything else, the key.
+  takeNote(midi: number) {
+    const { target } = current;
+    return isKit(target) ? PIECE_NOTES[keyPiece(target, midi)] : midi;
+  },
+
+  // A take's note on the current sound, as `takeNote` kept it: a kit strikes
+  // its piece; anything else plays it as the keybed note.
+  playNote(note: number, velocity: number) {
+    const { target } = current;
+    if (!isKit(target)) return deviceEngine.noteOn(note, velocity);
+    const piece = notePiece(note);
+    if (piece) physicalSynth.hit(target, piece, velocity);
+  },
+
   // A kit's piece, now or at `time` on the audio clock (see `now`).
   hit(kit: KitId, piece: DrumPieceId, velocity: number, time?: number) {
     physicalSynth.hit(kit, piece, velocity, time);
   },
 
-  // A keybed note on `sound`'s instrument rather than the current preset's,
+  // A take's note on `sound`'s instrument rather than the current preset's,
   // at `time` on the audio clock: struck with a velocity, or let go with
   // null. A kit hits the note's piece and ignores the let-go.
   noteAt(
@@ -546,8 +563,9 @@ export const deviceEngine = {
     time: number,
   ) {
     if (isKit(target)) {
-      if (velocity !== null)
-        physicalSynth.hit(target, keyPiece(target, midi), velocity, time);
+      const piece = notePiece(midi);
+      if (velocity !== null && piece)
+        physicalSynth.hit(target, piece, velocity, time);
     } else if (velocity === null) {
       physicalSynth.noteOff(target, midi + octave, time);
     } else {
@@ -626,7 +644,7 @@ export const deviceEngine = {
     return { target, octave, overrides };
   },
 
-  // Keybed notes (ms) rendered offline with `sound`, for scrubbing a take or
+  // A take's notes (ms) rendered offline with `sound`, for scrubbing a take or
   // mixing tracks. Null until the engine starts.
   render(
     notes: readonly PlayedNote[],
@@ -635,32 +653,37 @@ export const deviceEngine = {
   ) {
     const { target, octave, overrides } = sound;
     const events: EngineEvent[] = notes.flatMap(
-      ({ note, start, duration, velocity }): EngineEvent[] =>
-        isKit(target)
-          ? [
-              {
-                type: "hit",
-                kit: target,
-                piece: keyPiece(target, note),
-                velocity,
-                time: start / 1000,
-              },
-            ]
-          : [
-              {
-                type: "noteOn",
-                instrument: target,
-                note: note + octave,
-                velocity,
-                time: start / 1000,
-              },
-              {
-                type: "noteOff",
-                instrument: target,
-                note: note + octave,
-                time: (start + duration) / 1000,
-              },
-            ],
+      ({ note, start, duration, velocity }): EngineEvent[] => {
+        if (isKit(target)) {
+          const piece = notePiece(note);
+          return piece
+            ? [
+                {
+                  type: "hit",
+                  kit: target,
+                  piece,
+                  velocity,
+                  time: start / 1000,
+                },
+              ]
+            : [];
+        }
+        return [
+          {
+            type: "noteOn",
+            instrument: target,
+            note: note + octave,
+            velocity,
+            time: start / 1000,
+          },
+          {
+            type: "noteOff",
+            instrument: target,
+            note: note + octave,
+            time: (start + duration) / 1000,
+          },
+        ];
+      },
     );
     return physicalSynth.render(events, length / 1000 + RENDER_TAIL, overrides);
   },

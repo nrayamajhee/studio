@@ -22,15 +22,15 @@ The home page's synthesizer, from the outside in. A file-by-file map covers the 
 
 #### [Synth engine](docs/project/synth-engine.md)
 
-The physical-modeling engine the Device plays through: every voice is an exciter driving a resonator, rendered sample-accurately in one `AudioWorkletProcessor`. A table covers each instrument family (strings, bowed, blown, free reeds, tuned percussion, drums and a plain oscillator) and its model. The rest is the practical side: the mix chain around the voices, the source layout, the `physicalSynth` API, how tuning and loudness are calibrated, and how to audition instruments, add a patch or add a Device preset.
-
-#### [How the synth works](docs/project/synth-model.md)
-
-A longer walkthrough of the engine, with diagrams, for anyone changing the DSP. It follows a note from the worklet and render loop through the signal flow and voice lifecycle. Then it goes through each instrument model in depth, along with bodies, the FDN reverb, the parameter system, the path from key press to sound, calibration and a file map.
+The physical-modeling engine the Device plays through, with diagrams: every voice is an exciter driving a resonator, rendered sample-accurately in one `AudioWorkletProcessor`. It starts with a table of each instrument family (strings, bowed, blown, free reeds, tuned percussion, drums and a plain oscillator) and the mix chain around them. Then it follows a note from the worklet and render loop through the signal flow and voice lifecycle, and goes through each instrument model in depth, along with bodies, the FDN reverb, the parameter system, the path from key press to sound, calibration, adding a patch or a Device preset, and a file map.
 
 #### [Chord progressions](docs/project/chord-progressions.md)
 
 The source material behind the Device's chord progressions (Shift + Piano roll), compiled from all 51 videos of David Bennett's chord progressions playlist. Each entry gives the progression in Roman numerals, songs that use it and a short note on why it works, credited to him throughout.
+
+#### [Drum beats](docs/project/drum-beats.md)
+
+The 81 grooves behind the Device's drum beats (Shift + Drum grid), in ten styles from simple kick-and-hat starters through rock, funk, jazz, Latin, hip hop and electronic to classical and the tabla's taals. Each gives its kit, tempo and meter, the pattern as the drum grid plays it, what makes it feel the way it does, and the records and drummers to hear it from, from Hal Blaine's "Be My Baby" to the Amen break and Ravel's _Boléro_.
 
 ### Development
 

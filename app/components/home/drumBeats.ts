@@ -3,6 +3,7 @@ import type { Meter, Take } from "./noteRecorder";
 import { patternTake, type StepHit, type StepPattern } from "./stepPattern";
 
 export type BeatStyle =
+  | "Simple"
   | "Rock"
   | "Pop"
   | "Funk and soul"
@@ -10,6 +11,7 @@ export type BeatStyle =
   | "Latin and reggae"
   | "Hip hop"
   | "Electronic"
+  | "Classical"
   | "South Asian";
 
 // A drum beat for the drum grid, on the kit and at the tempo that suit it
@@ -52,6 +54,80 @@ function strokes(bols: readonly DrumPieceId[], perBeat: number) {
 }
 
 export const DRUM_BEATS: readonly DrumBeat[] = [
+  ...styled("Simple", [
+    {
+      id: "boomTss",
+      name: "Boom tss",
+      bpm: 90,
+      kit: "drums",
+      rows: {
+        kick: "x... .... x... ....",
+        closedHat: ".... x... .... x...",
+      },
+    },
+    {
+      id: "kickKickHat",
+      name: "Kick kick hat",
+      bpm: 90,
+      kit: "drums",
+      rows: {
+        kick: "x... .... x.x. ....",
+        closedHat: ".... x... .... x...",
+      },
+    },
+    {
+      id: "offbeatHat",
+      name: "Offbeat hat",
+      bpm: 120,
+      kit: "drums",
+      rows: {
+        kick: "x... x... x... x...",
+        closedHat: "..x. ..x. ..x. ..x.",
+      },
+    },
+    {
+      id: "eighthHats",
+      name: "Eighth hats",
+      bpm: 100,
+      kit: "drums",
+      rows: {
+        kick: "x... .... x... ....",
+        closedHat: "x.x. x.x. x.x. x.x.",
+      },
+    },
+    {
+      id: "kickSnare",
+      name: "Kick and snare",
+      bpm: 96,
+      kit: "drums",
+      rows: {
+        kick: "x... .... x... ....",
+        snare: ".... x... .... x...",
+      },
+    },
+    {
+      id: "basicBeat",
+      name: "Basic beat",
+      bpm: 100,
+      kit: "drums",
+      rows: {
+        kick: "x... .... x... ....",
+        snare: ".... x... .... x...",
+        closedHat: "x.x. x.x. x.x. x.x.",
+      },
+    },
+    {
+      id: "sixteenthHats",
+      name: "Sixteenth hats",
+      bpm: 92,
+      kit: "drums",
+      rows: {
+        kick: "x... .... x... ....",
+        snare: ".... x... .... x...",
+        closedHat: "xxxx xxxx xxxx xxxx",
+      },
+    },
+  ]),
   ...styled("Rock", [
     {
       id: "rock",
@@ -122,6 +198,66 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
         cowbell: "x.x. x.x. x.x. x.x.",
       },
     },
+    {
+      // Krautrock's one bar, held for minutes on end.
+      id: "motorik",
+      name: "Motorik",
+      bpm: 150,
+      kit: "rockDrums",
+      rows: {
+        kick: "x... ..x. x... ....",
+        snare: ".... X... .... X...",
+        closedHat: "x.x. x.x. x.x. x.x.",
+      },
+    },
+    {
+      // The 3-2 son clave squeezed into one bar, on the floor tom over
+      // maracas (the tambourine).
+      id: "boDiddley",
+      name: "Bo Diddley",
+      bpm: 112,
+      kit: "drums",
+      rows: {
+        lowTom: "X..x ..x. ..X. x...",
+        kick: "x... .... x... ....",
+        tambourine: "xxxx xxxx xxxx xxxx",
+      },
+    },
+    {
+      id: "stompClap",
+      name: "Stomp clap",
+      bpm: 81,
+      kit: "drums",
+      rows: {
+        kick: "x.x. .... x.x. ....",
+        clap: ".... X... .... X...",
+      },
+    },
+    {
+      // Ghosts on every triplet's middle, as in the Purdie shuffle, with the
+      // backbeat only on 3.
+      id: "halfTimeShuffle",
+      name: "Half-time shuffle",
+      bpm: 86,
+      kit: "drums",
+      perBeat: 3,
+      rows: {
+        kick: "x.. ..x ... ..x",
+        snare: ".o. .o. Xo. .o.",
+        closedHat: "x.x x.x x.x x.x",
+      },
+    },
+    {
+      // Brushes churning sixteenths on the snare, the backbeat leaning out.
+      id: "trainBeat",
+      name: "Train beat",
+      bpm: 140,
+      kit: "jazzDrums",
+      rows: {
+        snare: "oooo Xooo oooo Xooo",
+        kick: "x... .... x... ....",
+      },
+    },
   ]),
   ...styled("Pop", [
     {
@@ -155,7 +291,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       kit: "drums",
       rows: {
         kick: "x... .... x.x. ....",
-        snare: "o... X... o... X...",
+        snare: "x... X... x... X...",
         tambourine: "x... x... x... x...",
         closedHat: "..x. ..x. ..x. ..x.",
       },
@@ -181,6 +317,54 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
         kick: "x.. ... x.. ...",
         snare: "... x.. ... x..",
         closedHat: "x.x x.x x.x x.x",
+      },
+    },
+    {
+      id: "beMyBaby",
+      name: "Be My Baby",
+      bpm: 130,
+      kit: "drums",
+      rows: {
+        kick: "x... ..x. x... ....",
+        snare: ".... .... .... X...",
+        tambourine: "x.x. x.x. x.x. x.x.",
+      },
+    },
+    {
+      id: "billieJean",
+      name: "Billie Jean",
+      bpm: 117,
+      kit: "drums",
+      rows: {
+        kick: "x... .... x... ....",
+        snare: ".... x... .... x...",
+        closedHat: "x.x. x.x. x.x. x.x.",
+      },
+    },
+    {
+      // 3 + 3 + 2 sixteenths in each half bar.
+      id: "tresillo",
+      name: "Tresillo",
+      bpm: 96,
+      kit: "drums",
+      rows: {
+        kick: "x..x ..x. x..x ..x.",
+        clap: ".... x... .... x...",
+        closedHat: "x.x. x.x. x.x. x.x.",
+      },
+    },
+    {
+      // Triplets on the hat, counted in eighths: 64 dotted quarters a minute.
+      id: "ballad128",
+      name: "12/8 ballad",
+      bpm: 192,
+      kit: "drums",
+      meter: { beats: 12, unit: 8 },
+      perBeat: 2,
+      rows: {
+        kick: "x..... ...... x...x. ......",
+        snare: "...... X..... ...... X.....",
+        closedHat: "x.x.x. x.x.x. x.x.x. x.x.x.",
       },
     },
   ]),
@@ -230,6 +414,34 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
         stick: ".... x... .... x...",
         snare: ".... .... .... ...o",
         closedHat: "x.xx x.x. x.xx x.x.",
+      },
+    },
+    {
+      // Swung sixteenths on a sextuplet grid, a clap doubling the backbeat.
+      id: "newJackSwing",
+      name: "New jack swing",
+      bpm: 108,
+      kit: "drums808",
+      perBeat: 6,
+      rows: {
+        kick: "x....x ...... ..x... ...x..",
+        snare: "...... X..... ...... X.....",
+        clap: "...... x..... ...... x.....",
+        closedHat: "x.xx.x x.xx.x x.xx.x x.xx.x",
+      },
+    },
+    {
+      // After Tony Allen: the hats carry the sixteenths while the kick and
+      // snare talk around them.
+      id: "afrobeat",
+      name: "Afrobeat",
+      bpm: 112,
+      kit: "drums",
+      rows: {
+        kick: "x... ..x. ..x. ....",
+        snare: "..o. x..o .o.. x.o.",
+        closedHat: "xxXx xxXx xxXx xxX.",
+        openHat: ".... .... .... ...x",
       },
     },
   ]),
@@ -338,6 +550,21 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
         closedHat: ".... x... .... x...",
       },
     },
+    {
+      // Swing grouped 3 + 2, the rim marking the second group.
+      id: "fiveFour",
+      name: "Five-four",
+      bpm: 172,
+      kit: "jazzDrums",
+      meter: { beats: 5, unit: 4 },
+      perBeat: 3,
+      rows: {
+        ride: "x.. x.x x.. x.. x.x",
+        closedHat: "... x.. ... x.. ...",
+        stick: "... ... ... x.. ...",
+        kick: "o.. ... ... o.. ...",
+      },
+    },
   ]),
   ...styled("Latin and reggae", [
     {
@@ -425,8 +652,33 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
         closedHat: "x.x x.x x.x x.x",
       },
     },
+    {
+      // The one drop's rim on 3 over a kick on every beat.
+      id: "steppers",
+      name: "Steppers",
+      bpm: 80,
+      kit: "drums",
+      perBeat: 3,
+      rows: {
+        kick: "x.. x.. x.. x..",
+        stick: "... ... x.. ...",
+        closedHat: "x.x x.x x.x x.x",
+      },
+    },
   ]),
   ...styled("Hip hop", [
+    {
+      // The drum machine's bare kick and snare, before samples took over.
+      id: "oldSchool",
+      name: "Old school",
+      bpm: 102,
+      kit: "drums808",
+      rows: {
+        kick: "x... ..x. ..x. x...",
+        snare: ".... X... .... X...",
+        closedHat: "x.x. x.x. x.x. x.x.",
+      },
+    },
     {
       id: "boomBap",
       name: "Boom bap",
@@ -435,6 +687,42 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       rows: {
         kick: "x..x .... ..x. ....",
         snare: ".... x... .... x...",
+        closedHat: "x.x. x.x. x.x. x.x.",
+      },
+    },
+    {
+      // Boom bap with swung sixteenths on a sextuplet grid.
+      id: "goldenEra",
+      name: "Golden era",
+      bpm: 94,
+      kit: "drums",
+      perBeat: 6,
+      rows: {
+        kick: "x..... ...x.. ..x... ......",
+        snare: "...... X..... ...... X.....",
+        closedHat: "x.ox.o x.ox.o x.ox.o x.ox.o",
+      },
+    },
+    {
+      id: "gFunk",
+      name: "G-funk",
+      bpm: 94,
+      kit: "drums808",
+      rows: {
+        kick: "x... ..x. .x.. ..x.",
+        snare: ".... X... .... X...",
+        clap: ".... x... .... x...",
+        closedHat: "x.xx x.xx x.xx x.xx",
+      },
+    },
+    {
+      id: "crunk",
+      name: "Crunk",
+      bpm: 100,
+      kit: "drums808",
+      rows: {
+        kick: "x... .... x.x. ....",
+        clap: ".... X... .... X...",
         closedHat: "x.x. x.x. x.x. x.x.",
       },
     },
@@ -448,6 +736,19 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
         clap: ".... .... x... ....",
         closedHat: "xxxx xxxx xxxx xxxx",
         openHat: ".... .... .... ..x.",
+      },
+    },
+    {
+      // Trap's hats rolling into 32nds before the bar turns.
+      id: "trapRolls",
+      name: "Trap rolls",
+      bpm: 140,
+      kit: "drums808",
+      perBeat: 8,
+      rows: {
+        kick: "x....... ......x. ....x... ........",
+        clap: "........ ........ x....... ........",
+        closedHat: "x.x.x.x. x.x.x.x. x.x.x.x. xxxxxxxx",
       },
     },
     {
@@ -487,6 +788,19 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
         lowTom: ".... .... ..x. ....",
       },
     },
+    {
+      // Memphis rap's cowbell, 3 + 3 + 2, revived in drift phonk.
+      id: "phonk",
+      name: "Phonk",
+      bpm: 130,
+      kit: "drums808",
+      rows: {
+        kick: "x... .... ..x. ....",
+        clap: ".... X... .... X...",
+        cowbell: "x..x ..x. x..x ..x.",
+        closedHat: "x.x. x.x. x.x. x.x.",
+      },
+    },
   ]),
   ...styled("Electronic", [
     {
@@ -524,14 +838,15 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       },
     },
     {
-      id: "breakbeat",
-      name: "Breakbeat",
-      bpm: 130,
-      kit: "drums909",
+      // The first bar of the Winstons' "Amen, Brother" break.
+      id: "amen",
+      name: "Amen break",
+      bpm: 136,
+      kit: "drums",
       rows: {
-        kick: "x... .... ..x. ....",
-        snare: ".... x..x .x.. x...",
-        closedHat: "x.x. x.x. x.x. x.x.",
+        kick: "x.x. .... ..xx ....",
+        snare: ".... x..x .x.. x..x",
+        ride: "x.x. x.x. x.x. x.x.",
       },
     },
     {
@@ -544,6 +859,91 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
         clap: ".... x... .... x...",
         closedHat: "xxxx xxxx xxxx xxxx",
         cowbell: "...x .... ..x. ....",
+      },
+    },
+    {
+      // The two-step.
+      id: "drumAndBass",
+      name: "Drum and bass",
+      bpm: 174,
+      kit: "drums",
+      rows: {
+        kick: "x... .... ..x. ....",
+        snare: ".... X... .... X...",
+        closedHat: "x.x. x.x. x.x. x.x.",
+      },
+    },
+    {
+      id: "dubstep",
+      name: "Dubstep",
+      bpm: 140,
+      kit: "drums909",
+      rows: {
+        kick: "x... .... .... ..x.",
+        snare: ".... .... X... ....",
+        closedHat: "..x. ..x. ..x. ..x.",
+      },
+    },
+  ]),
+  ...styled("Classical", [
+    {
+      id: "viennaWaltz",
+      name: "Waltz",
+      bpm: 168,
+      kit: "drums",
+      meter: { beats: 3, unit: 4 },
+      perBeat: 2,
+      rows: {
+        kick: "x. .. ..",
+        snare: ".. x. x.",
+      },
+    },
+    {
+      id: "polka",
+      name: "Polka",
+      bpm: 120,
+      kit: "drums",
+      meter: { beats: 2, unit: 4 },
+      rows: {
+        kick: "x... x...",
+        snare: "..x. ..x.",
+      },
+    },
+    {
+      // A band's bass drum on the beat, the cymbals on the downbeat.
+      id: "march",
+      name: "March",
+      bpm: 120,
+      kit: "drums",
+      meter: { beats: 2, unit: 4 },
+      rows: {
+        crash: "X... ....",
+        kick: "x... x...",
+        snare: "x.xx x.x.",
+      },
+    },
+    {
+      // Ravel's ostinato: eighths and sixteenth triplets over two bars.
+      id: "bolero",
+      name: "Boléro",
+      bpm: 72,
+      kit: "drums",
+      meter: { beats: 3, unit: 4 },
+      perBeat: 6,
+      rows: {
+        snare: "x..xxx x..xxx x..x.. x..xxx x..xxx xxxxxx",
+      },
+    },
+    {
+      // Carmen's: a dotted eighth, a sixteenth and two eighths.
+      id: "habanera",
+      name: "Habanera",
+      bpm: 72,
+      kit: "drums",
+      meter: { beats: 2, unit: 4 },
+      rows: {
+        lowTom: "x..x x.x.",
+        stick: "x... x...",
       },
     },
   ]),
@@ -611,6 +1011,32 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       perBeat: 2,
       rows: strokes(
         ["dhin", "na", "dhin", "dhin", "na", "tin", "na", "dhin", "dhin", "na"],
+        2,
+      ),
+    },
+    {
+      // Its dhage and tirakita phrases each sounded as one stroke.
+      id: "ektaal",
+      name: "Ektaal",
+      bpm: 120,
+      kit: "tabla",
+      meter: { beats: 12, unit: 8 },
+      perBeat: 2,
+      rows: strokes(
+        [
+          "dhin",
+          "dhin",
+          "dha",
+          "te",
+          "tun",
+          "na",
+          "ke",
+          "na",
+          "dha",
+          "te",
+          "dhin",
+          "na",
+        ],
         2,
       ),
     },

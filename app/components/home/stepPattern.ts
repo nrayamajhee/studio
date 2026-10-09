@@ -1,6 +1,7 @@
 import type { DrumPieceId, KitId } from "../../lib/physical";
 import { PATCH_BY_ID } from "../../lib/physical/patches";
 import type { DrumKitPatch } from "../../lib/physical/patches/types";
+import { F3_MIDI } from "./deviceMath";
 import type { Meter, PlayedNote, Take, Timing } from "./noteRecorder";
 
 // A hit on the drum sequencer: which piece, how hard (0–1), and where, in
@@ -27,15 +28,56 @@ export const INITIAL_PATTERN: StepPattern = { perBeat: 4, bars: 1, hits: [] };
 
 const kitKeys = (kit: KitId) => (PATCH_BY_ID[kit] as DrumKitPatch).keys;
 
-// A kit's rows: its pieces in the order its keys play them, each once.
-export const kitRows = (kit: KitId): DrumPieceId[] => [
-  ...new Set(kitKeys(kit)),
-];
+// A kit's rows, top to bottom: its pieces as the keybed plays them from its
+// lowest key (F) up, each once, turned over so the lowest key's piece (the
+// kick) sits at the bottom, as on a piano roll.
+export const kitRows = (kit: KitId): DrumPieceId[] => {
+  const keys = kitKeys(kit);
+  const fromLowest = keys.map((_, i) => keys[(F3_MIDI + i) % 12]);
+  return [...new Set(fromLowest)].reverse();
+};
 
-// The keybed note that plays a piece: the first key the kit gives it, in
-// middle C's octave (a kit only reads the pitch class).
-export const pieceNote = (kit: KitId, piece: DrumPieceId) =>
-  60 + kitKeys(kit).indexOf(piece);
+// A drum hit's note in a take, fixed by the piece's name rather than the key
+// a kit puts it on, so moving pieces between keys never changes what a
+// recording plays: the General MIDI drum map for the kit pieces, and a run
+// from middle C for the hand-drum bols.
+export const PIECE_NOTES: Readonly<Record<DrumPieceId, number>> = {
+  kick: 36,
+  stick: 37,
+  snare: 38,
+  clap: 39,
+  sweep: 40,
+  closedHat: 42,
+  lowTom: 45,
+  openHat: 46,
+  crash: 49,
+  highTom: 50,
+  ride: 51,
+  bell: 53,
+  tambourine: 54,
+  cowbell: 56,
+  dha: 60,
+  dhin: 61,
+  na: 62,
+  ta: 63,
+  tin: 64,
+  tun: 65,
+  te: 66,
+  ti: 67,
+  ge: 68,
+  ke: 69,
+  ka: 70,
+};
+
+const NOTE_PIECES = new Map(
+  Object.entries(PIECE_NOTES).map(([piece, note]) => [
+    note,
+    piece as DrumPieceId,
+  ]),
+);
+
+// The piece a take's note strikes on a kit, if it is one.
+export const notePiece = (note: number) => NOTE_PIECES.get(note);
 
 export const patternSteps = (pattern: StepPattern, meter: Meter) =>
   pattern.bars * meter.beats * pattern.perBeat;
@@ -92,7 +134,7 @@ export function patternTake(
       (hit) => rows.has(hit.piece) && hitStep(hit, pattern.perBeat) < steps,
     )
     .map((hit) => ({
-      note: pieceNote(kit, hit.piece),
+      note: PIECE_NOTES[hit.piece],
       start: hitStep(hit, pattern.perBeat) * step,
       duration: step,
       velocity: hit.velocity,
@@ -114,10 +156,11 @@ export function takePattern(
     ? timing.perBeat
     : 4;
   const beat = 60_000 / take.bpm;
-  const keys = kitKeys(kit);
+  const rows = new Set(kitRows(kit));
   const hits = new Map<string, StepHit>();
   for (const { note, start, velocity } of take.notes) {
-    const piece = keys[note % 12];
+    const piece = notePiece(note);
+    if (!piece || !rows.has(piece)) continue;
     const step = Math.round((start / beat) * perBeat);
     const key = `${piece}@${step}`;
     const there = hits.get(key);

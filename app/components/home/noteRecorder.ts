@@ -3,7 +3,8 @@
 // directly. Presses are timed to the millisecond whatever the meter.
 
 // A note as played: MIDI note, when it started and how long it was held (ms
-// from the start of the take), and how hard (0–1, a MIDI velocity / 127).
+// from the start of the take), and how hard (0–1, a MIDI velocity / 127). On
+// a kit the note names the piece struck (PIECE_NOTES), not the key it was on.
 export type PlayedNote = {
   note: number;
   start: number;

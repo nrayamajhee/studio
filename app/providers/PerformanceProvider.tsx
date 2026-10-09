@@ -136,11 +136,11 @@ function usePerformanceValue() {
       {
         on: (midi) => {
           deviceEngine.noteOn(midi, KEY_VELOCITY);
-          transport.capture(midi, true, KEY_VELOCITY);
+          transport.capture(deviceEngine.takeNote(midi), true, KEY_VELOCITY);
         },
         off: (midi) => {
           deviceEngine.noteOff(midi);
-          transport.capture(midi, false);
+          transport.capture(deviceEngine.takeNote(midi), false);
         },
       },
     );
