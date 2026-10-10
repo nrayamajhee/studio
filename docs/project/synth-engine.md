@@ -497,12 +497,12 @@ The one source with nothing to simulate: a sine, triangle, square or saw (the **
   oscillator (sine | triangle | square | saw)  x velocity    (LFO Pitch bends it)
         |
         v
-  filter module  ->  ADSR (Attack, Decay, Sustain, Release)  ->  LFO Level  ->  master ADSR  ->  bus
+  filter module  ->  gate (Attack, Release)  ->  LFO Level  ->  master ADSR  ->  bus
 ```
 
 - Raw square and saw edges alias at high notes, so the square and saw steps are rounded off with **polyBLEP** and the triangle's corners with **polyBLAMP** (`dsp/generators.ts`), about 15 dB less aliasing at F7.
 - Each wave is scaled to a sine's RMS, so switching waves keeps the level; one output gain puts a mezzo-forte C4 at −14 LUFS momentary for all four.
-- Its Envelope is a full ADSR, from the same params as the winds' breath. Up to 8 voices.
+- Its Envelope is only a gate's Attack and Release, holding full level while the key is down: decay and sustain come from the master ADSR (the Device's ADSR mode), so two volume envelopes never stack. Up to 8 voices.
 - **Glide**: played legato, a new note's frequency slides from the held note's (50 ms by default), under the same chord rule as the bowed strings.
 
 ## 6. Bodies (`models/Body.ts`)
@@ -558,20 +558,23 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
     label:    "Hardness"
     section:  the module: exciter | resonator | body | filter | envelope | lfo | output
     min, max, default
-    unit:     Hz | s | % | cents | dB | st | oct | x | ms | °   (display only)
+    unit:     Hz | s | % | cents | dB | st | oct | x | ms | °   (display only;
+              without one, a value shows as how far the knob has turned;
+              % shows a fraction as itself, such as a position on a string)
     scale:    linear | log                                    (knob mapping)
     primary:  shown without "Advanced"
   }
 ```
 
-- **Modules.** Every instrument's params come in the same modules, in the same order (`MODULES`): the Synth screen gives each its own page, named after it (‹ Exciter · Resonator · Body · Filter · Envelope · LFO · Output ›), and the Lab a heading. An instrument skips the modules it doesn't have: the bars have no Envelope, the kits no Envelope or LFO. The first three are each model's own. The rest are built by the same helpers, so they carry the same ids, labels and ranges everywhere:
+- **Modules.** Every instrument's params come in the same modules, in the same order (`MODULES`): the signal chain (Exciter, Resonator, Filter, Body, Output), then what modulates it (Envelope, LFO). The Synth screen gives each its own page after an overview of the chain (see [The Device › Synth parameters](the-device.md#architecture)), and the Lab a heading. An instrument skips the modules it doesn't have: the bars have no Envelope, the oscillator no Resonator or Body, the kits no Envelope or LFO. The Exciter and Resonator are each model's own. The rest are built by the same helpers, so they carry the same ids, labels and ranges everywhere:
 
-  | Module   | Params                                                                                                                                      |
-  | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-  | Filter   | Cutoff, Resonance, Env amount, Env decay, Keytrack (`filterParams`; the kits have only Cutoff and Resonance, on the bus)                    |
-  | Envelope | Attack, Decay, Sustain, Release of the exciter: breath, bow, bellows, the oscillator's amplitude (`adsrParams`); strings: Attack and Damper |
-  | LFO      | Rate, Shape, Delay, Pitch, Level, Filter (`lfoParams`)                                                                                      |
-  | Output   | Drive (where there is one), Level, Reverb send (`outputParams`)                                                                             |
+  | Module   | Params                                                                                                                                                         |
+  | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | Filter   | Cutoff, Resonance, Env amount, Env decay, Keytrack (`filterParams`; the kits have only Cutoff and Resonance, on the bus)                                       |
+  | Envelope | Attack, Decay, Sustain, Release of the exciter: breath, bow, bellows (`adsrParams`); strings: Attack and Damper; the oscillator: its gate's Attack and Release |
+  | LFO      | Rate, Shape, Delay, Pitch, Level, Filter (`lfoParams`)                                                                                                         |
+  | Body     | Size, Resonance, Tone, Mix (`bodyParams`); the violin's measured body is one Body knob, a kit's body its stereo Width and Tone                                 |
+  | Output   | Drive (where there is one), Level, Reverb send (`outputParams`)                                                                                                |
 
   Away from its page, a label two modules share is led by its module (Filter Resonance, Body Resonance).
 
@@ -620,7 +623,7 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
   | onset, lifecycle      | notes start on time; voices free themselves                                                          |
 
 - **Audition and tune.** Storybook › `Lab/Instrument Lab`: press Start audio, pick an instrument, play with the mouse or `A W S E D F T G Y H U J K` (`Z`/`X` octave, hold Space for sustain), tweak the generated parameter panel, and use **Copy patch JSON** to move tuned values into `patches/*.ts`. The Diagnostics tab runs the tuning, decay, stability, level, onset/lifecycle and stress sweeps through the real worklet.
-- **Unit tests.** `npm run test:unit` runs the DSP building blocks (`dsp/dsp.test.ts`) and the engine (`physical.test.ts`) in Node.
+- **Unit tests.** `npm run test:unit` runs the DSP building blocks (`dsp/dsp.test.ts`), the engine (`physical.test.ts`) and the Synth screen's pages and graphs (`app/components/home/synthPages.test.ts`) in Node.
 
 ## 11. Adding to it
 

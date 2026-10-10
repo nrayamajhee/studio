@@ -21,9 +21,9 @@ import {
 import { pickTuning, type KeyTable, type BowedPatch } from "../patches/types";
 import { Waveguide } from "./Waveguide";
 
-const STK_RATE = 44100;
+export const STK_RATE = 44100;
 // Body sections as (b0, b1, b2, a1, a2), designed at 44.1 kHz.
-const BODY_SECTIONS = [
+export const BODY_SECTIONS = [
   [1.0, 1.5667, 0.3133, -0.5509, -0.3925],
   [1.0, -1.9537, 0.9542, -1.6357, 0.8697],
   [1.0, -1.6683, 0.8852, -1.7674, 0.8735],

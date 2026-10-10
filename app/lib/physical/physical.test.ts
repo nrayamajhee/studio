@@ -55,6 +55,27 @@ describe("StringLoop", () => {
   );
 });
 
+describe("StringLoop partials", () => {
+  it("predict where a stiff string's partials ring and how long", () => {
+    const fs = 48000;
+    const f0 = midiToHz(40);
+    const loop = new StringLoop(fs, 20);
+    loop.tune(f0, 2, 0.3, 8, -0.7);
+    const partials = loop.partials(12);
+    const out = new Float32Array(2 * fs);
+    for (let i = 0; i < out.length; i++)
+      out[i] = loop.tick(i < 20 ? Math.sin(i) : 0);
+    expect(partials[0].t60 / 2).toBeCloseTo(1, 2);
+    // Stiffness stretches the upper partials sharp, and they die sooner.
+    expect(1200 * Math.log2(partials[7].hz / (8 * f0))).toBeGreaterThan(2);
+    expect(partials[11].t60).toBeLessThan(partials[0].t60);
+    for (const { hz } of partials)
+      expect(
+        Math.abs(measurePitch(out, fs, hz, 0, 0.05, 0.6).cents),
+      ).toBeLessThan(0.5);
+  });
+});
+
 describe("Engine", () => {
   it("starts events on the scheduled sample", async () => {
     for (const fs of RATES)

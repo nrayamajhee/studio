@@ -2,21 +2,15 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 import { PATCH_BY_ID } from "../../lib/physical/patches";
 import { formatParam } from "../../lib/physical/patches/format";
-import { paramModules } from "../../lib/physical/patches/params";
 import { DEVICE_PRESETS } from "./deviceEngine";
 import { DeviceScreen, ScreenHint, ScreenValue } from "./DeviceScreen";
 import { DEFAULT_TIMING } from "./noteRecorder";
 import { DRUM_PIECES } from "./instrumentIcons";
 import { ICON_CHOICES, PresetIcon } from "./presetIcons";
+import { previewPage } from "./synthGraphs";
 
-// The piano's Exciter page, one module of its params.
-const pianoModules = paramModules(PATCH_BY_ID.piano.params);
-const pianoParams = pianoModules[0].specs.map((spec) => ({
-  id: spec.id,
-  label: spec.label,
-  value: formatParam(spec, spec.default),
-  selected: spec.id === "exciter.hardness",
-}));
+// The piano's Resonator page at its defaults.
+const pianoResonator = previewPage(PATCH_BY_ID.piano, "resonator");
 
 const meta = {
   title: "Home/Screen",
@@ -55,7 +49,7 @@ const meta = {
       ],
     },
     getAnalyser: { control: false },
-    params: { control: false },
+    synthScene: { control: false },
     tiles: { control: false },
     readouts: { control: false },
     badges: { control: false },
@@ -77,11 +71,22 @@ export const Synth: Story = {
   args: {
     view: "synth",
     status: "",
-    params: pianoParams,
+    footer: ["C4", ""],
+    synthScene: pianoResonator.scene,
+    synthLabel: "Resonator: what its knobs do on the Grand piano",
+    readouts: pianoResonator.page.main.map((spec) =>
+      spec
+        ? {
+            label: spec.label,
+            display: formatParam(spec, spec.default),
+            amount: 0,
+          }
+        : { label: "", display: "", amount: 0 },
+    ),
     pager: {
-      pages: pianoModules.map(({ label }) => label),
-      at: 0,
-      color: "red",
+      pages: pianoResonator.pages.map(({ label }) => label),
+      at: pianoResonator.pages.indexOf(pianoResonator.page),
+      color: "ink",
       onPick: fn(),
     },
   },

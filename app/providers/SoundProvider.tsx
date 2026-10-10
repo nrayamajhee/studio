@@ -16,6 +16,7 @@ import {
   type DevicePreset,
 } from "../components/home/deviceEngine";
 import { clampOctave } from "../components/home/deviceMath";
+import { synthPages, type SynthPageId } from "../components/home/synthPages";
 import {
   allPresets,
   clearAllEdits,
@@ -28,16 +29,12 @@ import { createStrictContext } from "./createStrictContext";
 
 const INITIAL_PRESET = "piano";
 
-// An instrument's params a module at a time, in module order: each page's
-// name, the params on it and where they start in the flat list.
-function paramPages(params: readonly ParamSpec[]) {
-  let start = 0;
-  return paramModules(params).map((module) => {
-    const page = { ...module, start };
-    start += module.specs.length;
-    return page;
-  });
-}
+// An instrument's params in module order, as the red knob picks them.
+const moduleOrder = (params: readonly ParamSpec[]) =>
+  paramModules(params).flatMap((module) => module.specs);
+
+// A param with named choices (the oscillator's wave) steps through them.
+const stepsOf = (spec: ParamSpec) => spec.options?.length ?? KNOB_STEPS;
 
 // A param's name away from its page: its label, led by its module where
 // another module has the same one (the filter's Resonance, the body's).
@@ -52,6 +49,10 @@ function useSoundValue() {
   const [preset, setPreset] = useState(() => findPreset(INITIAL_PRESET));
   const [paramIndex, setParamIndex] = useState(0);
   const [octave, setOctave] = useState(0);
+  // The Synth screen's page, and the block the overview has picked; kept by
+  // module so they carry over to the next instrument when it has them.
+  const [pageId, setPageId] = useState<SynthPageId>("chain");
+  const [chainPick, setChainPick] = useState<SynthPageId>("exciter");
 
   useEffect(() => {
     const initial = findPreset(INITIAL_PRESET);
@@ -61,17 +62,32 @@ function useSoundValue() {
   // The preset's own values plus any edits made since it was picked.
   const edits = library.edits[preset.id];
   const values = { ...presetValues(preset), ...edits };
-  const pages = paramPages(PATCH_BY_ID[preset.target].params);
-  const specs = pages.flatMap((page) => page.specs);
+  const params = PATCH_BY_ID[preset.target].params;
+  const specs = moduleOrder(params);
   const selected = specs[Math.min(paramIndex, specs.length - 1)];
-  // The page always follows the selected param.
-  const paramPage = pages.reduce(
-    (at, page, i) => (page.start <= paramIndex ? i : at),
-    0,
-  );
   const selectedValue = values[selected.id] ?? selected.default;
-  // A param with named choices (the oscillator's wave) steps through them.
-  const valueSteps = selected.options?.length ?? KNOB_STEPS;
+  const valueSteps = stepsOf(selected);
+  const pages = synthPages(params);
+  const pageIndex = Math.max(
+    0,
+    pages.findIndex(({ id }) => id === pageId),
+  );
+  const picked = pages.some(({ id }) => id === chainPick)
+    ? chainPick
+    : pages[1].id;
+
+  // Turning back to the preset's own step restores its exact value and drops
+  // the edit. The param becomes the selected one, so the main screen shows
+  // what was last turned.
+  const setParamStep = (spec: ParamSpec, step: number) => {
+    const steps = stepsOf(spec);
+    const own = presetValues(preset)[spec.id];
+    const original = step === valueToStep(spec, own, steps);
+    const value = original ? own : stepToValue(spec, step, steps);
+    deviceEngine.setValue(spec.id, value);
+    setEdit(preset.id, spec.id, original ? null : value);
+    setParamIndex(Math.max(0, specs.indexOf(spec)));
+  };
 
   // Keeps the selected param when the next instrument has it too, and the
   // octave shift as far as the next one's range allows.
@@ -80,9 +96,7 @@ function useSoundValue() {
     deviceEngine.loadPreset(next, library.edits[next.id]);
     setPreset(next);
     setOctave((current) => clampOctave(current, next));
-    const nextSpecs = paramPages(PATCH_BY_ID[next.target].params).flatMap(
-      (page) => page.specs,
-    );
+    const nextSpecs = moduleOrder(PATCH_BY_ID[next.target].params);
     setParamIndex(
       Math.max(
         0,
@@ -104,12 +118,17 @@ function useSoundValue() {
     selectedDisplay: formatParam(selected, selectedValue),
     valueSteps,
     paramIndex,
-    paramPage,
-    // The pages' names, one per module.
-    pageNames: pages.map((page) => page.label),
-    // The params on the page showing.
-    pageSpecs: pages[paramPage].specs,
-    pageStart: pages[paramPage].start,
+    // The Synth screen: its pages (the overview, then a module each), the one
+    // showing and the block the overview has picked.
+    pages,
+    pageIndex,
+    page: pages[pageIndex],
+    chainPick: picked,
+    showPage: (index: number) =>
+      setPageId(pages[Math.max(0, Math.min(index, pages.length - 1))].id),
+    pickBlock: setChainPick,
+    stepsOf,
+    setParamStep,
     octave,
     octaveLabel: `OCT ${octave > 0 ? "+" : octave < 0 ? "−" : "±"}${Math.abs(octave)}`,
     // The kit the sequencer plays, while one is picked.
@@ -129,18 +148,7 @@ function useSoundValue() {
     shiftOctave: (direction: 1 | -1) =>
       setOctave((current) => clampOctave(current + direction, preset)),
     selectParam: setParamIndex,
-    // Turning to a module's page selects its first param.
-    showParamPage: (page: number) =>
-      setParamIndex(pages[Math.max(0, Math.min(page, pages.length - 1))].start),
-    // Turning back to the preset's own step restores its exact value and
-    // drops the edit.
-    setSelectedValue: (step: number) => {
-      const own = presetValues(preset)[selected.id];
-      const original = step === valueToStep(selected, own, valueSteps);
-      const value = original ? own : stepToValue(selected, step, valueSteps);
-      deviceEngine.setValue(selected.id, value);
-      setEdit(preset.id, selected.id, original ? null : value);
-    },
+    setSelectedValue: (step: number) => setParamStep(selected, step),
     revertSound: () => {
       clearEdits(preset.id);
       deviceEngine.loadPreset(preset);

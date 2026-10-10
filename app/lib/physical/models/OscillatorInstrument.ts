@@ -17,7 +17,8 @@ import type { OscillatorPatch } from "../patches/types";
 class OscillatorVoice extends Voice {
   readonly oscillator: Oscillator;
   readonly osc2: Oscillator;
-  // The amplitude envelope, Attack through Release.
+  // Opens at full while the key is down; decay and sustain come from the
+  // track ADSR.
   readonly gate: Adsr;
   level = 0;
   level2 = 0;
@@ -55,7 +56,8 @@ class OscillatorVoice extends Voice {
 }
 
 // One or two polyphonic oscillators (sine, triangle, square or saw) summed
-// through the filter and an ADSR: a plain source for the modules to shape.
+// through the filter and a gate: a plain source for the modules and the track
+// ADSR to shape.
 export class OscillatorInstrument extends Instrument {
   readonly patch: OscillatorPatch;
   private readonly voices: OscillatorVoice[] = [];
@@ -81,7 +83,8 @@ export class OscillatorInstrument extends Instrument {
     const wave2 = Math.round(p.get("exciter.wave2"));
     const level2 = wave2 > 0 ? p.get("exciter.level2") : 0;
     const phase = p.get("exciter.phase") / 360;
-    const { attack, decay, sustain, release } = p.envelope("envelope");
+    const attack = p.get("envelope.attack");
+    const release = p.get("envelope.release");
     const glide = 1 - Math.exp(-3 / (p.get("exciter.glide") * this.fs));
     for (let i = 0; i < this.voices.length; i++) {
       const voice = this.voices[i];
@@ -91,7 +94,7 @@ export class OscillatorInstrument extends Instrument {
       voice.osc2.glide = glide;
       voice.osc2.phaseOffset = phase;
       voice.level2 = level2;
-      voice.gate.set(attack, decay, sustain, release);
+      voice.gate.set(attack, 0, 1, release, true);
     }
   }
 

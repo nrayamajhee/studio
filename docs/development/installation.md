@@ -34,7 +34,7 @@ npm install
 ## Checks
 
 - **Typecheck**: `npm run typecheck`
-- **Unit tests** (DSP and synth engine, Node): `npm run test:unit`
+- **Unit tests** (DSP, synth engine and the Synth screen's pages, Node): `npm run test:unit`
 - **Story smoke tests** (headless Chromium): `npx vitest run --project storybook`
 - **Lint**: `npm run lint` (fix with `npm run lint:fix`)
 - **Format**: `npm run format` (check with `npm run format:check`)

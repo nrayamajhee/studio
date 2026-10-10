@@ -158,6 +158,30 @@ export class StringLoop {
     this.bridge = 0;
   }
 
+  // The first `count` partials of the tuned loop: each where the round trip
+  // holds a whole number of cycles (so stiffness stretches them sharp), and
+  // how long it rings (T60, s) through the loss filter at its frequency.
+  partials(count: number) {
+    const fs = this.fs;
+    const roundTrip = (w: number) =>
+      this.nInt +
+      this.stages * allpass1PhaseDelay(this.apA, w) +
+      onePolePhaseDelay(this.p, w) +
+      allpass1PhaseDelay(this.tA, w) +
+      (this.jawari ? 1 : 0);
+    const result: { hz: number; t60: number }[] = [];
+    for (let n = 1; n <= count; n++) {
+      let w = n * this.w0;
+      for (let i = 0; i < 30 && w < Math.PI; i++)
+        w = (TWO_PI * n) / roundTrip(w);
+      if (w >= Math.PI) break;
+      const perTrip = this.gTarget * onePoleMagnitude(this.p, w);
+      const t60 = (-3 / Math.log10(perTrip)) * (roundTrip(w) / fs);
+      result.push({ hz: (w * fs) / TWO_PI, t60 });
+    }
+    return result;
+  }
+
   // g = 10^(−3/(f0·T60)) / |H_loss(ω0)|: loses 60 dB after f0·T60 periods.
   private loopGain(t60: number) {
     const perPeriod = 10 ** (-3 / (this.f0 * t60));

@@ -14,17 +14,18 @@ const param = (
 const primary = { primary: true } as const;
 
 // Every instrument's params come in these modules, always in this order: the
-// Synth screen gives each its own page and the Lab a heading. The exciter,
-// resonator and body are the model's own; the filter, envelope, LFO and
-// output are built from the same params on every instrument that has them.
+// signal chain (exciter, resonator, filter, body, output), then what
+// modulates it (envelope, LFO). The Synth screen gives each its own page and
+// the Lab a heading. The exciter and resonator are the model's own; the rest
+// are built from the same params on every instrument that has them.
 export const MODULES: readonly { id: SectionId; label: string }[] = [
   { id: "exciter", label: "Exciter" },
   { id: "resonator", label: "Resonator" },
-  { id: "body", label: "Body" },
   { id: "filter", label: "Filter" },
+  { id: "body", label: "Body" },
+  { id: "output", label: "Output" },
   { id: "envelope", label: "Envelope" },
   { id: "lfo", label: "LFO" },
-  { id: "output", label: "Output" },
 ];
 
 // An instrument's params grouped by module, in module order; modules it
@@ -40,19 +41,12 @@ type AdsrRanges = {
   readonly [Stage in keyof AdsrStages]: readonly [min: number, max: number];
 };
 
-// The winds' breath, the violin's bow and the oscillator's amplitude.
+// The winds' breath, the violin's bow and the free reeds' bellows.
 const INSTRUMENT_ADSR: AdsrRanges = {
   attack: [0.005, 0.5],
   decay: [0.01, 1],
   sustain: [0.3, 1],
   release: [0.02, 1],
-};
-
-const OSCILLATOR_ADSR: AdsrRanges = {
-  attack: [0.001, 2],
-  decay: [0.01, 2],
-  sustain: [0, 1],
-  release: [0.01, 2],
 };
 
 // Log ranges whose 11-step knobs land on 200 ms for decay and release.
@@ -273,15 +267,11 @@ export const PLUCKS = ["Pick", "Finger"] as const;
 export function stringParams(d: StringDefaults): ParamSpec[] {
   return [
     param("exciter.hardness", "Hardness", "exciter", 0, 1, d.hardness, primary),
-    param(
-      "exciter.position",
-      "Position",
-      "exciter",
-      0.05,
-      0.5,
-      d.position,
-      primary,
-    ),
+    // How far along the string from the bridge, shown as that fraction.
+    param("exciter.position", "Position", "exciter", 0.05, 0.5, d.position, {
+      unit: "%",
+      primary: true,
+    }),
     param("exciter.strength", "Strength", "exciter", 0, 1, 0.8, primary),
     ...(d.pluck === undefined
       ? []
@@ -454,15 +444,10 @@ export function bowedParams(
 ): ParamSpec[] {
   return [
     param("exciter.pressure", "Bow pressure", "exciter", 0, 1, 0.75, primary),
-    param(
-      "exciter.position",
-      "Bow position",
-      "exciter",
-      0.05,
-      0.4,
-      0.18,
-      primary,
-    ),
+    param("exciter.position", "Bow position", "exciter", 0.05, 0.4, 0.18, {
+      unit: "%",
+      primary: true,
+    }),
     param("exciter.speed", "Bow speed", "exciter", 0.5, 1.5, 1, {
       unit: "×",
       primary: true,
@@ -567,6 +552,7 @@ export const OSCILLATOR_WAVES = ["Sine", "Triangle", "Square", "Saw"] as const;
 export const OSCILLATOR_WAVES_2 = ["Off", ...OSCILLATOR_WAVES] as const;
 
 export function oscillatorParams(send: number, glide: number): ParamSpec[] {
+  const time = { unit: "s", scale: "log", primary: true } as const;
   return [
     param(
       "exciter.wave",
@@ -602,11 +588,10 @@ export function oscillatorParams(send: number, glide: number): ParamSpec[] {
     }),
     glideParam("exciter.glide", "exciter", glide, 0.5),
     ...filterParams(16000),
-    ...adsrParams(
-      "envelope",
-      { attack: 0.005, decay: 0.3, sustain: 1, release: 0.1 },
-      OSCILLATOR_ADSR,
-    ),
+    // Only a gate's attack and release: the track ADSR shapes the rest, so
+    // two volume envelopes never stack.
+    param("envelope.attack", "Attack", "envelope", 0.005, 0.5, 0.005, time),
+    param("envelope.release", "Release", "envelope", 0.02, 2, 0.1, time),
     ...lfoParams(),
     ...outputParams(send),
   ];
