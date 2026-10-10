@@ -64,7 +64,7 @@ export const soundName = ({ sound, lanes }: Device) =>
 // that picks it, and its value in blue.
 export const selection = ({ sound }: Device) => (
   <>
-    <ScreenSeek>{sound.selected.label}</ScreenSeek>{" "}
+    <ScreenSeek>{sound.selectedName}</ScreenSeek>{" "}
     <ScreenValue>{sound.selectedDisplay}</ScreenValue>
   </>
 );
@@ -81,7 +81,7 @@ export const padPreset = ({ shift, sound }: Device, pad: number) => {
 
 export const paramKnob = ({ sound }: Device): KnobBinding => ({
   label: "Parameter",
-  valueLabel: sound.selected.label,
+  valueLabel: sound.selectedName,
   step: sound.specs.indexOf(sound.selected),
   steps: Math.max(2, sound.specs.length),
   onChange: (index) =>
@@ -380,7 +380,6 @@ const openSynth = ({ view, views, sound, browse }: Device, params: boolean) => {
     return;
   }
   if (params) {
-    sound.showSelectedPage();
     views.setView("synth");
     return;
   }
@@ -468,7 +467,7 @@ export function baseBindings(device: Device): Bindings {
       red: paramKnob(device),
       blue: {
         label: "Value",
-        valueLabel: `${sound.selected.label} ${sound.selectedDisplay}`,
+        valueLabel: `${sound.selectedName} ${sound.selectedDisplay}`,
         step: valueToStep(
           sound.selected,
           sound.selectedValue,

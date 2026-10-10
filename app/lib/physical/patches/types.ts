@@ -20,8 +20,9 @@ export function pickTuning(tables: TuningTables, fs: number): KeyTable {
   return best;
 }
 
+// The modules an instrument's params are grouped into (see MODULES).
 export type SectionId =
-  "exciter" | "resonator" | "body" | "filter" | "envelope" | "space";
+  "exciter" | "resonator" | "body" | "filter" | "envelope" | "lfo" | "output";
 
 export type ParamSpec = {
   id: string;
@@ -30,7 +31,7 @@ export type ParamSpec = {
   min: number;
   max: number;
   default: number;
-  unit?: "Hz" | "s" | "%" | "cents" | "dB" | "st" | "×" | "ms" | "°";
+  unit?: "Hz" | "s" | "%" | "cents" | "dB" | "st" | "oct" | "×" | "ms" | "°";
   scale?: "linear" | "log";
   primary?: boolean;
   // Named choices for an index param, e.g. the oscillator's wave.

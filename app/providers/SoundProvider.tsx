@@ -1,5 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { PATCH_BY_ID } from "../lib/physical/patches";
+import { MODULES, paramModules } from "../lib/physical/patches/params";
+import type { ParamSpec } from "../lib/physical/patches/types";
 import {
   formatParam,
   stepToValue,
@@ -13,7 +15,6 @@ import {
   presetValues,
   type DevicePreset,
 } from "../components/home/deviceEngine";
-import { PARAMS_PER_PAGE } from "../components/home/DeviceScreen";
 import { clampOctave } from "../components/home/deviceMath";
 import {
   allPresets,
@@ -27,12 +28,29 @@ import { createStrictContext } from "./createStrictContext";
 
 const INITIAL_PRESET = "piano";
 
+// An instrument's params a module at a time, in module order: each page's
+// name, the params on it and where they start in the flat list.
+function paramPages(params: readonly ParamSpec[]) {
+  let start = 0;
+  return paramModules(params).map((module) => {
+    const page = { ...module, start };
+    start += module.specs.length;
+    return page;
+  });
+}
+
+// A param's name away from its page: its label, led by its module where
+// another module has the same one (the filter's Resonance, the body's).
+const paramName = (specs: readonly ParamSpec[], spec: ParamSpec) =>
+  specs.some((other) => other !== spec && other.label === spec.label)
+    ? `${MODULES.find(({ id }) => id === spec.section)?.label} ${spec.label}`
+    : spec.label;
+
 function useSoundValue() {
   const library = usePresetLibrary();
   const presets = allPresets(library);
   const [preset, setPreset] = useState(() => findPreset(INITIAL_PRESET));
   const [paramIndex, setParamIndex] = useState(0);
-  const [paramPage, setParamPage] = useState(0);
   const [octave, setOctave] = useState(0);
 
   useEffect(() => {
@@ -43,8 +61,14 @@ function useSoundValue() {
   // The preset's own values plus any edits made since it was picked.
   const edits = library.edits[preset.id];
   const values = { ...presetValues(preset), ...edits };
-  const specs = PATCH_BY_ID[preset.target].params;
+  const pages = paramPages(PATCH_BY_ID[preset.target].params);
+  const specs = pages.flatMap((page) => page.specs);
   const selected = specs[Math.min(paramIndex, specs.length - 1)];
+  // The page always follows the selected param.
+  const paramPage = pages.reduce(
+    (at, page, i) => (page.start <= paramIndex ? i : at),
+    0,
+  );
   const selectedValue = values[selected.id] ?? selected.default;
   // A param with named choices (the oscillator's wave) steps through them.
   const valueSteps = selected.options?.length ?? KNOB_STEPS;
@@ -56,12 +80,15 @@ function useSoundValue() {
     deviceEngine.loadPreset(next, library.edits[next.id]);
     setPreset(next);
     setOctave((current) => clampOctave(current, next));
-    const index = Math.max(
-      0,
-      PATCH_BY_ID[next.target].params.findIndex(({ id }) => id === selected.id),
+    const nextSpecs = paramPages(PATCH_BY_ID[next.target].params).flatMap(
+      (page) => page.specs,
     );
-    setParamIndex(index);
-    setParamPage(Math.floor(index / PARAMS_PER_PAGE));
+    setParamIndex(
+      Math.max(
+        0,
+        nextSpecs.findIndex(({ id }) => id === selected.id),
+      ),
+    );
   };
 
   return {
@@ -72,12 +99,17 @@ function useSoundValue() {
     values,
     specs,
     selected,
+    selectedName: paramName(specs, selected),
     selectedValue,
     selectedDisplay: formatParam(selected, selectedValue),
     valueSteps,
     paramIndex,
     paramPage,
-    pages: Math.ceil(specs.length / PARAMS_PER_PAGE),
+    // The pages' names, one per module.
+    pageNames: pages.map((page) => page.label),
+    // The params on the page showing.
+    pageSpecs: pages[paramPage].specs,
+    pageStart: pages[paramPage].start,
     octave,
     octaveLabel: `OCT ${octave > 0 ? "+" : octave < 0 ? "−" : "±"}${Math.abs(octave)}`,
     // The kit the sequencer plays, while one is picked.
@@ -96,17 +128,10 @@ function useSoundValue() {
     },
     shiftOctave: (direction: 1 | -1) =>
       setOctave((current) => clampOctave(current + direction, preset)),
-    selectParam: (index: number) => {
-      setParamIndex(index);
-      setParamPage(Math.floor(index / PARAMS_PER_PAGE));
-    },
-    // Turning a page selects its first (top-left) param.
-    showParamPage: (page: number) => {
-      setParamPage(page);
-      setParamIndex(page * PARAMS_PER_PAGE);
-    },
-    showSelectedPage: () =>
-      setParamPage(Math.floor(paramIndex / PARAMS_PER_PAGE)),
+    selectParam: setParamIndex,
+    // Turning to a module's page selects its first param.
+    showParamPage: (page: number) =>
+      setParamIndex(pages[Math.max(0, Math.min(page, pages.length - 1))].start),
     // Turning back to the preset's own step restores its exact value and
     // drops the edit.
     setSelectedValue: (step: number) => {

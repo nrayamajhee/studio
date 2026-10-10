@@ -32,16 +32,13 @@ import {
   PATCH_BY_ID,
   PATCHES,
 } from "../../lib/physical/patches";
+import { paramModules } from "../../lib/physical/patches/params";
 import {
   formatParam,
   fromUnit,
   toUnit,
 } from "../../lib/physical/patches/format";
-import type {
-  DrumKitPatch,
-  ParamSpec,
-  SectionId,
-} from "../../lib/physical/patches/types";
+import type { DrumKitPatch, ParamSpec } from "../../lib/physical/patches/types";
 import { cn } from "../../lib/utils";
 import { Button } from "../design-system/Button";
 import { Slider } from "../design-system/Slider";
@@ -52,14 +49,6 @@ export type InstrumentLabProps = {
   initialInstrument?: BusId;
 };
 
-const SECTIONS: SectionId[] = [
-  "exciter",
-  "resonator",
-  "body",
-  "filter",
-  "envelope",
-  "space",
-];
 const isKit = (id: BusId): id is KitId => PATCH_BY_ID[id].family === "drums";
 
 // Two octaves from C; A W S E D F T G Y H U J K play the first octave and a C.
@@ -676,22 +665,18 @@ export function InstrumentLab({
             className="flex flex-col gap-4"
             aria-label={`${patch.name} parameters`}
           >
-            {SECTIONS.map((section) => {
-              const specs = primary.filter((spec) => spec.section === section);
-              if (specs.length === 0) return null;
-              return (
-                <div key={section} className="flex flex-col gap-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-font-light dark:text-stone-400">
-                    {section}
-                  </h3>
-                  <ParamGroup
-                    specs={specs}
-                    values={values[instrument]}
-                    onChange={setParam}
-                  />
-                </div>
-              );
-            })}
+            {paramModules(primary).map(({ id, label, specs }) => (
+              <div key={id} className="flex flex-col gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-font-light dark:text-stone-400">
+                  {label}
+                </h3>
+                <ParamGroup
+                  specs={specs}
+                  values={values[instrument]}
+                  onChange={setParam}
+                />
+              </div>
+            ))}
             {advanced.length > 0 && (
               <details className="flex flex-col gap-2">
                 <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-font-light dark:text-stone-400">

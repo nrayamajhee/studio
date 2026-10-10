@@ -4,7 +4,7 @@
 
 import { Adsr, type AdsrStages } from "../dsp/Adsr";
 import { DcBlocker, OnePoleLowpass } from "../dsp/filters";
-import { Lfo, Noise } from "../dsp/generators";
+import { Noise } from "../dsp/generators";
 import {
   foldNote,
   keyTable,
@@ -15,15 +15,14 @@ import {
 } from "../dsp/math";
 import { jetTable, reedTable, softClip } from "../dsp/nonlinear";
 import { onePolePhaseDelay } from "../dsp/phaseDelay";
-import { Svf } from "../dsp/Svf";
 import { Instrument } from "../engine/Instrument";
+import type { ModuleSettings } from "../engine/Modules";
 import { ACTIVE, IDLE, RELEASED, Voice } from "../engine/Voice";
 import { pickTuning, type KeyTable, type BorePatch } from "../patches/types";
 import { Waveguide } from "./Waveguide";
 
 const BURST_WINDOW = 0.015;
 const MAX_HELD = 16;
-const FILTER_UPDATE = 16;
 // STK Flute: the bore is tuned to 2/3 of the note and overblown.
 const FLUTE_OVERBLOW = 0.66666;
 const FLUTE_JET_REFLECTION = 0.5;
@@ -69,9 +68,6 @@ class BoreVoice extends Voice {
   readonly breath: Adsr;
   readonly gate: Adsr;
   readonly noise = new Noise(4242);
-  readonly vibrato: Lfo;
-  readonly svf = new Svf("lowpass");
-  readonly gains = new Float64Array(2);
   boreLength = 100;
   jetLength = 30;
   boreTarget = 100;
@@ -80,10 +76,6 @@ class BoreVoice extends Voice {
   maxPressure = 1;
   outputGain = 0.5;
   noiseGain = 0.15;
-  vibratoGain = 0.05;
-  pitchVibrato = 0;
-  cutoff = 12000;
-  q = Math.SQRT1_2;
   reedSlope = 0.3;
   watchdog = false;
   // Lip resonance: input gain, a1, a2 and state.
@@ -93,10 +85,14 @@ class BoreVoice extends Voice {
   private lipY1 = 0;
   private lipY2 = 0;
   private zero1 = 0;
-  private ticks = 0;
 
-  constructor(fs: number, lowestHz: number, model: BoreModel) {
-    super(fs);
+  constructor(
+    fs: number,
+    mods: ModuleSettings,
+    lowestHz: number,
+    model: BoreModel,
+  ) {
+    super(fs, mods);
     this.model = model;
     const longest =
       model === "brass"
@@ -107,7 +103,6 @@ class BoreVoice extends Voice {
     this.dc = new DcBlocker(fs);
     this.breath = new Adsr(fs);
     this.gate = new Adsr(fs);
-    this.vibrato = new Lfo(fs);
   }
 
   reset() {
@@ -115,7 +110,7 @@ class BoreVoice extends Voice {
     this.jet.clear();
     this.reflection.clear();
     this.dc.clear();
-    this.svf.clear();
+    this.clearModules();
     this.breath.reset();
     this.gate.reset();
     this.lipY1 = this.lipY2 = 0;
@@ -141,17 +136,15 @@ class BoreVoice extends Voice {
   render(left: Float32Array, right: Float32Array, start: number, end: number) {
     const bore = this.bore;
     const jet = this.jet;
-    const gains = this.gains;
-    let peak = 0;
+    const { pitch, level } = this.mods;
     for (let i = start; i < end; i++) {
       this.boreLength += (this.boreTarget - this.boreLength) * this.glide;
       this.jetLength += (this.jetTarget - this.jetLength) * this.glide;
-      const vib = this.vibrato.process();
+      // The LFO sways the breath and bends the bore's length.
+      const vib = this.modulate();
       let pressure = this.maxPressure * this.breath.process();
-      pressure +=
-        pressure *
-        (this.noiseGain * this.noise.next() + this.vibratoGain * vib);
-      const bend = 1 - this.pitchVibrato * vib;
+      pressure += pressure * (this.noiseGain * this.noise.next() + level * vib);
+      const bend = 1 - pitch * vib;
 
       let out: number;
       if (this.model === "brass") {
@@ -208,23 +201,9 @@ class BoreVoice extends Voice {
         out = 0;
       }
 
-      if (this.ticks++ % FILTER_UPDATE === 0)
-        this.svf.set(this.cutoff, this.q, this.fs);
-      let y =
-        this.svf.process(out) *
-        this.outputGain *
-        this.gate.process() *
-        this.shape.process();
-      if (this.fadeStep > 0) {
-        this.fade = Math.max(0, this.fade - this.fadeStep);
-        y *= this.fade;
-      }
-      left[i] += y * gains[0];
-      right[i] += y * gains[1];
-      const level = y < 0 ? -y : y;
-      if (level > peak) peak = level;
+      this.emit(out, this.outputGain * this.gate.process(), i, left, right);
     }
-    this.track(peak, end - start);
+    this.endBlock(end - start);
     if (!this.breath.active && this.state === ACTIVE) this.state = RELEASED;
   }
 
@@ -247,8 +226,6 @@ export class BoreInstrument extends Instrument {
   private burstStart = -Infinity;
   private pressure = 1;
   private noiseLevel = 1;
-  private vibratoDepth = 0.04;
-  private vibratoRate = 5;
   private portamento = 0.03;
   private envelope: AdsrStages = {
     attack: 0.05,
@@ -256,9 +233,6 @@ export class BoreInstrument extends Instrument {
     sustain: 0.9,
     release: 0.1,
   };
-  private cutoff = 12000;
-  private q = Math.SQRT1_2;
-  private pitchDepth = 0;
   private lipRatio = 1;
   private watchdogReported = false;
 
@@ -267,10 +241,15 @@ export class BoreInstrument extends Instrument {
     fs: number,
     overrides?: Record<string, number>,
   ) {
-    super(patch, fs, overrides);
+    super(patch, fs, overrides, { pitch: "model", level: "model" });
     this.patch = patch;
     this.tuning = pickTuning(patch.tuningCents, fs);
-    this.voice = new BoreVoice(fs, midiToHz(patch.range[0]), patch.model);
+    this.voice = new BoreVoice(
+      fs,
+      this.mods,
+      midiToHz(patch.range[0]),
+      patch.model,
+    );
     this.voice.reflection.setPole(
       patch.model === "saxophone" ? 0.9 : 0.7 - (0.1 * 22050) / fs,
     );
@@ -283,13 +262,8 @@ export class BoreInstrument extends Instrument {
     const p = this.params;
     this.pressure = p.get("exciter.pressure");
     this.noiseLevel = p.get("exciter.noise");
-    this.vibratoDepth = p.get("exciter.vibrato");
-    this.vibratoRate = p.get("resonator.vibratoRate");
     this.portamento = p.get("resonator.portamento");
-    this.pitchDepth = p.get("resonator.pitchVibrato");
     this.envelope = p.envelope("envelope");
-    this.cutoff = p.get("filter.cutoff");
-    this.q = p.get("filter.resonance");
     const voice = this.voice;
     voice.noiseGain =
       (voice.model === "saxophone" || voice.model === "clarinet"
@@ -297,17 +271,12 @@ export class BoreInstrument extends Instrument {
         : voice.model === "brass"
           ? 0.05
           : 0.15) * this.noiseLevel;
-    voice.vibratoGain = this.vibratoDepth;
-    voice.pitchVibrato = this.pitchDepth;
-    voice.vibrato.setRate(this.vibratoRate);
     voice.reedSlope = 0.1 + 0.4 * p.get("exciter.reed");
     this.lipRatio = p.has("exciter.lip")
       ? 2 ** ((p.get("exciter.lip") - 0.5) * BRASS_LIP_RANGE)
       : 1;
     if (voice.model === "brass" && this.current >= 0)
       voice.setLip(this.currentHz * this.lipRatio);
-    voice.cutoff = this.cutoff;
-    voice.q = this.q;
     voice.breath.setRelease(this.envelope.release);
     voice.glide =
       1 - Math.exp(-3 / (Math.max(0.001, this.portamento) * this.fs));
@@ -395,13 +364,8 @@ export class BoreInstrument extends Instrument {
       voice.gate.set(0.005, 0, 1, 0.05, true);
       voice.gate.noteOn();
       voice.shape.noteOn();
-      voice.vibrato.set(
-        this.vibratoRate,
-        this.patch.id === "flute" ? 0.3 : 0.25,
-        0.3,
-      );
-      voice.vibrato.restart();
       voice.start(n, this.clock);
+      voice.onset(n, this.clock);
     }
     this.retune(n, !legato);
   }
@@ -414,6 +378,7 @@ export class BoreInstrument extends Instrument {
     this.current = n;
     voice.note = n;
     voice.state = ACTIVE;
+    voice.retarget(n);
     const f0 = midiToHz(n) * 2 ** (keyTable(this.tuning, n) / 1200);
     const fs = this.fs;
     this.currentHz = f0;

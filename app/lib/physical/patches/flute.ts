@@ -46,6 +46,7 @@ export const flute: BorePatch = {
     noise: 1.2,
     vibrato: 0.04,
     vibratoRate: 5,
+    vibratoDelay: 0.3,
     portamento: 0.03,
     jetRatio: 0.32,
     attack: 0.06,

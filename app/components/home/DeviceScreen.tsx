@@ -924,8 +924,8 @@ export type DeviceScreenProps = {
   // Centred along the bottom in place of the footer.
   badges?: readonly ScreenBadge[];
   getAnalyser?: () => AnalyserNode | null;
+  // The synth view's params: the page showing, one module's worth.
   params?: readonly ScreenParam[];
-  page?: number;
   // Turns the readout into the view's pager: ‹ [page] ›.
   pager?: ScreenPager;
   tiles?: readonly ScreenTile[];
@@ -940,7 +940,7 @@ export type DeviceScreenProps = {
   onLoopEdge?: (index: number, edge: "start" | "end", beats: number) => void;
   // A clip edge's drag starting and ending.
   onLoopEdgeDrag?: (dragging: boolean) => void;
-  // Tapping a param on the synth view selects it, like the red knob.
+  // Tapping a param on the synth view selects it (its index on the page).
   onSelectParam?: (index: number) => void;
   // The four knob readings for the ADSR, LFO and FX views.
   readouts?: readonly ScreenReadout[];
@@ -989,7 +989,6 @@ export type DeviceScreenProps = {
   className?: string;
 };
 
-export const PARAMS_PER_PAGE = 15;
 export const TILES_PER_PAGE: Record<string, number> = {
   save: 48,
   presets: 12,
@@ -1318,7 +1317,6 @@ export function DeviceScreen({
   badges,
   getAnalyser = noAnalyser,
   params = [],
-  page = 0,
   pager,
   tiles = [],
   selected = 0,
@@ -1622,25 +1620,23 @@ export function DeviceScreen({
             role="group"
             aria-label="Parameters"
           >
-            {params
-              .slice(page * PARAMS_PER_PAGE, (page + 1) * PARAMS_PER_PAGE)
-              .map((entry, i) => {
-                const styles = param({ selected: entry.selected });
-                return (
-                  <Button
-                    key={entry.id}
-                    unstyled
-                    aria-label={`${entry.label}: ${entry.value}`}
-                    aria-pressed={entry.selected ?? false}
-                    className={styles.base()}
-                    {...keepFocus}
-                    onClick={() => onSelectParam?.(page * PARAMS_PER_PAGE + i)}
-                  >
-                    <span className={styles.label()}>{entry.label}</span>
-                    <span className={styles.value()}>{entry.value}</span>
-                  </Button>
-                );
-              })}
+            {params.map((entry, i) => {
+              const styles = param({ selected: entry.selected });
+              return (
+                <Button
+                  key={entry.id}
+                  unstyled
+                  aria-label={`${entry.label}: ${entry.value}`}
+                  aria-pressed={entry.selected ?? false}
+                  className={styles.base()}
+                  {...keepFocus}
+                  onClick={() => onSelectParam?.(i)}
+                >
+                  <span className={styles.label()}>{entry.label}</span>
+                  <span className={styles.value()}>{entry.value}</span>
+                </Button>
+              );
+            })}
           </div>
         )}
 

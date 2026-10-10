@@ -2,7 +2,6 @@ import { Adsr } from "../dsp/Adsr";
 import { DcBlocker } from "../dsp/filters";
 import { Noise } from "../dsp/generators";
 import { clamp, foldNote, keyTable, midiToHz, panGains } from "../dsp/math";
-import { Svf } from "../dsp/Svf";
 import { Instrument } from "../engine/Instrument";
 import {
   ACTIVE,
@@ -21,7 +20,6 @@ import {
 } from "./exciters";
 import { StringLoop } from "./StringLoop";
 
-const FILTER_UPDATE = 16;
 const REFRET_SECONDS = 0.008;
 const STRUM_WINDOW = 0.015;
 const MAX_UNISON = 3;
@@ -31,9 +29,7 @@ class StringVoice extends Voice {
   readonly split = new Float64Array(MAX_UNISON);
   readonly excitation: Float32Array;
   readonly noise: Noise;
-  readonly gains = new Float64Array(2);
   readonly dc: DcBlocker;
-  readonly svf = new Svf("lowpass");
   readonly amp: Adsr;
   loopCount = 1;
   excitationLength = 0;
@@ -43,14 +39,7 @@ class StringVoice extends Voice {
   countdown = 0;
   pendingNote = -1;
   pendingVelocity = 0;
-  cutoff = 16000;
-  cutoffTarget = 16000;
-  q = Math.SQRT1_2;
-  filterEnv = 0;
-  filterEnvDecay = 1;
-  envAmount = 0;
   lastContactMs = 0;
-  private ticks = 0;
   private readonly owner: StringInstrument;
 
   constructor(
@@ -61,7 +50,7 @@ class StringVoice extends Voice {
     excitationSize: number,
     seed: number,
   ) {
-    super(fs);
+    super(fs, owner.mods);
     this.owner = owner;
     for (let i = 0; i < loops; i++)
       this.loops.push(new StringLoop(fs, lowestHz));
@@ -74,7 +63,7 @@ class StringVoice extends Voice {
   reset() {
     for (let i = 0; i < this.loops.length; i++) this.loops[i].clear();
     this.dc.clear();
-    this.svf.clear();
+    this.clearModules();
     this.amp.reset();
     this.excitationLength = 0;
     this.excitationPos = 0;
@@ -87,8 +76,6 @@ class StringVoice extends Voice {
     const loops = this.loops;
     const split = this.split;
     const excitation = this.excitation;
-    const gains = this.gains;
-    let peak = 0;
     for (let i = start; i < end; i++) {
       if (this.countdown > 0 && --this.countdown === 0) this.owner.launch(this);
       let e = 0;
@@ -98,28 +85,9 @@ class StringVoice extends Voice {
       let y = 0;
       for (let s = 0; s < this.loopCount; s++) y += loops[s].tick(e * split[s]);
       if (this.pickupTap > 0) y -= loops[0].delay.readInt(this.pickupTap);
-      y = this.dc.process(y);
-      if (this.ticks++ % FILTER_UPDATE === 0) this.updateFilter();
-      y = this.svf.process(y) * this.amp.process() * this.shape.process();
-      if (this.fadeStep > 0) {
-        this.fade = Math.max(0, this.fade - this.fadeStep);
-        y *= this.fade;
-      }
-      left[i] += y * gains[0];
-      right[i] += y * gains[1];
-      const level = y < 0 ? -y : y;
-      if (level > peak) peak = level;
+      this.emit(this.dc.process(y), this.amp.process(), i, left, right);
     }
-    this.track(peak, end - start);
-  }
-
-  // Cutoff glides toward its target and the filter envelope decays, both
-  // recomputed every 16 samples.
-  private updateFilter() {
-    this.cutoff += (this.cutoffTarget - this.cutoff) * 0.3;
-    this.filterEnv *= this.filterEnvDecay;
-    const cutoff = this.cutoff * (1 + this.envAmount * this.filterEnv);
-    this.svf.set(cutoff, this.q, this.fs);
+    this.endBlock(end - start);
   }
 }
 
@@ -139,11 +107,6 @@ export class StringInstrument extends Instrument {
   private hardness = 0.5;
   private position = 0.15;
   private strength = 1;
-  private cutoff = 16000;
-  private q = Math.SQRT1_2;
-  private envAmount = 0;
-  private envDecay = 0.3;
-  private keytrack = 0;
   private attack = 0.001;
   private release = 1;
   private strum = 0;
@@ -208,11 +171,6 @@ export class StringInstrument extends Instrument {
     this.hardness = p.get("exciter.hardness");
     this.position = p.get("exciter.position");
     this.strength = p.get("exciter.strength");
-    this.cutoff = p.get("filter.cutoff");
-    this.q = p.get("filter.resonance");
-    this.envAmount = p.get("filter.envAmount");
-    this.envDecay = p.get("filter.envDecay");
-    this.keytrack = p.get("filter.keytrack");
     this.attack = p.get("envelope.attack");
     this.release = p.get("envelope.release");
     this.strum = p.has("exciter.strum") ? p.get("exciter.strum") : 0;
@@ -220,10 +178,6 @@ export class StringInstrument extends Instrument {
       ? p.get("exciter.pluck") >= 0.5
       : this.patch.exciter === "finger";
     this.jawari = p.has("resonator.jawari") ? p.get("resonator.jawari") : 0;
-    for (let i = 0; i < this.voices.length; i++) {
-      const voice = this.voices[i];
-      if (voice.busy) this.configureFilter(voice, voice.note);
-    }
   }
 
   activeVoices() {
@@ -509,9 +463,7 @@ export class StringInstrument extends Instrument {
     }
     panGains(pan, voice.gains);
 
-    this.configureFilter(voice, note);
-    voice.cutoff = voice.cutoffTarget;
-    voice.filterEnv = 1;
+    voice.onset(note, this.clock);
     voice.amp.set(this.attack, 0, 1, 0.05, true);
     voice.amp.noteOn();
     voice.shape.noteOn();
@@ -537,7 +489,7 @@ export class StringInstrument extends Instrument {
       voice.loops[s].setDecay(t60 * scale, 0.005);
     }
     this.excite(voice, note, velocity);
-    voice.filterEnv = 1;
+    voice.retrigger();
     voice.shape.noteOn();
   }
 
@@ -576,16 +528,6 @@ export class StringInstrument extends Instrument {
     const t60 = keyTable(this.patch.damperT60, voice.note) * this.release;
     for (let s = 0; s < voice.loopCount; s++)
       voice.loops[s].setDecay(t60, 0.015);
-  }
-
-  private configureFilter(voice: StringVoice, note: number) {
-    voice.cutoffTarget =
-      this.cutoff * 2 ** ((this.keytrack * (note - 60)) / 12);
-    voice.q = this.q;
-    voice.envAmount = this.envAmount;
-    voice.filterEnvDecay = Math.exp(
-      -16 / (Math.max(0.01, this.envDecay) * this.fs),
-    );
   }
 
   private findHeld(n: number) {

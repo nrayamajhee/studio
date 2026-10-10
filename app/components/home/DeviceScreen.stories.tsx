@@ -2,13 +2,16 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 import { PATCH_BY_ID } from "../../lib/physical/patches";
 import { formatParam } from "../../lib/physical/patches/format";
+import { paramModules } from "../../lib/physical/patches/params";
 import { DEVICE_PRESETS } from "./deviceEngine";
 import { DeviceScreen, ScreenHint, ScreenValue } from "./DeviceScreen";
 import { DEFAULT_TIMING } from "./noteRecorder";
 import { DRUM_PIECES } from "./instrumentIcons";
 import { ICON_CHOICES, PresetIcon } from "./presetIcons";
 
-const pianoParams = PATCH_BY_ID.piano.params.map((spec) => ({
+// The piano's Exciter page, one module of its params.
+const pianoModules = paramModules(PATCH_BY_ID.piano.params);
+const pianoParams = pianoModules[0].specs.map((spec) => ({
   id: spec.id,
   label: spec.label,
   value: formatParam(spec, spec.default),
@@ -71,7 +74,17 @@ export const VolumeOverlay: Story = {
 };
 
 export const Synth: Story = {
-  args: { view: "synth", status: "Params 1/2", params: pianoParams },
+  args: {
+    view: "synth",
+    status: "",
+    params: pianoParams,
+    pager: {
+      pages: pianoModules.map(({ label }) => label),
+      at: 0,
+      color: "red",
+      onPick: fn(),
+    },
+  },
 };
 
 export const Envelope: Story = {

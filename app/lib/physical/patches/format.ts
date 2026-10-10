@@ -41,6 +41,8 @@ export function formatParam(spec: ParamSpec, value: number) {
       return `${value.toFixed(2)}×`;
     case "st":
       return `${value > 0 ? "+" : ""}${value.toFixed(1)} st`;
+    case "oct":
+      return `${value.toFixed(1)} oct`;
     case "cents":
       return `${value.toFixed(1)} ¢`;
     case "dB":

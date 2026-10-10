@@ -21,6 +21,9 @@ import {
   tuningSweep,
 } from "./offline/diagnostics";
 import { renderEngine } from "./offline/renderEngine";
+import { PATCHES } from "./patches";
+import { piano } from "./patches/piano";
+import type { Patch } from "./patches/types";
 
 const RATES = [44100, 48000];
 
@@ -108,7 +111,7 @@ describe("Engine", () => {
     const { left } = renderEngine(events, {
       sampleRate: 48000,
       duration: 2,
-      overrides: { flute: { "exciter.vibrato": 0, "space.send": 0 } },
+      overrides: { flute: { "lfo.level": 0, "lfo.pitch": 0, "space.send": 0 } },
     });
     expect(
       Math.abs(measurePitch(left, 48000, midiToHz(72)).cents),
@@ -271,5 +274,83 @@ describe("instruments", () => {
     );
     const db = gainToDb(windowRms(left, 48000, 0, 0.1, 0.4));
     expect(db).toBeLessThan(-60);
+  });
+});
+
+describe("modules", () => {
+  const melodic = PATCHES.filter((patch) => patch.family !== "drums");
+  const ids = (patch: Patch, section: string) =>
+    patch.params.filter((spec) => spec.section === section).map(({ id }) => id);
+
+  it("give every instrument the same filter, LFO and output params", () => {
+    for (const section of ["filter", "lfo"]) {
+      const expected = ids(piano, section);
+      for (const patch of melodic) {
+        expect(ids(patch, section), `${patch.id} ${section}`).toEqual(expected);
+      }
+    }
+    for (const patch of PATCHES) {
+      expect(ids(patch, "output"), patch.id).toEqual(
+        expect.arrayContaining(["output.level", "space.send"]),
+      );
+    }
+  });
+
+  const play = (
+    instrument: InstrumentId,
+    overrides: Record<string, number>,
+    duration = 2,
+  ) =>
+    renderEngine(
+      [{ type: "noteOn", instrument, note: 69, velocity: 0.7, time: 0 }],
+      {
+        sampleRate: 48000,
+        duration,
+        overrides: {
+          [instrument]: { "space.send": 0, ...overrides },
+          master: { "reverb.return": 0 },
+        },
+      },
+    ).left;
+
+  it("bend the oscillator's own pitch with the LFO", () => {
+    // A square LFO at 0.5 Hz holds the pitch up for a second, then down.
+    const left = play("oscillator", {
+      "lfo.rate": 0.5,
+      "lfo.shape": 2,
+      "lfo.pitch": 50,
+    });
+    const up = measurePitch(left, 48000, 440, 0, 0.2, 0.8).cents;
+    const down = measurePitch(left, 48000, 440, 0, 1.2, 1.8).cents;
+    expect(Math.abs(up - 50)).toBeLessThan(3);
+    expect(Math.abs(down + 50)).toBeLessThan(3);
+  });
+
+  it("bend a model's output through the swept delay", () => {
+    // A triangle sweeps the delay at a steady speed each half cycle: flat
+    // while it lengthens, sharp while it shortens.
+    const left = play("harmonium", {
+      "lfo.rate": 0.5,
+      "lfo.shape": 1,
+      "lfo.pitch": 50,
+      "lfo.level": 0,
+    });
+    const flat = measurePitch(left, 48000, 440, 0, 0.2, 0.8).cents;
+    const sharp = measurePitch(left, 48000, 440, 0, 1.2, 1.8).cents;
+    expect(sharp - flat).toBeGreaterThan(40);
+  });
+
+  it("open the filter with its envelope on every instrument", () => {
+    for (const patch of melodic) {
+      const id = patch.id as InstrumentId;
+      const shut = { "filter.cutoff": 300, "lfo.level": 0, "lfo.pitch": 0 };
+      const closed = play(id, shut, 0.3);
+      const opened = play(id, { ...shut, "filter.envAmount": 4 }, 0.3);
+      expect(
+        windowRms(opened, 48000, 0, 0, 0.3) /
+          windowRms(closed, 48000, 0, 0, 0.3),
+        patch.id,
+      ).toBeGreaterThan(1.2);
+    }
   });
 });
