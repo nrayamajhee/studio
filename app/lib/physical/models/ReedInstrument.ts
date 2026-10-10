@@ -9,8 +9,8 @@ import {
   panGains,
   TWO_PI,
 } from "../dsp/math";
-import { Svf } from "../dsp/Svf";
-import { Instrument, MAX_BLOCK } from "../engine/Instrument";
+import { Instrument } from "../engine/Instrument";
+import type { ModuleSettings } from "../engine/Modules";
 import {
   ACTIVE,
   IDLE,
@@ -22,7 +22,6 @@ import {
 import { pickTuning, type KeyTable, type ReedPatch } from "../patches/types";
 
 const MAX_REEDS = 2;
-const FILTER_UPDATE = 16;
 // The reed swings through its slot freely while it is within this much of
 // rest; past it the air rushes round the tip. The Brightness param moves it.
 const SLOT = 0.25;
@@ -60,21 +59,16 @@ class ReedVoice extends Voice {
   readonly noise: Noise;
   readonly noiseFilter = new OnePoleHighpass();
   readonly dc: DcBlocker;
-  readonly svf = new Svf("lowpass");
-  readonly gains = new Float64Array(2);
   reeds = 1;
   drive = 2;
   slot = SLOT;
   asymmetry = 0;
   noiseGain = 0;
   outputScale = 1;
-  cutoff = 12000;
-  q = Math.SQRT1_2;
   private flow = 0;
-  private ticks = 0;
 
-  constructor(fs: number, seed: number) {
-    super(fs);
+  constructor(fs: number, mods: ModuleSettings, seed: number) {
+    super(fs, mods);
     this.breath = new Adsr(fs);
     this.noise = new Noise(seed);
     this.noiseFilter.setCutoff(NOISE_HIGHPASS, fs);
@@ -86,7 +80,7 @@ class ReedVoice extends Voice {
     this.y2.fill(0);
     this.breath.reset();
     this.dc.clear();
-    this.svf.clear();
+    this.chain.clear();
     this.flow = 0;
   }
 
@@ -114,20 +108,13 @@ class ReedVoice extends Voice {
   }
 
   render(left: Float32Array, right: Float32Array, start: number, end: number) {
-    this.play(left, right, start, end, null);
-  }
-
-  play(
-    left: Float32Array,
-    right: Float32Array,
-    start: number,
-    end: number,
-    swell: Float32Array | null,
-  ) {
-    const { c1, c2, feed, level, y1, y2, gains } = this;
-    let peak = 0;
+    this.chain.begin();
+    const { c1, c2, feed, level, y1, y2 } = this;
+    const swell = this.mods.level;
     for (let i = start; i < end; i++) {
-      const pressure = this.breath.process() * (1 + (swell ? swell[i] : 0));
+      // The LFO is the swell: bellows or a hand moving the pressure.
+      const pressure =
+        this.breath.process() * (1 + swell * this.chain.modulate());
       const drive = this.drive * pressure;
       // Air through the slot follows the opening and √pressure (Bernoulli).
       let open = 0;
@@ -154,22 +141,9 @@ class ReedVoice extends Voice {
         flow *
         this.noiseFilter.process(this.noise.next());
 
-      if (this.ticks++ % FILTER_UPDATE === 0)
-        this.svf.set(this.cutoff, this.q, this.fs);
-      let y =
-        this.svf.process(this.dc.process(out)) *
-        this.outputScale *
-        this.shape.process();
-      if (this.fadeStep > 0) {
-        this.fade = Math.max(0, this.fade - this.fadeStep);
-        y *= this.fade;
-      }
-      left[i] += y * gains[0];
-      right[i] += y * gains[1];
-      const magnitude = y < 0 ? -y : y;
-      if (magnitude > peak) peak = magnitude;
+      this.chain.emit(this.dc.process(out), this.outputScale, i, left, right);
     }
-    this.track(peak, end - start);
+    this.endBlock(end - start);
   }
 }
 
@@ -178,18 +152,14 @@ class ReedVoice extends Voice {
 // fed by the pressure; the air it lets past is a pulse each swing, and the
 // sound is that flow's slope, so harder blowing swings the reed further out
 // of the slot and brightens it. A key can sound two reeds, the second a few
-// cents sharp. One shared swell (bellows or hand tremolo) moves the pressure
-// of every voice.
+// cents sharp. The LFO is a shared swell (bellows or hand tremolo): one
+// free-running cycle moves the pressure of every voice.
 export class ReedInstrument extends Instrument {
   readonly patch: ReedPatch;
   // Replaced by calibration tools; otherwise fixed at construction.
   tuning: KeyTable;
   private readonly voices: ReedVoice[] = [];
   private readonly byNote = new Int16Array(128).fill(-1);
-  private readonly swell = new Float32Array(MAX_BLOCK);
-  private swellPhase = 0;
-  private swellStep = 0;
-  private swellDepth = 0;
   private pressure = 1;
   private celeste = 1;
   private noiseLevel = 1;
@@ -200,19 +170,21 @@ export class ReedInstrument extends Instrument {
     sustain: 0.9,
     release: 0.08,
   };
-  private cutoff = 12000;
-  private q = Math.SQRT1_2;
 
   constructor(
     patch: ReedPatch,
     fs: number,
     overrides?: Record<string, number>,
   ) {
-    super(patch, fs, overrides);
+    super(patch, fs, overrides, {
+      pitch: "output",
+      level: "model",
+      free: true,
+    });
     this.patch = patch;
     this.tuning = pickTuning(patch.tuningCents, fs);
     for (let v = 0; v < patch.polyphony + 2; v++)
-      this.voices.push(new ReedVoice(fs, 3000 + v * 97));
+      this.voices.push(new ReedVoice(fs, this.mods, 3000 + v * 97));
     this.applyParams();
   }
 
@@ -221,19 +193,13 @@ export class ReedInstrument extends Instrument {
     const p = this.params;
     this.pressure = p.get("exciter.pressure");
     this.noiseLevel = p.get("exciter.noise");
-    this.swellDepth = p.get("exciter.vibrato");
-    this.swellStep = p.get("resonator.vibratoRate") / this.fs;
     this.celeste = p.get("resonator.detune");
     this.slot = SLOT + SLOT_RANGE * p.get("resonator.brightness");
     this.envelope = p.envelope("envelope");
-    this.cutoff = p.get("filter.cutoff");
-    this.q = p.get("filter.resonance");
     for (let i = 0; i < this.voices.length; i++) {
       const voice = this.voices[i];
       voice.slot = this.slot;
       voice.noiseGain = this.noiseLevel;
-      voice.cutoff = this.cutoff;
-      voice.q = this.q;
       voice.breath.setRelease(this.envelope.release);
       if (voice.busy) this.tune(voice, voice.note);
     }
@@ -289,6 +255,7 @@ export class ReedInstrument extends Instrument {
     voice.start(n, this.clock);
     this.byNote[n] = idle;
     this.tune(voice, n);
+    voice.onset(n, this.clock);
     voice.push();
     const [low, high] = this.patch.range;
     panGains(
@@ -326,15 +293,9 @@ export class ReedInstrument extends Instrument {
   }
 
   protected renderVoices(start: number, end: number) {
-    const swell = this.swell;
-    for (let i = start; i < end; i++) {
-      swell[i] = this.swellDepth * Math.sin(TWO_PI * this.swellPhase);
-      this.swellPhase += this.swellStep;
-      if (this.swellPhase >= 1) this.swellPhase -= 1;
-    }
     for (let i = 0; i < this.voices.length; i++) {
       const voice = this.voices[i];
-      if (voice.busy) voice.play(this.left, this.right, start, end, swell);
+      if (voice.busy) voice.render(this.left, this.right, start, end);
     }
   }
 

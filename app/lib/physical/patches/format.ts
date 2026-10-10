@@ -41,6 +41,12 @@ export function formatParam(spec: ParamSpec, value: number) {
       return `${value.toFixed(2)}×`;
     case "st":
       return `${value > 0 ? "+" : ""}${value.toFixed(1)} st`;
+    // A fraction of something physical (a string's length), not the knob's
+    // travel.
+    case "%":
+      return `${Math.round(value * 100)}%`;
+    case "oct":
+      return `${value.toFixed(1)} oct`;
     case "cents":
       return `${value.toFixed(1)} ¢`;
     case "dB":

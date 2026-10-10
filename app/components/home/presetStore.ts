@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { PATCH_BY_ID } from "../../lib/physical/patches";
+import { migrateParams } from "../../lib/physical/patches/params";
 import {
   DEVICE_PRESETS,
   PRESET_CATEGORIES,
@@ -60,8 +61,22 @@ const isPreset = (value: unknown): value is DevicePreset => {
 function read(): PresetLibrary {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+    // Saved before some params moved into the vibrato module, values come
+    // across under their new ids.
+    const migrate = (target: DevicePreset["target"], values: object) =>
+      migrateParams(
+        PATCH_BY_ID[target].family,
+        values as Record<string, number>,
+      );
     const instruments = Array.isArray(stored?.instruments)
-      ? (stored.instruments as unknown[]).filter(isPreset)
+      ? (stored.instruments as unknown[]).filter(isPreset).map((preset) =>
+          preset.overrides && typeof preset.overrides === "object"
+            ? {
+                ...preset,
+                overrides: migrate(preset.target, preset.overrides),
+              }
+            : preset,
+        )
       : [];
     const known = new Set([
       ...DEVICE_PRESETS.map((preset) => preset.id),
@@ -84,7 +99,7 @@ function read(): PresetLibrary {
         PATCH_BY_ID[preset.target].params.map((spec) => spec.id),
       );
       const clean = Object.fromEntries(
-        Object.entries(raw).filter(
+        Object.entries(migrate(preset.target, raw)).filter(
           ([id, value]) =>
             params.has(id) &&
             typeof value === "number" &&

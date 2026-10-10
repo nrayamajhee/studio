@@ -4,6 +4,7 @@ import { lerp, panGains } from "../dsp/math";
 import { ModalBank } from "../dsp/modal";
 import { Svf } from "../dsp/Svf";
 import { Instrument } from "../engine/Instrument";
+import type { ModuleSettings } from "../engine/Modules";
 import { RELEASED, Voice } from "../engine/Voice";
 import type { DrumPieceId } from "../messages";
 import type { DrumBrush, DrumKitPatch, DrumPieceSpec } from "../patches/types";
@@ -64,7 +65,6 @@ class DrumVoice extends Voice {
   readonly bank: ModalBank;
   readonly pulse: Float32Array;
   readonly noise: Noise;
-  readonly gains = new Float64Array(2);
   private readonly baseFreq: Float64Array;
   private readonly baseT60: Float64Array;
   private readonly weights: Float64Array;
@@ -103,8 +103,8 @@ class DrumVoice extends Voice {
   private brushScale = 0;
   private hissLevel = 0;
 
-  constructor(spec: VoiceSpec, fs: number, seed: number) {
-    super(fs);
+  constructor(spec: VoiceSpec, fs: number, mods: ModuleSettings, seed: number) {
+    super(fs, mods);
     this.spec = spec;
     this.noise = new Noise(seed);
     this.pulse = new Float32Array(Math.ceil(0.006 * fs) + 2);
@@ -403,13 +403,14 @@ export class DrumKit extends Instrument {
     fs: number,
     overrides?: Record<string, number>,
   ) {
-    super(patch, fs, overrides);
+    // The kit has no vibrato and filters the whole bus itself.
+    super(patch, fs, overrides, { pitch: "model", level: "model" });
     this.patch = patch;
     for (const piece of kitPieces(patch)) {
       const spec = patch.pieces[piece];
       if (!spec || spec.model === "combo") continue;
       const seed = 9000 + PIECE_ORDER.indexOf(piece) * 101;
-      const voice = new DrumVoice(spec, fs, seed);
+      const voice = new DrumVoice(spec, fs, this.mods, seed);
       this.voices.push(voice);
       this.byPiece.set(piece, voice);
     }

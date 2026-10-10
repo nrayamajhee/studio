@@ -1,7 +1,7 @@
 import { foldNote, keyTable, lerp, midiToHz, panGains } from "../dsp/math";
 import { ModalBank } from "../dsp/modal";
-import { Svf } from "../dsp/Svf";
 import { Instrument } from "../engine/Instrument";
+import type { ModuleSettings } from "../engine/Modules";
 import {
   ACTIVE,
   IDLE,
@@ -14,23 +14,17 @@ import type { BarPatch } from "../patches/types";
 import { stick } from "./exciters";
 
 const MAX_MODES = 8;
-const FILTER_UPDATE = 16;
 // A hard hit stays on for less time than a soft one at the same hardness.
 const VELOCITY_CONTACT = 0.3;
 
 class BarVoice extends Voice {
   readonly modes: ModalBank;
   readonly excitation: Float32Array;
-  readonly svf = new Svf("lowpass");
-  readonly gains = new Float64Array(2);
   excitationLength = 0;
   excitationPos = 0;
-  cutoff = 16000;
-  q = Math.SQRT1_2;
-  private ticks = 0;
 
-  constructor(fs: number, longestContact: number) {
-    super(fs);
+  constructor(fs: number, mods: ModuleSettings, longestContact: number) {
+    super(fs, mods);
     this.modes = new ModalBank(MAX_MODES, fs);
     this.excitation = new Float32Array(Math.ceil(longestContact * fs) + 1);
   }
@@ -41,32 +35,22 @@ class BarVoice extends Voice {
 
   reset() {
     this.modes.clear();
-    this.svf.clear();
+    this.chain.clear();
     this.excitationLength = 0;
     this.excitationPos = 0;
   }
 
   render(left: Float32Array, right: Float32Array, start: number, end: number) {
-    const { modes, excitation, gains } = this;
-    let peak = 0;
+    this.chain.begin();
+    const { modes, excitation } = this;
     for (let i = start; i < end; i++) {
       const e =
         this.excitationPos < this.excitationLength
           ? excitation[this.excitationPos++]
           : 0;
-      if (this.ticks++ % FILTER_UPDATE === 0)
-        this.svf.set(this.cutoff, this.q, this.fs);
-      let y = this.svf.process(modes.process(e)) * this.shape.process();
-      if (this.fadeStep > 0) {
-        this.fade = Math.max(0, this.fade - this.fadeStep);
-        y *= this.fade;
-      }
-      left[i] += y * gains[0];
-      right[i] += y * gains[1];
-      const level = y < 0 ? -y : y;
-      if (level > peak) peak = level;
+      this.chain.emit(modes.process(e), 1, i, left, right);
     }
-    this.track(peak, end - start);
+    this.endBlock(end - start);
   }
 }
 
@@ -85,15 +69,13 @@ export class BarInstrument extends Instrument {
   private strength = 0.8;
   private decay = 1;
   private brightness = 0;
-  private cutoff = 16000;
-  private q = Math.SQRT1_2;
 
   constructor(patch: BarPatch, fs: number, overrides?: Record<string, number>) {
     super(patch, fs, overrides);
     this.patch = patch;
     const longest = (patch.contact[0] / 1000) * (1 + VELOCITY_CONTACT);
     for (let v = 0; v < patch.polyphony + 2; v++)
-      this.voices.push(new BarVoice(fs, longest));
+      this.voices.push(new BarVoice(fs, this.mods, longest));
     this.applyParams();
   }
 
@@ -104,13 +86,6 @@ export class BarInstrument extends Instrument {
     this.strength = p.get("exciter.strength");
     this.decay = p.get("resonator.decay");
     this.brightness = p.get("resonator.brightness");
-    this.cutoff = p.get("filter.cutoff");
-    this.q = p.get("filter.resonance");
-    for (let i = 0; i < this.voices.length; i++) {
-      const voice = this.voices[i];
-      voice.cutoff = this.cutoff;
-      voice.q = this.q;
-    }
   }
 
   protected allVoices() {
@@ -164,6 +139,7 @@ export class BarInstrument extends Instrument {
     voice.start(n, this.clock);
     this.byNote[n] = idle;
     this.tune(voice, n);
+    voice.onset(n, this.clock);
     const [low, high] = this.patch.range;
     panGains(
       this.patch.pan.center +
@@ -247,6 +223,7 @@ export class BarInstrument extends Instrument {
     const gain = velocity ** (1.5 * this.strength);
     voice.excitationLength = stick(voice.excitation, contact, gain, this.fs);
     voice.excitationPos = 0;
+    voice.retrigger();
     voice.shape.noteOn();
   }
 }

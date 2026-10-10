@@ -204,6 +204,43 @@ A voice is one sounding note (or one string, or one drum piece). Every model sha
 
 When all voices are busy, `pickVictim` chooses which one to reuse: the **quietest released** voice first, otherwise the **oldest active** one. Voice pools hold a few spares above the polyphony so a stolen voice can fade out while its replacement starts.
 
+### Built-in modules
+
+Inside each instrument, every voice carries the same **filter** and **vibrato** (an LFO of its own), set from the same params on every melodic instrument (`engine/Modules.ts`, `ModuleSettings`), alongside the model's own **envelope** (the breath, the bow, the bellows; a string's attack and damper; the oscillator's gate). These belong to the instrument. The **master ADSR** and **master LFO** above are the engine's: the Device sets them over every instrument (its ADSR and LFO modes, kept per track), with their own params (`adsr.*`, `lfo.*`) apart from any instrument's. A model renders only its raw signal and hands each sample to its voice's chain (`engine/VoiceChain.ts`), which runs the rest of the voice the same way for all of them. In the order a note goes through:
+
+```text
+  EXCITER     hammer, pluck, stick, or bow / breath / bellows  <- the ENVELOPE drives these
+                                                                <- VIBRATO Level (winds, bow, reeds)
+     |
+  RESONATOR   string loop, bore, modes                         <- the ENVELOPE's damper (strings)
+     |                                                          <- VIBRATO Pitch (winds, bow)
+     x model's own gain (a string's attack, the oscillator's GATE, level tilt)
+     |
+  FILTER      SVF lowpass, updated every 16 samples:
+              cutoff glides 30% of the way to Cutoff x 2^(Keytrack x (note - 60)/12),
+              x (1 + Env amount x env), env = 1 at each note, decaying over Env decay,
+              x 2^(VIBRATO Filter x vibrato)
+     |
+  VIBRATO     where the model can't take them: Level as tremolo, Pitch as a swept delay
+     |
+  ---------- the instrument's voice ends here; the engine's stages follow ----------
+     |
+  master ADSR -> steal fade -> pan -> bus: BODY -> OUTPUT (drive, level, send) -> master LFO, FX
+```
+
+The **vibrato** (`dsp/generators.ts`, `Lfo`) is one per voice: Rate, Shape (sine, triangle, square, random), and a Delay after which its depth fades in, the way a player starts vibrato late. Three depths say where it goes. Filter always sweeps the filter's cutoff, by octaves. Pitch and Level go to whatever the model has that is physical to move, and otherwise to the voice's output right after the filter:
+
+| Depth | Winds (`BoreInstrument`) | Bowed strings     | Free reeds                   | Oscillator      | Strings, bars       |
+| ----- | ------------------------ | ----------------- | ---------------------------- | --------------- | ------------------- |
+| Pitch | the bore's length        | the neck's length | output: swept delay          | the oscillators | output: swept delay |
+| Level | breath pressure          | bow velocity      | bellows pressure (the swell) | output: tremolo | output: tremolo     |
+
+- **The swept delay** bends any model's output, however it is built: a delay moving at speed `v` shifts pitch by `1 − v`, so a swing of `p` needs a sweep of `p / (2π · rate)` s. It is capped at 8 ms, which only limits the slowest rates, and crossfades in and out over 20 ms so switching it never clicks.
+- **The free reeds' vibrato runs freely**: every voice joins one cycle that started with the instrument, as a harmonium's bellows move every reed at once. Everywhere else each note starts its own after the Delay.
+- **Drum kits** have no envelope or vibrato, and filter the whole bus instead of each voice.
+- **Restarts.** A new note snaps the filter to its cutoff and starts the envelope and vibrato over. A re-strike while the note rings (a piano key, a bar) restarts only the filter envelope; a legato wind note keeps both, and its filter glides to the new note's keytracked cutoff.
+- **Cost.** The chain settles once per rendered segment which modules have anything to do, so modules left at zero cost a branch per sample; the vibrato is computed every 16 samples and drawn straight between, the filter is only redesigned when its cutoff moves, and the swept delay only runs while pitch vibrato is on. The chain is one class for every model (`VoiceChain`), not code on the shared `Voice` base, so its per-sample path stays monomorphic for the JIT however many models play: on Node, a dense passage renders within ±10% of the speed it did before the modules existed (strings and bowed strings faster, the oscillator and free reeds a little slower).
+
 ## 5. The instruments
 
 ### 5.1 Strings: piano, guitars, ukulele, banjo, basses, harp and sitar
@@ -303,7 +340,7 @@ The exciter writes a short burst into a buffer, and the loop adds it in sample b
 A wind instrument is a nonlinear "mouth" coupled to a tube. Pressure waves travel down the tube, reflect off the open end or bell, and come back to disturb the jet or reed. That disturbance is what keeps the note going.
 
 ```text
-   breath pressure = maxPressure x ADSR x (1 + noise + vibrato)
+   breath pressure = maxPressure x ADSR x (1 + noise + vibrato Level)
          |
          v
   +--------------+  pressure wave  +------------------------------+  +---------------------+
@@ -363,7 +400,7 @@ The bow sits on the string, splitting it into a neck side and a bridge side. At 
    v_bow = (0.03 + 0.2 x velocity) x Bow speed x ADSR
 ```
 
-- Up to 4 voices (double stops and chords). Vibrato modulates the neck length and fades in after 0.3 s, the way a player adds it late.
+- Up to 4 voices (double stops and chords). Vibrato is the vibrato module on the neck's length, 10 cents after a 0.3 s Delay, fading in over 0.4 s, the way a player adds it late; its Level sways the bow.
 - **Portamento**: a note played while another is still held starts at that note's loop length and glides to its own (80 ms on the violin, 100 ms on the cello), like a finger sliding along the string. Notes starting within 30 ms of each other are a chord and don't glide. The plucked and struck strings have no portamento: a fret or hammer jumps.
 - The body filter was designed at 44.1 kHz. Its pole/zero pairs are rescaled to the actual sample rate so the resonances stay put.
 - The **cello** runs the same loop an octave and a fifth lower. The violin's filter would put its resonances in the wrong place, so the cello uses the bus's modal body instead (air and wood modes near 100 and 200 Hz); its Body knob is that body's mix.
@@ -416,7 +453,7 @@ The **metronome** is a separate two-mode woodblock (1.9/2.9 kHz, higher when acc
 A free reed is a brass tongue that swings through a slot. Each swing it lets a pulse of air past, and that pulsing flow is the sound; unlike the sax's reed, no tube sets the pitch, so the tongue's own frequency does. A key can have several reeds: the harmonium's second sits a few cents sharp and beats against the first, and the accordion's musette has three, one in tune and one either side of it.
 
 ```text
-   pressure = ADSR x drive x (1 + swell)          swell: bellows (harmonium), hand tremolo (harmonica)
+   pressure = ADSR x drive x (1 + swell)          swell: the vibrato's Level, as bellows (harmonium) or hand tremolo (harmonica)
         |
         v
    +--------------------------+     x      +---------------------------+   flow   +-----------+
@@ -459,18 +496,18 @@ A struck bar, a hammered pan dome and a plucked tine all ring in a handful of mo
 
 ### 5.7 Oscillator (not a physical model)
 
-The one source with nothing to simulate: a sine, triangle, square or saw (the **Wave** param, in the LFO's shape order with a saw in place of random) through a lowpass, for the master ADSR, LFO and FX to shape. It runs on its own bus like any instrument, so it reaches them the same way.
+The one source with nothing to simulate: a sine, triangle, square or saw (the **Wave** param, in the vibrato's shape order with a saw in place of random) through the shared filter and an ADSR, for the modules to shape. It runs on its own bus like any instrument, so it reaches the master ADSR, LFO and FX the same way.
 
 ```text
-  oscillator (sine | triangle | square | saw)  x velocity
+  oscillator (sine | triangle | square | saw)  x velocity    (vibrato Pitch bends it)
         |
         v
-  SVF lowpass (Cutoff, Resonance)  ->  gate (Attack, Release)  ->  master ADSR  ->  bus
+  filter module  ->  gate (Attack, Release)  ->  vibrato Level  ->  master ADSR  ->  bus
 ```
 
 - Raw square and saw edges alias at high notes, so the square and saw steps are rounded off with **polyBLEP** and the triangle's corners with **polyBLAMP** (`dsp/generators.ts`), about 15 dB less aliasing at F7.
 - Each wave is scaled to a sine's RMS, so switching waves keeps the level; one output gain puts a mezzo-forte C4 at −14 LUFS momentary for all four.
-- The gate holds full level while the key is down; decay and sustain come from the master ADSR. Up to 8 voices.
+- Its Envelope is only a gate's Attack and Release, holding full level while the key is down: decay and sustain come from the master ADSR (the Device's ADSR mode), so two volume envelopes never stack. Up to 8 voices.
 - **Glide**: played legato, a new note's frequency slides from the held note's (50 ms by default), under the same chord rule as the bowed strings.
 
 ## 6. Bodies (`models/Body.ts`)
@@ -522,19 +559,34 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
 
 ```text
   ParamSpec {
-    id:       "exciter.hardness"      section.name
+    id:       "exciter.hardness"      module.name
     label:    "Hardness"
-    section:  exciter | resonator | body | filter | envelope | space
+    section:  the module: exciter | resonator | filter | body | output | envelope | vibrato,
+              or master (the engine's own: master ADSR, LFO, FX, reverb, volume)
     min, max, default
-    unit:     Hz | s | % | cents | dB | st | x | ms       (display only)
-    scale:    linear | log                                (knob mapping)
+    unit:     Hz | s | % | cents | dB | st | oct | x | ms | °   (display only;
+              without one, a value shows as how far the knob has turned;
+              % shows a fraction as itself, such as a position on a string)
+    scale:    linear | log                                    (knob mapping)
     primary:  shown without "Advanced"
   }
 ```
 
+- **Modules.** Every instrument's params come in the same modules (`paramModules`), in the order they act on a note: the signal chain (Exciter, Resonator, Filter, Body, Output), with each of the instrument's own modulators after the stage it acts on. The envelope follows the exciter it drives (named Breath, Bow or Bellows), a string's resonator it damps (Damper), or the oscillator's filter it gates (Gate); the vibrato follows the filter, since everything it moves happens by then. So a flute reads Exciter · Breath · Resonator · Filter · Vibrato · Body · Output, a piano Exciter · Resonator · Damper · Filter · Vibrato · Body · Output. The Synth screen gives each its own page after an overview of the chain (see [The Device › Synth parameters](the-device.md#architecture)), and the Lab a heading. An instrument skips the modules it doesn't have: the bars have no envelope, the oscillator no Resonator or Body, the kits no envelope or vibrato. The Exciter and Resonator are each model's own. The rest are built by the same helpers, so they carry the same ids, labels and ranges everywhere:
+
+  | Module   | Params                                                                                                                                                         |
+  | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | Filter   | Cutoff, Resonance, Env amount, Env decay, Keytrack (`filterParams`; the kits have only Cutoff and Resonance, on the bus)                                       |
+  | Envelope | Attack, Decay, Sustain, Release of the exciter: breath, bow, bellows (`adsrParams`); strings: Attack and Damper; the oscillator: its gate's Attack and Release |
+  | Vibrato  | Rate, Shape, Delay, Pitch, Level, Filter (`vibratoParams`)                                                                                                     |
+  | Body     | Size, Resonance, Tone, Mix (`bodyParams`); the violin's measured body is one Body knob, a kit's body its stereo Width and Tone                                 |
+  | Output   | Drive (where there is one), Level, Reverb send (`outputParams`)                                                                                                |
+
+  Away from its page, a label two modules share is led by its module (Filter Resonance, Body Resonance).
+
 - **Knob mapping.** `fromUnit(spec, t)` maps 0–1 across the range, geometrically for log params. The Device's knobs have 11 steps: step `k` means `t = k / 10`.
-- **When changes take effect.** On strings and winds, settings that shape the attack or tune the loop (hardness, position, decay, brightness, inharmonicity, breath) apply from the next note. Everything else changes notes that are already sounding: filter, body, drive, level, send, reverb, volume, vibrato, bow pressure and the drum controls. Values that would click if they jumped are smoothed.
-- **Presets.** `deviceEngine.loadPreset` resets _every_ param of the instrument to its default or the preset's override, so settings never leak between presets. It only sends values that actually changed. Saved presets are a full snapshot of those values.
+- **When changes take effect.** On strings and winds, settings that shape the attack or tune the loop (hardness, position, decay, brightness, inharmonicity, breath) apply from the next note. Everything else changes notes that are already sounding: filter, body, drive, level, send, reverb, volume, the vibrato's rate, shape and depths, bow pressure and the drum controls; the vibrato's Delay applies from the next note. Values that would click if they jumped are smoothed.
+- **Presets.** `deviceEngine.loadPreset` resets _every_ param of the instrument to its default or the preset's override, so settings never leak between presets. It only sends values that actually changed. Saved presets are a full snapshot of those values. Presets and edits saved before the vibrato and swell became the vibrato module are read under their new ids (`migrateParams`), with the old loop-length vibrato depths turned into cents.
 
 ## 9. From key press to sound
 
@@ -577,7 +629,7 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
   | onset, lifecycle      | notes start on time; voices free themselves                                                          |
 
 - **Audition and tune.** Storybook › `Lab/Instrument Lab`: press Start audio, pick an instrument, play with the mouse or `A W S E D F T G Y H U J K` (`Z`/`X` octave, hold Space for sustain), tweak the generated parameter panel, and use **Copy patch JSON** to move tuned values into `patches/*.ts`. The Diagnostics tab runs the tuning, decay, stability, level, onset/lifecycle and stress sweeps through the real worklet.
-- **Unit tests.** `npm run test:unit` runs the DSP building blocks (`dsp/dsp.test.ts`) and the engine (`physical.test.ts`) in Node.
+- **Unit tests.** `npm run test:unit` runs the DSP building blocks (`dsp/dsp.test.ts`), the engine (`physical.test.ts`) and the Synth screen's pages and graphs (`app/components/home/synthPages.test.ts`) in Node.
 
 ## 11. Adding to it
 
@@ -595,11 +647,13 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
   |-- messages.ts            event / stats / warning types shared by both threads
   |-- engine/
   |   |-- Engine.ts          render loop, segmenting, master stage, limiter, safety clip
-  |   |-- MasterLfo.ts       the LFO over the mix: pitch, volume, filter, pan
+  |   |-- MasterLfo.ts       the master LFO over the mix: pitch, volume, filter, pan
   |   |-- MasterFx.ts        drive, chorus, ping-pong delay over the mix
   |   |-- EventQueue.ts      preallocated frame-sorted queue
   |   |-- Instrument.ts      bus: body, drive, gain, reverb send, idle tail
   |   |-- Voice.ts           voice state machine, pickVictim
+  |   |-- VoiceChain.ts      the chain every voice runs: filter, vibrato, master ADSR, fade, pan
+  |   |-- Modules.ts         the filter and vibrato settings every voice shares
   |   `-- ParamSet.ts        clamped param values by id
   |-- models/
   |   |-- StringLoop.ts      single-delay-loop string, jawari bridge

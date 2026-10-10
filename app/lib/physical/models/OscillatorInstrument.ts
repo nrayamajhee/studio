@@ -1,8 +1,8 @@
 import { Adsr } from "../dsp/Adsr";
 import { Oscillator } from "../dsp/generators";
 import { foldNote, midiToHz, panGains } from "../dsp/math";
-import { Svf } from "../dsp/Svf";
 import { Instrument } from "../engine/Instrument";
+import type { ModuleSettings } from "../engine/Modules";
 import {
   ACTIVE,
   IDLE,
@@ -18,15 +18,13 @@ class OscillatorVoice extends Voice {
   readonly oscillator: Oscillator;
   readonly osc2: Oscillator;
   // Opens at full while the key is down; decay and sustain come from the
-  // master ADSR.
+  // track ADSR.
   readonly gate: Adsr;
-  readonly filter = new Svf("lowpass");
-  readonly gains = new Float64Array(2);
   level = 0;
   level2 = 0;
 
-  constructor(fs: number) {
-    super(fs);
+  constructor(fs: number, mods: ModuleSettings) {
+    super(fs, mods);
     this.oscillator = new Oscillator(fs);
     this.osc2 = new Oscillator(fs);
     this.gate = new Adsr(fs);
@@ -36,7 +34,7 @@ class OscillatorVoice extends Voice {
     this.oscillator.reset();
     this.osc2.reset();
     this.gate.reset();
-    this.filter.clear();
+    this.chain.clear();
   }
 
   start(note: number, clock: number) {
@@ -44,31 +42,24 @@ class OscillatorVoice extends Voice {
   }
 
   render(left: Float32Array, right: Float32Array, start: number, end: number) {
-    const gains = this.gains;
-    let peak = 0;
+    this.chain.begin();
+    const { pitch } = this.mods;
+    const vibrato = this.mods.lfoOn;
     for (let i = start; i < end; i++) {
-      let y =
-        this.filter.process(
-          this.level *
-            (this.oscillator.process() + this.level2 * this.osc2.process()),
-        ) *
-        this.gate.process() *
-        this.shape.process();
-      if (this.fadeStep > 0) {
-        this.fade = Math.max(0, this.fade - this.fadeStep);
-        y *= this.fade;
-      }
-      left[i] += y * gains[0];
-      right[i] += y * gains[1];
-      const level = y < 0 ? -y : y;
-      if (level > peak) peak = level;
+      // The vibrato bends both oscillators; level and filter are the output's.
+      const bend = vibrato ? 1 + pitch * this.chain.modulate() : 1;
+      const x =
+        this.level *
+        (this.oscillator.process(bend) + this.level2 * this.osc2.process(bend));
+      this.chain.emit(x, this.gate.process(), i, left, right);
     }
-    this.track(peak, end - start);
+    this.endBlock(end - start);
   }
 }
 
 // One or two polyphonic oscillators (sine, triangle, square or saw) summed
-// through a lowpass: a plain source for the master ADSR, LFO and FX to shape.
+// through the filter and a gate: a plain source for the modules and the track
+// ADSR to shape.
 export class OscillatorInstrument extends Instrument {
   readonly patch: OscillatorPatch;
   private readonly voices: OscillatorVoice[] = [];
@@ -79,10 +70,10 @@ export class OscillatorInstrument extends Instrument {
     fs: number,
     overrides?: Record<string, number>,
   ) {
-    super(patch, fs, overrides);
+    super(patch, fs, overrides, { pitch: "model", level: "output" });
     this.patch = patch;
     for (let i = 0; i < patch.polyphony + 2; i++) {
-      this.voices.push(new OscillatorVoice(fs));
+      this.voices.push(new OscillatorVoice(fs, this.mods));
     }
     this.applyParams();
   }
@@ -96,8 +87,6 @@ export class OscillatorInstrument extends Instrument {
     const phase = p.get("exciter.phase") / 360;
     const attack = p.get("envelope.attack");
     const release = p.get("envelope.release");
-    const cutoff = p.get("filter.cutoff");
-    const q = p.get("filter.resonance");
     const glide = 1 - Math.exp(-3 / (p.get("exciter.glide") * this.fs));
     for (let i = 0; i < this.voices.length; i++) {
       const voice = this.voices[i];
@@ -108,7 +97,6 @@ export class OscillatorInstrument extends Instrument {
       voice.osc2.phaseOffset = phase;
       voice.level2 = level2;
       voice.gate.set(attack, 0, 1, release, true);
-      voice.filter.set(cutoff, q, this.fs);
     }
   }
 
@@ -162,6 +150,7 @@ export class OscillatorInstrument extends Instrument {
     voice.reset();
     voice.start(n, this.clock);
     this.byNote[n] = idle;
+    voice.onset(n, this.clock);
     voice.oscillator.setFrequency(
       midiToHz(n),
       from >= 0 ? midiToHz(from) : undefined,

@@ -1,5 +1,5 @@
 import type { AdsrStages } from "../dsp/Adsr";
-import type { ParamSpec, SectionId } from "./types";
+import type { ParamSpec, Patch, SectionId } from "./types";
 
 const param = (
   id: string,
@@ -13,11 +13,85 @@ const param = (
 
 const primary = { primary: true } as const;
 
+// An instrument's modules. The exciter and resonator are the model's own; the
+// rest are built from the same params on every instrument that has them. The
+// envelope and vibrato are the instrument's own modulators, inside each voice,
+// apart from the master ADSR and LFO the Device sets over every instrument.
+export const MODULE_LABELS: Readonly<Record<SectionId, string>> = {
+  exciter: "Exciter",
+  resonator: "Resonator",
+  filter: "Filter",
+  body: "Body",
+  output: "Output",
+  envelope: "Envelope",
+  vibrato: "Vibrato",
+  master: "Master",
+};
+
+// The envelope is named after what it drives: the breath, the bow, the
+// bellows, a string's damper, the oscillator's gate.
+const ENVELOPE_LABELS: Readonly<Record<Patch["family"], string>> = {
+  string: "Damper",
+  bore: "Breath",
+  bowed: "Bow",
+  reed: "Bellows",
+  oscillator: "Gate",
+  bar: "Envelope",
+  drums: "Envelope",
+};
+
+// The order the modules act on a note: the signal chain (exciter, resonator,
+// filter, body, output), each modulator after the stage it acts on. The
+// envelope drives the exciter, damps a string's resonator, or gates the
+// oscillator after its filter; everything the vibrato moves (the exciter,
+// the loop, the cutoff, or the voice's level and pitch right after the
+// filter) happens before the body.
+function moduleOrder(family: Patch["family"]): SectionId[] {
+  const envelopeAfter: SectionId =
+    family === "string"
+      ? "resonator"
+      : family === "oscillator"
+        ? "filter"
+        : "exciter";
+  const order: SectionId[] = [];
+  for (const stage of [
+    "exciter",
+    "resonator",
+    "filter",
+    "body",
+    "output",
+  ] as const) {
+    order.push(stage);
+    if (stage === envelopeAfter) order.push("envelope");
+    if (stage === "filter") order.push("vibrato");
+  }
+  return order;
+}
+
+export const moduleLabel = (family: Patch["family"], id: SectionId) =>
+  id === "envelope" ? ENVELOPE_LABELS[family] : MODULE_LABELS[id];
+
+// An instrument's params grouped by module, in the order they act on a note;
+// modules it doesn't have are left out. The Synth screen gives each its own
+// page and the Lab a heading.
+export function paramModules(
+  specs: readonly ParamSpec[],
+  family: Patch["family"],
+) {
+  return moduleOrder(family)
+    .map((id) => ({
+      id,
+      label: moduleLabel(family, id),
+      specs: specs.filter((spec) => spec.section === id),
+    }))
+    .filter((module) => module.specs.length > 0);
+}
+
 type AdsrRanges = {
   readonly [Stage in keyof AdsrStages]: readonly [min: number, max: number];
 };
 
-// The winds' breath and the violin's bow.
+// The winds' breath, the violin's bow and the free reeds' bellows.
 const INSTRUMENT_ADSR: AdsrRanges = {
   attack: [0.005, 0.5],
   decay: [0.01, 1],
@@ -39,13 +113,14 @@ function adsrParams(
   prefix: string,
   stages: AdsrStages,
   ranges: AdsrRanges,
+  section: SectionId = "envelope",
 ): ParamSpec[] {
   const time = { unit: "s", scale: "log", primary: true } as const;
   return [
     param(
       `${prefix}.attack`,
       "Attack",
-      "envelope",
+      section,
       ...ranges.attack,
       stages.attack,
       time,
@@ -53,7 +128,7 @@ function adsrParams(
     param(
       `${prefix}.decay`,
       "Decay",
-      "envelope",
+      section,
       ...ranges.decay,
       stages.decay,
       time,
@@ -61,7 +136,7 @@ function adsrParams(
     param(
       `${prefix}.sustain`,
       "Sustain",
-      "envelope",
+      section,
       ...ranges.sustain,
       stages.sustain,
       primary,
@@ -69,7 +144,7 @@ function adsrParams(
     param(
       `${prefix}.release`,
       "Release",
-      "envelope",
+      section,
       ...ranges.release,
       stages.release,
       time,
@@ -77,7 +152,9 @@ function adsrParams(
   ];
 }
 
-function filterParams(cutoff: number, q: number): ParamSpec[] {
+// The filter module: a lowpass whose cutoff follows the key and opens with
+// an envelope that starts at each note and decays.
+function filterParams(cutoff: number, q = Math.SQRT1_2): ParamSpec[] {
   return [
     param("filter.cutoff", "Cutoff", "filter", 200, 16000, cutoff, {
       unit: "Hz",
@@ -86,30 +163,143 @@ function filterParams(cutoff: number, q: number): ParamSpec[] {
     }),
     param("filter.resonance", "Resonance", "filter", 0.5, 8, q, primary),
     param("filter.envAmount", "Env amount", "filter", 0, 4, 0, primary),
-    param("filter.keytrack", "Keytrack", "filter", 0, 1, 0, primary),
     param("filter.envDecay", "Env decay", "filter", 0.02, 2, 0.3, {
       unit: "s",
       scale: "log",
+      primary: true,
+    }),
+    param("filter.keytrack", "Keytrack", "filter", 0, 1, 0, primary),
+  ];
+}
+
+// In the order of the LFO's shapes.
+export const LFO_SHAPES = ["Sine", "Triangle", "Square", "Random"] as const;
+
+export type VibratoDefaults = {
+  rate?: number;
+  delay?: number;
+  // Cents either side of the note.
+  pitch?: number;
+  // A fraction of the exciter's drive (breath, bow, bellows) or, on models
+  // without one, of the output.
+  level?: number;
+};
+
+// A wind or bow's vibrato depth as it used to be set, a fraction of the loop's
+// length, in cents.
+export const ratioToCents = (ratio: number) => 1200 * Math.log2(1 + ratio);
+
+// Ids older saved presets may hold for what is now the vibrato module, with
+// how each value carries over. The winds' and bow's pitch depths were
+// fractions of the loop's length.
+const MOVED_TO_VIBRATO: Partial<
+  Record<
+    Patch["family"],
+    Record<string, [id: string, convert?: (v: number) => number]>
+  >
+> = {
+  bore: {
+    "exciter.vibrato": ["vibrato.level"],
+    "resonator.vibratoRate": ["vibrato.rate"],
+    "resonator.pitchVibrato": ["vibrato.pitch", ratioToCents],
+  },
+  bowed: {
+    "exciter.vibrato": ["vibrato.pitch", ratioToCents],
+    "resonator.vibratoRate": ["vibrato.rate"],
+  },
+  reed: {
+    "exciter.vibrato": ["vibrato.level"],
+    "resonator.vibratoRate": ["vibrato.rate"],
+  },
+};
+
+// Saved values with their ids brought up to date; values whose id is current
+// pass through, and a moved one never replaces one already under its new id.
+export function migrateParams(
+  family: Patch["family"],
+  values: Readonly<Record<string, number>>,
+) {
+  if (family === "drums") return values;
+  const moved = MOVED_TO_VIBRATO[family] ?? {};
+  const next: Record<string, number> = {};
+  for (const [id, value] of Object.entries(values)) {
+    // Briefly, the vibrato's params were lfo.*, the master LFO's ids.
+    const target =
+      moved[id] ??
+      (id.startsWith("lfo.") ? [`vibrato.${id.slice(4)}`] : undefined);
+    if (!target) next[id] = value;
+    else if (!(target[0] in values))
+      next[target[0]] = target[1] ? target[1](value) : value;
+  }
+  return next;
+}
+
+// The vibrato module: an LFO in each voice, starting with the note after
+// `delay` (the free reeds' swell runs freely instead), swinging pitch, level
+// and cutoff. Not the master LFO, which the Device sets over the whole mix.
+function vibratoParams(d: VibratoDefaults = {}): ParamSpec[] {
+  return [
+    param("vibrato.rate", "Rate", "vibrato", 0.2, 12, d.rate ?? 5, {
+      unit: "Hz",
+      scale: "log",
+      primary: true,
+    }),
+    param("vibrato.shape", "Shape", "vibrato", 0, LFO_SHAPES.length - 1, 0, {
+      options: LFO_SHAPES,
+      primary: true,
+    }),
+    param("vibrato.delay", "Delay", "vibrato", 0, 2, d.delay ?? 0, {
+      unit: "s",
+      primary: true,
+    }),
+    param("vibrato.pitch", "Pitch", "vibrato", 0, 50, d.pitch ?? 0, {
+      unit: "cents",
+      primary: true,
+    }),
+    param("vibrato.level", "Level", "vibrato", 0, 0.3, d.level ?? 0, primary),
+    param("vibrato.filter", "Filter", "vibrato", 0, 3, 0, {
+      unit: "oct",
+      primary: true,
     }),
   ];
 }
 
-// Just the voice's lowpass, for models without a filter envelope.
-function lowpassParams(cutoff: number): ParamSpec[] {
-  return filterParams(cutoff, Math.SQRT1_2).slice(0, 2);
-}
-
 // Legato glide time; the lowest is a jump.
-const portamentoParam = (value: number) =>
-  param("resonator.portamento", "Portamento", "resonator", 0.001, 0.3, value, {
+const glideParam = (id: string, section: SectionId, value: number, max = 0.3) =>
+  param(id, "Glide", section, 0.001, max, value, {
     unit: "s",
     scale: "log",
     primary: true,
   });
 
-const shared = (send: number): ParamSpec[] => [
-  param("space.send", "Reverb send", "space", 0, 1, send, primary),
-  param("output.level", "Level", "space", 0, 2, 1),
+// The output module: drive (where the model has it), level and reverb send.
+const outputParams = (send: number, drive?: number): ParamSpec[] => [
+  ...(drive === undefined
+    ? []
+    : [param("output.drive", "Drive", "output", 0, 1, drive, primary)]),
+  param("output.level", "Level", "output", 0, 2, 1),
+  param("space.send", "Reverb send", "output", 0, 1, send, primary),
+];
+
+const bodyParams = (
+  mix: number,
+  labels?: { size: string; resonance: string },
+) => [
+  param("body.size", labels?.size ?? "Size", "body", 0.7, 1.4, 1, {
+    unit: "×",
+    primary: true,
+  }),
+  param(
+    "body.resonance",
+    labels?.resonance ?? "Resonance",
+    "body",
+    labels ? 0 : 0.5,
+    2,
+    1,
+    { unit: "×", primary: true },
+  ),
+  param("body.tone", "Tone", "body", -1, 1, 0, primary),
+  param("body.mix", "Mix", "body", 0, 1, mix, primary),
 ];
 
 export type StringDefaults = {
@@ -132,15 +322,11 @@ export const PLUCKS = ["Pick", "Finger"] as const;
 export function stringParams(d: StringDefaults): ParamSpec[] {
   return [
     param("exciter.hardness", "Hardness", "exciter", 0, 1, d.hardness, primary),
-    param(
-      "exciter.position",
-      "Position",
-      "exciter",
-      0.05,
-      0.5,
-      d.position,
-      primary,
-    ),
+    // How far along the string from the bridge, shown as that fraction.
+    param("exciter.position", "Position", "exciter", 0.05, 0.5, d.position, {
+      unit: "%",
+      primary: true,
+    }),
     param("exciter.strength", "Strength", "exciter", 0, 1, 0.8, primary),
     ...(d.pluck === undefined
       ? []
@@ -197,20 +383,8 @@ export function stringParams(d: StringDefaults): ParamSpec[] {
             primary,
           ),
         ]),
-    param("body.size", "Size", "body", 0.7, 1.4, 1, {
-      unit: "×",
-      primary: true,
-    }),
-    param("body.resonance", "Resonance", "body", 0.5, 2, 1, {
-      unit: "×",
-      primary: true,
-    }),
-    param("body.tone", "Tone", "body", -1, 1, 0, primary),
-    param("body.mix", "Mix", "body", 0, 1, d.bodyMix, primary),
-    ...(d.drive === undefined
-      ? []
-      : [param("output.drive", "Drive", "body", 0, 1, d.drive)]),
-    ...filterParams(d.cutoff, d.q ?? Math.SQRT1_2),
+    ...bodyParams(d.bodyMix),
+    ...filterParams(d.cutoff, d.q),
     param("envelope.attack", "Attack", "envelope", 0.001, 0.2, 0.001, {
       unit: "s",
       scale: "log",
@@ -221,7 +395,8 @@ export function stringParams(d: StringDefaults): ParamSpec[] {
       scale: "log",
       primary: true,
     }),
-    ...shared(d.send),
+    ...vibratoParams(),
+    ...outputParams(d.send, d.drive),
   ];
 }
 
@@ -229,6 +404,8 @@ export type BoreDefaults = {
   noise: number;
   vibrato: number;
   vibratoRate: number;
+  // How long a held note waits before its vibrato fades in.
+  vibratoDelay?: number;
   // Legato glide time; the winds slide, brass a little less.
   portamento: number;
   jetRatio?: number;
@@ -298,41 +475,18 @@ export function boreParams(d: BoreDefaults): ParamSpec[] {
       unit: "×",
       primary: true,
     }),
-    param("exciter.vibrato", "Vibrato", "exciter", 0, 0.12, d.vibrato, primary),
-    param(
-      "resonator.vibratoRate",
-      "Vibrato rate",
-      "resonator",
-      3,
-      8,
-      d.vibratoRate,
-      {
-        unit: "Hz",
-        primary: true,
-      },
-    ),
-    portamentoParam(d.portamento),
-    param(
-      "resonator.pitchVibrato",
-      "Pitch vibrato",
-      "resonator",
-      0,
-      0.01,
-      0.002,
-    ),
-    param("body.size", "Bell size", "body", 0.7, 1.4, 1, {
-      unit: "×",
-      primary: true,
-    }),
-    param("body.resonance", "Presence", "body", 0, 2, 1, {
-      unit: "×",
-      primary: true,
-    }),
-    param("body.tone", "Tone", "body", -1, 1, 0, primary),
-    param("body.mix", "Mix", "body", 0, 1, 1, primary),
-    ...filterParams(d.cutoff, Math.SQRT1_2),
+    glideParam("resonator.portamento", "resonator", d.portamento),
+    ...bodyParams(1, { size: "Bell size", resonance: "Presence" }),
+    ...filterParams(d.cutoff),
     ...adsrParams("envelope", d, INSTRUMENT_ADSR),
-    ...shared(d.send),
+    // The vibrato sways the breath; a touch of pitch rides on it.
+    ...vibratoParams({
+      rate: d.vibratoRate,
+      delay: d.vibratoDelay ?? 0.25,
+      pitch: ratioToCents(0.002),
+      level: d.vibrato,
+    }),
+    ...outputParams(d.send),
   ];
 }
 
@@ -345,36 +499,28 @@ export function bowedParams(
 ): ParamSpec[] {
   return [
     param("exciter.pressure", "Bow pressure", "exciter", 0, 1, 0.75, primary),
-    param(
-      "exciter.position",
-      "Bow position",
-      "exciter",
-      0.05,
-      0.4,
-      0.18,
-      primary,
-    ),
+    param("exciter.position", "Bow position", "exciter", 0.05, 0.4, 0.18, {
+      unit: "%",
+      primary: true,
+    }),
     param("exciter.speed", "Bow speed", "exciter", 0.5, 1.5, 1, {
       unit: "×",
       primary: true,
     }),
-    param("exciter.vibrato", "Vibrato", "exciter", 0, 0.02, 0.006, primary),
-    param("resonator.vibratoRate", "Vibrato rate", "resonator", 3, 8, 5.6, {
-      unit: "Hz",
-      primary: true,
-    }),
-    portamentoParam(portamento),
+    glideParam("resonator.portamento", "resonator", portamento),
     body === "violin"
       ? param("body.violin", "Body", "body", 0, 1, 1, primary)
       : param("body.mix", "Body", "body", 0, 1, 0.6, primary),
     param("body.tone", "Tone", "body", -1, 1, 0, primary),
-    ...filterParams(12000, Math.SQRT1_2),
+    ...filterParams(12000),
     ...adsrParams(
       "envelope",
       { attack: 0.06, decay: 0.05, sustain: 0.9, release: 0.15 },
       INSTRUMENT_ADSR,
     ),
-    ...shared(send),
+    // The left hand's vibrato: it rolls the string's length.
+    ...vibratoParams({ rate: 5.6, delay: 0.3, pitch: ratioToCents(0.006) }),
+    ...outputParams(send),
   ];
 }
 
@@ -403,16 +549,6 @@ export function reedParams(d: ReedDefaults): ParamSpec[] {
       unit: "×",
       primary: true,
     }),
-    param("exciter.vibrato", "Swell", "exciter", 0, 0.3, d.swell, primary),
-    param(
-      "resonator.vibratoRate",
-      "Swell rate",
-      "resonator",
-      0.2,
-      8,
-      d.swellRate,
-      { unit: "Hz", scale: "log", primary: true },
-    ),
     // How far the reed swings before air rushes past it: narrower, brighter
     // pulses.
     param(
@@ -429,19 +565,12 @@ export function reedParams(d: ReedDefaults): ParamSpec[] {
       unit: "×",
       primary: true,
     }),
-    param("body.size", "Size", "body", 0.7, 1.4, 1, {
-      unit: "×",
-      primary: true,
-    }),
-    param("body.resonance", "Resonance", "body", 0.5, 2, 1, {
-      unit: "×",
-      primary: true,
-    }),
-    param("body.tone", "Tone", "body", -1, 1, 0, primary),
-    param("body.mix", "Mix", "body", 0, 1, d.bodyMix, primary),
-    ...lowpassParams(d.cutoff),
+    ...bodyParams(d.bodyMix),
+    ...filterParams(d.cutoff),
     ...adsrParams("envelope", d, INSTRUMENT_ADSR),
-    ...shared(d.send),
+    // The swell: the bellows or a cupped hand moving the pressure.
+    ...vibratoParams({ rate: d.swellRate, level: d.swell }),
+    ...outputParams(d.send),
   ];
 }
 
@@ -464,22 +593,10 @@ export function barParams(d: BarDefaults): ParamSpec[] {
     }),
     // Tilts the upper modes' levels, ±6 dB an octave of their ratio.
     param("resonator.brightness", "Brightness", "resonator", -1, 1, 0, primary),
-    ...(d.bodyMix === undefined
-      ? []
-      : [
-          param("body.size", "Size", "body", 0.7, 1.4, 1, {
-            unit: "×",
-            primary: true,
-          }),
-          param("body.resonance", "Resonance", "body", 0.5, 2, 1, {
-            unit: "×",
-            primary: true,
-          }),
-          param("body.tone", "Tone", "body", -1, 1, 0, primary),
-          param("body.mix", "Mix", "body", 0, 1, d.bodyMix, primary),
-        ]),
-    ...lowpassParams(d.cutoff),
-    ...shared(d.send),
+    ...(d.bodyMix === undefined ? [] : bodyParams(d.bodyMix)),
+    ...filterParams(d.cutoff),
+    ...vibratoParams(),
+    ...outputParams(d.send),
   ];
 }
 
@@ -489,7 +606,6 @@ export const OSCILLATOR_WAVES = ["Sine", "Triangle", "Square", "Saw"] as const;
 // The second oscillator can be switched off, leaving a single-oscillator patch.
 export const OSCILLATOR_WAVES_2 = ["Off", ...OSCILLATOR_WAVES] as const;
 
-// Shaping beyond the gate's attack and release comes from the master ADSR.
 export function oscillatorParams(send: number, glide: number): ParamSpec[] {
   const time = { unit: "s", scale: "log", primary: true } as const;
   return [
@@ -525,25 +641,14 @@ export function oscillatorParams(send: number, glide: number): ParamSpec[] {
       unit: "°",
       primary: true,
     }),
-    // Legato glide, the synth's portamento; the lowest is a jump.
-    param("exciter.glide", "Glide", "exciter", 0.001, 0.5, glide, time),
-    param("filter.cutoff", "Cutoff", "filter", 200, 16000, 16000, {
-      unit: "Hz",
-      scale: "log",
-      primary: true,
-    }),
-    param(
-      "filter.resonance",
-      "Resonance",
-      "filter",
-      0.5,
-      8,
-      Math.SQRT1_2,
-      primary,
-    ),
+    glideParam("exciter.glide", "exciter", glide, 0.5),
+    ...filterParams(16000),
+    // Only a gate's attack and release: the track ADSR shapes the rest, so
+    // two volume envelopes never stack.
     param("envelope.attack", "Attack", "envelope", 0.005, 0.5, 0.005, time),
     param("envelope.release", "Release", "envelope", 0.02, 2, 0.1, time),
-    ...shared(send),
+    ...vibratoParams(),
+    ...outputParams(send),
   ];
 }
 
@@ -592,44 +697,45 @@ export function drumParams(send: number): ParamSpec[] {
       Math.SQRT1_2,
       primary,
     ),
-    ...shared(send),
+    ...outputParams(send),
   ];
 }
 
 export const MASTER_PARAMS: ParamSpec[] = [
-  param("master.volume", "Volume", "space", 0, 1, 0.8, primary),
-  param("reverb.size", "Reverb size", "space", 0.5, 1.5, 1, {
+  param("master.volume", "Volume", "master", 0, 1, 0.8, primary),
+  param("reverb.size", "Reverb size", "master", 0.5, 1.5, 1, {
     unit: "×",
     primary: true,
   }),
-  param("reverb.decay", "Reverb decay", "space", 0.3, 8, 1.8, {
+  param("reverb.decay", "Reverb decay", "master", 0.3, 8, 1.8, {
     unit: "s",
     scale: "log",
     primary: true,
   }),
-  param("reverb.damping", "Reverb damping", "space", 0, 0.7, 0.35, primary),
-  param("reverb.predelay", "Predelay", "space", 0, 0.06, 0.015, { unit: "s" }),
-  param("reverb.return", "Reverb return", "space", 0, 1, 0.35, primary),
+  param("reverb.damping", "Reverb damping", "master", 0, 0.7, 0.35, primary),
+  param("reverb.predelay", "Predelay", "master", 0, 0.06, 0.015, { unit: "s" }),
+  param("reverb.return", "Reverb return", "master", 0, 1, 0.35, primary),
   // One LFO over the whole mix; shape and target are indices (sine, triangle,
   // square, random; pitch, volume, filter, pan). Zero depth leaves the mix as
   // it is.
-  param("lfo.rate", "LFO rate", "space", 0.2, 20, 5, {
+  param("lfo.rate", "LFO rate", "master", 0.2, 20, 5, {
     unit: "Hz",
     scale: "log",
     primary: true,
   }),
-  param("lfo.depth", "LFO depth", "space", 0, 1, 0, primary),
-  param("lfo.shape", "LFO shape", "space", 0, 3, 0),
-  param("lfo.target", "LFO target", "space", 0, 3, 0),
+  param("lfo.depth", "LFO depth", "master", 0, 1, 0, primary),
+  param("lfo.shape", "LFO shape", "master", 0, 3, 0),
+  param("lfo.target", "LFO target", "master", 0, 3, 0),
   // The FX chain; zero leaves the mix as it is.
-  param("fx.drive", "Drive", "space", 0, 1, 0, primary),
-  param("fx.chorus", "Chorus", "space", 0, 1, 0, primary),
-  param("fx.delay", "Delay", "space", 0, 1, 0, primary),
+  param("fx.drive", "Drive", "master", 0, 1, 0, primary),
+  param("fx.chorus", "Chorus", "master", 0, 1, 0, primary),
+  param("fx.delay", "Delay", "master", 0, 1, 0, primary),
   // The master ADSR over every voice. The defaults (instant attack, full
   // sustain, a release far longer than any damper) leave notes as modelled.
   ...adsrParams(
     "adsr",
     { attack: 0.001, decay: 0.3, sustain: 1, release: 4 },
     MASTER_ADSR,
+    "master",
   ),
 ];

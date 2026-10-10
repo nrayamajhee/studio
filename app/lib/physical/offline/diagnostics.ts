@@ -101,7 +101,7 @@ export async function tuningSweep(
         events,
         sampleRate,
         2,
-        dry(id, { "body.mix": 0, "exciter.vibrato": 0 }),
+        dry(id, { "body.mix": 0, "vibrato.level": 0, "vibrato.pitch": 0 }),
       ),
     );
     const onset = Math.max(0, findOnset(out));

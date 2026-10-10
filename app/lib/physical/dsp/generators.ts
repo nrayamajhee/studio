@@ -23,53 +23,11 @@ export class Noise {
   }
 }
 
-// Sine or triangle LFO whose depth ramps in after `delay`, the way a player
-// starts vibrato late and widens it.
+// A low-frequency modulator in [−1, 1]: sine, triangle, square, or random (a
+// new value each cycle). Square and random edges are eased over ~5 ms so they
+// don't click. Its depth can ramp in after a delay, the way a player starts
+// vibrato late and widens it; with no delay it runs at full depth at once.
 export class Lfo {
-  private readonly fs: number;
-  private phase = 0;
-  private increment = 0;
-  private elapsed = 0;
-  private delaySamples = 0;
-  private fadeSamples = 1;
-  triangle = false;
-
-  constructor(fs: number) {
-    this.fs = fs;
-  }
-
-  set(rate: number, delay: number, fadeIn: number) {
-    this.increment = rate / this.fs;
-    this.delaySamples = delay * this.fs;
-    this.fadeSamples = Math.max(1, fadeIn * this.fs);
-  }
-
-  setRate(rate: number) {
-    this.increment = rate / this.fs;
-  }
-
-  restart() {
-    this.phase = 0;
-    this.elapsed = 0;
-  }
-
-  process() {
-    const t = this.elapsed++ - this.delaySamples;
-    if (t < 0) return 0;
-    this.phase += this.increment;
-    if (this.phase >= 1) this.phase -= 1;
-    const fade = t < this.fadeSamples ? t / this.fadeSamples : 1;
-    const wave = this.triangle
-      ? 1 - 4 * Math.abs(this.phase - 0.5)
-      : Math.sin(TWO_PI * this.phase);
-    return wave * fade;
-  }
-}
-
-// A free-running modulator in [−1, 1]: sine, triangle, square, or random (a new
-// value each cycle). Square and random edges are eased over ~5 ms so they
-// don't click.
-export class ModLfo {
   shape = 0;
   private readonly fs: number;
   private readonly ease: number;
@@ -78,6 +36,9 @@ export class ModLfo {
   private increment = 0;
   private stepped = 0;
   private random = 0;
+  private elapsed = 0;
+  private delaySamples = 0;
+  private fadeSamples = 0;
 
   constructor(fs: number) {
     this.fs = fs;
@@ -88,24 +49,48 @@ export class ModLfo {
     this.increment = hz / this.fs;
   }
 
+  // Seconds of silence after restart(), then seconds to fade in.
+  setDelay(delay: number, fadeIn: number) {
+    this.delaySamples = delay * this.fs;
+    this.fadeSamples = fadeIn * this.fs;
+  }
+
+  // Starts the delay over, from `phase` (0–1) of the cycle.
+  restart(phase = 0) {
+    this.phase = phase;
+    this.elapsed = 0;
+  }
+
   process() {
-    this.phase += this.increment;
+    return this.advance(1);
+  }
+
+  // The value `count` samples on; process() is one sample.
+  advance(count: number) {
+    let fade = 1;
+    if (this.elapsed < this.delaySamples + this.fadeSamples) {
+      const t = this.elapsed + count - 1 - this.delaySamples;
+      this.elapsed += count;
+      if (t < 0) return 0;
+      if (t < this.fadeSamples) fade = t / this.fadeSamples;
+    }
+    this.phase += this.increment * count;
     if (this.phase >= 1) {
-      this.phase -= 1;
+      this.phase -= Math.floor(this.phase);
       this.random = this.noise.next();
     }
+    const ease = count === 1 ? this.ease : 1 - (1 - this.ease) ** count;
     switch (this.shape) {
       case 0:
-        return Math.sin(TWO_PI * this.phase);
+        return fade * Math.sin(TWO_PI * this.phase);
       case 1:
-        return 1 - 4 * Math.abs(this.phase - 0.5);
+        return fade * (1 - 4 * Math.abs(this.phase - 0.5));
       case 2:
-        this.stepped +=
-          ((this.phase < 0.5 ? 1 : -1) - this.stepped) * this.ease;
-        return this.stepped;
+        this.stepped += ((this.phase < 0.5 ? 1 : -1) - this.stepped) * ease;
+        return fade * this.stepped;
       default:
-        this.stepped += (this.random - this.stepped) * this.ease;
-        return this.stepped;
+        this.stepped += (this.random - this.stepped) * ease;
+        return fade * this.stepped;
     }
   }
 }
@@ -169,7 +154,8 @@ export class Oscillator {
     this.phase = 0;
   }
 
-  process() {
+  // `bend` scales the frequency for this sample (the LFO's vibrato).
+  process(bend = 1) {
     if (this.increment !== this.target) {
       this.increment += (this.target - this.increment) * this.glide;
       if (Math.abs(this.target - this.increment) < 1e-9)
@@ -177,7 +163,7 @@ export class Oscillator {
     }
     let t = this.phase + this.phaseOffset;
     if (t >= 1) t -= 1;
-    const dt = this.increment;
+    const dt = this.increment * bend;
     this.phase += dt;
     if (this.phase >= 1) this.phase -= 1;
     const half = t < 0.5 ? t + 0.5 : t - 0.5;

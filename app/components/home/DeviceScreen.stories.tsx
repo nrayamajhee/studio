@@ -7,13 +7,10 @@ import { DeviceScreen, ScreenHint, ScreenValue } from "./DeviceScreen";
 import { DEFAULT_TIMING } from "./noteRecorder";
 import { DRUM_PIECES } from "./instrumentIcons";
 import { ICON_CHOICES, PresetIcon } from "./presetIcons";
+import { previewPage } from "./synthGraphs";
 
-const pianoParams = PATCH_BY_ID.piano.params.map((spec) => ({
-  id: spec.id,
-  label: spec.label,
-  value: formatParam(spec, spec.default),
-  selected: spec.id === "exciter.hardness",
-}));
+// The piano's Resonator page at its defaults.
+const pianoResonator = previewPage(PATCH_BY_ID.piano, "resonator");
 
 const meta = {
   title: "Home/Screen",
@@ -52,7 +49,7 @@ const meta = {
       ],
     },
     getAnalyser: { control: false },
-    params: { control: false },
+    synthScene: { control: false },
     tiles: { control: false },
     readouts: { control: false },
     badges: { control: false },
@@ -71,7 +68,28 @@ export const VolumeOverlay: Story = {
 };
 
 export const Synth: Story = {
-  args: { view: "synth", status: "Params 1/2", params: pianoParams },
+  args: {
+    view: "synth",
+    status: "",
+    footer: ["C4", ""],
+    synthScene: pianoResonator.scene,
+    synthLabel: "Resonator: what its knobs do on the Grand piano",
+    readouts: pianoResonator.page.main.map((spec) =>
+      spec
+        ? {
+            label: spec.label,
+            display: formatParam(spec, spec.default),
+            amount: 0,
+          }
+        : { label: "", display: "", amount: 0 },
+    ),
+    pager: {
+      pages: pianoResonator.pages.map(({ label }) => label),
+      at: pianoResonator.pages.indexOf(pianoResonator.page),
+      color: "ink",
+      onPick: fn(),
+    },
+  },
 };
 
 export const Envelope: Story = {

@@ -5,6 +5,7 @@ import { drive as saturate } from "../dsp/nonlinear";
 import type { BusId, DrumPieceId } from "../messages";
 import { Body } from "../models/Body";
 import type { BasePatch } from "../patches/types";
+import { ModuleSettings, type LfoRouting } from "./Modules";
 import { ParamSet } from "./ParamSet";
 import type { Voice } from "./Voice";
 
@@ -22,6 +23,8 @@ export abstract class Instrument {
   readonly name: string;
   readonly fs: number;
   readonly params: ParamSet;
+  // The built-in filter and LFO every voice shares.
+  readonly mods: ModuleSettings;
   readonly left = new Float32Array(MAX_BLOCK);
   readonly right = new Float32Array(MAX_BLOCK);
   clock = 0;
@@ -40,11 +43,13 @@ export abstract class Instrument {
     patch: BasePatch,
     fs: number,
     overrides?: Record<string, number>,
+    routing?: LfoRouting,
   ) {
     this.id = patch.id;
     this.name = patch.name;
     this.fs = fs;
     this.params = new ParamSet(patch.params, overrides);
+    this.mods = new ModuleSettings(routing);
     this.body = new Body(patch.body, fs);
     this.outputGain = patch.outputGain;
     this.gain = new Smoother(patch.outputGain, fs);
@@ -93,6 +98,11 @@ export abstract class Instrument {
       p.has("body.tone") ? p.get("body.tone") : 0,
       p.has("body.mix") ? p.get("body.mix") : 0,
     );
+    this.mods.read(p, this.fs);
+    const voices = this.allVoices();
+    for (let i = 0; i < voices.length; i++) {
+      if (voices[i].busy) voices[i].retarget();
+    }
   }
 
   render(start: number, end: number) {

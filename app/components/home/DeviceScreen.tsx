@@ -11,6 +11,8 @@ import { tv } from "../../lib/utils";
 import { Button } from "../design-system/Button";
 import { NoteRoll } from "./NoteRoll";
 import { Oscilloscope } from "./Oscilloscope";
+import { SynthGraph } from "./SynthGraph";
+import type { GraphScene } from "./synthGraphs";
 import { DEFAULT_TIMING, type Timing } from "./noteRecorder";
 import type { TrackClip } from "./tracks";
 import type { RollFrame } from "../../hooks/useTransport";
@@ -35,14 +37,6 @@ export type ScreenView =
   | "steps"
   | "tracks";
 
-export type ScreenParam = {
-  id: string;
-  label: string;
-  value: string;
-  // The param the red and blue knobs are editing.
-  selected?: boolean;
-};
-
 export type ScreenTile = {
   id: string;
   label: string;
@@ -51,7 +45,8 @@ export type ScreenTile = {
   badge?: string;
 };
 
-// One module knob's reading, in knob order (white, green, red, blue).
+// One module knob's reading, in knob order (white, green, red, blue). A knob
+// with nothing to set has an empty label, and reads as a dim dash.
 export type ScreenReadout = {
   label: string;
   display: string;
@@ -895,7 +890,7 @@ export function ScreenValue({ children }: { children: ReactNode }) {
 export type ScreenPager = {
   pages: readonly string[];
   at: number;
-  color: "red" | "green";
+  color: "red" | "green" | "ink";
   onPick: (page: number) => void;
 };
 
@@ -924,8 +919,10 @@ export type DeviceScreenProps = {
   // Centred along the bottom in place of the footer.
   badges?: readonly ScreenBadge[];
   getAnalyser?: () => AnalyserNode | null;
-  params?: readonly ScreenParam[];
-  page?: number;
+  // The synth view's graph of the page showing, and what it shows for
+  // screen readers.
+  synthScene?: GraphScene;
+  synthLabel?: string;
   // Turns the readout into the view's pager: ‹ [page] ›.
   pager?: ScreenPager;
   tiles?: readonly ScreenTile[];
@@ -940,9 +937,7 @@ export type DeviceScreenProps = {
   onLoopEdge?: (index: number, edge: "start" | "end", beats: number) => void;
   // A clip edge's drag starting and ending.
   onLoopEdgeDrag?: (dragging: boolean) => void;
-  // Tapping a param on the synth view selects it, like the red knob.
-  onSelectParam?: (index: number) => void;
-  // The four knob readings for the ADSR, LFO and FX views.
+  // The four knob readings for the ADSR, LFO, FX and synth views.
   readouts?: readonly ScreenReadout[];
   // The LFO view's shape (0–3) and rate in Hz.
   lfoShape?: number;
@@ -989,7 +984,6 @@ export type DeviceScreenProps = {
   className?: string;
 };
 
-export const PARAMS_PER_PAGE = 15;
 export const TILES_PER_PAGE: Record<string, number> = {
   save: 48,
   presets: 12,
@@ -1021,6 +1015,7 @@ const pageTab = tv({
       red: "cursor-default bg-synth-red text-white hover:bg-synth-red hover:text-white active:bg-synth-red active:text-white",
       green:
         "cursor-default bg-synth-green text-white hover:bg-synth-green hover:text-white active:bg-synth-green active:text-white",
+      ink: "cursor-default bg-screen-ink text-screen hover:bg-screen-ink hover:text-screen active:bg-screen-ink active:text-screen",
     },
   },
 });
@@ -1060,6 +1055,7 @@ const screen = tv({
     stage: "flex flex-col items-center whitespace-nowrap",
     stageLabel: "tracking-[0.02em] first-letter:uppercase text-screen-ink/55",
     stageValue: "font-semibold",
+    stageEmpty: "font-semibold text-screen-ink/25",
     // The tempo in green, as the green knob sets it, over a light per beat.
     bpm: "flex items-baseline gap-[10px] text-[72px] leading-none font-semibold tabular-nums",
     bpmUnit: "text-[14px] tracking-[0.08em] text-screen-ink/55",
@@ -1085,7 +1081,6 @@ const screenView = tv({
   base: "absolute top-[30px] right-[20px] bottom-[30px] left-[20px] m-0",
   variants: {
     kind: {
-      params: "grid grid-cols-3 grid-rows-5 gap-x-[18px] gap-y-0 font-screen",
       tiles: "grid grid-cols-6 grid-rows-2 gap-[6px] overflow-hidden",
       icons:
         "grid grid-cols-12 grid-rows-4 justify-items-center gap-[6px] overflow-hidden",
@@ -1096,23 +1091,6 @@ const screenView = tv({
     },
     // Under a pager's taller header, the content starts lower, leaving a gap.
     paged: { true: "top-[42px]" },
-  },
-});
-
-// A param's name and value: a hairline that turns blue on keyboard focus,
-// like the tiles, its margin keeping the text lined up with the readouts.
-// The green knob picks the selected one and the blue knob sets its value.
-const param = tv({
-  slots: {
-    base: "relative -mx-[7px] flex min-w-0 cursor-pointer items-center justify-between gap-[6px] rounded-[6px] border border-transparent px-[6px] text-center text-[14px] leading-[18px] font-normal text-screen-ink select-none [font-family:inherit] focus-visible:border-synth-blue focus-visible:shadow-[inset_0_0_0_1px_var(--color-synth-blue)] focus-visible:outline-none",
-    label:
-      "truncate tracking-[0.02em] first-letter:uppercase text-screen-ink/55",
-    value: "font-semibold whitespace-nowrap",
-  },
-  variants: {
-    selected: {
-      true: { label: "text-synth-green", value: "text-synth-blue" },
-    },
   },
 });
 
@@ -1317,8 +1295,8 @@ export function DeviceScreen({
   footer,
   badges,
   getAnalyser = noAnalyser,
-  params = [],
-  page = 0,
+  synthScene,
+  synthLabel = "",
   pager,
   tiles = [],
   selected = 0,
@@ -1327,7 +1305,6 @@ export function DeviceScreen({
   onActivate,
   onLoopEdge,
   onLoopEdgeDrag,
-  onSelectParam,
   readouts = [],
   lfoShape = 0,
   lfoRate = 1,
@@ -1452,21 +1429,28 @@ export function DeviceScreen({
           </div>
         )}
 
-        {(view === "adsr" || view === "lfo" || view === "fx") &&
-          readouts.length === 4 && (
-            <div className={screenView({ kind: "module" })}>
-              {view === "adsr" && <EnvelopeGraph stages={readouts} />}
-              {view === "lfo" && (
-                <LfoGraph
-                  shape={lfoShape}
-                  depth={readouts[1].amount}
-                  rate={lfoRate}
-                />
-              )}
-              {view === "fx" && <FxMeters stages={readouts} />}
-              <div className={ui.stages()}>
-                {readouts.map((stage, i) => (
-                  <span key={stage.label} className={ui.stage()}>
+        {(((view === "adsr" || view === "lfo" || view === "fx") &&
+          readouts.length === 4) ||
+          (view === "synth" && synthScene)) && (
+          <div
+            className={screenView({ kind: "module", paged: Boolean(pager) })}
+          >
+            {view === "synth" && synthScene && (
+              <SynthGraph scene={synthScene} label={synthLabel} />
+            )}
+            {view === "adsr" && <EnvelopeGraph stages={readouts} />}
+            {view === "lfo" && (
+              <LfoGraph
+                shape={lfoShape}
+                depth={readouts[1].amount}
+                rate={lfoRate}
+              />
+            )}
+            {view === "fx" && <FxMeters stages={readouts} />}
+            <div className={ui.stages()}>
+              {readouts.map((stage, i) =>
+                stage.label ? (
+                  <span key={i} className={ui.stage()}>
                     <span className={ui.stageLabel()}>{stage.label}</span>
                     <span
                       className={ui.stageValue()}
@@ -1475,10 +1459,16 @@ export function DeviceScreen({
                       {stage.display}
                     </span>
                   </span>
-                ))}
-              </div>
+                ) : (
+                  <span key={i} className={ui.stage()} aria-hidden="true">
+                    <span className={ui.stageLabel()}>&nbsp;</span>
+                    <span className={ui.stageEmpty()}>—</span>
+                  </span>
+                ),
+              )}
             </div>
-          )}
+          </div>
+        )}
 
         {view === "tempo" && (
           <div className={screenView({ kind: "tempo" })}>
@@ -1614,34 +1604,6 @@ export function DeviceScreen({
 
         {view === "scope" && (
           <Oscilloscope className={ui.scope()} getAnalyser={getAnalyser} />
-        )}
-
-        {view === "synth" && (
-          <div
-            className={screenView({ kind: "params", paged: Boolean(pager) })}
-            role="group"
-            aria-label="Parameters"
-          >
-            {params
-              .slice(page * PARAMS_PER_PAGE, (page + 1) * PARAMS_PER_PAGE)
-              .map((entry, i) => {
-                const styles = param({ selected: entry.selected });
-                return (
-                  <Button
-                    key={entry.id}
-                    unstyled
-                    aria-label={`${entry.label}: ${entry.value}`}
-                    aria-pressed={entry.selected ?? false}
-                    className={styles.base()}
-                    {...keepFocus}
-                    onClick={() => onSelectParam?.(page * PARAMS_PER_PAGE + i)}
-                  >
-                    <span className={styles.label()}>{entry.label}</span>
-                    <span className={styles.value()}>{entry.value}</span>
-                  </Button>
-                );
-              })}
-          </div>
         )}
 
         {(view === "save" ||

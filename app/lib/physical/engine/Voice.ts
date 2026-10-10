@@ -1,4 +1,6 @@
 import { Adsr } from "../dsp/Adsr";
+import type { ModuleSettings } from "./Modules";
+import { VoiceChain } from "./VoiceChain";
 
 export const IDLE = 0;
 export const ACTIVE = 1;
@@ -10,23 +12,30 @@ const SILENCE = 3.1623e-5; // −90 dBFS
 const CHORD_SECONDS = 0.03;
 
 // Shared lifecycle: idle → active → released → idle, plus stolen (a 5 ms
-// fade-out). Voices report each rendered segment's peak through track() and
-// the owner frees them once they have stayed silent long enough.
+// fade-out). Voices report each rendered segment's peak through endBlock()
+// and the owner frees them once they have stayed silent long enough. Every
+// voice runs its model's raw signal through its `chain`: the instrument's
+// built-in modules, the master ADSR, the steal fade and the pan.
 export abstract class Voice {
   state = IDLE;
   note = -1;
   holds = 0;
   age = 0;
   quietSamples = 0;
-  protected fade = 1;
-  protected fadeStep = 0;
   protected readonly fs: number;
   // The master ADSR, applied on top of the model's own envelopes.
   readonly shape: Adsr;
+  readonly gains = new Float64Array(2);
+  // The instrument's module settings, which the chain runs and a model reads
+  // for the vibrato it takes itself.
+  readonly mods: ModuleSettings;
+  readonly chain: VoiceChain;
 
-  constructor(fs: number) {
+  constructor(fs: number, mods: ModuleSettings) {
     this.fs = fs;
+    this.mods = mods;
     this.shape = new Adsr(fs);
+    this.chain = new VoiceChain(fs, mods, this.shape, this.gains);
   }
 
   get busy() {
@@ -47,20 +56,25 @@ export abstract class Voice {
     else this.quietSamples = 0;
   }
 
+  // Reports the peak of a segment rendered through the chain.
+  protected endBlock(count: number) {
+    this.track(this.chain.takePeak(), count);
+  }
+
   protected begin(note: number, clock: number) {
     this.state = ACTIVE;
     this.note = note;
     this.holds = 1;
     this.age = clock;
     this.quietSamples = 0;
-    this.fade = 1;
-    this.fadeStep = 0;
+    this.chain.fade = 1;
+    this.chain.fadeStep = 0;
   }
 
   steal() {
     this.state = STOLEN;
     this.holds = 0;
-    this.fadeStep = 1 / (0.005 * this.fs);
+    this.chain.fadeStep = 1 / (0.005 * this.fs);
   }
 
   free() {
@@ -68,10 +82,23 @@ export abstract class Voice {
     this.note = -1;
     this.holds = 0;
     this.quietSamples = 0;
-    this.fade = 1;
-    this.fadeStep = 0;
+    this.chain.fade = 1;
+    this.chain.fadeStep = 0;
     this.shape.reset();
     this.reset();
+  }
+
+  // A new note: see VoiceChain.onset.
+  onset(note: number, clock: number) {
+    this.chain.onset(note, clock);
+  }
+
+  retrigger() {
+    this.chain.retrigger();
+  }
+
+  retarget(note = this.note) {
+    this.chain.retarget(note);
   }
 
   abstract reset(): void;

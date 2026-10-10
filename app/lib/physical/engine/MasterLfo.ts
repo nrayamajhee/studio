@@ -1,5 +1,5 @@
 import { DelayLine } from "../dsp/DelayLine";
-import { ModLfo, Smoother } from "../dsp/generators";
+import { Lfo, Smoother } from "../dsp/generators";
 import { Svf } from "../dsp/Svf";
 
 // Targets, in the order of the lfo.target param.
@@ -17,7 +17,7 @@ const FILTER_UPDATE = 16;
 // mix passes through untouched.
 export class MasterLfo {
   private readonly fs: number;
-  private readonly lfo: ModLfo;
+  private readonly lfo: Lfo;
   private readonly depth: Smoother;
   // Crossfade into the delayed signal, so switching pitch on or off is smooth.
   private readonly pitchMix: Smoother;
@@ -31,7 +31,7 @@ export class MasterLfo {
 
   constructor(fs: number) {
     this.fs = fs;
-    this.lfo = new ModLfo(fs);
+    this.lfo = new Lfo(fs);
     this.depth = new Smoother(0, fs);
     this.pitchMix = new Smoother(0, fs, 0.02);
     this.delayL = new DelayLine(2 * MAX_SWEEP * fs + 8);
