@@ -1,5 +1,9 @@
 import { paramModules } from "../../lib/physical/patches/params";
-import type { ParamSpec, SectionId } from "../../lib/physical/patches/types";
+import type {
+  ParamSpec,
+  Patch,
+  SectionId,
+} from "../../lib/physical/patches/types";
 
 export type SynthPageId = "chain" | SectionId;
 
@@ -39,7 +43,12 @@ const SLOTS: Partial<Record<SectionId, readonly (readonly string[])[]>> = {
     ["envelope.sustain"],
     ["envelope.release"],
   ],
-  lfo: [["lfo.rate"], ["lfo.pitch"], ["lfo.level"], ["lfo.filter"]],
+  vibrato: [
+    ["vibrato.rate"],
+    ["vibrato.pitch"],
+    ["vibrato.level"],
+    ["vibrato.filter"],
+  ],
   output: [["output.drive"], ["output.level"], ["space.send"]],
 };
 
@@ -66,13 +75,16 @@ const CHAIN: SynthPage = {
   shift: fill([]),
 };
 
-// The overview, then a page per module the instrument has, in module order:
-// the chain's stops (exciter, resonator, filter, body, output), then what
-// modulates them (envelope, LFO).
-export function synthPages(params: readonly ParamSpec[]): SynthPage[] {
+// The overview, then a page per module the instrument has, in the order they
+// act on a note: the chain's stages, each of the instrument's own modulators
+// (its envelope, its vibrato) after the stage it acts on.
+export function synthPages(
+  params: readonly ParamSpec[],
+  family: Patch["family"],
+): SynthPage[] {
   return [
     CHAIN,
-    ...paramModules(params).map(({ id, label, specs }) => ({
+    ...paramModules(params, family).map(({ id, label, specs }) => ({
       id,
       label,
       ...knobSlots(id, specs),
@@ -80,7 +92,7 @@ export function synthPages(params: readonly ParamSpec[]): SynthPage[] {
   ];
 }
 
-// The chain's stops in signal order; the envelope and LFO drive them.
+// The chain's stages in signal order; the envelope and vibrato move them.
 export const CHAIN_STOPS: readonly SectionId[] = [
   "exciter",
   "resonator",

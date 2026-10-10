@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { PATCH_BY_ID } from "../lib/physical/patches";
-import { MODULES, paramModules } from "../lib/physical/patches/params";
-import type { ParamSpec } from "../lib/physical/patches/types";
+import { moduleLabel, paramModules } from "../lib/physical/patches/params";
+import type { ParamSpec, Patch } from "../lib/physical/patches/types";
 import {
   formatParam,
   stepToValue,
@@ -30,17 +30,21 @@ import { createStrictContext } from "./createStrictContext";
 const INITIAL_PRESET = "piano";
 
 // An instrument's params in module order, as the red knob picks them.
-const moduleOrder = (params: readonly ParamSpec[]) =>
-  paramModules(params).flatMap((module) => module.specs);
+const moduleOrder = ({ params, family }: Patch) =>
+  paramModules(params, family).flatMap((module) => module.specs);
 
 // A param with named choices (the oscillator's wave) steps through them.
 const stepsOf = (spec: ParamSpec) => spec.options?.length ?? KNOB_STEPS;
 
 // A param's name away from its page: its label, led by its module where
 // another module has the same one (the filter's Resonance, the body's).
-const paramName = (specs: readonly ParamSpec[], spec: ParamSpec) =>
+const paramName = (
+  { family }: Patch,
+  specs: readonly ParamSpec[],
+  spec: ParamSpec,
+) =>
   specs.some((other) => other !== spec && other.label === spec.label)
-    ? `${MODULES.find(({ id }) => id === spec.section)?.label} ${spec.label}`
+    ? `${moduleLabel(family, spec.section)} ${spec.label}`
     : spec.label;
 
 function useSoundValue() {
@@ -62,12 +66,12 @@ function useSoundValue() {
   // The preset's own values plus any edits made since it was picked.
   const edits = library.edits[preset.id];
   const values = { ...presetValues(preset), ...edits };
-  const params = PATCH_BY_ID[preset.target].params;
-  const specs = moduleOrder(params);
+  const patch = PATCH_BY_ID[preset.target];
+  const specs = moduleOrder(patch);
   const selected = specs[Math.min(paramIndex, specs.length - 1)];
   const selectedValue = values[selected.id] ?? selected.default;
   const valueSteps = stepsOf(selected);
-  const pages = synthPages(params);
+  const pages = synthPages(patch.params, patch.family);
   const pageIndex = Math.max(
     0,
     pages.findIndex(({ id }) => id === pageId),
@@ -96,7 +100,7 @@ function useSoundValue() {
     deviceEngine.loadPreset(next, library.edits[next.id]);
     setPreset(next);
     setOctave((current) => clampOctave(current, next));
-    const nextSpecs = moduleOrder(PATCH_BY_ID[next.target].params);
+    const nextSpecs = moduleOrder(PATCH_BY_ID[next.target]);
     setParamIndex(
       Math.max(
         0,
@@ -113,7 +117,7 @@ function useSoundValue() {
     values,
     specs,
     selected,
-    selectedName: paramName(specs, selected),
+    selectedName: paramName(patch, specs, selected),
     selectedValue,
     selectedDisplay: formatParam(selected, selectedValue),
     valueSteps,

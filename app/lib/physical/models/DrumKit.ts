@@ -403,7 +403,7 @@ export class DrumKit extends Instrument {
     fs: number,
     overrides?: Record<string, number>,
   ) {
-    // The kit has no LFO module and filters the whole bus itself.
+    // The kit has no vibrato and filters the whole bus itself.
     super(patch, fs, overrides, { pitch: "model", level: "model" });
     this.patch = patch;
     for (const piece of kitPieces(patch)) {

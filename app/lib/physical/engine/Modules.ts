@@ -1,8 +1,9 @@
 import type { ParamSet } from "./ParamSet";
 
-// How a model takes the LFO module: on its own exciter's level (breath, bow,
-// bellows) and its own loop's pitch, or left to the voice's output, which
-// applies level as tremolo and pitch through a swept delay.
+// How a model takes the vibrato (the LFO in each voice): on its own exciter's
+// level (breath, bow, bellows) and its own loop's pitch, or left to the
+// voice's output, which applies level as tremolo and pitch through a swept
+// delay, right after the filter.
 export type LfoRouting = {
   pitch: "model" | "output";
   level: "model" | "output";
@@ -16,8 +17,10 @@ export type LfoRouting = {
 const OUTPUT_ROUTING: LfoRouting = { pitch: "output", level: "output" };
 
 // The built-in modules every voice of an instrument shares settings for: the
-// filter (cutoff, resonance, envelope, keytrack) and the LFO. They are read
-// from the patch's filter.* and lfo.* params, so a model only declares them.
+// filter (cutoff, resonance, envelope, keytrack) and the vibrato. They are
+// read from the patch's filter.* and vibrato.* params, so a model only
+// declares them. The master ADSR and LFO are the engine's, over every
+// instrument, and set apart from these.
 export class ModuleSettings {
   readonly routing: LfoRouting;
   readonly fadeIn: number;
@@ -59,12 +62,12 @@ export class ModuleSettings {
         ) *
           fs),
     );
-    if (!p.has("lfo.rate")) return;
-    this.lfoRate = p.get("lfo.rate");
-    this.lfoShape = Math.round(p.get("lfo.shape"));
-    this.lfoDelay = p.get("lfo.delay");
-    this.pitch = 2 ** (p.get("lfo.pitch") / 1200) - 1;
-    this.level = p.get("lfo.level");
-    this.filter = p.get("lfo.filter");
+    if (!p.has("vibrato.rate")) return;
+    this.lfoRate = p.get("vibrato.rate");
+    this.lfoShape = Math.round(p.get("vibrato.shape"));
+    this.lfoDelay = p.get("vibrato.delay");
+    this.pitch = 2 ** (p.get("vibrato.pitch") / 1200) - 1;
+    this.level = p.get("vibrato.level");
+    this.filter = p.get("vibrato.filter");
   }
 }

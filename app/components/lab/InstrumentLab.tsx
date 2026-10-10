@@ -665,7 +665,7 @@ export function InstrumentLab({
             className="flex flex-col gap-4"
             aria-label={`${patch.name} parameters`}
           >
-            {paramModules(primary).map(({ id, label, specs }) => (
+            {paramModules(primary, patch.family).map(({ id, label, specs }) => (
               <div key={id} className="flex flex-col gap-2">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-font-light dark:text-stone-400">
                   {label}

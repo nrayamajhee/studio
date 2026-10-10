@@ -1315,21 +1315,21 @@ export function envelopeScene({
         ? "bow speed → the exciter"
         : patch.family === "reed"
           ? "bellows → the exciter"
-          : "the gate: full while held; the track ADSR shapes the rest";
+          : "the gate: full while the key is held";
   scene.label(98, 2, drives, "dim", "end");
   return scene.done();
 }
 
-const LFO_SHAPES = [
+const VIBRATO_SHAPES = [
   (t: number) => Math.sin(2 * Math.PI * t),
   (t: number) => 1 - 4 * Math.abs(t - 0.5),
   (t: number) => (t < 0.5 ? 1 : -1),
 ];
 const RANDOM_STEPS = [0.6, -0.35, 0.9, -0.8, 0.15, -0.55, 0.4, -0.1];
 
-// Where the LFO's three depths go on each family: the model's own loop or
-// exciter where it has one, else the voice's output.
-const LFO_DESTINATIONS: Record<
+// Where the vibrato's three depths go on each family: the model's own loop or
+// exciter where it has one, else the voice's output right after the filter.
+const VIBRATO_DESTINATIONS: Record<
   Patch["family"],
   { pitch: string; level: string }
 > = {
@@ -1342,14 +1342,18 @@ const LFO_DESTINATIONS: Record<
   drums: { pitch: "", level: "" },
 };
 
-// The first 1.2 s of a note's LFO: silent through its delay, fading in, and
+// The first 1.2 s of a note's vibrato: silent through its delay, fading in, and
 // three gauges for how far it moves pitch, level and the cutoff.
-export function lfoScene({ patch, values, toneOf }: GraphInput): GraphScene {
+export function vibratoScene({
+  patch,
+  values,
+  toneOf,
+}: GraphInput): GraphScene {
   const scene = new Scene();
-  const rate = get(values, "lfo.rate", 5);
-  const shape = Math.round(get(values, "lfo.shape"));
+  const rate = get(values, "vibrato.rate", 5);
+  const shape = Math.round(get(values, "vibrato.shape"));
   const free = patch.family === "reed";
-  const delay = free ? 0 : get(values, "lfo.delay");
+  const delay = free ? 0 : get(values, "vibrato.delay");
   const fade = free ? 0 : patch.family === "bowed" ? 0.4 : 0.3;
   const span = 1.2;
   const x = (t: number) => 2 + (t / span) * 96;
@@ -1360,7 +1364,7 @@ export function lfoScene({ patch, values, toneOf }: GraphInput): GraphScene {
     const phase = cycles - Math.floor(cycles);
     const value =
       shape < 3
-        ? LFO_SHAPES[shape](phase)
+        ? VIBRATO_SHAPES[shape](phase)
         : RANDOM_STEPS[Math.floor(cycles) % RANDOM_STEPS.length];
     return value * (fade > 0 ? Math.min(1, after / fade) : 1);
   };
@@ -1371,7 +1375,7 @@ export function lfoScene({ patch, values, toneOf }: GraphInput): GraphScene {
   scene.path(hline(33, 2, 98), "faint", { dashed: true });
   scene.path(
     sample(600, (t) => [x(t * span), 33 - wave(t * span) * 20]),
-    toneOf("lfo.rate"),
+    toneOf("vibrato.rate"),
     { width: 1.8 },
   );
   scene.label(
@@ -1380,30 +1384,30 @@ export function lfoScene({ patch, values, toneOf }: GraphInput): GraphScene {
     free
       ? `${rate.toFixed(1)} Hz, one cycle for every voice`
       : `${rate.toFixed(1)} Hz`,
-    toneOf("lfo.rate"),
+    toneOf("vibrato.rate"),
     "end",
   );
-  const destinations = LFO_DESTINATIONS[patch.family];
+  const destinations = VIBRATO_DESTINATIONS[patch.family];
   const gauges = [
     [
       "Pitch",
-      "lfo.pitch",
+      "vibrato.pitch",
       50,
-      `±${get(values, "lfo.pitch").toFixed(1)} ¢`,
+      `±${get(values, "vibrato.pitch").toFixed(1)} ¢`,
       destinations.pitch,
     ],
     [
       "Level",
-      "lfo.level",
+      "vibrato.level",
       0.3,
-      `±${percent(get(values, "lfo.level"))}`,
+      `±${percent(get(values, "vibrato.level"))}`,
       destinations.level,
     ],
     [
       "Filter",
-      "lfo.filter",
+      "vibrato.filter",
       3,
-      `±${get(values, "lfo.filter").toFixed(1)} oct`,
+      `±${get(values, "vibrato.filter").toFixed(1)} oct`,
       "cutoff",
     ],
   ] as const;
@@ -1485,14 +1489,6 @@ export function outputScene({ values, toneOf }: GraphInput): GraphScene {
     scene.path(hline(72, right, right + send * width), toneOf("space.send"), {
       width: 8,
     });
-  scene.label(
-    98,
-    100,
-    "then the track: ADSR · LFO · FX",
-    "dim",
-    "end",
-    "bottom",
-  );
   return scene.done();
 }
 
@@ -1503,7 +1499,8 @@ const STOP_NAMES: Record<SectionId, string> = {
   body: "BODY",
   output: "OUTPUT",
   envelope: "ENVELOPE",
-  lfo: "LFO",
+  vibrato: "VIBRATO",
+  master: "MASTER",
 };
 
 // What each stop is on this instrument.
@@ -1600,7 +1597,7 @@ function stopSketch(
 }
 
 // The overview: the chain's stops as blocks in signal order, the picked one
-// green, and the envelope and LFO wired to what they move.
+// green, and the instrument's envelope and vibrato wired to where they act.
 export function chainScene(
   { patch, values }: GraphInput,
   pages: readonly SynthPage[],
@@ -1654,8 +1651,8 @@ export function chainScene(
     scene.label(x0 + width / 2, 87, text, tone, "middle", "middle");
     return x0 + width / 2;
   };
-  // A wire from a pill up to a block along its pill's lane, labelled beside
-  // its last climb.
+  // A wire from a pill along its lane and up to where it acts (`end`, a block's
+  // bottom or the chain between two blocks), labelled beside its last climb.
   const wire = (
     from: number,
     to: number,
@@ -1663,67 +1660,77 @@ export function chainScene(
     label: string,
     tone: Tone,
     labelY: number,
+    end: number,
   ) => {
     if (to < 0) return;
     scene.path(
-      `M${n2(from)} 78 V${n2(lane)} H${n2(to)} V${n2(bottom + 1)} M${n2(to - 0.8)} ${n2(bottom + 5)} L${n2(to)} ${n2(bottom + 1)} L${n2(to + 0.8)} ${n2(bottom + 5)}`,
+      `M${n2(from)} 78 V${n2(lane)} H${n2(to)} V${n2(end)} M${n2(to - 0.8)} ${n2(end + 4)} L${n2(to)} ${n2(end)} L${n2(to + 0.8)} ${n2(end + 4)}`,
       tone,
       { width: 1.2 },
     );
     scene.label(to + 1, labelY, label, tone, "start", "bottom");
   };
   const quarter = width / 4;
-  if (pages.some((page) => page.id === "envelope")) {
-    const from = pill(
-      0,
-      patch.family === "string" ? "ENV damper" : "ENV",
-      "green",
-    );
-    const [to, label] =
+  // Where the voice's own output stage joins the chain: right after the
+  // filter, before the body. The oscillator's gate and any vibrato the model
+  // can't take itself (tremolo, the swept delay's pitch) act there.
+  const filterAt = stops.indexOf("filter");
+  const afterFilter = left(filterAt) + width + gap / 2;
+  const join = (to: number) =>
+    Math.abs(to - afterFilter) < 1 ? 31 : bottom + 1;
+  const envelope = pages.find((page) => page.id === "envelope");
+  if (envelope) {
+    const from = pill(0, envelope.label.toUpperCase(), "green");
+    const to =
       patch.family === "string"
-        ? [centre("resonator") - quarter, "damper"]
+        ? centre("resonator") - quarter
         : patch.family === "oscillator"
-          ? [centre("output") - quarter, "gate"]
-          : [
-              centre("exciter") - quarter,
-              patch.family === "bore"
-                ? "breath"
-                : patch.family === "bowed"
-                  ? "bow"
-                  : "bellows",
-            ];
-    wire(from - quarter, to, 70, label, "green", 69);
+          ? afterFilter - 0.6
+          : centre("exciter") - quarter;
+    wire(
+      from - quarter,
+      to,
+      70,
+      envelope.label.toLowerCase(),
+      "green",
+      69,
+      join(to),
+    );
   }
-  if (pages.some((page) => page.id === "lfo")) {
+  if (pages.some((page) => page.id === "vibrato")) {
     const ownsPitch = patch.family === "bore" || patch.family === "bowed";
     const ownsLevel = ownsPitch || patch.family === "reed";
-    const routes = [
+    const routes: [id: string, to: number, label: string][] = [
       [
-        "lfo.pitch",
+        "vibrato.pitch",
         patch.family === "oscillator"
           ? centre("exciter")
           : ownsPitch
             ? centre("resonator")
-            : centre("output") - quarter,
+            : afterFilter,
         "pitch",
       ],
       [
-        "lfo.level",
-        ownsLevel ? centre("exciter") + quarter : centre("output") + quarter,
-        "level",
+        "vibrato.level",
+        ownsLevel ? centre("exciter") + quarter : afterFilter,
+        ownsLevel ? "level" : "tremolo",
       ],
-      ["lfo.filter", centre("filter"), "cutoff"],
-    ] as const;
+      ["vibrato.filter", centre("filter"), "cutoff"],
+    ];
     const on = routes.filter(([id]) => get(values, id) > 0);
     const from = pill(
       Math.min(1, stops.length - 1),
       on.length > 0
-        ? `LFO ${get(values, "lfo.rate", 5).toFixed(1)} Hz`
-        : "LFO off",
+        ? `VIBRATO ${get(values, "vibrato.rate", 5).toFixed(1)} Hz`
+        : "VIBRATO off",
       on.length > 0 ? "blue" : "dim",
     );
+    // One wire to each place, naming all it moves there.
+    const targets = new Map<number, string[]>();
     for (const [, to, label] of on)
-      wire(from, to, 58, label, "blue", bottom + 7);
+      targets.set(to, [...(targets.get(to) ?? []), label]);
+    for (const [to, labels] of targets)
+      wire(from, to, 58, labels.join(" · "), "blue", bottom + 7, join(to));
   }
   return scene.done();
 }
@@ -1749,8 +1756,10 @@ export function pageScene(
       return bodyScene(input);
     case "envelope":
       return envelopeScene(input);
-    case "lfo":
-      return lfoScene(input);
+    case "vibrato":
+      return vibratoScene(input);
+    case "master":
+      return { paths: [], labels: [] };
     case "output":
       return outputScene(input);
   }
@@ -1758,7 +1767,7 @@ export function pageScene(
 
 // A page drawn at the patch's defaults: for stories and checks.
 export function previewPage(patch: Patch, pageId: SynthPageId) {
-  const pages = synthPages(patch.params);
+  const pages = synthPages(patch.params, patch.family);
   const page = pages.find(({ id }) => id === pageId) ?? pages[0];
   const values = Object.fromEntries(
     patch.params.map((spec) => [spec.id, spec.default]),

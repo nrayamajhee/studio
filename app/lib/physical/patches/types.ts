@@ -20,9 +20,18 @@ export function pickTuning(tables: TuningTables, fs: number): KeyTable {
   return best;
 }
 
-// The modules an instrument's params are grouped into (see MODULES).
+// The modules an instrument's params are grouped into (see MODULE_LABELS).
 export type SectionId =
-  "exciter" | "resonator" | "body" | "filter" | "envelope" | "lfo" | "output";
+  | "exciter"
+  | "resonator"
+  | "filter"
+  | "body"
+  | "output"
+  | "envelope"
+  | "vibrato"
+  // The engine's own stages over every instrument: master ADSR, LFO, FX,
+  // reverb and volume, apart from any instrument's modules.
+  | "master";
 
 export type ParamSpec = {
   id: string;
