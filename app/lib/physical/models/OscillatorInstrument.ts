@@ -34,7 +34,7 @@ class OscillatorVoice extends Voice {
     this.oscillator.reset();
     this.osc2.reset();
     this.gate.reset();
-    this.clearModules();
+    this.chain.clear();
   }
 
   start(note: number, clock: number) {
@@ -42,14 +42,16 @@ class OscillatorVoice extends Voice {
   }
 
   render(left: Float32Array, right: Float32Array, start: number, end: number) {
+    this.chain.begin();
     const { pitch } = this.mods;
+    const vibrato = this.mods.lfoOn;
     for (let i = start; i < end; i++) {
-      // The LFO bends both oscillators; level and filter are the output's.
-      const bend = 1 + pitch * this.modulate();
+      // The vibrato bends both oscillators; level and filter are the output's.
+      const bend = vibrato ? 1 + pitch * this.chain.modulate() : 1;
       const x =
         this.level *
         (this.oscillator.process(bend) + this.level2 * this.osc2.process(bend));
-      this.emit(x, this.gate.process(), i, left, right);
+      this.chain.emit(x, this.gate.process(), i, left, right);
     }
     this.endBlock(end - start);
   }

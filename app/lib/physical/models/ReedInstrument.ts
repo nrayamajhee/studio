@@ -80,7 +80,7 @@ class ReedVoice extends Voice {
     this.y2.fill(0);
     this.breath.reset();
     this.dc.clear();
-    this.clearModules();
+    this.chain.clear();
     this.flow = 0;
   }
 
@@ -108,11 +108,13 @@ class ReedVoice extends Voice {
   }
 
   render(left: Float32Array, right: Float32Array, start: number, end: number) {
+    this.chain.begin();
     const { c1, c2, feed, level, y1, y2 } = this;
     const swell = this.mods.level;
     for (let i = start; i < end; i++) {
       // The LFO is the swell: bellows or a hand moving the pressure.
-      const pressure = this.breath.process() * (1 + swell * this.modulate());
+      const pressure =
+        this.breath.process() * (1 + swell * this.chain.modulate());
       const drive = this.drive * pressure;
       // Air through the slot follows the opening and √pressure (Bernoulli).
       let open = 0;
@@ -139,7 +141,7 @@ class ReedVoice extends Voice {
         flow *
         this.noiseFilter.process(this.noise.next());
 
-      this.emit(this.dc.process(out), this.outputScale, i, left, right);
+      this.chain.emit(this.dc.process(out), this.outputScale, i, left, right);
     }
     this.endBlock(end - start);
   }

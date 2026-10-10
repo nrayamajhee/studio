@@ -35,19 +35,20 @@ class BarVoice extends Voice {
 
   reset() {
     this.modes.clear();
-    this.clearModules();
+    this.chain.clear();
     this.excitationLength = 0;
     this.excitationPos = 0;
   }
 
   render(left: Float32Array, right: Float32Array, start: number, end: number) {
+    this.chain.begin();
     const { modes, excitation } = this;
     for (let i = start; i < end; i++) {
       const e =
         this.excitationPos < this.excitationLength
           ? excitation[this.excitationPos++]
           : 0;
-      this.emit(modes.process(e), 1, i, left, right);
+      this.chain.emit(modes.process(e), 1, i, left, right);
     }
     this.endBlock(end - start);
   }

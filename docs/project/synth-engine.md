@@ -206,7 +206,7 @@ When all voices are busy, `pickVictim` chooses which one to reuse: the **quietes
 
 ### Built-in modules
 
-Inside each instrument, every voice carries the same **filter** and **vibrato** (an LFO of its own), set from the same params on every melodic instrument (`engine/Modules.ts`, `ModuleSettings`), alongside the model's own **envelope** (the breath, the bow, the bellows; a string's attack and damper; the oscillator's gate). These belong to the instrument. The **master ADSR** and **master LFO** above are the engine's: the Device sets them over every instrument (its ADSR and LFO modes, kept per track), with their own params (`adsr.*`, `lfo.*`) apart from any instrument's. A model renders only its raw signal and hands each sample to `Voice.emit()`, which runs the rest of the voice the same way for all of them. In the order a note goes through:
+Inside each instrument, every voice carries the same **filter** and **vibrato** (an LFO of its own), set from the same params on every melodic instrument (`engine/Modules.ts`, `ModuleSettings`), alongside the model's own **envelope** (the breath, the bow, the bellows; a string's attack and damper; the oscillator's gate). These belong to the instrument. The **master ADSR** and **master LFO** above are the engine's: the Device sets them over every instrument (its ADSR and LFO modes, kept per track), with their own params (`adsr.*`, `lfo.*`) apart from any instrument's. A model renders only its raw signal and hands each sample to its voice's chain (`engine/VoiceChain.ts`), which runs the rest of the voice the same way for all of them. In the order a note goes through:
 
 ```text
   EXCITER     hammer, pluck, stick, or bow / breath / bellows  <- the ENVELOPE drives these
@@ -239,6 +239,7 @@ The **vibrato** (`dsp/generators.ts`, `Lfo`) is one per voice: Rate, Shape (sine
 - **The free reeds' vibrato runs freely**: every voice joins one cycle that started with the instrument, as a harmonium's bellows move every reed at once. Everywhere else each note starts its own after the Delay.
 - **Drum kits** have no envelope or vibrato, and filter the whole bus instead of each voice.
 - **Restarts.** A new note snaps the filter to its cutoff and starts the envelope and vibrato over. A re-strike while the note rings (a piano key, a bar) restarts only the filter envelope; a legato wind note keeps both, and its filter glides to the new note's keytracked cutoff.
+- **Cost.** The chain settles once per rendered segment which modules have anything to do, so modules left at zero cost a branch per sample; the vibrato is computed every 16 samples and drawn straight between, the filter is only redesigned when its cutoff moves, and the swept delay only runs while pitch vibrato is on. The chain is one class for every model (`VoiceChain`), not code on the shared `Voice` base, so its per-sample path stays monomorphic for the JIT however many models play: on Node, a dense passage renders within ±10% of the speed it did before the modules existed (strings and bowed strings faster, the oscillator and free reeds a little slower).
 
 ## 5. The instruments
 
@@ -650,7 +651,8 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
   |   |-- MasterFx.ts        drive, chorus, ping-pong delay over the mix
   |   |-- EventQueue.ts      preallocated frame-sorted queue
   |   |-- Instrument.ts      bus: body, drive, gain, reverb send, idle tail
-  |   |-- Voice.ts           voice state machine, pickVictim, the shared filter/vibrato/output chain
+  |   |-- Voice.ts           voice state machine, pickVictim
+  |   |-- VoiceChain.ts      the chain every voice runs: filter, vibrato, master ADSR, fade, pan
   |   |-- Modules.ts         the filter and vibrato settings every voice shares
   |   `-- ParamSet.ts        clamped param values by id
   |-- models/

@@ -63,7 +63,7 @@ class StringVoice extends Voice {
   reset() {
     for (let i = 0; i < this.loops.length; i++) this.loops[i].clear();
     this.dc.clear();
-    this.clearModules();
+    this.chain.clear();
     this.amp.reset();
     this.excitationLength = 0;
     this.excitationPos = 0;
@@ -73,6 +73,7 @@ class StringVoice extends Voice {
   }
 
   render(left: Float32Array, right: Float32Array, start: number, end: number) {
+    this.chain.begin();
     const loops = this.loops;
     const split = this.split;
     const excitation = this.excitation;
@@ -85,7 +86,7 @@ class StringVoice extends Voice {
       let y = 0;
       for (let s = 0; s < this.loopCount; s++) y += loops[s].tick(e * split[s]);
       if (this.pickupTap > 0) y -= loops[0].delay.readInt(this.pickupTap);
-      this.emit(this.dc.process(y), this.amp.process(), i, left, right);
+      this.chain.emit(this.dc.process(y), this.amp.process(), i, left, right);
     }
     this.endBlock(end - start);
   }

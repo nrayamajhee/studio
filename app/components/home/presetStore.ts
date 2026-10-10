@@ -61,7 +61,7 @@ const isPreset = (value: unknown): value is DevicePreset => {
 function read(): PresetLibrary {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
-    // Saved before some params moved into the LFO module, values come
+    // Saved before some params moved into the vibrato module, values come
     // across under their new ids.
     const migrate = (target: DevicePreset["target"], values: object) =>
       migrateParams(

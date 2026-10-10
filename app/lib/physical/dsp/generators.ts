@@ -62,28 +62,34 @@ export class Lfo {
   }
 
   process() {
+    return this.advance(1);
+  }
+
+  // The value `count` samples on; process() is one sample.
+  advance(count: number) {
     let fade = 1;
     if (this.elapsed < this.delaySamples + this.fadeSamples) {
-      const t = this.elapsed++ - this.delaySamples;
+      const t = this.elapsed + count - 1 - this.delaySamples;
+      this.elapsed += count;
       if (t < 0) return 0;
       if (t < this.fadeSamples) fade = t / this.fadeSamples;
     }
-    this.phase += this.increment;
+    this.phase += this.increment * count;
     if (this.phase >= 1) {
-      this.phase -= 1;
+      this.phase -= Math.floor(this.phase);
       this.random = this.noise.next();
     }
+    const ease = count === 1 ? this.ease : 1 - (1 - this.ease) ** count;
     switch (this.shape) {
       case 0:
         return fade * Math.sin(TWO_PI * this.phase);
       case 1:
         return fade * (1 - 4 * Math.abs(this.phase - 0.5));
       case 2:
-        this.stepped +=
-          ((this.phase < 0.5 ? 1 : -1) - this.stepped) * this.ease;
+        this.stepped += ((this.phase < 0.5 ? 1 : -1) - this.stepped) * ease;
         return fade * this.stepped;
       default:
-        this.stepped += (this.random - this.stepped) * this.ease;
+        this.stepped += (this.random - this.stepped) * ease;
         return fade * this.stepped;
     }
   }

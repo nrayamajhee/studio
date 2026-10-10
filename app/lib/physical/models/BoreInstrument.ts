@@ -110,7 +110,7 @@ class BoreVoice extends Voice {
     this.jet.clear();
     this.reflection.clear();
     this.dc.clear();
-    this.clearModules();
+    this.chain.clear();
     this.breath.reset();
     this.gate.reset();
     this.lipY1 = this.lipY2 = 0;
@@ -134,6 +134,7 @@ class BoreVoice extends Voice {
   }
 
   render(left: Float32Array, right: Float32Array, start: number, end: number) {
+    this.chain.begin();
     const bore = this.bore;
     const jet = this.jet;
     const { pitch, level } = this.mods;
@@ -141,7 +142,7 @@ class BoreVoice extends Voice {
       this.boreLength += (this.boreTarget - this.boreLength) * this.glide;
       this.jetLength += (this.jetTarget - this.jetLength) * this.glide;
       // The LFO sways the breath and bends the bore's length.
-      const vib = this.modulate();
+      const vib = this.chain.modulate();
       let pressure = this.maxPressure * this.breath.process();
       pressure += pressure * (this.noiseGain * this.noise.next() + level * vib);
       const bend = 1 - pitch * vib;
@@ -201,7 +202,13 @@ class BoreVoice extends Voice {
         out = 0;
       }
 
-      this.emit(out, this.outputGain * this.gate.process(), i, left, right);
+      this.chain.emit(
+        out,
+        this.outputGain * this.gate.process(),
+        i,
+        left,
+        right,
+      );
     }
     this.endBlock(end - start);
     if (!this.breath.active && this.state === ACTIVE) this.state = RELEASED;

@@ -71,7 +71,7 @@ class BowedVoice extends Voice {
     this.bridge.clear();
     this.stringFilter.clear();
     for (let i = 0; i < this.body.length; i++) this.body[i].clear();
-    this.clearModules();
+    this.chain.clear();
     this.bow.reset();
   }
 
@@ -80,6 +80,7 @@ class BowedVoice extends Voice {
   }
 
   render(left: Float32Array, right: Float32Array, start: number, end: number) {
+    this.chain.begin();
     const neck = this.neck;
     const bridge = this.bridge;
     const body = this.body;
@@ -91,7 +92,7 @@ class BowedVoice extends Voice {
           this.baseDelay = this.delayTarget;
       }
       // The LFO bends the string's length (vibrato) and sways the bow.
-      const vib = this.modulate();
+      const vib = this.chain.modulate();
       const bowVelocity =
         this.maxVelocity * this.bow.process() * (1 + level * vib);
       const bridgeReflection =
@@ -109,7 +110,7 @@ class BowedVoice extends Voice {
       let wet = x;
       for (let s = 0; s < body.length; s++) wet = body[s].process(wet);
       x = BODY_GAIN * (x + this.bodyMix * (wet - x));
-      this.emit(x, 1, i, left, right);
+      this.chain.emit(x, 1, i, left, right);
     }
     this.endBlock(end - start);
   }
