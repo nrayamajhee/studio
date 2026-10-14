@@ -11,8 +11,8 @@ const RED = "var(--color-synth-red)";
 
 // Every pad, three rows of twelve in reading order:
 //   Play  Stop  Record Albums Tracks Params ADSR LFO FX Chords Style Tempo
-//   Clip  Mute  ↑      Save   Delete Instr. preset 1–3      chord 1–3
-//   Shift ←     ↓      →      Roll   Grid   preset 4–6      chord 4–6
+//   Clip  Mute  ↑      Save   Delete Roll   preset 1–3      chord 1–3
+//   Shift ←     ↓      →      Instr. Grid   preset 4–6      chord 4–6
 // Play, Stop and Record act on whatever the mode plays: the piano roll, the
 // drum grid or the mix. The presets are three instruments over three kits.
 export function PadButtons() {
@@ -98,7 +98,7 @@ export function PadButtons() {
         command={{ code: "Backspace", legend: "⌫" }}
         accent={RED}
       />
-      {tool("synth", RED)}
+      {tool("take", RED)}
       {preset(0)}
       {preset(1)}
       {preset(2)}
@@ -131,7 +131,7 @@ export function PadButtons() {
         control={{ kind: "step", direction: 1 }}
         accent={RED}
       />
-      {tool("take", RED)}
+      {tool("synth", RED)}
       {tool("steps", RED)}
       {preset(3)}
       {preset(4)}
