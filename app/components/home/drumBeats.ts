@@ -14,8 +14,9 @@ export type BeatStyle =
   | "Classical"
   | "South Asian";
 
-// A drum beat for the drum grid, on the kit and at the tempo that suit it
-// (`bpm` counts the meter's beats, so an eighth in 6/8): each row a piece, a
+// A drum beat for the drum grid, on the kit that suits it, with the tempo it
+// is heard at on record (`bpm` counts the meter's beats, so an eighth in
+// 6/8; the Device plays it at its own tempo): each row a piece, a
 // character a step (X accented, x played, o a ghost note, . rest; spaces
 // only mark the beats), in `meter` at `perBeat` steps a beat, over as many
 // bars as the rows run.
@@ -1089,11 +1090,11 @@ export function beatPattern(beat: DrumBeat): StepPattern {
   };
 }
 
-// The beat as the drum grid will play it, on its kit at its tempo, played
-// round for PREVIEW_BARS: what the preview tape auditions.
-export function beatPreview(beat: DrumBeat): Take {
+// The beat as the drum grid will play it, on its kit at `bpm`, played round
+// for PREVIEW_BARS: what the preview tape auditions.
+export function beatPreview(beat: DrumBeat, bpm: number): Take {
   const pattern = beatPattern(beat);
-  const pass = patternTake(pattern, beat.kit, beat.meter, beat.bpm);
+  const pass = patternTake(pattern, beat.kit, beat.meter, bpm);
   const times = Math.ceil(PREVIEW_BARS / pattern.bars);
   return {
     notes: Array.from({ length: times }, (_, time) =>
@@ -1103,6 +1104,6 @@ export function beatPreview(beat: DrumBeat): Take {
       })),
     ).flat(),
     length: times * pass.length,
-    bpm: beat.bpm,
+    bpm,
   };
 }
