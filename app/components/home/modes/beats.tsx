@@ -23,10 +23,9 @@ const SHELVES = shelvesOf(DRUM_BEATS, ({ style }) => style);
 
 // Drum beats (Shift + Drum grid), by style: the red knob (or ← →) picks a
 // style and the blue one a beat. A tile tapped, or Play, plays it on the
-// preview tape, on its kit at its tempo; Play again pauses it. Save loads it
-// into the drum grid on that kit, setting the tempo and time signature to
-// its own, and opens the grid to play or keep it; so does a tile
-// double-clicked.
+// preview tape, on its kit at the tempo; Play again pauses it. Save loads it
+// into the drum grid on that kit, setting the time signature to its own, and
+// opens the grid to play or keep it; so does a tile double-clicked.
 export const beatsMode: Mode = (device, base) => {
   const { browse, sound, transport, views, feedback, preview } = device;
   const { beatIndex } = browse;
@@ -35,7 +34,7 @@ export const beatsMode: Mode = (device, base) => {
   const select = browse.setBeatIndex;
   const audition = (index: number) => {
     const beat = DRUM_BEATS[index];
-    preview.play(beat.id, beatPreview(beat), {
+    preview.play(beat.id, beatPreview(beat, transport.bpm), {
       target: beat.kit,
       octave: 0,
     });
@@ -58,7 +57,6 @@ export const beatsMode: Mode = (device, base) => {
         beats === beat.meter.beats && unit === beat.meter.unit,
     );
     if (meter >= 0) transport.setMeter(meter);
-    transport.setBpm(beat.bpm);
     views.setView("steps");
     feedback.showNotice(`${beat.name} in the drum grid`);
   };
@@ -95,13 +93,7 @@ export const beatsMode: Mode = (device, base) => {
         (beat) => ({
           id: beat.id,
           label: beat.name,
-          icon: (
-            <span>
-              {meterLabel(beat.meter)}
-              <br />
-              {beat.bpm} BPM
-            </span>
-          ),
+          icon: <span>{meterLabel(beat.meter)}</span>,
         }),
       ),
       selected: beatIndex - shelf.start,

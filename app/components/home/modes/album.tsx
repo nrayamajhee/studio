@@ -33,9 +33,10 @@ const pickSong = (device: Device, index: number) => {
 
 // The album, a song a tile: the green knob and the arrows open a song (the
 // red and blue knobs set nothing here), Play plays its tracks, Save starts an
-// empty song at the tempo playing now and Delete removes the open one.
+// empty song at the tempo playing now and Delete removes the open one. A tile
+// double-clicked opens its song and closes the album onto its tracks.
 export const albumMode: Mode = (device, base) => {
-  const { lanes, transport, feedback } = device;
+  const { lanes, transport, feedback, views } = device;
   const { songs, songIndex, currentSong } = lanes;
   const pick = (index: number) => pickSong(device, index);
   return {
@@ -104,6 +105,10 @@ export const albumMode: Mode = (device, base) => {
       })),
       selected: songIndex,
       onSelect: pick,
+      onActivate: (index) => {
+        pick(index);
+        views.setView("tracks");
+      },
     },
   };
 };
