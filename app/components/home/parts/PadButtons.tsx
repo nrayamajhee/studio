@@ -10,9 +10,9 @@ import { DevicePad } from "./DevicePad";
 const RED = "var(--color-synth-red)";
 
 // Every pad, three rows of twelve in reading order:
-//   Play  Stop  Record Save   Albums Tracks ADSR LFO FX Chords Style Tempo
-//   Clip  Mute  ↑      Delete Roll   Instr. preset 1–3      chord 1–3
-//   Shift ←     ↓      →      Grid   Params preset 4–6      chord 4–6
+//   Play  Stop  Record Albums Tracks Params ADSR LFO FX Chords Style Tempo
+//   Clip  Mute  ↑      Save   Delete Instr. preset 1–3      chord 1–3
+//   Shift ←     ↓      →      Roll   Grid   preset 4–6      chord 4–6
 // Play, Stop and Record act on whatever the mode plays: the piano roll, the
 // drum grid or the mix. The presets are three instruments over three kits.
 export function PadButtons() {
@@ -70,13 +70,9 @@ export function PadButtons() {
       {tool("play")}
       {tool("stop", RED)}
       {tool("record", RED)}
-      <DevicePad
-        binding={pads.save}
-        command={{ code: "KeyS", legend: "S" }}
-        accent={RED}
-      />
       {tool("album", RED)}
       {tool("tracks", RED)}
+      {tool("params", RED)}
       {tool("adsr", RED)}
       {tool("lfo", RED)}
       {tool("fx", RED)}
@@ -92,12 +88,16 @@ export function PadButtons() {
         accent={RED}
       />
       <DevicePad
+        binding={pads.save}
+        command={{ code: "KeyS", legend: "S" }}
+        accent={RED}
+      />
+      <DevicePad
         binding={pads.delete}
         control={{ kind: "tool", tool: "delete" }}
         command={{ code: "Backspace", legend: "⌫" }}
         accent={RED}
       />
-      {tool("take", RED)}
       {tool("synth", RED)}
       {preset(0)}
       {preset(1)}
@@ -131,8 +131,8 @@ export function PadButtons() {
         control={{ kind: "step", direction: 1 }}
         accent={RED}
       />
+      {tool("take", RED)}
       {tool("steps", RED)}
-      {tool("params", RED)}
       {preset(3)}
       {preset(4)}
       {preset(5)}
