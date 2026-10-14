@@ -25,8 +25,7 @@ const SHELVES = shelvesOf(DRUM_BEATS, ({ style }) => style);
 // style and the blue one a beat. A tile tapped, or Play, plays it on the
 // preview tape, on its kit at the tempo; Play again pauses it. Save loads it
 // into the drum grid on that kit, setting the time signature to its own, and
-// opens the grid to play or keep it; so does a tile double-clicked. Each
-// tile shows the tempo the beat is heard at on record, to dial in by hand.
+// opens the grid to play or keep it; so does a tile double-clicked.
 export const beatsMode: Mode = (device, base) => {
   const { browse, sound, transport, views, feedback, preview } = device;
   const { beatIndex } = browse;
@@ -94,13 +93,7 @@ export const beatsMode: Mode = (device, base) => {
         (beat) => ({
           id: beat.id,
           label: beat.name,
-          icon: (
-            <span>
-              {meterLabel(beat.meter)}
-              <br />
-              {beat.bpm} BPM
-            </span>
-          ),
+          icon: <span>{meterLabel(beat.meter)}</span>,
         }),
       ),
       selected: beatIndex - shelf.start,
