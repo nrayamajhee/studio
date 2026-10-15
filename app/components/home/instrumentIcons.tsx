@@ -1,7 +1,7 @@
 import type { ComponentType, SVGProps } from "react";
 import { Bell, Drum, Hand } from "lucide-react";
 import type { DrumPieceId } from "../../lib/physical";
-import type { ChordStyleId } from "./chordStyles";
+import type { PlayStyleId } from "./playStyles";
 
 // Stroke icons in the lucide style for instruments and drum pieces lucide
 // doesn't cover.
@@ -253,21 +253,93 @@ export function KalimbaIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-// Lucide's chart-bar-stacked without its axes, centred: two lanes of clips.
+// Three lanes of clips, each starting where it was slid to.
 export function TracksIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...base} {...props}>
-      <rect x="4" y="5" width="16" height="5" rx="1" />
-      <rect x="4" y="14" width="12" height="5" rx="1" />
-      <path d="M15 5v5" />
-      <path d="M9 14v5" />
+      <rect x="3" y="3.5" width="12" height="3.5" rx="1" />
+      <rect x="8" y="10.25" width="13" height="3.5" rx="1" />
+      <rect x="3" y="17" width="9" height="3.5" rx="1" />
+    </svg>
+  );
+}
+
+// Lucide's cassette-tape as a deck: two reels with the tape between them.
+export function TapeDeckIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="2" y="3" width="20" height="18" rx="2" />
+      <circle cx="8" cy="10" r="3" />
+      <circle cx="16" cy="10" r="3" />
+      <path d="M8 13h8" />
+      <path d="M6 17h12" />
+    </svg>
+  );
+}
+
+// Recording into a dashed clip: a track that isn't kept yet.
+export function TakeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="4.5" cy="12" r="2" fill="currentColor" stroke="none" />
+      <rect
+        x="9"
+        y="7.5"
+        width="12"
+        height="9"
+        rx="1.5"
+        strokeDasharray="2.5 2.5"
+      />
+    </svg>
+  );
+}
+
+// Lucide's chart-no-axes-gantt with a strip of keys down its left.
+export function PianoRollIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="3" width="5" height="18" rx="1" />
+      <path d="M3 9h5" />
+      <path d="M3 15h5" />
+      <path d="M11.5 6H16" />
+      <path d="M14 12h6" />
+      <path d="M11.5 18H15" />
+    </svg>
+  );
+}
+
+// Four steps by three drums, like a drum machine's lights: hits lit, rests
+// as dots.
+const GRID_HITS = ["xxxx", ".x.x", "x.x."];
+
+export function DrumGridIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      {GRID_HITS.flatMap((row, r) =>
+        [...row].map((step, c) => {
+          const x = 4.5 + 5 * c;
+          const y = 6 + 6 * r;
+          return step === "x" ? (
+            <circle
+              key={`${r}-${c}`}
+              cx={x}
+              cy={y}
+              r="2"
+              fill="currentColor"
+              stroke="none"
+            />
+          ) : (
+            <path key={`${r}-${c}`} d={`M${x} ${y}h.01`} />
+          );
+        }),
+      )}
     </svg>
   );
 }
 
 // How a play style plays a chord, as a little piano roll: a bar a note, time
 // to the right and pitch upwards, [from, to, height].
-const STYLE_NOTES: Readonly<Record<ChordStyleId, readonly number[][]>> = {
+const STYLE_NOTES: Readonly<Record<PlayStyleId, readonly number[][]>> = {
   block: [
     [5, 19, 17],
     [5, 19, 12],
@@ -359,10 +431,10 @@ const STYLE_NOTES: Readonly<Record<ChordStyleId, readonly number[][]>> = {
   ],
 };
 
-export function ChordStyleIcon({
+export function PlayStyleIcon({
   pattern,
   ...props
-}: SVGProps<SVGSVGElement> & { pattern: ChordStyleId }) {
+}: SVGProps<SVGSVGElement> & { pattern: PlayStyleId }) {
   return (
     <svg {...base} {...props}>
       {STYLE_NOTES[pattern].map(([from, to, y]) => (

@@ -6,12 +6,9 @@ import {
   ArrowUp,
   AudioLines,
   AudioWaveform,
-  ChartNoAxesGantt,
   Circle,
-  DiscAlbum,
   Activity,
   FileMusic,
-  Grid3x3,
   LayoutGrid,
   Metronome,
   ListMusic,
@@ -22,21 +19,31 @@ import {
   Save,
   Scissors,
   Square,
+  Star,
   Trash2,
   VolumeX,
   WavesHorizontal,
 } from "lucide-react";
 import { valueToStep } from "../../../lib/physical/patches/format";
-import { isTape } from "../../../providers/LanesProvider";
+import { isTake } from "../../../providers/LanesProvider";
 import {
   DEVICE_MODULES,
   KNOB_STEPS,
   deviceEngine,
   engineName,
+  presetCategory,
   type ModuleId,
 } from "../deviceEngine";
 import { ScreenSeek, ScreenValue, type ScreenPager } from "../DeviceScreen";
-import { AdsrIcon, ChordStyleIcon, TracksIcon } from "../instrumentIcons";
+import { toggleFavorite, type FavoriteKind } from "../favoritesStore";
+import {
+  AdsrIcon,
+  DrumGridIcon,
+  PianoRollIcon,
+  PlayStyleIcon,
+  TapeDeckIcon,
+  TracksIcon,
+} from "../instrumentIcons";
 import { MODULE_IDS } from "../modules";
 import { PresetIcon } from "../presetIcons";
 import { swapPad } from "../presetStore";
@@ -177,6 +184,111 @@ export function shelfKnobs(
   return { red, blue };
 }
 
+const FAVORITES = "Favorites";
+
+// A picker's items led by its favorites, on a page of their own, then every
+// one on its category's page.
+export function listFavorites<T extends { id: string }>(
+  items: readonly T[],
+  categoryOf: (item: T) => string,
+  favorites: readonly string[],
+) {
+  return [
+    ...favorites.flatMap((id) => {
+      const item = items.find((candidate) => candidate.id === id);
+      return item ? [{ ...item, page: FAVORITES }] : [];
+    }),
+    ...items.map((item) => ({ ...item, page: categoryOf(item) })),
+  ];
+}
+
+// A picker led by its favorites (see listFavorites): its list, its pages and
+// the item picked, at `index` (or, where the pick is what plays, `picked`,
+// wherever that is if it was picked elsewhere), with `select` to pick
+// another, which sets `index` and passes the item to `onPick`. Mute stars the
+// pick or lets it go: the pick stays on its item, on its category's page,
+// or, let go from the favorites' page, moves to the next favorite while any
+// are left (unless it plays).
+export function favoritesPicker<T extends { id: string; name: string }>(
+  { browse, feedback }: Device,
+  {
+    kind,
+    items,
+    categoryOf,
+    index,
+    setIndex,
+    picked,
+    onPick,
+  }: {
+    kind: FavoriteKind;
+    items: readonly T[];
+    categoryOf: (item: T) => string;
+    index: number;
+    setIndex: (index: number) => void;
+    picked?: string;
+    onPick?: (item: T) => void;
+  },
+) {
+  const favorites = browse.favorites[kind];
+  const listed = listFavorites(items, categoryOf, favorites);
+  const shelves = shelvesOf(listed, ({ page }) => page);
+  const at = Math.min(index, listed.length - 1);
+  const pick =
+    picked === undefined || listed[at]?.id === picked
+      ? at
+      : Math.max(
+          0,
+          listed.findIndex(({ id }) => id === picked),
+        );
+  const chosen = listed[pick];
+  const favorite = favorites.includes(chosen.id);
+  const select = (to: number, from = listed) => {
+    setIndex(to);
+    onPick?.(from[to]);
+  };
+  const star = () => {
+    const next = listFavorites(
+      items,
+      categoryOf,
+      toggleFavorite(kind, chosen.id),
+    );
+    const left = next.filter(({ page }) => page === FAVORITES).length;
+    const to =
+      picked === undefined && chosen.page === FAVORITES && left > 0
+        ? Math.min(pick, left - 1)
+        : next.findIndex(
+            ({ id, page }) => id === chosen.id && page !== FAVORITES,
+          );
+    if (next[to].id === chosen.id) setIndex(to);
+    else select(to, next);
+    feedback.showNotice(
+      favorite ? "Removed from favorites" : "Added to favorites",
+    );
+  };
+  return {
+    listed,
+    shelves,
+    index: pick,
+    chosen,
+    select,
+    // Lets an item about to be deleted go from the favorites.
+    forget: (id: string) => {
+      if (favorites.includes(id)) toggleFavorite(kind, id);
+    },
+    mute: {
+      label: favorite
+        ? `Remove ${chosen.name} from favorites`
+        : `Add ${chosen.name} to favorites`,
+      icon: <Star fill={favorite ? "currentColor" : "none"} />,
+      lit: favorite,
+      onPress: star,
+    } satisfies PadBinding,
+    // A star on a favorite, on its category's page.
+    star: ({ id, page }: { id: string; page: string }) =>
+      page !== FAVORITES && favorites.includes(id) ? "★" : undefined,
+  };
+}
+
 // The green knob scrolling whatever the screen lists.
 export const seekKnob = (
   valueLabel: string,
@@ -214,8 +326,8 @@ export const arrowPads = (
   right: arrowPad(device, 1, next, () => step(1)),
 });
 
-// With Shift, Save keeps the tracks as MIDI from any view but the tape and
-// the sequencer, where it always keeps what's on them as a track.
+// With Shift, Save keeps the tracks as MIDI from any view but the piano roll and
+// the drum grid, where it always keeps what's on them as a track.
 export const savePad = (
   device: Device,
   own: { label: string; icon?: ReactNode; onPress?: () => void },
@@ -258,27 +370,27 @@ export const deletePad = (
 });
 
 // Play and Stop for the drum pattern.
-export const stepPads = ({ steps }: Device) => {
-  const playing = steps.stepsRunning && !steps.recordingSteps;
+export const drumGridPads = ({ drumGrid }: Device) => {
+  const playing = drumGrid.patternRunning && !drumGrid.recordingPattern;
   return {
     play: {
-      label: playing ? "Stop the steps" : "Play the steps",
+      label: playing ? "Stop the pattern" : "Play the pattern",
       icon: playing ? (
         <Pause fill="currentColor" />
       ) : (
         <Play fill="currentColor" />
       ),
       onPress: () => {
-        if (playing) steps.stopSteps();
-        else steps.playSteps(false);
+        if (playing) drumGrid.stopPattern();
+        else drumGrid.playPattern(false);
       },
     },
     stop: {
       label: "Stop",
       icon: <Square fill="currentColor" />,
       onPress: () => {
-        if (steps.stepsRunning) steps.stopSteps();
-        else steps.moveStepHead(0);
+        if (drumGrid.patternRunning) drumGrid.stopPattern();
+        else drumGrid.moveStepHead(0);
       },
     },
   };
@@ -325,22 +437,22 @@ export const mixPads = ({ mix }: Device, stopLabel = "Stop") => ({
   },
 });
 
-// Opens or closes the tracks or the album. While recording it ends the
+// Opens or closes the tracks or the tapes. While recording it ends the
 // take, like Record.
-const openTracks = ({ transport, latch, views }: Device, album: boolean) => {
+const openTracks = ({ transport, latch, views }: Device, tapes: boolean) => {
   transport.setRollPosition(null);
   if (transport.recording) {
     transport.stop();
     return;
   }
-  if (album) latch.release();
-  views.toggleView(album ? "album" : "tracks");
+  if (tapes) latch.release();
+  views.toggleView(tapes ? "tapes" : "tracks");
 };
 
 // Opens or closes the take (record mode), which Record also opens, loading
-// the picked track onto it; with `steps` the drum sequencer. While recording
+// the picked track onto it; with `drumGrid` the drum grid. While recording
 // it ends the take.
-const openTape = (device: Device, steps: boolean) => {
+const openTake = (device: Device, drumGrid: boolean) => {
   const { transport, latch, views, lanes, feedback } = device;
   transport.setRollPosition(null);
   if (transport.recording) {
@@ -348,34 +460,35 @@ const openTape = (device: Device, steps: boolean) => {
     return;
   }
   latch.release();
-  // A track opens only where it was made: a played take on the tape, a drawn
-  // pattern in the sequencer.
-  const where = steps ? "steps" : "roll";
-  const track = isTape(lanes.focusedLane) ? null : lanes.focusedLane;
+  // A track opens only where it was made: a played take in the piano roll, a
+  // drawn pattern in the drum grid.
+  const where = drumGrid ? "drumGrid" : "roll";
+  const track = isTake(lanes.focusedLane) ? null : lanes.focusedLane;
   if (device.view !== where && track && trackSource(track) !== where) {
     feedback.showPrompt(
-      steps
+      drumGrid
         ? "Open this track in the piano roll"
         : "Open this track in the drum grid",
     );
     return;
   }
-  if (steps) {
-    device.steps.toggleSteps();
+  if (drumGrid) {
+    device.drumGrid.toggleDrumGrid();
     return;
   }
   if (device.view === "roll") {
     views.setView("scope");
     return;
   }
-  if (!isTape(lanes.focusedLane)) lanes.loadOntoTape(lanes.focusedLane);
+  if (!isTake(lanes.focusedLane)) lanes.loadTake(lanes.focusedLane);
   views.setView("roll");
 };
 
-// The preset library, or with `params` the synth parameters; either closes
-// on another press.
+// The preset library, on the sound playing (on the favorites' page if it is
+// one), or with `params` the synth parameters; either closes on another
+// press.
 const openSynth = ({ view, views, sound, browse }: Device, params: boolean) => {
-  if (view === (params ? "synth" : "presets")) {
+  if (view === (params ? "synth" : "instruments")) {
     views.setView("scope");
     return;
   }
@@ -386,10 +499,14 @@ const openSynth = ({ view, views, sound, browse }: Device, params: boolean) => {
   browse.setPresetIndex(
     Math.max(
       0,
-      sound.presets.findIndex(({ id }) => id === sound.preset.id),
+      listFavorites(
+        sound.presets,
+        presetCategory,
+        browse.favorites.instruments,
+      ).findIndex(({ id }) => id === sound.preset.id),
     ),
   );
-  views.setView("presets");
+  views.setView("instruments");
 };
 
 // A module pad opens its view; with Shift it switches the module on or off
@@ -450,7 +567,7 @@ const viewPad = (
 // volume and the selected param, ↑ and ↓ move the octave (so do ← and →,
 // which with Shift step the preset) and the pads open their views.
 export function baseBindings(device: Device): Bindings {
-  const { shift, views, output, transport, sound, performance, tape, browse } =
+  const { shift, views, output, transport, sound, performance, take, browse } =
     device;
   const recording = transport.recording;
 
@@ -481,7 +598,7 @@ export function baseBindings(device: Device): Bindings {
       play: {
         label: recording
           ? "Stop recording"
-          : tape.recordArmed
+          : take.recordArmed
             ? "Start recording"
             : transport.playing
               ? "Pause"
@@ -491,36 +608,36 @@ export function baseBindings(device: Device): Bindings {
         ) : (
           <Play fill="currentColor" />
         ),
-        onPress: tape.togglePlay,
+        onPress: take.togglePlay,
       },
       record: {
         label: recording
           ? "Stop recording"
-          : tape.recordArmed
+          : take.recordArmed
             ? "Disarm recording"
             : "Arm recording",
         icon: <Circle fill="currentColor" />,
-        lit: recording || tape.recordArmed,
-        onPress: tape.toggleRecord,
+        lit: recording || take.recordArmed,
+        onPress: take.toggleRecord,
       },
       stop: {
         label: "Stop",
         icon: <Square fill="currentColor" />,
-        onPress: tape.stop,
+        onPress: take.stop,
       },
       // Every other view shows over the main one, so Play and Stop act on
-      // what it plays: the tracks, the pattern, or (as above) the tape.
+      // what it plays: the tracks, the pattern, or (as above) the take.
       ...(views.mainView === "tracks"
         ? mixPads(device)
-        : views.mainView === "steps"
-          ? stepPads(device)
+        : views.mainView === "drumGrid"
+          ? drumGridPads(device)
           : {}),
       save: savePad(device, { label: "Save instrument" }),
-      album: viewPad(
+      tapes: viewPad(
         device,
-        "album",
-        ["Albums", "Close albums"],
-        <DiscAlbum />,
+        "tapes",
+        ["Tapes", "Close tapes"],
+        <TapeDeckIcon />,
         () => openTracks(device, true),
       ),
       tracks: viewPad(
@@ -531,7 +648,7 @@ export function baseBindings(device: Device): Bindings {
         () => openTracks(device, false),
       ),
       // With Shift, the chord progressions.
-      take: shift
+      roll: shift
         ? {
             label:
               device.view === "progressions"
@@ -549,11 +666,11 @@ export function baseBindings(device: Device): Bindings {
             device,
             "roll",
             ["Piano roll", "Close piano roll"],
-            <ChartNoAxesGantt />,
-            () => openTape(device, false),
+            <PianoRollIcon />,
+            () => openTake(device, false),
           ),
       // With Shift, the drum beats.
-      steps: shift
+      drumGrid: shift
         ? {
             label: device.view === "beats" ? "Close beats" : "Drum beats",
             icon: <Activity />,
@@ -566,10 +683,10 @@ export function baseBindings(device: Device): Bindings {
           }
         : viewPad(
             device,
-            "steps",
+            "drumGrid",
             ["Drum grid", "Close drum grid"],
-            <Grid3x3 />,
-            () => openTape(device, true),
+            <DrumGridIcon />,
+            () => openTake(device, true),
           ),
       adsr: modulePad(device, "adsr", <AdsrIcon />),
       lfo: modulePad(device, "lfo", <WavesHorizontal />),
@@ -588,14 +705,14 @@ export function baseBindings(device: Device): Bindings {
         onPress: () => sound.shiftOctave(-1),
       },
       delete: deletePad(device),
-      synth: viewPad(
+      instruments: viewPad(
         device,
-        "presets",
+        "instruments",
         ["Instruments", "Close instruments"],
         <LayoutGrid />,
         () => openSynth(device, false),
       ),
-      params: viewPad(
+      synth: viewPad(
         device,
         "synth",
         ["Synth parameters", "Close synth parameters"],
@@ -606,16 +723,16 @@ export function baseBindings(device: Device): Bindings {
       chords: viewPad(
         device,
         "chords",
-        ["Chord palette", "Close chord palette"],
+        ["Chords", "Close chords"],
         <Music4 />,
         () => views.toggleView("chords"),
       ),
-      style: viewPad(
+      playStyle: viewPad(
         device,
-        "chordStyle",
+        "playStyle",
         ["Play style", "Close play style"],
-        <ChordStyleIcon pattern={performance.chordStyle.id} />,
-        () => views.toggleView("chordStyle"),
+        <PlayStyleIcon pattern={performance.playStyle.id} />,
+        () => views.toggleView("playStyle"),
       ),
       ...arrowPads(
         device,
@@ -626,7 +743,7 @@ export function baseBindings(device: Device): Bindings {
           shift ? sound.stepPreset(direction) : sound.shiftOctave(direction),
       ),
     },
-    presetPad: (pad) => {
+    instrumentPad: (pad) => {
       const bound = padPreset(device, pad);
       const current = bound?.id === sound.preset.id;
       return {
@@ -652,7 +769,7 @@ export function baseBindings(device: Device): Bindings {
       };
     },
     chordPad: (index) => {
-      const { name, label } = performance.macroChords[index];
+      const { name, label } = performance.padChords[index];
       return {
         label: `${name} chord`,
         icon: label,

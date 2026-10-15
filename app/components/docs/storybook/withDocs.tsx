@@ -2,8 +2,8 @@ import type { Decorator } from "@storybook/react-vite";
 import { MemoryRouter } from "react-router";
 import type { DocNode } from "../../../types/docs";
 
-// The README with docs/ under it and its two folders, as the route bakes
-// them from the repo.
+// The README with docs/ under it and three of its folders, in the order
+// their TOML gives, as the route bakes them from the repo.
 export const SAMPLE_TREE: DocNode[] = [
   {
     kind: "file",
@@ -11,16 +11,71 @@ export const SAMPLE_TREE: DocNode[] = [
     path: "README.md",
     href: "/docs",
     title: "Studio",
+    order: 0,
   },
   {
     kind: "folder",
     name: "docs",
     path: "docs",
+    title: "Docs",
+    order: 1,
     children: [
+      {
+        kind: "folder",
+        name: "user-manual",
+        path: "docs/user-manual",
+        title: "User manual",
+        order: 1,
+        children: [
+          {
+            kind: "file",
+            name: "introduction.md",
+            path: "docs/user-manual/introduction.md",
+            href: "/docs/user-manual/introduction",
+            title: "User manual",
+            order: 1,
+          },
+          {
+            kind: "file",
+            name: "play-notes-and-chords.md",
+            path: "docs/user-manual/play-notes-and-chords.md",
+            href: "/docs/user-manual/play-notes-and-chords",
+            title: "Play notes and chords",
+            order: 2,
+          },
+        ],
+      },
+      {
+        kind: "folder",
+        name: "the-device",
+        path: "docs/the-device",
+        title: "The Device",
+        order: 2,
+        children: [
+          {
+            kind: "file",
+            name: "overview.md",
+            path: "docs/the-device/overview.md",
+            href: "/docs/the-device/overview",
+            title: "The Device",
+            order: 1,
+          },
+          {
+            kind: "file",
+            name: "knobs.md",
+            path: "docs/the-device/knobs.md",
+            href: "/docs/the-device/knobs",
+            title: "Knobs",
+            order: 2,
+          },
+        ],
+      },
       {
         kind: "folder",
         name: "development",
         path: "docs/development",
+        title: "Development",
+        order: 5,
         children: [
           {
             kind: "file",
@@ -28,6 +83,7 @@ export const SAMPLE_TREE: DocNode[] = [
             path: "docs/development/installation.md",
             href: "/docs/development/installation",
             title: "Installation",
+            order: 1,
           },
           {
             kind: "file",
@@ -35,27 +91,7 @@ export const SAMPLE_TREE: DocNode[] = [
             path: "docs/development/storybook.md",
             href: "/docs/development/storybook",
             title: "Storybook",
-          },
-        ],
-      },
-      {
-        kind: "folder",
-        name: "project",
-        path: "docs/project",
-        children: [
-          {
-            kind: "file",
-            name: "the-device.md",
-            path: "docs/project/the-device.md",
-            href: "/docs/project/the-device",
-            title: "The Device (Home Page)",
-          },
-          {
-            kind: "file",
-            name: "synth-engine.md",
-            path: "docs/project/synth-engine.md",
-            href: "/docs/project/synth-engine",
-            title: "Synth engine",
+            order: 2,
           },
         ],
       },

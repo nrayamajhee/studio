@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="430" viewBox="0 0 860 430">
+  <text x="24" y="30" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="24" dy="0">The instrument's voice</tspan></text>
+  <rect x="24" y="48" width="148" height="80" rx="8" fill="none" fill-opacity="0" stroke="#1d7346" stroke-width="1.5"/>
+  <text x="40" y="75" fill="#1d7346" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">Exciter</tspan></text>
+  <text x="40" y="98" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="40" dy="0">hammer, pluck,</tspan><tspan x="40" dy="19.575">bow, breath</tspan></text>
+  <rect x="190" y="48" width="148" height="80" rx="8" fill="none" fill-opacity="0" stroke="#171615" stroke-width="1.5"/>
+  <text x="206" y="75" fill="#171615" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="206" dy="0">Resonator</tspan></text>
+  <text x="206" y="98" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="206" dy="0">string, bore,</tspan><tspan x="206" dy="19.575">modes</tspan></text>
+  <rect x="356" y="48" width="148" height="80" rx="8" fill="none" fill-opacity="0" stroke="#8b8880" stroke-width="1.5"/>
+  <text x="372" y="75" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="372" dy="0">× Gain</tspan></text>
+  <text x="372" y="98" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="372" dy="0">attack, gate,</tspan><tspan x="372" dy="19.575">level tilt</tspan></text>
+  <rect x="522" y="48" width="148" height="80" rx="8" fill="none" fill-opacity="0" stroke="#171615" stroke-width="1.5"/>
+  <text x="538" y="75" fill="#171615" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="538" dy="0">Filter</tspan></text>
+  <text x="538" y="98" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="538" dy="0">SVF lowpass,</tspan><tspan x="538" dy="19.575">keytracked</tspan></text>
+  <rect x="688" y="48" width="148" height="80" rx="8" fill="none" fill-opacity="0" stroke="#1d4fd0" stroke-width="1.5"/>
+  <text x="704" y="75" fill="#1d4fd0" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="704" dy="0">Vibrato</tspan></text>
+  <text x="704" y="98" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="704" dy="0">tremolo or a</tspan><tspan x="704" dy="19.575">swept delay</tspan></text>
+  <path d="M172 88 L182.8 88" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M181.8959760788259 84.08531019299893 L190 88 L181.8959760788259 91.91468980700107 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M338 88 L348.8 88" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M347.8959760788259 84.08531019299893 L356 88 L347.8959760788259 91.91468980700107 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M504 88 L514.8 88" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M513.8959760788259 84.08531019299893 L522 88 L513.8959760788259 91.91468980700107 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M670 88 L680.8 88" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M679.8959760788259 84.08531019299893 L688 88 L679.8959760788259 91.91468980700107 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="240" width="148" height="44" rx="8" fill="none" fill-opacity="0" stroke="#1d7346" stroke-width="1.5"/>
+  <text x="98" y="267" fill="#1d7346" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="98" dy="0">Envelope</tspan></text>
+  <rect x="522" y="240" width="314" height="44" rx="8" fill="none" fill-opacity="0" stroke="#1d4fd0" stroke-width="1.5"/>
+  <text x="679" y="267" fill="#1d4fd0" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="679" dy="0">Vibrato LFO</tspan></text>
+  <path d="M60 240 L60 135.2" fill="none" stroke="#1d7346" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M56.085310192998925 136.1040239211741 L60 128 L63.914689807001075 136.1040239211741 Z" fill="#1d7346" stroke="#1d7346" stroke-width="1" stroke-linejoin="round"/>
+  <text x="70" y="214" fill="#1d7346" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="13.750000000000002" font-weight="400" text-anchor="start"><tspan x="70" dy="0">drives</tspan></text>
+  <path d="M172 262 L236 262" fill="none" stroke="#1d7346" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <path d="M236 262 L236 135.2" fill="none" stroke="#1d7346" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <path d="M232.08531019299892 136.1040239211741 L236 128 L239.91468980700108 136.1040239211741 Z" fill="#1d7346" stroke="#1d7346" stroke-width="1" stroke-linejoin="round"/>
+  <text x="244" y="230" fill="#1d7346" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="13.750000000000002" font-weight="400" text-anchor="start"><tspan x="244" dy="0">damper (strings)</tspan></text>
+  <path d="M556 240 L556 150 L140 150" fill="none" stroke="#1d4fd0" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <path d="M140 150 L140 135.2" fill="none" stroke="#1d4fd0" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <path d="M136.08531019299892 136.1040239211741 L140 128 L143.91468980700108 136.1040239211741 Z" fill="#1d4fd0" stroke="#1d4fd0" stroke-width="1" stroke-linejoin="round"/>
+  <text x="150" y="168" fill="#1d4fd0" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="13.750000000000002" font-weight="400" text-anchor="start"><tspan x="150" dy="0">Level</tspan></text>
+  <path d="M590 240 L590 176 L300 176" fill="none" stroke="#1d4fd0" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <path d="M300 176 L300 135.2" fill="none" stroke="#1d4fd0" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <path d="M296.0853101929989 136.1040239211741 L300 128 L303.9146898070011 136.1040239211741 Z" fill="#1d4fd0" stroke="#1d4fd0" stroke-width="1" stroke-linejoin="round"/>
+  <text x="310" y="194" fill="#1d4fd0" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="13.750000000000002" font-weight="400" text-anchor="start"><tspan x="310" dy="0">Pitch</tspan></text>
+  <path d="M624 240 L624 135.2" fill="none" stroke="#1d4fd0" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M620.0853101929989 136.1040239211741 L624 128 L627.9146898070011 136.1040239211741 Z" fill="#1d4fd0" stroke="#1d4fd0" stroke-width="1" stroke-linejoin="round"/>
+  <text x="632" y="214" fill="#1d4fd0" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="13.750000000000002" font-weight="400" text-anchor="start"><tspan x="632" dy="0">Filter</tspan></text>
+  <path d="M780 240 L780 135.2" fill="none" stroke="#1d4fd0" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <path d="M776.0853101929989 136.1040239211741 L780 128 L783.9146898070011 136.1040239211741 Z" fill="#1d4fd0" stroke="#1d4fd0" stroke-width="1" stroke-linejoin="round"/>
+  <text x="788" y="214" fill="#1d4fd0" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="13.750000000000002" font-weight="400" text-anchor="start"><tspan x="788" dy="0">else</tspan></text>
+  <path d="M24 318 L836 318" fill="none" stroke="#8b8880" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <text x="24" y="346" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="24" dy="0">Then the engine's stages</tspan></text>
+  <rect x="24" y="362" width="148" height="44" rx="8" fill="none" fill-opacity="0" stroke="#8b8880" stroke-width="1.5"/>
+  <text x="98" y="389" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="98" dy="0">Master ADSR</tspan></text>
+  <rect x="190" y="362" width="148" height="44" rx="8" fill="none" fill-opacity="0" stroke="#8b8880" stroke-width="1.5"/>
+  <text x="264" y="389" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="264" dy="0">Steal fade</tspan></text>
+  <rect x="356" y="362" width="148" height="44" rx="8" fill="none" fill-opacity="0" stroke="#8b8880" stroke-width="1.5"/>
+  <text x="430" y="389" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="430" dy="0">Pan</tspan></text>
+  <rect x="522" y="362" width="148" height="44" rx="8" fill="none" fill-opacity="0" stroke="#8b8880" stroke-width="1.5"/>
+  <text x="596" y="389" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="596" dy="0">Bus</tspan></text>
+  <rect x="688" y="362" width="148" height="44" rx="8" fill="none" fill-opacity="0" stroke="#8b8880" stroke-width="1.5"/>
+  <text x="762" y="389" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="762" dy="0">Master LFO, FX</tspan></text>
+  <path d="M172 384 L182.8 384" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M181.8959760788259 380.0853101929989 L190 384 L181.8959760788259 387.9146898070011 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M338 384 L348.8 384" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M347.8959760788259 380.0853101929989 L356 384 L347.8959760788259 387.9146898070011 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M504 384 L514.8 384" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M513.8959760788259 380.0853101929989 L522 384 L513.8959760788259 387.9146898070011 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M670 384 L680.8 384" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M679.8959760788259 380.0853101929989 L688 384 L679.8959760788259 387.9146898070011 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+</svg>

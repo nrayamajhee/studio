@@ -1,3 +1,7 @@
+---
+order = 3
+---
+
 # Agent Guidelines
 
 ## 1. Storybook & Component Story Structure

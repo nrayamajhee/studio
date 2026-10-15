@@ -1,4 +1,4 @@
-import { chordNotes, type ChordStyle } from "./chordStyles";
+import { chordNotes, type PlayStyle } from "./playStyles";
 import { KEY_VELOCITY } from "./deviceMath";
 import {
   barMs,
@@ -78,7 +78,7 @@ export type ProgressionGroup =
   | "Cadences";
 
 // A chord progression, a bar a chord, from David Bennett's videos (see
-// docs/project/chord-progressions.md): named for what it is called, or else for the
+// docs/library/chord-progressions.md): named for what it is called, or else for the
 // song it is known for, and in that song's key where one stands out (else
 // C, or A minor). The key is the home note's: the major tonic, or the minor
 // one for a progression written from i.
@@ -788,7 +788,7 @@ export function progressionTake(
   { chords }: Progression,
   note: number,
   timing: Timing,
-  style: ChordStyle,
+  style: PlayStyle,
 ): Take {
   const home = HOME_LOW + ((((note - HOME_LOW) % 12) + 12) % 12);
   const bar = barMs(timing);

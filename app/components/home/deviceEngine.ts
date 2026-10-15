@@ -12,7 +12,7 @@ import type {
   Patch,
 } from "../../lib/physical/patches/types";
 import type { PlayedNote } from "./noteRecorder";
-import { notePiece, PIECE_NOTES } from "./stepPattern";
+import { notePiece, PIECE_NOTES } from "./drumPattern";
 
 // Rendered past a take's end, so its last notes and the reverb ring out (s).
 const RENDER_TAIL = 2.5;
@@ -36,7 +36,7 @@ export type DevicePreset = {
   // Semitones added to keybed notes so each instrument plays in its register.
   octave: number;
   overrides?: Record<string, number>;
-  // The preset pad (0–5) a built-in starts on, and the one it starts on as a
+  // The instrument pad (0–5) a built-in starts on, and the one it starts on as a
   // Shift alternate: instruments on 0–2, kits on 3–5. A pad goes back to it
   // when its saved preset is deleted.
   pad?: number;

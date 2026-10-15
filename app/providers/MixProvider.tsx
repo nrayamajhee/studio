@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useState, type ReactNode } from "react";
 import { PATCH_BY_ID } from "../lib/physical/patches";
 import { foldNote } from "../lib/physical/dsp/math";
 import { deviceEngine, isKit } from "../components/home/deviceEngine";
-import { notePiece } from "../components/home/stepPattern";
+import { notePiece } from "../components/home/drumPattern";
 import {
   download,
   mixInto,
@@ -23,19 +23,24 @@ import { useTracks } from "./TracksProvider";
 import { useDeviceTransport } from "./TransportProvider";
 import { useView } from "./ViewProvider";
 
+// How often (ms) the seek knob follows the playing mix, and how long after a
+// turn it holds where it was turned to.
+const FOLLOW_MS = 100;
+const TURN_MS = 250;
+
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const fileName = (now: Date) =>
   `studio-${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}-${pad2(now.getHours())}${pad2(now.getMinutes())}`;
 
 function useMixValue() {
-  const { mainView } = useView();
+  const { view, mainView } = useView();
   const feedback = useFeedback();
   const transport = useDeviceTransport();
   const { releaseAll } = usePerformance();
-  const { tracks, lanes, stepPattern, updateTrack } = useLanes();
+  const { tracks, lanes, drumPattern, updateTrack } = useLanes();
   const { trackSpan } = useTracks();
   const { bpm, timing } = transport;
-  // The tape is only an indicator; the mix plays the kept tracks.
+  // The take is only an indicator; the mix plays the kept tracks.
   const mix = useTrackMix(tracks, bpm, trackSpan);
 
   // The mix from `start` to `end` (ms), for scrubbing like a take: each
@@ -155,19 +160,30 @@ function useMixValue() {
     ]),
     renderMix,
   );
-  // Where the mix was last scrubbed to (ms), so the playhead follows it
-  // until playback takes over.
-  const [scrubbedTo, setScrubbedTo] = useState<number | null>(null);
+  // Where the mix was last scrubbed to (ms), and when. Stopped, the knob and
+  // playhead hold it. Playing, the mix carries on from it, so they hold it
+  // only while the knob turns, then follow the mix: a tick redraws the knob
+  // while the tracks play on screen.
+  const [scrub, setScrub] = useState<{ to: number; at: number } | null>(null);
+  const [now, setNow] = useState(0);
+  const following = mix.playing && view === "tracks";
+  useEffect(() => {
+    if (!following) return;
+    const timer = setInterval(() => setNow(performance.now()), FOLLOW_MS);
+    return () => clearInterval(timer);
+  }, [following]);
+  const held =
+    scrub && (!mix.playing || now - scrub.at < TURN_MS) ? scrub.to : null;
   const mixBars = Math.max(
     1,
     Math.ceil((trackSpan * beatMs(timing)) / barMs(timing)),
   );
-  const mixAt = scrubbedTo ?? (mix.position() ?? 0) * beatMs(timing);
+  const mixAt = held ?? (mix.position() ?? 0) * beatMs(timing);
   // The seek knob is continuous in milliseconds, so scrubbing follows the
   // drag rather than snapping to a grid.
   const mixSteps = Math.max(2, Math.round(trackSpan * beatMs(timing)));
 
-  // The mix plays while the tracks (or the album) are the main view, whatever
+  // The mix plays while the tracks (or the tapes) are the main view, whatever
   // shows over them, so each turn of a knob is heard on the track itself; and
   // under a take while it records.
   const mixView = mainView === "tracks";
@@ -177,41 +193,44 @@ function useMixValue() {
   }, [mixView, transport.recording]);
 
   const rewind = () => {
-    setScrubbedTo(null);
+    setScrub(null);
     mix.stop();
   };
 
   return {
     mixView,
     playing: mix.playing,
-    follow: mix.follow,
+    follow: (origin: number) => {
+      setScrub(null);
+      mix.follow(origin);
+    },
     exportMix,
     mixBars,
     mixBar: Math.min(mixBars - 1, Math.floor(mixAt / barMs(timing))),
     mixSteps,
     mixStep: Math.min(mixSteps - 1, mixAt),
     scrubMix: (to: number) => {
-      mixScrub.scrollTo(to, scrubbedTo ?? 0);
-      setScrubbedTo(to);
+      mixScrub.scrollTo(to, mixAt);
+      setScrub({ to, at: performance.now() });
       // Move the play position too, so Play resumes from where it was
-      // scrubbed.
+      // scrubbed, or the playing mix carries on from there.
       mix.seek(to / beatMs(timing));
     },
     getTrackPosition: () =>
-      scrubbedTo !== null ? scrubbedTo / beatMs(timing) : mix.position(),
-    // The tape only shows on the tracks, so with nothing kept there is
+      held !== null && !mix.playing ? held / beatMs(timing) : mix.position(),
+    // The take only shows on the tracks, so with nothing kept there is
     // nothing to play.
     togglePlay: () => {
-      setScrubbedTo(null);
+      setScrub(null);
       if (mix.playing) {
         mix.pause();
         return;
       }
       if (tracks.length === 0) {
         const taped =
-          lanes[0].take.notes.length > 0 || stepPattern.hits.length > 0;
+          lanes[0].take.notes.length > 0 || drumPattern.hits.length > 0;
         feedback.showPrompt(
-          taped ? "Save the tape as a track first" : "No tracks to play",
+          taped ? "Save the take as a track first" : "No tracks to play",
         );
         return;
       }
@@ -225,7 +244,7 @@ function useMixValue() {
       whole.forEach((track, i) => {
         if (track !== tracks[i]) updateTrack(track.id, { loop: track.loop });
       });
-      transport.pauseTape();
+      transport.pauseTake();
       mix.play(whole);
     },
     // Holds the mix where it is, if it is playing, so Play resumes there.

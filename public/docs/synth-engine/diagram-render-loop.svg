@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="318" viewBox="0 0 860 318">
+  <text x="24" y="30" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="24" dy="0">One block: 128 frames</tspan></text>
+  <rect x="24" y="50" width="232" height="48" rx="8" fill="none" fill-opacity="0" stroke="#171615" stroke-width="1.5"/>
+  <text x="140" y="79" fill="#171615" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="140" dy="0">Voices render 0–37</tspan></text>
+  <rect x="260" y="50" width="334" height="48" rx="8" fill="#171615" fill-opacity="0.12" stroke="#171615" stroke-width="1.5"/>
+  <text x="427" y="79" fill="#171615" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="427" dy="0">Voices render 37–90</tspan></text>
+  <rect x="598" y="50" width="238" height="48" rx="8" fill="none" fill-opacity="0" stroke="#171615" stroke-width="1.5"/>
+  <text x="717" y="79" fill="#171615" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="717" dy="0">Voices render 90–128</tspan></text>
+  <path d="M258 140 L258 109.2" fill="none" stroke="#1d7346" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M254.08531019299892 110.10402392117409 L258 102 L261.9146898070011 110.10402392117409 Z" fill="#1d7346" stroke="#1d7346" stroke-width="1" stroke-linejoin="round"/>
+  <text x="258" y="160" fill="#1d7346" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="258" dy="0">noteOn C4 @ 37</tspan></text>
+  <path d="M596 140 L596 109.2" fill="none" stroke="#b3372a" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M592.0853101929989 110.10402392117409 L596 102 L599.9146898070011 110.10402392117409 Z" fill="#b3372a" stroke="#b3372a" stroke-width="1" stroke-linejoin="round"/>
+  <text x="596" y="160" fill="#b3372a" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="596" dy="0">cutoff @ 90</tspan></text>
+  <text x="24" y="205" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="24" dy="0">Then, once per block:</tspan></text>
+  <rect x="24" y="222" width="176" height="72" rx="8" fill="none" fill-opacity="0" stroke="#171615" stroke-width="1.5"/>
+  <text x="40" y="249" fill="#171615" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">Each bus</tspan></text>
+  <text x="40" y="272" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="40" dy="0">body, drive, gain</tspan></text>
+  <rect x="236" y="222" width="176" height="72" rx="8" fill="none" fill-opacity="0" stroke="#1d4fd0" stroke-width="1.5"/>
+  <text x="252" y="249" fill="#1d4fd0" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="252" dy="0">Reverb</tspan></text>
+  <text x="252" y="272" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="252" dy="0">from the sends</tspan></text>
+  <rect x="448" y="222" width="176" height="72" rx="8" fill="none" fill-opacity="0" stroke="#171615" stroke-width="1.5"/>
+  <text x="464" y="249" fill="#171615" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="464" dy="0">LFO, FX</tspan></text>
+  <text x="464" y="272" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="464" dy="0">on the master</tspan></text>
+  <rect x="660" y="222" width="176" height="72" rx="8" fill="none" fill-opacity="0" stroke="#b3372a" stroke-width="1.5"/>
+  <text x="676" y="249" fill="#b3372a" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="676" dy="0">Limit, clip</tspan></text>
+  <text x="676" y="272" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="676" dy="0">level, look-ahead</tspan></text>
+  <path d="M200 258 L228.8 258" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M227.8959760788259 254.08531019299892 L236 258 L227.8959760788259 261.9146898070011 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M412 258 L440.8 258" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M439.8959760788259 254.08531019299892 L448 258 L439.8959760788259 261.9146898070011 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M624 258 L652.8 258" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M651.8959760788259 254.08531019299892 L660 258 L651.8959760788259 261.9146898070011 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+</svg>

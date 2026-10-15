@@ -5,7 +5,7 @@ import { SAMPLE_TREE, withDocs } from "./storybook/withDocs";
 
 const SAMPLE = `# Installation
 
-Studio runs in the browser. See [The Device](../project/the-device.md) for how it's built, or skip to [Checks](#checks).
+Studio runs in the browser. See [The Device](../the-device/overview.md) for how it's built, or skip to [Checks](#checks).
 
 > Run the app on port \`5173\` and Storybook on \`6006\`.
 

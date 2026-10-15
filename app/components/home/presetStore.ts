@@ -8,7 +8,7 @@ import {
   type DevicePreset,
 } from "./deviceEngine";
 
-// Saved presets (`instruments`) and which preset each of the six preset pads
+// Saved presets (`instruments`) and which preset each of the six instrument pads
 // plays (`buttons`) and plays with Shift held (`shiftButtons`), "" for none,
 // persisted in localStorage.
 export type PresetEdits = Readonly<Record<string, number>>;
@@ -26,14 +26,14 @@ const STORAGE_KEY = "studio.instruments";
 // Pad bindings stored under an older layout are dropped once, so every pad
 // starts on its built-in pair (the last three pads became kits).
 const PADS_VERSION = 3;
-export const PRESET_PADS = 6;
+export const INSTRUMENT_PADS = 6;
 
 // What the pads play at first, and with Shift a relative from the same family,
 // as the built-in presets place themselves. Every built-in preset stays in the
 // library to bind to any pad.
 const padList = (field: "pad" | "shiftPad") =>
   Array.from(
-    { length: PRESET_PADS },
+    { length: INSTRUMENT_PADS },
     (_, pad) =>
       DEVICE_PRESETS.find((preset) => preset[field] === pad)?.id ?? "",
   );

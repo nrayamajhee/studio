@@ -11,7 +11,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "**The Device**: a desktop synthesizer with four knobs, a screen, three rows of pads and a keybed. Every view is a mode that rebinds the same controls (see `modes/`); its state comes from `DeviceProviders`.",
+          "**The Device**: an all-in-one virtual synthesizer with four knobs, a screen, three rows of pads and a keybed. Every view is a mode that rebinds the same controls (see `modes/`); its state comes from `DeviceProviders`.",
       },
     },
   },

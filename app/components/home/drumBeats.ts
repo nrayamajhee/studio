@@ -1,6 +1,6 @@
 import type { DrumPieceId, KitId } from "../../lib/physical";
 import type { Meter, Take } from "./noteRecorder";
-import { patternTake, type StepHit, type StepPattern } from "./stepPattern";
+import { patternTake, type DrumHit, type DrumPattern } from "./drumPattern";
 
 export type BeatStyle =
   | "Simple"
@@ -1071,12 +1071,12 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
 const stepsPerBar = ({ meter, perBeat }: DrumBeat) => meter.beats * perBeat;
 
 // The beat as the drum grid's pattern.
-export function beatPattern(beat: DrumBeat): StepPattern {
+export function beatPattern(beat: DrumBeat): DrumPattern {
   const rows = Object.entries(beat.rows).map(
     ([piece, row]) => [piece as DrumPieceId, row.replaceAll(" ", "")] as const,
   );
   const length = Math.max(...rows.map(([, row]) => row.length));
-  const hits: StepHit[] = rows.flatMap(([piece, row]) =>
+  const hits: DrumHit[] = rows.flatMap(([piece, row]) =>
     [...row].flatMap((mark, step) =>
       mark in VELOCITY
         ? [{ piece, beat: step / beat.perBeat, velocity: VELOCITY[mark] }]

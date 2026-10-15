@@ -9,16 +9,16 @@ import { deviceEngine } from "../components/home/deviceEngine";
 import { F3_MIDI, KEY_VELOCITY } from "../components/home/deviceMath";
 import { chordById } from "../components/home/chords";
 import {
-  DEFAULT_CHORD_STYLE,
+  DEFAULT_PLAY_STYLE,
   playChord,
-  playStyles,
+  playStyleOptions,
   styleEdited,
-} from "../components/home/chordStyles";
+} from "../components/home/playStyles";
 import {
-  setChordStyle,
-  useChordMacros,
-  useChordStyle,
-  useSavedChordStyles,
+  setPlayStyle,
+  usePadChords,
+  usePlayStyle,
+  useSavedPlayStyles,
 } from "../components/home/chordStore";
 import { beatMs } from "../components/home/noteRecorder";
 import {
@@ -49,17 +49,17 @@ function usePerformanceValue() {
   const feedback = useFeedback();
   const transport = useDeviceTransport();
   const { octave } = useSound();
-  const chordMacros = useChordMacros();
-  const chordStyle = useChordStyle();
-  const styles = playStyles(useSavedChordStyles());
+  const padChordIds = usePadChords();
+  const playStyle = usePlayStyle();
+  const styles = playStyleOptions(useSavedPlayStyles());
   // The play style picked: the saved one it was picked as, or (if that's
   // gone) its built-in pattern.
-  const savedIndex = styles.findIndex(({ id }) => id === chordStyle.saved);
-  const chordStyleIndex = Math.max(
+  const savedIndex = styles.findIndex(({ id }) => id === playStyle.saved);
+  const playStyleIndex = Math.max(
     0,
     savedIndex >= 0
       ? savedIndex
-      : styles.findIndex(({ id }) => id === chordStyle.id),
+      : styles.findIndex(({ id }) => id === playStyle.id),
   );
   // A chord latches on a click; its hotkey holds it while down.
   const [chord, setChord] = useState<number | null>(null);
@@ -68,7 +68,7 @@ function usePerformanceValue() {
   );
   const held = useRef(new Map<number, HeldKey>());
   const [notesPlayed] = useState(() => createEmitter<readonly number[]>());
-  const macroChords = chordMacros.map(chordById);
+  const padChords = padChordIds.map(chordById);
   const activeChord = keys.chord ?? chord;
 
   // The timing a held chord's pattern reads each step, so it follows the
@@ -105,15 +105,15 @@ function usePerformanceValue() {
     );
 
   // A progression waiting for its home note: the next key played sets it
-  // (its note, not its octave), and the progression goes onto the tape in
+  // (its note, not its octave), and the progression becomes the take in
   // the play style. Leaving the view lets it go.
   const [homeFor, setHomeFor] = useState<Progression | null>(null);
   if (homeFor && view !== "progressions") setHomeFor(null);
   const writeProgression = (progression: Progression, home: number) => {
     setHomeFor(null);
-    setTake(progressionTake(progression, home, transport.timing, chordStyle));
+    setTake(progressionTake(progression, home, transport.timing, playStyle));
     setView("roll");
-    feedback.showNotice(`${progression.name} on the tape`);
+    feedback.showNotice(`Loaded ${progression.name} as the take`);
   };
 
   const pressKey = (root: number, chordToPlay = activeChord) => {
@@ -122,17 +122,17 @@ function usePerformanceValue() {
     deviceEngine.unlock();
     if (transport.tapMode) transport.tapNote();
     const intervals =
-      chordToPlay === null ? [0] : macroChords[chordToPlay].intervals;
+      chordToPlay === null ? [0] : padChords[chordToPlay].intervals;
     const semitones = intervals.map((interval) => root + interval);
     const midis = semitones.map((semitone) => F3_MIDI + semitone + 12 * octave);
     if (homeFor) writeProgression(homeFor, F3_MIDI + root + 12 * octave);
-    // A chord plays in the play style; the sequencer takes it as a block.
+    // A chord plays in the play style; the drum grid takes it as a block.
     const stop = playChord(
       midis,
-      chordToPlay === null || view === "steps"
-        ? DEFAULT_CHORD_STYLE
-        : chordStyle,
-      () => beatMs(liveTiming.current) / chordStyle.perBeat,
+      chordToPlay === null || view === "drumGrid"
+        ? DEFAULT_PLAY_STYLE
+        : playStyle,
+      () => beatMs(liveTiming.current) / playStyle.perBeat,
       {
         on: (midi) => {
           deviceEngine.noteOn(midi, KEY_VELOCITY);
@@ -153,12 +153,12 @@ function usePerformanceValue() {
     litNotes,
     chord,
     activeChord,
-    macroChords,
-    chordStyle,
+    padChords,
+    playStyle,
     playStyles: styles,
-    chordStyleIndex,
+    playStyleIndex,
     // The rate or strum moved off what the picked play style plays.
-    chordStyleEdited: styleEdited(chordStyle, styles[chordStyleIndex]),
+    playStyleEdited: styleEdited(playStyle, styles[playStyleIndex]),
     pressKey,
     homeFor,
     awaitHome: setHomeFor,
@@ -180,9 +180,9 @@ function usePerformanceValue() {
       setChord((current) => (current === index ? null : index)),
     dropChord: () => setChord(null),
     // Picking a play style plays it at its own rate and strum.
-    pickChordStyle: (index: number) => {
+    pickPlayStyle: (index: number) => {
       const { style } = styles[Math.max(0, Math.min(index, styles.length - 1))];
-      setChordStyle({ ...style, saved: style.saved });
+      setPlayStyle({ ...style, saved: style.saved });
     },
     subscribeNotes: notesPlayed.subscribe,
   };

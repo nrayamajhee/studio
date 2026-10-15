@@ -1,7 +1,11 @@
 import { Menu } from "lucide-react";
 import { data, Link, useLocation } from "react-router";
 import type { Route } from "./+types/docs";
-import { DOCS_TREE, findDoc } from "../components/docs/docs.server";
+import {
+  DARK_IMAGES,
+  DOCS_TREE,
+  findDoc,
+} from "../components/docs/docs.server";
 import { DocsMarkdown } from "../components/docs/DocsMarkdown";
 import { DocsPaper, paperSheet } from "../components/docs/DocsPaper";
 import { DocsSidebar } from "../components/docs/DocsSidebar";
@@ -11,7 +15,10 @@ import { cn } from "../lib/utils";
 
 export function loader({ params }: Route.LoaderArgs) {
   const doc = findDoc(params["*"] ?? "") ?? null;
-  return data({ tree: DOCS_TREE, doc }, { status: doc ? 200 : 404 });
+  return data(
+    { tree: DOCS_TREE, doc, darkImages: DARK_IMAGES },
+    { status: doc ? 200 : 404 },
+  );
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -27,13 +34,13 @@ export function meta({ loaderData }: Route.MetaArgs) {
     {
       name: "description",
       content:
-        "How Studio and The Device work: installation, the Device, the synth engine and Storybook.",
+        "How Studio and The Device work: the user manual, the Device, the synth engine, installation and Storybook.",
     },
   ];
 }
 
 export default function DocsRoute({ loaderData }: Route.ComponentProps) {
-  const { tree, doc } = loaderData;
+  const { tree, doc, darkImages } = loaderData;
   const { pathname } = useLocation();
 
   return (
@@ -61,11 +68,12 @@ export default function DocsRoute({ loaderData }: Route.ComponentProps) {
           </details>
 
           {doc ? (
-            <DocsPaper source={doc.path}>
+            <DocsPaper>
               <DocsMarkdown
                 markdown={doc.markdown}
                 path={doc.path}
                 tree={tree}
+                darkImages={darkImages}
               />
             </DocsPaper>
           ) : (

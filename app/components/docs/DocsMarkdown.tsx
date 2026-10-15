@@ -8,11 +8,16 @@ import { cn } from "../../lib/utils";
 import type { DocNode } from "../../types/docs";
 import { docHrefs, docImage, docLink } from "./docLinks";
 
-type Source = { path: string; hrefs: Map<string, string> };
+type Source = {
+  path: string;
+  hrefs: Map<string, string>;
+  darkImages: Set<string>;
+};
 
 const SourceContext = createContext<Source>({
   path: "README.md",
   hrefs: new Map(),
+  darkImages: new Set(),
 });
 
 type Tag = keyof JSX.IntrinsicElements;
@@ -57,6 +62,10 @@ function DocLink({
   );
 }
 
+// An image with a dark twin (`name.dark.webp` beside `name.webp`) lays the
+// twin over it, faded in with the theme. Screenshots sit in a frame; SVG
+// diagrams are drawn on a transparent background, so they go bare and their
+// light version fades out under the dark.
 function DocImage({
   node: _node,
   src,
@@ -64,14 +73,35 @@ function DocImage({
   className,
   ...props
 }: ElementProps<"img">) {
-  const { path } = use(SourceContext);
+  const { path, darkImages } = use(SourceContext);
+  const light = typeof src === "string" ? docImage(src, path) : src;
+  const dark = light?.replace(/(\.[^./]+)$/, ".dark$1");
+  const diagram = light?.endsWith(".svg");
+  const frame = cn(
+    "my-6 max-w-full",
+    !diagram && "rounded-md shadow-mid",
+    className,
+  );
+  if (!dark || !darkImages.has(dark))
+    return <img {...props} src={light} alt={alt} className={frame} />;
   return (
-    <img
-      {...props}
-      src={typeof src === "string" ? docImage(src, path) : src}
-      alt={alt}
-      className={cn("my-6 max-w-full rounded-md shadow-mid", className)}
-    />
+    <span className={cn("grid w-fit overflow-hidden", frame)}>
+      <img
+        {...props}
+        src={light}
+        alt={alt}
+        className={cn(
+          "[grid-area:1/1]",
+          diagram && "opacity-[calc(1-var(--theme-dark))]",
+        )}
+      />
+      <img
+        {...props}
+        src={dark}
+        alt=""
+        className="opacity-(--theme-dark) [grid-area:1/1]"
+      />
+    </span>
   );
 }
 
@@ -143,20 +173,25 @@ export type DocsMarkdownProps = {
   markdown: string;
   path?: string;
   tree?: DocNode[];
+  darkImages?: string[];
   className?: string;
 };
 
 // A doc's markdown (GFM, with inline HTML) set in the paper's ink. `path` is
 // where the file sits in the repo, so its relative links and images resolve;
-// links to other docs in `tree` stay in the docs route.
+// links to other docs in `tree` stay in the docs route, and images with a
+// twin in `darkImages` follow the theme.
 export function DocsMarkdown({
   markdown,
   path = "README.md",
   tree = [],
+  darkImages = [],
   className,
 }: DocsMarkdownProps) {
   return (
-    <SourceContext value={{ path, hrefs: docHrefs(tree) }}>
+    <SourceContext
+      value={{ path, hrefs: docHrefs(tree), darkImages: new Set(darkImages) }}
+    >
       <div
         className={cn(
           "leading-[1.7] text-paper-ink [&>:first-child]:mt-0",

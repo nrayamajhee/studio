@@ -1,20 +1,20 @@
 import type { ScreenView } from "../DeviceScreen";
 import type { Bindings, Mode } from "../../../types/bindings";
 import type { Device } from "../../../types/device";
-import { albumMode } from "./album";
+import { tapesMode } from "./tapes";
 import { baseBindings } from "./base";
 import { beatsMode } from "./beats";
-import { chordStyleMode } from "./chordStyle";
+import { playStyleMode } from "./playStyle";
 import { chordsMode } from "./chords";
 import { moduleMode } from "./module";
-import { presetsMode } from "./presets";
+import { instrumentsMode } from "./instruments";
 import { progressionsMode } from "./progressions";
 import { revertMode } from "./revert";
 import { saveMode } from "./save";
 import { scopeMode } from "./scope";
-import { stepsMode } from "./steps";
+import { drumGridMode } from "./drumGrid";
 import { synthMode } from "./synth";
-import { tapeMode } from "./tape";
+import { rollMode } from "./roll";
 import { tempoMode } from "./tempo";
 import { tracksMode } from "./tracks";
 
@@ -24,19 +24,19 @@ const MODES: Readonly<Record<ScreenView, Mode>> = {
   scope: scopeMode,
   synth: synthMode,
   save: saveMode,
-  presets: presetsMode,
+  instruments: instrumentsMode,
   chords: chordsMode,
-  chordStyle: chordStyleMode,
+  playStyle: playStyleMode,
   progressions: progressionsMode,
   beats: beatsMode,
-  album: albumMode,
+  tapes: tapesMode,
   revert: revertMode,
   adsr: moduleMode("adsr"),
   lfo: moduleMode("lfo"),
   fx: moduleMode("fx"),
   tempo: tempoMode,
-  roll: tapeMode,
-  steps: stepsMode,
+  roll: rollMode,
+  drumGrid: drumGridMode,
   tracks: tracksMode,
 };
 
@@ -48,7 +48,7 @@ export function resolveBindings(device: Device): Bindings {
   return {
     knobs: { ...base.knobs, ...mode.knobs },
     pads: { ...base.pads, ...mode.pads },
-    presetPad: mode.presetPad ?? base.presetPad,
+    instrumentPad: mode.instrumentPad ?? base.instrumentPad,
     chordPad: mode.chordPad ?? base.chordPad,
     screen: { ...base.screen, ...mode.screen },
   };

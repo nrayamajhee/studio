@@ -44,7 +44,7 @@ export type ScreenBinding = Omit<
 export type Bindings = {
   knobs: Record<KnobSlot, KnobBinding>;
   pads: Record<PadSlot, PadBinding>;
-  presetPad: (pad: number) => PadBinding;
+  instrumentPad: (pad: number) => PadBinding;
   chordPad: (index: number) => PadBinding;
   screen: ScreenBinding;
 };
@@ -53,7 +53,7 @@ export type Bindings = {
 export type ModeBindings = {
   knobs?: Partial<Record<KnobSlot, KnobBinding>>;
   pads?: Partial<Record<PadSlot, PadBinding>>;
-  presetPad?: (pad: number) => PadBinding;
+  instrumentPad?: (pad: number) => PadBinding;
   chordPad?: (index: number) => PadBinding;
   screen?: Partial<ScreenBinding>;
 };

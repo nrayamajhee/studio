@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="232" viewBox="0 0 860 232">
+  <text x="24" y="30" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="24" dy="0">Every note is a small physics simulation</tspan></text>
+  <rect x="24" y="56" width="180" height="110" rx="8" fill="#6fcf97" fill-opacity="0.12" stroke="#6fcf97" stroke-width="1.5"/>
+  <text x="40" y="83" fill="#6fcf97" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">Exciter</tspan></text>
+  <text x="40" y="106" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="40" dy="0">hammer · pick</tspan><tspan x="40" dy="19.575">finger · breath</tspan><tspan x="40" dy="19.575">bow · stick</tspan></text>
+  <rect x="290" y="56" width="190" height="110" rx="8" fill="none" fill-opacity="0" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="306" y="83" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="306" dy="0">Resonator</tspan></text>
+  <text x="306" y="106" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="306" dy="0">string loop</tspan><tspan x="306" dy="19.575">air column · reed</tspan><tspan x="306" dy="19.575">membrane · bar</tspan></text>
+  <rect x="566" y="56" width="150" height="110" rx="8" fill="none" fill-opacity="0" stroke="#8ab4f8" stroke-width="1.5"/>
+  <text x="582" y="83" fill="#8ab4f8" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="582" dy="0">Body</tspan></text>
+  <text x="582" y="106" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="582" dy="0">soundboard</tspan><tspan x="582" dy="19.575">guitar top · bell</tspan></text>
+  <rect x="766" y="91" width="70" height="40" rx="8" fill="none" fill-opacity="0" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="801" y="116" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="801" dy="0">Out</tspan></text>
+  <path d="M204 92 L282.8 92" fill="none" stroke="#f3f2ee" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M281.8959760788259 88.08531019299893 L290 92 L281.8959760788259 95.91468980700107 Z" fill="#f3f2ee" stroke="#f3f2ee" stroke-width="1" stroke-linejoin="round"/>
+  <text x="247" y="82" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="247" dy="0">energy</tspan></text>
+  <path d="M290 136 L211.2 136" fill="none" stroke="#f28b7d" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <path d="M212.1040239211741 139.91468980700108 L204 136 L212.1040239211741 132.08531019299892 Z" fill="#f28b7d" stroke="#f28b7d" stroke-width="1" stroke-linejoin="round"/>
+  <text x="247" y="158" fill="#f28b7d" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="247" dy="0">push back</tspan></text>
+  <path d="M480 111 L558.8 111" fill="none" stroke="#f3f2ee" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M557.8959760788259 107.08531019299893 L566 111 L557.8959760788259 114.91468980700107 Z" fill="#f3f2ee" stroke="#f3f2ee" stroke-width="1" stroke-linejoin="round"/>
+  <text x="523" y="101" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="523" dy="0">vibration</tspan></text>
+  <path d="M716 111 L758.8 111" fill="none" stroke="#f3f2ee" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M757.8959760788259 107.08531019299893 L766 111 L757.8959760788259 114.91468980700107 Z" fill="#f3f2ee" stroke="#f3f2ee" stroke-width="1" stroke-linejoin="round"/>
+  <text x="24" y="210" fill="#6fcf97" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="24" dy="0">Struck, plucked: the exciter lets go after the attack</tspan></text>
+  <text x="836" y="210" fill="#f28b7d" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="end"><tspan x="836" dy="0">Blown, bowed: it stays coupled</tspan></text>
+</svg>

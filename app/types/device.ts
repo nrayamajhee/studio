@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { ScreenView } from "../components/home/DeviceScreen";
+import type { Favorites } from "../components/home/favoritesStore";
 import type { FeedbackValue } from "../providers/FeedbackProvider";
 import type { LanesValue } from "../providers/LanesProvider";
 import type { MixValue } from "../providers/MixProvider";
@@ -8,21 +9,24 @@ import type { PerformanceValue } from "../providers/PerformanceProvider";
 import type { PreviewValue } from "../providers/PreviewProvider";
 import type { ShiftValue } from "../providers/ShiftProvider";
 import type { SoundValue } from "../providers/SoundProvider";
-import type { StepsValue } from "../providers/StepsProvider";
-import type { TapeValue } from "../providers/TapeProvider";
+import type { DrumGridValue } from "../providers/DrumGridProvider";
+import type { TakeValue } from "../providers/TakeProvider";
 import type { TracksValue } from "../providers/TracksProvider";
 import type { TransportValue } from "../providers/TransportProvider";
 import type { ViewValue } from "../providers/ViewProvider";
 
-// The tile pickers' highlighted tiles, and the green knob's resting place
-// where it has nothing to move.
+// The tile pickers' highlighted tiles and the favorites that lead them, and
+// the green knob's resting place where it has nothing to move.
 export type Browse = {
+  favorites: Favorites;
   iconIndex: number;
   setIconIndex: Dispatch<SetStateAction<number>>;
   presetIndex: number;
   setPresetIndex: Dispatch<SetStateAction<number>>;
   chordIndex: number;
   setChordIndex: Dispatch<SetStateAction<number>>;
+  styleIndex: number;
+  setStyleIndex: Dispatch<SetStateAction<number>>;
   progressionIndex: number;
   setProgressionIndex: Dispatch<SetStateAction<number>>;
   beatIndex: number;
@@ -46,10 +50,10 @@ export type Device = {
   sound: SoundValue;
   performance: PerformanceValue;
   lanes: LanesValue;
-  steps: StepsValue;
+  drumGrid: DrumGridValue;
   tracks: TracksValue;
   mix: MixValue;
-  tape: TapeValue;
+  take: TakeValue;
   preview: PreviewValue;
   browse: Browse;
 };

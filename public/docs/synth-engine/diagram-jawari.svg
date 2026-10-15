@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="212" viewBox="0 0 860 212">
+  <text x="24" y="30" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="24" dy="0">The sitar's bridge: one more stage in the loop</tspan></text>
+  <rect x="24" y="50" width="170" height="66" rx="8" fill="none" fill-opacity="0" stroke="#1d4fd0" stroke-width="1.5"/>
+  <text x="40" y="77" fill="#1d4fd0" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">Tuning</tspan></text>
+  <text x="40" y="100" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="40" dy="0">allpass</tspan></text>
+  <rect x="260" y="50" width="220" height="100" rx="8" fill="#b3372a" fill-opacity="0.12" stroke="#b3372a" stroke-width="1.5"/>
+  <text x="276" y="77" fill="#b3372a" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="276" dy="0">Jawari</tspan></text>
+  <text x="276" y="100" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="276" dy="0">past the gap: an</tspan><tspan x="276" dy="19.575">allpass, a = contact;</tspan><tspan x="276" dy="19.575">else a plain delay</tspan></text>
+  <circle cx="550" cy="83" r="16" fill="none" stroke="#1d7346" stroke-width="1.5"/>
+  <text x="550" y="88" fill="#1d7346" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="550" dy="0">+</tspan></text>
+  <rect x="616" y="50" width="180" height="66" rx="8" fill="none" fill-opacity="0" stroke="#171615" stroke-width="1.5"/>
+  <text x="632" y="77" fill="#171615" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="632" dy="0">Delay line</tspan></text>
+  <text x="632" y="100" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="632" dy="0">back round the loop</tspan></text>
+  <path d="M194 83 L252.8 83" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M251.8959760788259 79.08531019299893 L260 83 L251.8959760788259 86.91468980700107 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M480 83 L526.8 83" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M525.8959760788259 79.08531019299893 L534 83 L525.8959760788259 86.91468980700107 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M566 83 L608.8 83" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M607.8959760788259 79.08531019299893 L616 83 L607.8959760788259 86.91468980700107 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M796 83 L832.8 83" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <path d="M831.8959760788259 79.08531019299893 L840 83 L831.8959760788259 86.91468980700107 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M550 150 L550 106.2" fill="none" stroke="#1d7346" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M546.0853101929989 107.10402392117409 L550 99 L553.9146898070011 107.10402392117409 Z" fill="#1d7346" stroke="#1d7346" stroke-width="1" stroke-linejoin="round"/>
+  <text x="562" y="145" fill="#1d7346" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="start"><tspan x="562" dy="0">excitation</tspan></text>
+  <text x="260" y="190" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="260" dy="0">A rotation of (input, state): it never adds energy</tspan></text>
+</svg>

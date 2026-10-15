@@ -6,12 +6,12 @@ import {
   type PlayedNote,
   type Take,
 } from "./noteRecorder";
-import { INITIAL_PATTERN, isPattern, type StepPattern } from "./stepPattern";
+import { INITIAL_PATTERN, isPattern, type DrumPattern } from "./drumPattern";
 import type { Track } from "./tracks";
 
-// A song on the album: a set of tracks, with the tempo and time signature
+// A tape: a set of tracks, with the tempo and time signature
 // they play at.
-export type Song = {
+export type Tape = {
   id: string;
   name: string;
   bpm: number;
@@ -20,27 +20,27 @@ export type Song = {
 };
 
 // What has been recorded: the working take with its ADSR, LFO and FX, the
-// drum sequencer's pattern, and the album of songs whose tracks were kept
+// drum grid's pattern, and the tapes whose tracks were kept
 // from them, persisted in localStorage under their own keys so a reload keeps
-// them. `tracks` are the open song's.
+// them. `tracks` are the open tape's.
 export type Session = {
   take: Take | null;
   modules: ModuleSettings;
-  steps: StepPattern;
-  songs: readonly Song[];
-  song: string;
+  pattern: DrumPattern;
+  tapes: readonly Tape[];
+  tape: string;
   tracks: readonly Track[];
 };
 
 const TAKE_KEY = "studio.take";
 const MODULES_KEY = "studio.takeModules";
-const STEPS_KEY = "studio.steps";
-// Where the tape kept the tracks it was loaded from, when saving it updated
+const PATTERN_KEY = "studio.pattern";
+// Where the take kept the tracks it was loaded from, when saving it updated
 // them; dropped on first read.
 const SOURCE_KEYS = ["studio.takeSource", "studio.stepsSource"];
-const SONGS_KEY = "studio.songs";
-const SONG_KEY = "studio.song";
-// Where the tracks were kept before there were songs; they become the first.
+const TAPES_KEY = "studio.tapes";
+const TAPE_KEY = "studio.tape";
+// Where the tracks were kept before there were tapes; they become the first.
 const TRACKS_KEY = "studio.tracks";
 // Where the take and tracks used to be kept together; split into their keys
 // on first read.
@@ -48,9 +48,9 @@ const LEGACY_KEY = "studio.session";
 const EMPTY: Session = {
   take: null,
   modules: INITIAL_MODULES,
-  steps: INITIAL_PATTERN,
-  songs: [],
-  song: "",
+  pattern: INITIAL_PATTERN,
+  tapes: [],
+  tape: "",
   tracks: [],
 };
 
@@ -93,7 +93,7 @@ const isTrack = (value: unknown): value is Track => {
     (track.modules === undefined || isModules(track.modules)) &&
     (track.source === undefined ||
       track.source === "roll" ||
-      track.source === "steps") &&
+      track.source === "drumGrid") &&
     isTake(track.take) &&
     isNumber(track.timing?.bpm) &&
     isNumber(track.timing.meter?.beats) &&
@@ -137,84 +137,84 @@ const tracksOf = (value: unknown) =>
 const modulesOf = (value: unknown) =>
   isModules(value) ? value : INITIAL_MODULES;
 
-const isSong = (value: unknown): value is Song => {
-  const song = value as Song;
+const isTape = (value: unknown): value is Tape => {
+  const tape = value as Tape;
   return (
-    typeof song?.id === "string" &&
-    typeof song.name === "string" &&
-    isNumber(song.bpm) &&
-    isNumber(song.meter?.beats) &&
-    isNumber(song.meter?.unit) &&
-    Array.isArray(song.tracks)
+    typeof tape?.id === "string" &&
+    typeof tape.name === "string" &&
+    isNumber(tape.bpm) &&
+    isNumber(tape.meter?.beats) &&
+    isNumber(tape.meter?.unit) &&
+    Array.isArray(tape.tracks)
   );
 };
 
-const songId = () => `song-${Date.now().toString(36)}`;
+const tapeId = () => `tape-${Date.now().toString(36)}`;
 
-// The next "Song n" after the highest number taken.
-const nextName = (songs: readonly Song[]) =>
-  `Song ${
+// The next "Tape n" after the highest number taken.
+const nextName = (tapes: readonly Tape[]) =>
+  `Tape ${
     Math.max(
       0,
-      ...songs.map(({ name }) => Number(/^Song (\d+)$/.exec(name)?.[1] ?? 0)),
+      ...tapes.map(({ name }) => Number(/^Tape (\d+)$/.exec(name)?.[1] ?? 0)),
     ) + 1
   }`;
 
-const emptySong = (
-  songs: readonly Song[],
+const emptyTape = (
+  tapes: readonly Tape[],
   bpm = DEFAULT_TIMING.bpm,
   meter = DEFAULT_TIMING.meter,
-): Song => ({ id: songId(), name: nextName(songs), bpm, meter, tracks: [] });
+): Tape => ({ id: tapeId(), name: nextName(tapes), bpm, meter, tracks: [] });
 
-// The album as stored, or a first song holding the tracks kept before there
-// were songs.
-function readSongs(legacyTracks: unknown) {
-  const stored = load(SONGS_KEY);
-  const songs = Array.isArray(stored)
+// The tapes as stored, or a first tape holding the tracks kept before there
+// were tapes.
+function readTapes(legacyTracks: unknown) {
+  const stored = load(TAPES_KEY);
+  const tapes = Array.isArray(stored)
     ? stored
-        .filter(isSong)
-        .map((song) => ({ ...song, tracks: tracksOf(song.tracks) }))
+        .filter(isTape)
+        .map((tape) => ({ ...tape, tracks: tracksOf(tape.tracks) }))
     : [];
-  if (songs.length > 0) {
-    const open = load(SONG_KEY);
-    const song = songs.some(({ id }) => id === open) ? (open as string) : "";
-    return { songs, song: song || songs[0].id };
+  if (tapes.length > 0) {
+    const open = load(TAPE_KEY);
+    const tape = tapes.some(({ id }) => id === open) ? (open as string) : "";
+    return { tapes, tape: tape || tapes[0].id };
   }
-  const first = { ...emptySong([]), tracks: tracksOf(legacyTracks) };
-  save(SONGS_KEY, [first]);
-  save(SONG_KEY, first.id);
+  const first = { ...emptyTape([]), tracks: tracksOf(legacyTracks) };
+  save(TAPES_KEY, [first]);
+  save(TAPE_KEY, first.id);
   save(TRACKS_KEY);
-  return { songs: [first], song: first.id };
+  return { tapes: [first], tape: first.id };
 }
 
-// The session with `songs`, `song` open, and its tracks.
-const withSongs = (
-  current: Omit<Session, "songs" | "song" | "tracks">,
-  songs: readonly Song[],
-  song: string,
+// The session with `tapes`, `tape` open, and its tracks.
+const withTapes = (
+  current: Omit<Session, "tapes" | "tape" | "tracks">,
+  tapes: readonly Tape[],
+  tape: string,
 ): Session => ({
   ...current,
-  songs,
-  song,
-  tracks: songs.find(({ id }) => id === song)?.tracks ?? [],
+  tapes,
+  tape,
+  tracks: tapes.find(({ id }) => id === tape)?.tracks ?? [],
 });
 
 function read(): Session {
   const modules = modulesOf(load(MODULES_KEY));
-  const pattern = load(STEPS_KEY);
-  const steps = isPattern(pattern) ? pattern : INITIAL_PATTERN;
+  const stored = load(PATTERN_KEY);
+  const pattern = isPattern(stored) ? stored : INITIAL_PATTERN;
   SOURCE_KEYS.forEach((key) => save(key));
   const legacy = load(LEGACY_KEY) as Record<string, unknown> | null;
   if (!legacy) {
-    const { songs, song } = readSongs(load(TRACKS_KEY));
+    const { tapes, tape } = readTapes(load(TRACKS_KEY));
     const take = takeOf(load(TAKE_KEY));
-    return withSongs({ take, modules, steps }, songs, song);
+    return withTapes({ take, modules, pattern }, tapes, tape);
   }
   const take = takeOf(legacy.take);
   save(TAKE_KEY, take);
   save(LEGACY_KEY);
-  const { songs, song } = readSongs(legacy.tracks);
-  return withSongs({ take, modules, steps }, songs, song);
+  const { tapes, tape } = readTapes(legacy.tracks);
+  return withTapes({ take, modules, pattern }, tapes, tape);
 }
 
 function update(next: Session) {
@@ -246,69 +246,70 @@ export function setTakeModules(modules: ModuleSettings) {
   update({ ...getSnapshot(), modules });
 }
 
-export function setSteps(
-  change: StepPattern | ((steps: StepPattern) => StepPattern),
+export function setPattern(
+  change: DrumPattern | ((pattern: DrumPattern) => DrumPattern),
 ) {
   const current = getSnapshot();
-  const steps = typeof change === "function" ? change(current.steps) : change;
-  save(STEPS_KEY, steps);
-  update({ ...current, steps });
+  const pattern =
+    typeof change === "function" ? change(current.pattern) : change;
+  save(PATTERN_KEY, pattern);
+  update({ ...current, pattern });
 }
 
-const setSongs = (songs: readonly Song[], song: string) => {
-  save(SONGS_KEY, songs);
-  save(SONG_KEY, song);
-  update(withSongs(getSnapshot(), songs, song));
+const setTapes = (tapes: readonly Tape[], tape: string) => {
+  save(TAPES_KEY, tapes);
+  save(TAPE_KEY, tape);
+  update(withTapes(getSnapshot(), tapes, tape));
 };
 
-// Changes the open song's tracks.
+// Changes the open tape's tracks.
 export function setTracks(
   change: (tracks: readonly Track[]) => readonly Track[],
 ) {
-  const { songs, song } = getSnapshot();
-  setSongs(
-    songs.map((candidate) =>
-      candidate.id === song
+  const { tapes, tape } = getSnapshot();
+  setTapes(
+    tapes.map((candidate) =>
+      candidate.id === tape
         ? { ...candidate, tracks: change(candidate.tracks) }
         : candidate,
     ),
-    song,
+    tape,
   );
 }
 
-export const openSong = (id: string) => setSongs(getSnapshot().songs, id);
+export const openTape = (id: string) => setTapes(getSnapshot().tapes, id);
 
-// Adds an empty song at `bpm` and `meter` after the others, and opens it.
-export function newSong(bpm: number, meter: Meter) {
-  const { songs } = getSnapshot();
-  const song = emptySong(songs, bpm, meter);
-  setSongs([...songs, song], song.id);
-  return song;
+// Adds an empty tape at `bpm` and `meter` after the others, and opens it.
+export function newTape(bpm: number, meter: Meter) {
+  const { tapes } = getSnapshot();
+  const tape = emptyTape(tapes, bpm, meter);
+  setTapes([...tapes, tape], tape.id);
+  return tape;
 }
 
-// Deletes a song, opening the one after it (or before); deleting the last
-// leaves a new empty one. Returns the song now open.
-export function deleteSong(id: string) {
-  const { songs, song } = getSnapshot();
-  const at = songs.findIndex((candidate) => candidate.id === id);
-  if (at < 0) return songs.find((candidate) => candidate.id === song);
-  const rest = songs.filter((candidate) => candidate.id !== id);
+// Deletes a tape, opening the one after it (or before); deleting the last
+// leaves a new empty one. Returns the tape now open.
+export function deleteTape(id: string) {
+  const { tapes, tape } = getSnapshot();
+  const at = tapes.findIndex((candidate) => candidate.id === id);
+  if (at < 0) return tapes.find((candidate) => candidate.id === tape);
+  const rest = tapes.filter((candidate) => candidate.id !== id);
   if (rest.length === 0) {
-    const fresh = emptySong(songs);
-    setSongs([fresh], fresh.id);
+    const fresh = emptyTape(tapes);
+    setTapes([fresh], fresh.id);
     return fresh;
   }
   const open =
-    (song !== id && rest.find((candidate) => candidate.id === song)) ||
+    (tape !== id && rest.find((candidate) => candidate.id === tape)) ||
     rest[Math.min(at, rest.length - 1)];
-  setSongs(rest, open.id);
+  setTapes(rest, open.id);
   return open;
 }
 
-// Keeps the tempo and time signature with the open song.
-export function setSongTiming(bpm: number, meter: Meter) {
-  const { songs, song } = getSnapshot();
-  const open = songs.find(({ id }) => id === song);
+// Keeps the tempo and time signature with the open tape.
+export function setTapeTiming(bpm: number, meter: Meter) {
+  const { tapes, tape } = getSnapshot();
+  const open = tapes.find(({ id }) => id === tape);
   if (
     !open ||
     (open.bpm === bpm &&
@@ -316,15 +317,15 @@ export function setSongTiming(bpm: number, meter: Meter) {
       open.meter.unit === meter.unit)
   )
     return;
-  setSongs(
-    songs.map((candidate) =>
-      candidate.id === song ? { ...candidate, bpm, meter } : candidate,
+  setTapes(
+    tapes.map((candidate) =>
+      candidate.id === tape ? { ...candidate, bpm, meter } : candidate,
     ),
-    song,
+    tape,
   );
 }
 
-export const openedSong = () => {
-  const { songs, song } = getSnapshot();
-  return songs.find(({ id }) => id === song);
+export const openedTape = () => {
+  const { tapes, tape } = getSnapshot();
+  return tapes.find(({ id }) => id === tape);
 };

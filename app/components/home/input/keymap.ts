@@ -5,14 +5,14 @@ export type Tool =
   | "play"
   | "stop"
   | "tracks"
-  | "album"
-  | "take"
-  | "steps"
+  | "tapes"
+  | "roll"
+  | "drumGrid"
   | "metronome"
+  | "instruments"
   | "synth"
-  | "params"
   | "chords"
-  | "style"
+  | "playStyle"
   | "save"
   | "delete"
   | "mute"
@@ -23,7 +23,7 @@ export type Tool =
 export type Control =
   | { kind: "note"; semitone: number }
   | { kind: "chord"; index: number }
-  | { kind: "preset"; index: number }
+  | { kind: "instrument"; index: number }
   | { kind: "tool"; tool: Tool }
   | { kind: "step"; direction: -1 | 1 }
   // ↑ and ↓: the previous or next row, as the blue knob picks a track.
@@ -73,27 +73,27 @@ export const shiftedNote = (semitone: number) =>
 // 7 8 9 0 - =, the most played last (- minor, = major). The letters the piano
 // leaves free:
 //   Q Play style · T Synth parameters · I Instruments · ] LFO · \ FX
-//   Z Albums · X Clip (⇧ Trim) · C Chord palette
+//   Z Tapes · X Clip (⇧ Trim) · C Chords
 //   V Piano roll (⇧ progressions) · B Drum grid (⇧ beats) · N ADSR
 //   M Metronome (Tempo; ⇧ the click) · , Mute (⇧ Solo) · . Record
 // ADSR, LFO and FX switch on or off with Shift. Play is Space, ` Stop and Esc
 // the tracks. Shift and the arrows are their own keys: ↑ and ↓ move the
 // octave (on the tracks they pick a track, as the blue knob does). ⌫ is
 // Delete (⇧⌫ Revert), and ⌘S (Ctrl S) is Save.
-const PRESET_KEYS = ["1", "2", "3", "4", "5", "6"];
+const INSTRUMENT_KEYS = ["1", "2", "3", "4", "5", "6"];
 const CHORD_KEYS = ["7", "8", "9", "0", "-", "="];
 const TOOL_KEYS: Readonly<Record<Tool, string>> = {
   play: "Space",
   stop: "`",
   record: ".",
-  synth: "I",
-  params: "T",
+  instruments: "I",
+  synth: "T",
   chords: "C",
-  style: "Q",
+  playStyle: "Q",
   tracks: "Esc",
-  album: "Z",
-  take: "V",
-  steps: "B",
+  tapes: "Z",
+  roll: "V",
+  drumGrid: "B",
   adsr: "N",
   lfo: "]",
   fx: "\\",
@@ -140,8 +140,8 @@ export function hotkeyLabel(control: Control): string {
         : `⇧${NOTE_KEYS[control.semitone - SHIFT_NOTES]}`;
     case "chord":
       return CHORD_KEYS[control.index];
-    case "preset":
-      return PRESET_KEYS[control.index];
+    case "instrument":
+      return INSTRUMENT_KEYS[control.index];
     case "tool":
       return TOOL_KEYS[control.tool];
     case "step":
@@ -160,7 +160,7 @@ export function controlId(control: Control): string {
       return `note:${control.semitone}`;
     case "chord":
       return `chord:${control.index}`;
-    case "preset":
+    case "instrument":
       return `preset:${control.index}`;
     case "tool":
       return `tool:${control.tool}`;
@@ -176,7 +176,10 @@ export function controlId(control: Control): string {
 const CONTROLS: readonly Control[] = [
   ...NOTE_KEYS.map((_, semitone): Control => ({ kind: "note", semitone })),
   ...CHORD_KEYS.map((_, index): Control => ({ kind: "chord", index })),
-  ...PRESET_KEYS.map((_, index): Control => ({ kind: "preset", index })),
+  ...INSTRUMENT_KEYS.map((_, index): Control => ({
+    kind: "instrument",
+    index,
+  })),
   ...(Object.keys(TOOL_KEYS) as Tool[]).map((tool): Control => ({
     kind: "tool",
     tool,
