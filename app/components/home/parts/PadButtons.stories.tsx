@@ -25,7 +25,7 @@ export const Default: Story = {};
 
 export const Library: Story = {
   parameters: {
-    device: { view: "presets" },
+    device: { view: "instruments" },
     docs: {
       description: {
         story:

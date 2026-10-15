@@ -15,7 +15,7 @@ import {
   ScreenValue,
 } from "../DeviceScreen";
 import { audible, repeatsOf } from "../tracks";
-import { isTape } from "../../../providers/LanesProvider";
+import { isTake } from "../../../providers/LanesProvider";
 import { arrowPads, deletePad, mixPads, savePad, seekKnob } from "./base";
 import type { Mode } from "../../../types/bindings";
 
@@ -25,7 +25,7 @@ import type { Mode } from "../../../types/bindings";
 // lanes, or trim a clipped track's edges, the green one slides it by beats
 // and the arrows repeat it.
 export const tracksMode: Mode = (device) => {
-  const { shift, lanes, tracks, mix, transport, sound, steps, feedback } =
+  const { shift, lanes, tracks, mix, transport, sound, drumGrid, feedback } =
     device;
   const { lanes: rows, focusIndex, pickedLane, pickedTrack: track } = lanes;
   const { trackLoop, loopLabel, startLabel, trackSpan, trackFrom } = tracks;
@@ -159,14 +159,14 @@ export const tracksMode: Mode = (device) => {
       },
       delete: deletePad(
         device,
-        pickedLane && isTape(pickedLane)
+        pickedLane && isTake(pickedLane)
           ? {
               label: "Delete",
-              key: "delete:tape",
-              prompt: "Press again to discard the tape",
+              key: "delete:take",
+              prompt: "Press again to discard the take",
               run: () => {
-                lanes.discardTape();
-                feedback.showNotice("Discarded the tape");
+                lanes.discardTake();
+                feedback.showNotice("Discarded the take");
               },
             }
           : track && {
@@ -201,7 +201,7 @@ export const tracksMode: Mode = (device) => {
       ),
     },
     screen: {
-      title: `Tracks · ${lanes.currentSong?.name ?? ""}`,
+      title: `Tracks · ${lanes.currentTape?.name ?? ""}`,
       unsaved: false,
       // The picked track in blue, as the blue knob picks it.
       status: (
@@ -236,7 +236,7 @@ export const tracksMode: Mode = (device) => {
           </>
         ) : (
           <>
-            Tape ·{" "}
+            Take ·{" "}
             <ScreenHint>
               record in the piano roll or drum grid, then save it
             </ScreenHint>
@@ -269,9 +269,9 @@ export const tracksMode: Mode = (device) => {
         volume: lane.volume,
         muted: lane.muted,
         soloed: lane.soloed,
-        audible: isTape(lane) ? true : audible(lane, lanes.tracks),
-        potential: isTape(lane),
-        pattern: isTape(lane) ? steps.patternClip : undefined,
+        audible: isTake(lane) ? true : audible(lane, lanes.tracks),
+        potential: isTake(lane),
+        pattern: isTake(lane) ? drumGrid.patternClip : undefined,
       })),
       getTrackPosition: mix.getTrackPosition,
       trackSpan,

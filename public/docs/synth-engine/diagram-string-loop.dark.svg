@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="278" viewBox="0 0 860 278">
+  <text x="24" y="30" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="24" dy="0">One trip around the loop is exactly one period of the note</tspan></text>
+  <rect x="64" y="50" width="170" height="80" rx="8" fill="none" fill-opacity="0" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="80" y="77" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="80" dy="0">Delay line</tspan></text>
+  <text x="80" y="100" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="80" dy="0">N_int samples</tspan></text>
+  <rect x="252" y="50" width="170" height="80" rx="8" fill="none" fill-opacity="0" stroke="#f28b7d" stroke-width="1.5"/>
+  <text x="268" y="77" fill="#f28b7d" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="268" dy="0">Dispersion</tspan></text>
+  <text x="268" y="100" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="268" dy="0">M allpasses:</tspan><tspan x="268" dy="19.575">highs travel faster</tspan></text>
+  <rect x="440" y="50" width="170" height="80" rx="8" fill="none" fill-opacity="0" stroke="#6fcf97" stroke-width="1.5"/>
+  <text x="456" y="77" fill="#6fcf97" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="456" dy="0">Loss</tspan></text>
+  <text x="456" y="100" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="456" dy="0">lowpass × g:</tspan><tspan x="456" dy="19.575">highs die faster</tspan></text>
+  <rect x="628" y="50" width="170" height="80" rx="8" fill="none" fill-opacity="0" stroke="#8ab4f8" stroke-width="1.5"/>
+  <text x="644" y="77" fill="#8ab4f8" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="644" dy="0">Tuning</tspan></text>
+  <text x="644" y="100" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="644" dy="0">allpass for the</tspan><tspan x="644" dy="19.575">leftover fraction</tspan></text>
+  <path d="M234 90 L244.8 90" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M243.8959760788259 86.08531019299893 L252 90 L243.8959760788259 93.91468980700107 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M422 90 L432.8 90" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M431.8959760788259 86.08531019299893 L440 90 L431.8959760788259 93.91468980700107 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M610 90 L620.8 90" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M619.8959760788259 86.08531019299893 L628 90 L619.8959760788259 93.91468980700107 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M798 90 L830 90 L830 200 L452 200" fill="none" stroke="#f3f2ee" stroke-width="1.5" stroke-linejoin="round"/>
+  <circle cx="436" cy="200" r="16" fill="none" stroke="#6fcf97" stroke-width="1.5"/>
+  <text x="436" y="205" fill="#6fcf97" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="436" dy="0">+</tspan></text>
+  <path d="M420 200 L36 200 L36 90" fill="none" stroke="#f3f2ee" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M36 90 L56.8 90" fill="none" stroke="#f3f2ee" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M55.89597607882591 86.08531019299893 L64 90 L55.89597607882591 93.91468980700107 Z" fill="#f3f2ee" stroke="#f3f2ee" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M436 256 L436 223.2" fill="none" stroke="#6fcf97" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M432.0853101929989 224.1040239211741 L436 216 L439.9146898070011 224.1040239211741 Z" fill="#6fcf97" stroke="#6fcf97" stroke-width="1" stroke-linejoin="round"/>
+  <text x="448" y="250" fill="#6fcf97" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="start"><tspan x="448" dy="0">excitation</tspan></text>
+  <path d="M640 200 L640 242.8" fill="none" stroke="#f3f2ee" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M643.9146898070011 241.8959760788259 L640 250 L636.0853101929989 241.8959760788259 Z" fill="#f3f2ee" stroke="#f3f2ee" stroke-width="1" stroke-linejoin="round"/>
+  <text x="652" y="248" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="start"><tspan x="652" dy="0">string output</tspan></text>
+</svg>

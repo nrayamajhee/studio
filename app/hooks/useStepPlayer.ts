@@ -5,8 +5,8 @@ import type { Meter } from "../components/home/noteRecorder";
 import {
   hitsAt,
   patternSteps,
-  type StepPattern,
-} from "../components/home/stepPattern";
+  type DrumPattern,
+} from "../components/home/drumPattern";
 
 // Hits are scheduled this far ahead on the audio clock, topped up every
 // TICK_MS, so a busy page never makes them late; the first step waits LEAD
@@ -16,7 +16,7 @@ const TICK_MS = 25;
 const LEAD = 0.05;
 
 export type StepSource = {
-  pattern: StepPattern;
+  pattern: DrumPattern;
   kit: KitId;
   meter: Meter;
   bpm: number;
@@ -38,7 +38,7 @@ type Run = {
   played: Set<string>;
 };
 
-// Plays the drum sequencer's pattern round in a loop, each hit on the audio
+// Plays the drum grid's pattern round in a loop, each hit on the audio
 // clock. `source` is read on every top-up, so edits, the tempo and the length
 // take effect on the steps not yet scheduled.
 export function useStepPlayer(source: () => StepSource) {

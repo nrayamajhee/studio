@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="476" viewBox="0 0 860 476">
+  <rect x="24" y="24" width="300" height="44" rx="8" fill="#f3f2ee" fill-opacity="0.12" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="40" y="51" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">Press Z</tspan></text>
+  <path d="M174 68 L174 76.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 75.89597607882591 L174 84 L170.08531019299892 75.89597607882591 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="84" width="300" height="44" rx="8" fill="none" fill-opacity="0" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="40" y="111" fill="#f3f2ee" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">SynthDevice.pressKey</tspan></text>
+  <text x="350" y="111" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="350" dy="0">a chord? expand it</tspan></text>
+  <path d="M174 128 L174 136.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 135.8959760788259 L174 144 L170.08531019299892 135.8959760788259 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="144" width="300" height="44" rx="8" fill="none" fill-opacity="0" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="40" y="171" fill="#f3f2ee" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">deviceEngine.noteOn</tspan></text>
+  <text x="350" y="171" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="350" dy="0">+ octave; a kit maps it to a piece</tspan></text>
+  <path d="M174 188 L174 196.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 195.8959760788259 L174 204 L170.08531019299892 195.8959760788259 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="204" width="300" height="44" rx="8" fill="none" fill-opacity="0" stroke="#6fcf97" stroke-width="1.5"/>
+  <text x="40" y="231" fill="#6fcf97" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">physicalSynth.noteOn</tspan></text>
+  <text x="350" y="231" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="350" dy="0">postMessage, queued until booted</tspan></text>
+  <path d="M174 248 L174 280.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 279.8959760788259 L174 288 L170.08531019299892 279.8959760788259 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="288" width="300" height="44" rx="8" fill="none" fill-opacity="0" stroke="#8ab4f8" stroke-width="1.5"/>
+  <text x="40" y="315" fill="#8ab4f8" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">Engine.schedule</tspan></text>
+  <text x="350" y="315" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="350" dy="0">no time: the next block</tspan></text>
+  <path d="M174 332 L174 340.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 339.8959760788259 L174 348 L170.08531019299892 339.8959760788259 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="348" width="300" height="44" rx="8" fill="none" fill-opacity="0" stroke="#8ab4f8" stroke-width="1.5"/>
+  <text x="40" y="375" fill="#8ab4f8" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">StringInstrument.noteOn</tspan></text>
+  <text x="350" y="375" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="350" dy="0">pick a voice, tune, excite</tspan></text>
+  <path d="M174 392 L174 400.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 399.8959760788259 L174 408 L170.08531019299892 399.8959760788259 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="408" width="300" height="44" rx="8" fill="none" fill-opacity="0" stroke="#8ab4f8" stroke-width="1.5"/>
+  <text x="40" y="435" fill="#8ab4f8" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">voice → bus → master</tspan></text>
+  <text x="350" y="435" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="350" dy="0">body, drive, limiter, speakers</tspan></text>
+  <path d="M24 268 L836 268" fill="none" stroke="#77756f" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <text x="836" y="260" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="end"><tspan x="836" dy="0">main thread</tspan></text>
+  <text x="836" y="286" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="end"><tspan x="836" dy="0">audio thread</tspan></text>
+</svg>

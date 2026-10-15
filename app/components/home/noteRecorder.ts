@@ -12,7 +12,7 @@ export type PlayedNote = {
   velocity: number;
 };
 
-// A note on the sequencer grid, the piano roll's view of a take: the step it
+// A note on the grid, the piano roll's view of a take: the step it
 // starts on and how many steps it lasts.
 export type GridNote = {
   note: number;

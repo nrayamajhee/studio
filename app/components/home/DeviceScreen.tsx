@@ -9,7 +9,8 @@ import {
 import { Asterisk, ChevronLeft, ChevronRight } from "lucide-react";
 import { tv } from "../../lib/utils";
 import { Button } from "../design-system/Button";
-import { NoteRoll } from "./NoteRoll";
+import { TakeIcon } from "./instrumentIcons";
+import { PianoRoll } from "./PianoRoll";
 import { Oscilloscope } from "./Oscilloscope";
 import { SynthGraph } from "./SynthGraph";
 import type { GraphScene } from "./synthGraphs";
@@ -22,19 +23,19 @@ export type ScreenView =
   | "scope"
   | "synth"
   | "save"
-  | "presets"
+  | "instruments"
   | "chords"
-  | "chordStyle"
+  | "playStyle"
   | "progressions"
   | "beats"
-  | "album"
+  | "tapes"
   | "revert"
   | "adsr"
   | "lfo"
   | "fx"
   | "tempo"
   | "roll"
-  | "steps"
+  | "drumGrid"
   | "tracks";
 
 export type ScreenTile = {
@@ -249,8 +250,8 @@ export type ScreenTrack = {
   audible: boolean;
   // The take shown as a potential track: no mute or solo.
   potential?: boolean;
-  // On the tape's row, the drum sequencer's pattern, drawn over the take
-  // from the start: the tape's other half.
+  // On the take's row, the drum grid's pattern, drawn over its notes
+  // from the start: the take's other half.
   pattern?: TrackClip;
 };
 
@@ -263,12 +264,13 @@ const trackRow = tv({
     label: "flex min-w-0 items-center justify-between gap-[6px] text-left",
     name: "truncate text-[12px] leading-[15px] font-semibold tracking-[0.02em] first-letter:uppercase",
     number: "mr-[5px] text-screen-ink/55",
+    icon: "mr-[5px] inline-block size-[13px] align-[-2px] text-screen-ink/55",
     flags: "flex gap-[3px] self-center",
     volume: "relative overflow-hidden rounded-[3px] bg-screen-ink/12",
     level: "absolute inset-x-0 bottom-0 rounded-[3px] bg-synth-red",
   },
   variants: {
-    // The tape has no volume, but keeps the strip's column so its lane
+    // The take has no volume, but keeps the strip's column so its lane
     // lines up.
     potential: { true: { volume: "bg-transparent" } },
   },
@@ -304,7 +306,7 @@ const lane = trackLane();
 
 // Each pass of the take is a clip, with a dark seam before the next. The
 // section a track is trimmed to is outlined in red; the drum pattern on the
-// tape's row is dimmer than the take, in a faint frame, so the two halves
+// take's row is dimmer than its notes, in a faint frame, so the two halves
 // read apart.
 const passStyle = tv({
   base: "absolute top-0 bottom-0 rounded-[4px] border-r-2 border-r-screen",
@@ -653,7 +655,7 @@ function TrackLane({
   );
 }
 
-// A row of the drum sequencer: a piece of the kit, shown by its icon or, for
+// A row of the drum grid: a piece of the kit, shown by its icon or, for
 // a hand-drum stroke, its syllable.
 export type StepRow = {
   id: string;
@@ -661,7 +663,7 @@ export type StepRow = {
   icon?: ReactNode;
 };
 
-// The drum sequencer: a row a piece, its icon in a narrow column, then the
+// The drum grid: a row a piece, its icon in a narrow column, then the
 // steps; each beat's first step a little brighter and each bar's set off by
 // a line. The head is a green column over the steps (--head of --columns),
 // red while recording.
@@ -699,7 +701,7 @@ const STEPS_PER_PAGE = 32;
 // Wheel travel (px) that moves the head one step.
 const WHEEL_PER_STEP = 40;
 
-// The drum sequencer's grid: a row a piece, its icon on the left, and the
+// The drum grid: a row a piece, its icon on the left, and the
 // steps running left to right, beats and bars marked. The head (where keys
 // set hits, or where the loop plays) is read every frame.
 function StepGrid({
@@ -780,9 +782,9 @@ function StepGrid({
   return (
     <div
       ref={grid}
-      className={screenView({ kind: "steps" })}
+      className={screenView({ kind: "drumGrid" })}
       role="group"
-      aria-label="Drum steps"
+      aria-label="Drum grid"
       style={
         {
           "--columns": columns,
@@ -961,13 +963,13 @@ export type DeviceScreenProps = {
   trackFrom?: number;
   onPanTracks?: (beats: number) => void;
   // The take for the roll view, read every frame, where it is scrolled to in
-  // time and pitch, and wheel scrolling over it (see NoteRoll).
+  // time and pitch, and wheel scrolling over it (see PianoRoll).
   getRoll?: () => RollFrame;
   rollPosition?: number | null;
   rollLow?: number;
   onRollScroll?: (ms: number) => void;
   onRollPitch?: (semitones: number) => void;
-  // The drum sequencer: its rows, its length and grid in steps, the hits as
+  // The drum grid: its rows, its length and grid in steps, the hits as
   // `row:step`, the head (read every frame), and clicking a cell or moving
   // the head with the wheel.
   stepRows?: readonly StepRow[];
@@ -986,12 +988,12 @@ export type DeviceScreenProps = {
 
 export const TILES_PER_PAGE: Record<string, number> = {
   save: 48,
-  presets: 12,
+  instruments: 12,
   chords: 12,
-  chordStyle: 12,
+  playStyle: 12,
   progressions: 12,
   beats: 12,
-  album: 12,
+  tapes: 12,
   revert: 12,
 };
 
@@ -1087,7 +1089,7 @@ const screenView = tv({
       module: "flex flex-col gap-[6px]",
       tempo: "flex flex-col items-center justify-center gap-[18px] font-screen",
       tracks: "grid grid-rows-4 gap-[4px] font-screen",
-      steps: "grid gap-[2px] font-screen",
+      drumGrid: "grid gap-[2px] font-screen",
     },
     // Under a pager's taller header, the content starts lower, leaving a gap.
     paged: { true: "top-[42px]" },
@@ -1521,7 +1523,7 @@ export function DeviceScreen({
                       unstyled
                       aria-label={
                         track.potential
-                          ? `${track.name}, tape`
+                          ? `${track.name}, take`
                           : `${track.name}, ${track.detail}, volume ${Math.round(
                               track.volume * 100,
                             )}%${track.muted ? ", muted" : ""}${
@@ -1536,7 +1538,9 @@ export function DeviceScreen({
                     >
                       <span className={row.label()} aria-hidden="true">
                         <span className={row.name()}>
-                          {!track.potential && (
+                          {track.potential ? (
+                            <TakeIcon className={row.icon()} />
+                          ) : (
                             <span className={row.number()}>#{index}</span>
                           )}
                           {track.name}
@@ -1577,7 +1581,7 @@ export function DeviceScreen({
         )}
 
         {view === "roll" && (
-          <NoteRoll
+          <PianoRoll
             className={ui.roll()}
             getFrame={getRoll}
             timing={timing}
@@ -1588,7 +1592,7 @@ export function DeviceScreen({
           />
         )}
 
-        {view === "steps" && (
+        {view === "drumGrid" && (
           <StepGrid
             rows={stepRows}
             steps={stepCount}
@@ -1607,12 +1611,12 @@ export function DeviceScreen({
         )}
 
         {(view === "save" ||
-          view === "presets" ||
+          view === "instruments" ||
           view === "chords" ||
-          view === "chordStyle" ||
+          view === "playStyle" ||
           view === "progressions" ||
           view === "beats" ||
-          view === "album" ||
+          view === "tapes" ||
           view === "revert") && (
           <div
             className={screenView({
@@ -1624,15 +1628,15 @@ export function DeviceScreen({
               view === "save"
                 ? "Instrument icon"
                 : view === "chords"
-                  ? "Chord palette"
-                  : view === "chordStyle"
+                  ? "Chords"
+                  : view === "playStyle"
                     ? "Play style"
                     : view === "progressions"
                       ? "Progressions"
                       : view === "beats"
                         ? "Beats"
-                        : view === "album"
-                          ? "Albums"
+                        : view === "tapes"
+                          ? "Tapes"
                           : view === "revert"
                             ? "Revert"
                             : "Instruments"
@@ -1654,12 +1658,12 @@ export function DeviceScreen({
                   <span className={tileParts.icon()} aria-hidden="true">
                     {entry.icon}
                   </span>
-                  {(view === "presets" ||
+                  {(view === "instruments" ||
                     view === "chords" ||
-                    view === "chordStyle" ||
+                    view === "playStyle" ||
                     view === "progressions" ||
                     view === "beats" ||
-                    view === "album" ||
+                    view === "tapes" ||
                     view === "revert") && (
                     <span className={tileParts.name()} aria-hidden="true">
                       <span className={tileParts.nameText()}>

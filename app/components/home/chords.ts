@@ -1,10 +1,10 @@
-// The chord palette the macro pads can be set to. Intervals are semitones from
+// The chords the chord pads can be set to. Intervals are semitones from
 // the root, so a chord transposes to whatever key is played.
 export type Chord = {
   id: string;
   // The full name, shown in the palette.
   name: string;
-  // The short label, shown on the macro pad.
+  // The short label, shown on the chord pad.
   label: string;
   intervals: readonly number[];
 };
@@ -246,10 +246,10 @@ export const chordGroup = (chord: Chord) =>
 export const chordById = (id: string): Chord =>
   CHORD_PALETTE.find((chord) => chord.id === id) ?? CHORD_PALETTE[0];
 
-// The six macros start on the most used chords, most used on the right: the
+// The six chord pads start on the most used chords, most used on the right: the
 // right hand rests its pinky on major (=) and ring finger on minor (-), while
 // the left plays the keys.
-export const DEFAULT_CHORD_MACROS: readonly string[] = [
+export const DEFAULT_PAD_CHORDS: readonly string[] = [
   "sus4",
   "maj7",
   "min7",

@@ -29,7 +29,7 @@ export const Tracks: Story = {
     device: { view: "tracks" },
     docs: {
       description: {
-        story: "The tracks: the tape and the song's tracks on a timeline.",
+        story: "The tracks: the take and the tape's tracks on a timeline.",
       },
     },
   },

@@ -6,14 +6,14 @@ import { createStrictContext } from "./createStrictContext";
 export const isModuleView = (view: ScreenView): view is ModuleId =>
   view === "adsr" || view === "lfo" || view === "fx";
 
-// The views that play something of their own: the tracks (and the album), the
-// tape's roll and the drum sequencer.
-export type MainView = "tracks" | "roll" | "steps";
+// The views that play something of their own: the tracks (and the tapes), the
+// piano roll and the drum grid.
+export type MainView = "tracks" | "roll" | "drumGrid";
 
 const mainOf = (view: ScreenView): MainView | null =>
-  view === "tracks" || view === "album"
+  view === "tracks" || view === "tapes"
     ? "tracks"
-    : view === "roll" || view === "steps"
+    : view === "roll" || view === "drumGrid"
       ? view
       : null;
 

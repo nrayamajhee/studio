@@ -3,9 +3,6 @@ import { Link, NavLink } from "react-router";
 import { cn } from "../../lib/utils";
 import type { DocNode } from "../../types/docs";
 
-const folderLabel = (name: string) =>
-  name.charAt(0).toUpperCase() + name.slice(1).replace(/[-_]/g, " ");
-
 // Each folder's files are indented under its parent's. The top folder
 // (docs/, the route itself) hangs under the README without a row of its own;
 // the folders inside it are labelled.
@@ -18,7 +15,7 @@ function DocsTree({ nodes, depth = 0 }: { nodes: DocNode[]; depth?: number }) {
             <>
               {depth > 0 && (
                 <div className="px-2 pt-3 pb-1 text-xs font-semibold tracking-wide uppercase opacity-60">
-                  {folderLabel(node.name)}
+                  {node.title}
                 </div>
               )}
               <DocsTree nodes={node.children} depth={depth + 1} />
@@ -56,7 +53,7 @@ export type DocsSidebarProps = {
   className?: string;
 };
 
-// The docs' file tree floating on the sky, as the repo lays them out, with
+// The docs' file tree floating on the sky, in the order their TOML gives, with
 // the way back to the Device above it and the home footer's GitHub and
 // coffee links at the foot (the bottom of the column when it fills one).
 export function DocsSidebar({ tree, className }: DocsSidebarProps) {

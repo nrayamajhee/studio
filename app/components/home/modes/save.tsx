@@ -80,8 +80,8 @@ export const saveMode: Mode = (device, base) => {
         ),
       ),
     },
-    presetPad: (pad) => ({
-      ...base.presetPad(pad),
+    instrumentPad: (pad) => ({
+      ...base.instrumentPad(pad),
       label: `Save to ${padName(device, pad).toLowerCase()} (${padPreset(device, pad)?.name ?? "empty"})`,
       onPress: () => saveToPad(device, pad),
     }),

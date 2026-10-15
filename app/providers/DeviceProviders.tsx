@@ -9,8 +9,8 @@ import { PerformanceProvider } from "./PerformanceProvider";
 import { PreviewProvider } from "./PreviewProvider";
 import { ShiftProvider } from "./ShiftProvider";
 import { SoundProvider } from "./SoundProvider";
-import { StepsProvider } from "./StepsProvider";
-import { TapeProvider } from "./TapeProvider";
+import { DrumGridProvider } from "./DrumGridProvider";
+import { TakeProvider } from "./TakeProvider";
 import { TracksProvider } from "./TracksProvider";
 import { TransportProvider } from "./TransportProvider";
 import { ViewProvider } from "./ViewProvider";
@@ -33,17 +33,17 @@ export function DeviceProviders({
               <SoundProvider>
                 <PerformanceProvider>
                   <LanesProvider>
-                    <StepsProvider>
+                    <DrumGridProvider>
                       <TracksProvider>
                         <MixProvider>
-                          <TapeProvider>
+                          <TakeProvider>
                             <PreviewProvider>
                               <ModeProvider>{children}</ModeProvider>
                             </PreviewProvider>
-                          </TapeProvider>
+                          </TakeProvider>
                         </MixProvider>
                       </TracksProvider>
-                    </StepsProvider>
+                    </DrumGridProvider>
                   </LanesProvider>
                 </PerformanceProvider>
               </SoundProvider>

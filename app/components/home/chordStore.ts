@@ -1,45 +1,45 @@
 import { useSyncExternalStore } from "react";
-import { CHORD_PALETTE, DEFAULT_CHORD_MACROS } from "./chords";
+import { CHORD_PALETTE, DEFAULT_PAD_CHORDS } from "./chords";
 import {
-  CHORD_STYLES,
-  DEFAULT_CHORD_STYLE,
-  isChordStyle,
-  isSavedChordStyle,
-  type ChordStyle,
-  type SavedChordStyle,
-} from "./chordStyles";
+  PLAY_STYLES,
+  DEFAULT_PLAY_STYLE,
+  isPlayStyle,
+  isSavedPlayStyle,
+  type PlayStyle,
+  type SavedPlayStyle,
+} from "./playStyles";
 
-// Which chord each macro pad plays, by chord id, persisted in localStorage.
-const STORAGE_KEY = "studio.chords";
-export const CHORD_MACROS = DEFAULT_CHORD_MACROS.length;
+// Which chord each chord pad plays, by chord id, persisted in localStorage.
+const STORAGE_KEY = "studio.padChords";
+export const CHORD_PADS = DEFAULT_PAD_CHORDS.length;
 
 const known = new Set(CHORD_PALETTE.map((chord) => chord.id));
 
-let macros: readonly string[] | null = null;
+let padChords: readonly string[] | null = null;
 const listeners = new Set<() => void>();
 
 function read(): readonly string[] {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
-    if (!Array.isArray(stored)) return DEFAULT_CHORD_MACROS;
-    // Four macros, from before there were six, go on the rightmost four
+    if (!Array.isArray(stored)) return DEFAULT_PAD_CHORDS;
+    // Four chords, from before there were six, go on the rightmost four
     // pads, the most played.
-    const macros: unknown[] =
+    const chords: unknown[] =
       stored.length === 4 ? [undefined, undefined, ...stored] : stored;
-    return DEFAULT_CHORD_MACROS.map((fallback, i) =>
-      typeof macros[i] === "string" && known.has(macros[i] as string)
-        ? (macros[i] as string)
+    return DEFAULT_PAD_CHORDS.map((fallback, i) =>
+      typeof chords[i] === "string" && known.has(chords[i] as string)
+        ? (chords[i] as string)
         : fallback,
     );
   } catch {
-    return DEFAULT_CHORD_MACROS;
+    return DEFAULT_PAD_CHORDS;
   }
 }
 
 function update(change: (current: readonly string[]) => readonly string[]) {
-  macros = change(macros ?? read());
+  padChords = change(padChords ?? read());
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(macros));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(padChords));
   } catch {
     // Storage can be unavailable (private mode); the change still applies.
   }
@@ -53,44 +53,44 @@ const subscribe = (listener: () => void) => {
   };
 };
 
-const getSnapshot = () => (macros ??= read());
-const getServerSnapshot = () => DEFAULT_CHORD_MACROS;
+const getSnapshot = () => (padChords ??= read());
+const getServerSnapshot = () => DEFAULT_PAD_CHORDS;
 
-export function useChordMacros() {
+export function usePadChords() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
 // Puts every chord pad back on its built-in chord, played as a block.
-export function resetChordMacros() {
-  update(() => DEFAULT_CHORD_MACROS);
-  setChordStyle({ ...DEFAULT_CHORD_STYLE, saved: undefined });
+export function resetPadChords() {
+  update(() => DEFAULT_PAD_CHORDS);
+  setPlayStyle({ ...DEFAULT_PLAY_STYLE, saved: undefined });
 }
 
-export function setChordMacro(index: number, id: string) {
+export function setPadChord(index: number, id: string) {
   update((current) => current.map((value, i) => (i === index ? id : value)));
 }
 
-// How the chord pads play their chords (see chordStyles), kept like them.
-const STYLE_KEY = "studio.chordStyle";
-let style: ChordStyle | null = null;
+// How the chord pads play their chords (see playStyles), kept like them.
+const STYLE_KEY = "studio.playStyle";
+let style: PlayStyle | null = null;
 
-function readStyle(): ChordStyle {
+function readStyle(): PlayStyle {
   try {
     const stored = JSON.parse(localStorage.getItem(STYLE_KEY) ?? "null");
-    return isChordStyle(stored) ? stored : DEFAULT_CHORD_STYLE;
+    return isPlayStyle(stored) ? stored : DEFAULT_PLAY_STYLE;
   } catch {
-    return DEFAULT_CHORD_STYLE;
+    return DEFAULT_PLAY_STYLE;
   }
 }
 
 const getStyle = () => (style ??= readStyle());
-const getServerStyle = () => DEFAULT_CHORD_STYLE;
+const getServerStyle = () => DEFAULT_PLAY_STYLE;
 
-export function useChordStyle() {
+export function usePlayStyle() {
   return useSyncExternalStore(subscribe, getStyle, getServerStyle);
 }
 
-export function setChordStyle(change: Partial<ChordStyle>) {
+export function setPlayStyle(change: Partial<PlayStyle>) {
   style = { ...getStyle(), ...change };
   try {
     localStorage.setItem(STYLE_KEY, JSON.stringify(style));
@@ -102,13 +102,13 @@ export function setChordStyle(change: Partial<ChordStyle>) {
 
 // Play styles saved from the Device, kept like the rest.
 const SAVED_KEY = "studio.playStyles";
-const NO_SAVED: readonly SavedChordStyle[] = [];
-let saved: readonly SavedChordStyle[] | null = null;
+const NO_SAVED: readonly SavedPlayStyle[] = [];
+let saved: readonly SavedPlayStyle[] | null = null;
 
-function readSaved(): readonly SavedChordStyle[] {
+function readSaved(): readonly SavedPlayStyle[] {
   try {
     const stored = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "null");
-    return Array.isArray(stored) ? stored.filter(isSavedChordStyle) : NO_SAVED;
+    return Array.isArray(stored) ? stored.filter(isSavedPlayStyle) : NO_SAVED;
   } catch {
     return NO_SAVED;
   }
@@ -116,11 +116,11 @@ function readSaved(): readonly SavedChordStyle[] {
 
 const getSaved = () => (saved ??= readSaved());
 
-export function useSavedChordStyles() {
+export function useSavedPlayStyles() {
   return useSyncExternalStore(subscribe, getSaved, () => NO_SAVED);
 }
 
-function writeSaved(next: readonly SavedChordStyle[]) {
+function writeSaved(next: readonly SavedPlayStyle[]) {
   saved = next;
   try {
     localStorage.setItem(SAVED_KEY, JSON.stringify(saved));
@@ -132,13 +132,13 @@ function writeSaved(next: readonly SavedChordStyle[]) {
 
 // Saves `style` as a new play style, named for its pattern with the next free
 // number ("Strum 2"), and plays it as that.
-export function saveChordStyle(style: ChordStyle): SavedChordStyle {
+export function savePlayStyle(style: PlayStyle): SavedPlayStyle {
   const base =
-    CHORD_STYLES.find(({ id }) => id === style.id)?.name ?? "Play style";
+    PLAY_STYLES.find(({ id }) => id === style.id)?.name ?? "Play style";
   const taken = new Set(getSaved().map(({ name }) => name));
   let n = 2;
   while (taken.has(`${base} ${n}`)) n++;
-  const made: SavedChordStyle = {
+  const made: SavedPlayStyle = {
     id: `style-${Date.now().toString(36)}`,
     name: `${base} ${n}`,
     pattern: style.id,
@@ -146,12 +146,12 @@ export function saveChordStyle(style: ChordStyle): SavedChordStyle {
     strum: style.strum,
   };
   writeSaved([...getSaved(), made]);
-  setChordStyle({ saved: made.id });
+  setPlayStyle({ saved: made.id });
   return made;
 }
 
 // Stores `style`'s rate and strum in the saved play style it is.
-export function updateChordStyle(style: ChordStyle) {
+export function updatePlayStyle(style: PlayStyle) {
   writeSaved(
     getSaved().map((candidate) =>
       candidate.id === style.saved
@@ -162,7 +162,7 @@ export function updateChordStyle(style: ChordStyle) {
 }
 
 // Removes a saved play style; playing it falls back to its pattern.
-export function deleteChordStyle(id: string) {
+export function deletePlayStyle(id: string) {
   writeSaved(getSaved().filter((candidate) => candidate.id !== id));
-  if (getStyle().saved === id) setChordStyle({ saved: undefined });
+  if (getStyle().saved === id) setPlayStyle({ saved: undefined });
 }

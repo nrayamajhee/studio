@@ -8,9 +8,9 @@ import {
 import { meterIndexOf } from "../components/home/deviceMath";
 import { METERS } from "../components/home/noteRecorder";
 import {
-  openedSong,
-  setSongTiming,
-  type Song,
+  openedTape,
+  setTapeTiming,
+  type Tape,
 } from "../components/home/sessionStore";
 import { useTransport } from "../hooks/useTransport";
 import { createStrictContext } from "./createStrictContext";
@@ -23,25 +23,25 @@ function useTransportValue() {
   // is the start of the take.
   const [rollPosition, setRollPosition] = useState<number | null>(null);
 
-  // Each song keeps its tempo and time signature: opening one sets them, and
-  // changing them is kept with the song open.
+  // Each tape keeps its tempo and time signature: opening one sets them, and
+  // changing them is kept with the tape open.
   const { bpm, meterIndex, setBpm, setMeter } = transport;
-  const songTiming = useRef({ bpm, meter: meterIndex });
+  const tapeTiming = useRef({ bpm, meter: meterIndex });
   useEffect(() => {
-    const last = songTiming.current;
+    const last = tapeTiming.current;
     if (last.bpm === bpm && last.meter === meterIndex) return;
-    songTiming.current = { bpm, meter: meterIndex };
-    setSongTiming(bpm, METERS[meterIndex]);
+    tapeTiming.current = { bpm, meter: meterIndex };
+    setTapeTiming(bpm, METERS[meterIndex]);
   }, [bpm, meterIndex]);
-  const applySongTiming = (song: Song) => {
-    setBpm(song.bpm);
-    setMeter(meterIndexOf(song.meter));
+  const applyTapeTiming = (tape: Tape) => {
+    setBpm(tape.bpm);
+    setMeter(meterIndexOf(tape.meter));
   };
-  const applyOpenedSong = useEffectEvent(() => {
-    const opened = openedSong();
-    if (opened) applySongTiming(opened);
+  const applyOpenedTape = useEffectEvent(() => {
+    const opened = openedTape();
+    if (opened) applyTapeTiming(opened);
   });
-  useEffect(() => applyOpenedSong(), []);
+  useEffect(() => applyOpenedTape(), []);
 
   // Holds the take where it is, so Play resumes there.
   const pause = () => {
@@ -55,13 +55,13 @@ function useTransportValue() {
     playing: transport.state === "playing",
     barBeats: transport.timing.meter.beats,
     tapMode: transport.tapping && view === "tempo",
-    applySongTiming,
+    applyTapeTiming,
     rollPosition,
     setRollPosition,
     pause,
-    // One thing plays at a time: the tracks or the sequencer starting pauses
-    // the tape, which otherwise plays on in other views.
-    pauseTape: () => {
+    // One thing plays at a time: the tracks or the drum grid starting pauses
+    // the take, which otherwise plays on in other views.
+    pauseTake: () => {
       if (transport.state === "playing") pause();
     },
   };
@@ -74,7 +74,7 @@ const [TransportContext, useDeviceTransport] =
 export { useDeviceTransport };
 
 // The tape deck: tempo, metronome, recording and playing the take, kept in
-// step with the open song's timing.
+// step with the open tape's timing.
 export function TransportProvider({ children }: { children: ReactNode }) {
   return (
     <TransportContext value={useTransportValue()}>{children}</TransportContext>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="296" viewBox="0 0 860 296">
+  <path d="M48 100 L740 100" fill="none" stroke="#171615" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M48 72 L48 128" fill="none" stroke="#8b8880" stroke-width="4" stroke-linejoin="round"/>
+  <text x="48" y="60" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="48" dy="0">nut</tspan></text>
+  <path d="M740 72 L740 128" fill="none" stroke="#8b8880" stroke-width="4" stroke-linejoin="round"/>
+  <text x="740" y="60" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="740" dy="0">bridge</tspan></text>
+  <rect x="590" y="60" width="22" height="80" rx="8" fill="#171615" fill-opacity="0.12" stroke="#171615" stroke-width="1.5"/>
+  <text x="601" y="50" fill="#171615" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="600" text-anchor="middle"><tspan x="601" dy="0">bow</tspan></text>
+  <path d="M63.2 152 L578.8 152" fill="none" stroke="#1d4fd0" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M577.8959760788259 148.08531019299892 L586 152 L577.8959760788259 155.91468980700108 Z" fill="#1d4fd0" stroke="#1d4fd0" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M64.10402392117409 155.91468980700108 L56 152 L64.10402392117409 148.08531019299892 Z" fill="#1d4fd0" stroke="#1d4fd0" stroke-width="1" stroke-linejoin="round"/>
+  <text x="321" y="176" fill="#1d4fd0" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="321" dy="0">neck delay (1 − β) × D</tspan></text>
+  <path d="M623.2 152 L724.8 152" fill="none" stroke="#1d7346" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M723.8959760788259 148.08531019299892 L732 152 L723.8959760788259 155.91468980700108 Z" fill="#1d7346" stroke="#1d7346" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M624.1040239211741 155.91468980700108 L616 152 L624.1040239211741 148.08531019299892 Z" fill="#1d7346" stroke="#1d7346" stroke-width="1" stroke-linejoin="round"/>
+  <text x="674" y="176" fill="#1d7346" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="674" dy="0">β × D</tspan></text>
+  <text x="48" y="214" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="start"><tspan x="48" dy="0">Reflects × −1</tspan></text>
+  <text x="601" y="214" fill="#b3372a" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="601" dy="0">dv = v_bow − v_string</tspan><tspan x="601" dy="18.849999999999998">f = dv × bowTable(dv)</tspan><tspan x="601" dy="18.849999999999998">sent both ways</tspan></text>
+  <path d="M740 128 L740 250" fill="none" stroke="#171615" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M740 250 L792.8 250" fill="none" stroke="#171615" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M791.8959760788259 246.08531019299892 L800 250 L791.8959760788259 253.91468980700108 Z" fill="#171615" stroke="#171615" stroke-width="1" stroke-linejoin="round"/>
+  <text x="836" y="282" fill="#171615" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="end"><tspan x="836" dy="0">× −0.95, lowpass, body → out</tspan></text>
+</svg>

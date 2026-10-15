@@ -135,7 +135,7 @@ function useSoundValue() {
     setParamStep,
     octave,
     octaveLabel: `OCT ${octave > 0 ? "+" : octave < 0 ? "−" : "±"}${Math.abs(octave)}`,
-    // The kit the sequencer plays, while one is picked.
+    // The kit the drum grid plays, while one is picked.
     stepKit: isKit(preset.target) ? preset.target : null,
     selectPreset,
     // Saving bakes the edits into the saved preset, so the one it came from

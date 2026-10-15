@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="286" viewBox="0 0 860 286">
+  <text x="24" y="30" fill="#1d7346" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="24" dy="0">pressure = ADSR × drive × (1 + swell)</tspan></text>
+  <path d="M120 42 L120 68.8" fill="none" stroke="#1d7346" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M123.91468980700107 67.89597607882591 L120 76 L116.08531019299893 67.89597607882591 Z" fill="#1d7346" stroke="#1d7346" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="76" width="220" height="100" rx="8" fill="#1d7346" fill-opacity="0.12" stroke="#1d7346" stroke-width="1.5"/>
+  <text x="40" y="103" fill="#1d7346" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">Reed</tspan></text>
+  <text x="40" y="126" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="40" dy="0">van der Pol: a resonator</tspan><tspan x="40" dy="19.575">at the note, fed by its</tspan><tspan x="40" dy="19.575">own speed</tspan></text>
+  <rect x="320" y="76" width="220" height="100" rx="8" fill="none" fill-opacity="0" stroke="#171615" stroke-width="1.5"/>
+  <text x="336" y="103" fill="#171615" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="336" dy="0">Slot</tspan></text>
+  <text x="336" y="126" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="336" dy="0">air past once it</tspan><tspan x="336" dy="19.575">swings past the gap,</tspan><tspan x="336" dy="19.575">× √pressure</tspan></text>
+  <rect x="616" y="76" width="220" height="100" rx="8" fill="none" fill-opacity="0" stroke="#1d4fd0" stroke-width="1.5"/>
+  <text x="632" y="103" fill="#1d4fd0" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="632" dy="0">d/dt</tspan></text>
+  <text x="632" y="126" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="632" dy="0">the flow's slope:</tspan><tspan x="632" dy="19.575">the radiated sound</tspan></text>
+  <path d="M244 120 L312.8 120" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M311.8959760788259 116.08531019299893 L320 120 L311.8959760788259 123.91468980700107 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <text x="282" y="111" fill="#4f4d48" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="282" dy="0">x</tspan></text>
+  <path d="M540 120 L608.8 120" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M607.8959760788259 116.08531019299893 L616 120 L607.8959760788259 123.91468980700107 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <text x="578" y="111" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="578" dy="0">flow</tspan></text>
+  <text x="430" y="200" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="430" dy="0">+ air noise</tspan></text>
+  <path d="M726 176 L726 218.8" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M729.9146898070011 217.8959760788259 L726 226 L722.0853101929989 217.8959760788259 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <text x="714" y="222" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="end"><tspan x="714" dy="0">DC block → lowpass → bus</tspan></text>
+  <text x="24" y="266" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="24" dy="0">The swell: the vibrato's Level, as bellows or a hand tremolo</tspan></text>
+</svg>

@@ -41,7 +41,7 @@ const meta = {
         "scope",
         "synth",
         "save",
-        "presets",
+        "instruments",
         "adsr",
         "tempo",
         "roll",
@@ -161,11 +161,11 @@ const rollNotes = [60, 64, 67, 72].map((note, i) => ({
   velocity: 0.8,
 }));
 
-export const Roll: Story = {
+export const PianoRoll: Story = {
   args: {
     view: "roll",
     timing: { ...DEFAULT_TIMING, bpm: 120 },
-    status: "Tape · 4/4",
+    status: "Take · 4/4",
     footer: ["", ""],
     getRoll: () => ({
       now: 3500,
@@ -185,9 +185,9 @@ export const Roll: Story = {
 
 // A bar of a rock beat on the drum kit, the head on beat two.
 const kitPieces = ["closedHat", "kick", "snare"] as const;
-export const Steps: Story = {
+export const DrumGrid: Story = {
   args: {
-    view: "steps",
+    view: "drumGrid",
     title: "Drum kit",
     status: "1.2.1 · 1 bar 1/16",
     footer: ["", "Keys set hits at the head"],
@@ -278,9 +278,9 @@ export const SaveIconPicker: Story = {
   },
 };
 
-export const Presets: Story = {
+export const Instruments: Story = {
   args: {
-    view: "presets",
+    view: "instruments",
     title: "Instruments",
     pager: {
       pages: ["Struck & plucked", "Bowed", "Blown"],

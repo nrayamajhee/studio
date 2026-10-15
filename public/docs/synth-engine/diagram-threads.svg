@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="566" viewBox="0 0 860 566">
+  <text x="24" y="30" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="600" text-anchor="start"><tspan x="24" dy="0">Main thread</tspan></text>
+  <text x="480" y="30" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="600" text-anchor="start"><tspan x="480" dy="0">Audio thread (AudioWorklet)</tspan></text>
+  <path d="M440 16 L440 262" fill="none" stroke="#8b8880" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <path d="M440 360 L440 550" fill="none" stroke="#8b8880" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 5"/>
+  <rect x="24" y="50" width="320" height="64" rx="8" fill="none" fill-opacity="0" stroke="#171615" stroke-width="1.5"/>
+  <text x="40" y="77" fill="#171615" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">SynthDevice</tspan></text>
+  <text x="40" y="100" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="40" dy="0">keys, pads, knobs</tspan></text>
+  <rect x="24" y="150" width="320" height="80" rx="8" fill="none" fill-opacity="0" stroke="#171615" stroke-width="1.5"/>
+  <text x="40" y="177" fill="#171615" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">deviceEngine</tspan></text>
+  <text x="40" y="200" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="40" dy="0">octave offset, kit mapping,</tspan><tspan x="40" dy="19.575">param de-duplication</tspan></text>
+  <rect x="24" y="266" width="320" height="84" rx="8" fill="#1d7346" fill-opacity="0.12" stroke="#1d7346" stroke-width="1.5"/>
+  <text x="40" y="293" fill="#1d7346" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">physicalSynth</tspan></text>
+  <text x="40" y="316" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="40" dy="0">boots the AudioContext lazily,</tspan><tspan x="40" dy="19.575">queues events until ready</tspan></text>
+  <path d="M184 114 L184 142.8" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M187.91468980700108 141.8959760788259 L184 150 L180.08531019299892 141.8959760788259 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M184 230 L184 258.8" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M187.91468980700108 257.8959760788259 L184 266 L180.08531019299892 257.8959760788259 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="480" y="50" width="356" height="64" rx="8" fill="none" fill-opacity="0" stroke="#171615" stroke-width="1.5"/>
+  <text x="496" y="77" fill="#171615" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="496" dy="0">PhysicalSynthProcessor</tspan></text>
+  <text x="496" y="100" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="496" dy="0">process() every 128 frames</tspan></text>
+  <rect x="480" y="150" width="356" height="200" rx="8" fill="#1d7346" fill-opacity="0.12" stroke="#1d7346" stroke-width="1.5"/>
+  <text x="496" y="177" fill="#1d7346" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="496" dy="0">Engine</tspan></text>
+  <text x="496" y="200" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="496" dy="0">EventQueue, sorted by frame</tspan><tspan x="496" dy="19.575">32 instruments, one bus each</tspan><tspan x="496" dy="19.575">FDN reverb, metronome</tspan><tspan x="496" dy="19.575">master LFO, FX, level</tspan><tspan x="496" dy="19.575">peak limiter, safety clip</tspan></text>
+  <path d="M658 114 L658 142.8" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M661.9146898070011 141.8959760788259 L658 150 L654.0853101929989 141.8959760788259 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M344 290 L472.8 290" fill="none" stroke="#171615" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M471.8959760788259 286.0853101929989 L480 290 L471.8959760788259 293.9146898070011 Z" fill="#171615" stroke="#171615" stroke-width="1" stroke-linejoin="round"/>
+  <text x="412" y="280" fill="#171615" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="412" dy="0">postMessage</tspan></text>
+  <path d="M480 326 L351.2 326" fill="none" stroke="#1d4fd0" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M352.1040239211741 329.9146898070011 L344 326 L352.1040239211741 322.0853101929989 Z" fill="#1d4fd0" stroke="#1d4fd0" stroke-width="1" stroke-linejoin="round"/>
+  <text x="412" y="348" fill="#1d4fd0" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="412" dy="0">stats every 0.25 s</tspan></text>
+  <rect x="480" y="386" width="166" height="62" rx="8" fill="none" fill-opacity="0" stroke="#8b8880" stroke-width="1.5"/>
+  <text x="496" y="413" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="496" dy="0">Browser limiter</tspan></text>
+  <text x="496" y="436" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="496" dy="0">−3 dB, 20:1</tspan></text>
+  <rect x="670" y="386" width="166" height="62" rx="8" fill="none" fill-opacity="0" stroke="#8b8880" stroke-width="1.5"/>
+  <text x="686" y="413" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="686" dy="0">Analyser</tspan></text>
+  <text x="686" y="436" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="686" dy="0">the oscilloscope</tspan></text>
+  <rect x="480" y="480" width="166" height="62" rx="8" fill="none" fill-opacity="0" stroke="#8b8880" stroke-width="1.5"/>
+  <text x="496" y="507" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="496" dy="0">Volume</tspan></text>
+  <text x="496" y="530" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="496" dy="0">the white knob</tspan></text>
+  <rect x="670" y="480" width="166" height="62" rx="8" fill="none" fill-opacity="0" stroke="#8b8880" stroke-width="1.5"/>
+  <text x="753" y="516" fill="#4f4d48" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="753" dy="0">Speakers</tspan></text>
+  <path d="M563 350 L563 378.8" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M566.9146898070011 377.8959760788259 L563 386 L559.0853101929989 377.8959760788259 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M646 417 L662.8 417" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M661.8959760788259 413.0853101929989 L670 417 L661.8959760788259 420.9146898070011 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M753 448 L753 464 L563 464 L563 472.8" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M566.9146898070011 471.8959760788259 L563 480 L559.0853101929989 471.8959760788259 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M646 511 L662.8 511" fill="none" stroke="#4f4d48" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M661.8959760788259 507.0853101929989 L670 511 L661.8959760788259 514.9146898070011 Z" fill="#4f4d48" stroke="#4f4d48" stroke-width="1" stroke-linejoin="round"/>
+</svg>

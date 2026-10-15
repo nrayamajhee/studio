@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="270" viewBox="0 0 860 270">
+  <text x="24" y="30" fill="#6fcf97" font-family='ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="24" dy="0">breath pressure = max × ADSR × (1 + noise + vibrato Level)</tspan></text>
+  <path d="M120 42 L120 74.8" fill="none" stroke="#6fcf97" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M123.91468980700107 73.89597607882591 L120 82 L116.08531019299893 73.89597607882591 Z" fill="#6fcf97" stroke="#6fcf97" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="82" width="190" height="120" rx="8" fill="#6fcf97" fill-opacity="0.12" stroke="#6fcf97" stroke-width="1.5"/>
+  <text x="40" y="109" fill="#6fcf97" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">Mouth</tspan></text>
+  <text x="40" y="132" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="40" dy="0">nonlinear:</tspan><tspan x="40" dy="19.575">flute: an air jet</tspan><tspan x="40" dy="19.575">sax, clarinet: a reed</tspan><tspan x="40" dy="19.575">brass: the lips</tspan></text>
+  <rect x="300" y="82" width="300" height="120" rx="8" fill="none" fill-opacity="0" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="316" y="109" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="316" dy="0">Tube</tspan></text>
+  <text x="316" y="132" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="316" dy="0">delay lines with a</tspan><tspan x="316" dy="19.575">fractional length</tspan><tspan x="316" dy="19.575">(Lagrange-3 reads)</tspan></text>
+  <rect x="680" y="82" width="156" height="120" rx="8" fill="none" fill-opacity="0" stroke="#8ab4f8" stroke-width="1.5"/>
+  <text x="696" y="109" fill="#8ab4f8" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="696" dy="0">Open end, bell</tspan></text>
+  <text x="696" y="132" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="696" dy="0">lowpass,</tspan><tspan x="696" dy="19.575">inverted:</tspan><tspan x="696" dy="19.575">reflects back in</tspan></text>
+  <path d="M214 118 L292.8 118" fill="none" stroke="#f3f2ee" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M291.8959760788259 114.08531019299893 L300 118 L291.8959760788259 121.91468980700107 Z" fill="#f3f2ee" stroke="#f3f2ee" stroke-width="1" stroke-linejoin="round"/>
+  <text x="257" y="109" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="257" dy="0">wave</tspan></text>
+  <path d="M300 170 L221.2 170" fill="none" stroke="#f28b7d" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M222.1040239211741 173.91468980700108 L214 170 L222.1040239211741 166.08531019299892 Z" fill="#f28b7d" stroke="#f28b7d" stroke-width="1" stroke-linejoin="round"/>
+  <text x="257" y="192" fill="#f28b7d" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="257" dy="0">reflection</tspan></text>
+  <path d="M600 118 L672.8 118" fill="none" stroke="#f3f2ee" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M671.8959760788259 114.08531019299893 L680 118 L671.8959760788259 121.91468980700107 Z" fill="#f3f2ee" stroke="#f3f2ee" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M680 170 L607.2 170" fill="none" stroke="#f28b7d" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M608.1040239211741 173.91468980700108 L600 170 L608.1040239211741 166.08531019299892 Z" fill="#f28b7d" stroke="#f28b7d" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M758 202 L758 244.8" fill="none" stroke="#f3f2ee" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M761.9146898070011 243.8959760788259 L758 252 L754.0853101929989 243.8959760788259 Z" fill="#f3f2ee" stroke="#f3f2ee" stroke-width="1" stroke-linejoin="round"/>
+  <text x="770" y="248" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="start"><tspan x="770" dy="0">output</tspan></text>
+</svg>

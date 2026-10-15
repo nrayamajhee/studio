@@ -9,7 +9,7 @@ import {
   SlidersHorizontal,
   Volume2,
 } from "lucide-react";
-import { resetChordMacros } from "../chordStore";
+import { resetPadChords } from "../chordStore";
 import { turnPage } from "../deviceMath";
 import { ScreenHint, ScreenPad, TILES_PER_PAGE } from "../DeviceScreen";
 import { AdsrIcon } from "../instrumentIcons";
@@ -37,7 +37,7 @@ type RevertOption = {
   run: () => void;
 };
 
-// Everything the Device keeps (songs and tracks, the tape, saved instruments
+// Everything the Device keeps (tapes and tracks, the take, saved instruments
 // and play styles, pad and chord bindings) is dropped, and the page starts
 // over as new. The page's theme is its own, and stays.
 const eraseEverything = () => {
@@ -86,7 +86,7 @@ const revertOptions = ({
       label: "Chord pads",
       detail: "The built-in chords, played as blocks",
       icon: <Music4 />,
-      run: resetChordMacros,
+      run: resetPadChords,
     },
     {
       id: "modules",
@@ -119,7 +119,7 @@ const revertOptions = ({
     {
       id: "everything",
       label: "Everything",
-      detail: "Erases songs, saved sounds and settings",
+      detail: "Erases tapes, saved sounds and settings",
       icon: <RotateCcw />,
       run: eraseEverything,
     },
@@ -200,7 +200,7 @@ export const revertMode: Mode = (device, base) => {
         ),
       ),
     },
-    presetPad: (pad) => closing(base.presetPad(pad)),
+    instrumentPad: (pad) => closing(base.instrumentPad(pad)),
     chordPad: (index) => closing(base.chordPad(index)),
     screen: {
       title: "Revert",

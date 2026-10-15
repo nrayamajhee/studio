@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="712" viewBox="0 0 860 712">
+  <circle cx="94" cy="40" r="18" fill="none" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="94" y="45" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="94" dy="0">v</tspan></text>
+  <circle cx="174" cy="40" r="18" fill="none" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="174" y="45" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="174" dy="0">v</tspan></text>
+  <circle cx="254" cy="40" r="18" fill="none" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="254" y="45" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="254" dy="0">v</tspan></text>
+  <path d="M94 58 L174 86" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M254 58 L174 86" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M174 58 L174 78.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 77.89597607882591 L174 86 L170.08531019299892 77.89597607882591 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <text x="350" y="36" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="350" dy="0">Each voice pans itself (equal power):</tspan><tspan x="350" dy="20.3">the piano by key, guitars and basses by string</tspan></text>
+  <rect x="24" y="86" width="300" height="60" rx="8" fill="none" fill-opacity="0" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="40" y="113" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">Bus L/R</tspan></text>
+  <text x="40" y="136" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="40" dy="0">one per instrument</tspan></text>
+  <text x="350" y="121" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="350" dy="0">Drum kits: their filter runs here</tspan></text>
+  <path d="M174 146 L174 168.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 167.8959760788259 L174 176 L170.08531019299892 167.8959760788259 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="176" width="300" height="60" rx="8" fill="none" fill-opacity="0" stroke="#8ab4f8" stroke-width="1.5"/>
+  <text x="40" y="203" fill="#8ab4f8" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">Body</tspan></text>
+  <text x="40" y="226" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="40" dy="0">modal, radiation or none; tilt</tspan></text>
+  <text x="350" y="202" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="350" dy="0">Skipped when its bus is idle</tspan><tspan x="350" dy="20.3">(0.5 s after the last voice)</tspan></text>
+  <path d="M174 236 L174 258.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 257.8959760788259 L174 266 L170.08531019299892 257.8959760788259 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="266" width="300" height="60" rx="8" fill="none" fill-opacity="0" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="40" y="293" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="40" dy="0">Drive</tspan></text>
+  <text x="40" y="316" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="40" dy="0">if &gt; 0, then a DC blocker</tspan></text>
+  <path d="M174 326 L174 348.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 347.8959760788259 L174 356 L170.08531019299892 347.8959760788259 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="356" width="300" height="48" rx="8" fill="none" fill-opacity="0" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="174" y="385" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="174" dy="0">× output gain × level</tspan></text>
+  <path d="M324 380 L718 380" fill="none" stroke="#8ab4f8" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M718 380 L718 412.8" fill="none" stroke="#8ab4f8" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M721.9146898070011 411.8959760788259 L718 420 L714.0853101929989 411.8959760788259 Z" fill="#8ab4f8" stroke="#8ab4f8" stroke-width="1" stroke-linejoin="round"/>
+  <text x="520" y="370" fill="#8ab4f8" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="520" dy="0">mono × send</tspan></text>
+  <rect x="600" y="420" width="236" height="64" rx="8" fill="none" fill-opacity="0" stroke="#8ab4f8" stroke-width="1.5"/>
+  <text x="616" y="447" fill="#8ab4f8" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="start"><tspan x="616" dy="0">FDN reverb</tspan></text>
+  <text x="616" y="470" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.850000000000001" font-weight="400" text-anchor="start"><tspan x="616" dy="0">shared by every bus</tspan></text>
+  <path d="M174 404 L174 436.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 435.8959760788259 L174 444 L170.08531019299892 435.8959760788259 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <text x="184" y="428" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="13.750000000000002" font-weight="400" text-anchor="start"><tspan x="184" dy="0">master L/R</tspan></text>
+  <rect x="24" y="444" width="300" height="48" rx="8" fill="none" fill-opacity="0" stroke="#6fcf97" stroke-width="1.5"/>
+  <text x="174" y="473" fill="#6fcf97" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="174" dy="0">LFO</tspan></text>
+  <text x="350" y="473" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="350" dy="0">pitch · volume · filter · pan</tspan></text>
+  <path d="M174 492 L174 508.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 507.8959760788259 L174 516 L170.08531019299892 507.8959760788259 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="516" width="300" height="48" rx="8" fill="none" fill-opacity="0" stroke="#6fcf97" stroke-width="1.5"/>
+  <text x="174" y="545" fill="#6fcf97" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="174" dy="0">FX: drive · chorus · delay</tspan></text>
+  <text x="350" y="545" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="15.400000000000002" font-weight="400" text-anchor="start"><tspan x="350" dy="0">Each stage skipped at zero</tspan></text>
+  <path d="M174 564 L174 580.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 579.8959760788259 L174 588 L170.08531019299892 579.8959760788259 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <circle cx="174" cy="604" r="16" fill="none" stroke="#f3f2ee" stroke-width="1.5"/>
+  <text x="174" y="609" fill="#f3f2ee" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="174" dy="0">+</tspan></text>
+  <text x="40" y="592" fill="#bab8b2" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="13.750000000000002" font-weight="400" text-anchor="start"><tspan x="40" dy="0">metronome</tspan></text>
+  <path d="M40 604 L150.8 604" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M149.8959760788259 600.0853101929989 L158 604 L149.8959760788259 607.9146898070011 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M718 484 L718 604 L400 604" fill="none" stroke="#8ab4f8" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M400 604 L197.2 604" fill="none" stroke="#8ab4f8" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M198.1040239211741 607.9146898070011 L190 604 L198.1040239211741 600.0853101929989 Z" fill="#8ab4f8" stroke="#8ab4f8" stroke-width="1" stroke-linejoin="round"/>
+  <text x="520" y="596" fill="#8ab4f8" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="14.3" font-weight="400" text-anchor="middle"><tspan x="520" dy="0">× return</tspan></text>
+  <path d="M174 620 L174 640.8" fill="none" stroke="#bab8b2" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M177.91468980700108 639.8959760788259 L174 648 L170.08531019299892 639.8959760788259 Z" fill="#bab8b2" stroke="#bab8b2" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="24" y="648" width="812" height="44" rx="8" fill="none" fill-opacity="0" stroke="#f28b7d" stroke-width="1.5"/>
+  <text x="430" y="675" fill="#f28b7d" font-family='ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' font-size="16.5" font-weight="600" text-anchor="middle"><tspan x="430" dy="0">× level → peak limiter, 1.5 ms look-ahead, −3 dBFS → safety clip → worklet out</tspan></text>
+</svg>

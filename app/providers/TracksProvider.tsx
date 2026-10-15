@@ -13,9 +13,9 @@ import {
 } from "../components/home/tracks";
 import { createStrictContext } from "./createStrictContext";
 import { useFeedback } from "./FeedbackProvider";
-import { isTape, useLanes } from "./LanesProvider";
+import { isTake, useLanes } from "./LanesProvider";
 import { useShift } from "./ShiftProvider";
-import { useSteps } from "./StepsProvider";
+import { useDrumGrid } from "./DrumGridProvider";
 import { useDeviceTransport } from "./TransportProvider";
 import { useView } from "./ViewProvider";
 
@@ -29,7 +29,7 @@ function useTracksValue() {
   const { showNotice } = useFeedback();
   const { bpm, barBeats } = useDeviceTransport();
   const { lanes, pickedTrack: track, setFocusIndex, updateTrack } = useLanes();
-  const { patternClip } = useSteps();
+  const { patternClip } = useDrumGrid();
 
   // The tracks view's zoom (a step of the zooms that fit) and the beat at
   // the left of its lanes.
@@ -119,7 +119,7 @@ function useTracksValue() {
         beats % barBeats ? ` beat ${Math.floor(beats % barBeats) + 1}` : ""
       }`,
     // The arrows slide the picked track along the timeline by bars; Shift
-    // and the blue knob slide it by beats. The tape doesn't move.
+    // and the blue knob slide it by beats. The take doesn't move.
     slideTrack: (beats: number) => {
       if (!track) return;
       updateTrack(track.id, { start: Math.max(0, track.start + beats) });
@@ -138,7 +138,7 @@ function useTracksValue() {
     // (finer than the knobs); it picks that track too.
     dragLoopEdge: (index: number, edge: "start" | "end", beats: number) => {
       const dragged = lanes[index];
-      if (!dragged || isTape(dragged)) return;
+      if (!dragged || isTake(dragged)) return;
       const unit = 1 / gridSteps(dragged);
       const reach = takeBeats(dragged);
       const at = Math.min(
@@ -184,7 +184,7 @@ function useTracksValue() {
       release();
       showNotice(`Trimmed ${clipped.name} to its clip`);
     },
-    // A track's mute, or with `solo` its solo. The tape has neither.
+    // A track's mute, or with `solo` its solo. The take has neither.
     toggleSwitch: (switched: Track, solo: boolean) => {
       if (solo) updateTrack(switched.id, { soloed: !switched.soloed });
       else updateTrack(switched.id, { muted: !switched.muted });

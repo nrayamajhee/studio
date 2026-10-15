@@ -18,9 +18,9 @@ export type TrackLoop = {
   on: boolean;
 };
 
-// Where a track was made, and so the one place it opens again: the tape's
-// piano roll, or the drum sequencer.
-export type TrackSource = "roll" | "steps";
+// Where a track was made, and so the one place it opens again: the piano
+// roll, or the drum grid.
+export type TrackSource = "roll" | "drumGrid";
 
 // A take kept on the tracks view, with the sound and preset that played it
 // and the timing it was recorded on (its own tempo, meter and grid). `start`
@@ -63,7 +63,7 @@ export const trackModules = (track: Track) =>
   track.modules ?? modulesOf(track.sound);
 
 // Where a track was made, or for an older track where it must have been: the
-// sequencer keeps a pattern as a kit's take with every note on the grid, one
+// drum grid keeps a pattern as a kit's take with every note on the grid, one
 // step long.
 export function trackSource(track: Track): TrackSource {
   if (track.source) return track.source;
@@ -75,7 +75,7 @@ export function trackSource(track: Track): TrackSource {
     ({ start, duration }) =>
       near(start, Math.round(start / step) * step) && near(duration, step),
   );
-  return onGrid ? "steps" : "roll";
+  return onGrid ? "drumGrid" : "roll";
 }
 
 // The change that gives a track `modules`, and renders it through them.
@@ -84,7 +84,7 @@ export const modulesChange = (track: Track, modules: ModuleSettings) => ({
   sound: withModules(track.sound, modules),
 });
 
-// The next track from a take, played on the tape or drawn in the sequencer:
+// The next track from a take, played in the piano roll or drawn in the drum grid:
 // named for its instrument, coloured in turn, unmuted, at the top of the
 // timeline. It keeps its own copy of the take and its effects, so later takes
 // on the take leave it alone.

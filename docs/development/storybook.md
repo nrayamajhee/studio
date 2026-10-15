@@ -1,3 +1,7 @@
+---
+order = 2
+---
+
 # Storybook
 
 The built Storybook is served in the app at [`/storybook`](/storybook) by the production build (`npm run build`, then `npm start`); each component named below opens its own page there. In development, run `npm run storybook` and open [localhost:6006](http://localhost:6006).
