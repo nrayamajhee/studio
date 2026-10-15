@@ -10,6 +10,7 @@ import { Button } from "./Button";
 import { tv } from "../../lib/utils";
 
 export type PadProps = {
+  // What pressing it does, also its tooltip (with its hotkey).
   label: string;
   accent?: string;
   lit?: boolean;
@@ -120,6 +121,7 @@ export function Pad({
     <Button
       unstyled
       aria-label={label}
+      title={hotkey ? `${label} (${hotkey})` : label}
       aria-pressed={pressed}
       aria-keyshortcuts={hotkey}
       className={styles.base({ className })}

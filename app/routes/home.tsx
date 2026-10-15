@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import type { Route } from "./+types/home";
 import { HotkeyProvider } from "../providers/HotkeyProvider";
 import { SynthDevice } from "../components/home/SynthDevice";
+import { DebugOverlay } from "../components/page/DebugOverlay";
 import { SkyBackground } from "../components/page/SkyBackground";
 import { ThemeToggle } from "../components/page/ThemeToggle";
 
@@ -65,6 +66,7 @@ export default function Home() {
       </footer>
 
       <ThemeToggle />
+      {import.meta.env.DEV && <DebugOverlay />}
     </div>
   );
 }

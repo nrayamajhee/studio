@@ -16,6 +16,8 @@ npm install
   npm run dev
   ```
 
+- **Debug overlay**: on the dev server's home page, `/` opens a panel over the Device listing everything in `localStorage`, a part (key) a row, with the picked one's JSON pretty-printed. It keeps reading while open, so what the Device saves shows as it is written, and the keys still play the Device under it.
+
 - **Storybook**: Runs on port `6006` (`http://localhost:6006`)
   ```bash
   npm run storybook

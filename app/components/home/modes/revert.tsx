@@ -174,7 +174,7 @@ export const revertMode: Mode = (device, base) => {
     },
     pads: {
       ...pads,
-      save: closing(savePad(device, { label: "Save" })),
+      save: closing(savePad(device, { label: "Close revert" })),
       delete: {
         label: shift ? "Close revert" : `Revert ${option.label.toLowerCase()}`,
         icon: <RotateCcw />,

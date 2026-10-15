@@ -24,7 +24,7 @@ For everything else, open **Instruments** (the four-squares pad, `I`). It's a li
 
 ## Change how it's made
 
-Every instrument is a small physical model, with parts you can play with. Open **Synth parameters** (the waveform pad, `T`). The first page, **Chain**, draws how the sound is made, left to right: what sets it moving (the exciter: a hammer, a pick, a bow, breath), what rings (the resonator: a string, a tube, a reed), the filter, the body and the output.
+Every instrument is a small physical model, with parts you can play with. Open **Synth parameters** (the waveform pad, `Z`). The first page, **Chain**, draws how the sound is made, left to right: what sets it moving (the exciter: a hammer, a pick, a bow, breath), what rings (the resonator: a string, a tube, a reed), the filter, the body and the output.
 
 ![The Chain page for the Grand piano: Exciter, Resonator, Filter, Body and Output, with the damper underneath](../../public/docs/user-manual/synth-chain.webp)
 

@@ -101,7 +101,7 @@ In the drum grid, Play loops the pattern. Stopped, the green knob moves the head
 
 ## Start a new tape
 
-Your tapes live in **Tapes** (`Z`), one tile a tape, each with its own tracks, tempo and time signature.
+Your tapes live in **Tapes** (`T`), one tile a tape, each with its own tracks, tempo and time signature.
 
 ![Tapes: Tape 1, with 2 tracks at 72 BPM in 4/4](../../public/docs/user-manual/tapes.webp)
 

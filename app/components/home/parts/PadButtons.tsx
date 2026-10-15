@@ -108,7 +108,9 @@ export function PadButtons() {
           as it looks while its key is held. */}
       <DevicePad
         binding={{
-          label: latched ? "Shift (latched)" : "Shift",
+          label: latched
+            ? "Let go of Shift (latched)"
+            : "Latch Shift for the pads' Shift jobs",
           icon: <ArrowBigUp />,
           onPress: toggleLatch,
         }}

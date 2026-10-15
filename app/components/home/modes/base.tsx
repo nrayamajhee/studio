@@ -57,6 +57,13 @@ import type { Device } from "../../../types/device";
 
 const noop = () => {};
 
+// A pad with nothing to do in this view: it keeps its icon and says so.
+export const unusedPad = (label: string, icon: ReactNode): PadBinding => ({
+  label: `${label} (not used here)`,
+  icon,
+  onPress: noop,
+});
+
 // How the sound is made: the model's exciter, then each module layered over
 // it that's on. Saved presets are named after it.
 export const soundName = ({ sound, lanes }: Device) =>
@@ -354,7 +361,9 @@ export const deletePad = (
     when?: boolean;
   },
 ): PadBinding => ({
-  label: device.shift ? "Revert" : (own?.label ?? "Delete"),
+  label: device.shift
+    ? "Open revert"
+    : (own?.label ?? "Delete (nothing to delete here)"),
   icon: device.shift ? <RotateCcw /> : <Trash2 />,
   lit: own !== undefined && device.feedback.pending === own.key,
   shiftLegend: device.shift,
@@ -386,7 +395,9 @@ export const drumGridPads = ({ drumGrid }: Device) => {
       },
     },
     stop: {
-      label: "Stop",
+      label: drumGrid.patternRunning
+        ? "Stop the pattern"
+        : "Back to the pattern's start",
       icon: <Square fill="currentColor" />,
       onPress: () => {
         if (drumGrid.patternRunning) drumGrid.stopPattern();
@@ -420,9 +431,9 @@ export const previewPads = (
 });
 
 // Play and Stop for the tracks: the mix, from the top.
-export const mixPads = ({ mix }: Device, stopLabel = "Stop") => ({
+export const mixPads = ({ mix }: Device) => ({
   play: {
-    label: mix.playing ? "Pause tracks" : "Play tracks",
+    label: mix.playing ? "Pause the tracks" : "Play the tracks",
     icon: mix.playing ? (
       <Pause fill="currentColor" />
     ) : (
@@ -431,7 +442,7 @@ export const mixPads = ({ mix }: Device, stopLabel = "Stop") => ({
     onPress: mix.togglePlay,
   },
   stop: {
-    label: stopLabel,
+    label: "Stop and rewind the tracks",
     icon: <Square fill="currentColor" />,
     onPress: mix.rewind,
   },
@@ -512,12 +523,12 @@ const openSynth = ({ view, views, sound, browse }: Device, params: boolean) => {
 // A module pad opens its view; with Shift it switches the module on or off
 // without leaving the current view.
 const modulePad = (device: Device, id: ModuleId, icon: ReactNode) => {
-  const { label, title } = DEVICE_MODULES[id];
+  const { label } = DEVICE_MODULES[id];
   const on = device.lanes.modules.on[id];
   return {
     label: device.shift
       ? `Turn ${label} ${on ? "off" : "on"}`
-      : `${title} (${on ? "on" : "off"})`,
+      : `${device.view === id ? "Close" : "Open"} the ${label} (${on ? "on" : "off"})`,
     icon,
     lit: device.view === id,
     indicator: on,
@@ -534,7 +545,7 @@ const modulePad = (device: Device, id: ModuleId, icon: ReactNode) => {
 const metronomePad = ({ shift, view, views, transport }: Device) => ({
   label: shift
     ? `Turn metronome ${transport.metronome ? "off" : "on"}`
-    : `Tempo (metronome ${transport.metronome ? "on" : "off"})`,
+    : `${view === "tempo" ? "Close" : "Open"} the tempo (metronome ${transport.metronome ? "on" : "off"})`,
   icon: <Metronome />,
   lit: view === "tempo",
   indicator: transport.metronome,
@@ -562,6 +573,11 @@ const viewPad = (
   lit: view === opens,
   onPress,
 });
+
+// The tracks, tapes, piano roll and drum grid pads end a recording before
+// they open anything (see openTracks and openTake).
+const endsRecording = ({ transport }: Device, pad: PadBinding): PadBinding =>
+  transport.recording ? { ...pad, label: "Stop recording" } : pad;
 
 // What every control does unless a mode rebinds it: the knobs set the
 // volume and the selected param, ↑ and ↓ move the octave (so do ← and →,
@@ -601,8 +617,8 @@ export function baseBindings(device: Device): Bindings {
           : take.recordArmed
             ? "Start recording"
             : transport.playing
-              ? "Pause"
-              : "Play",
+              ? "Pause the take"
+              : "Play the take",
         icon: transport.playing ? (
           <Pause fill="currentColor" />
         ) : (
@@ -621,7 +637,15 @@ export function baseBindings(device: Device): Bindings {
         onPress: take.toggleRecord,
       },
       stop: {
-        label: "Stop",
+        label: recording
+          ? "Stop recording"
+          : take.recordArmed
+            ? "Disarm recording"
+            : transport.playing
+              ? "Pause the take"
+              : device.view === "roll"
+                ? "Back to the take's start"
+                : "Stop (nothing is playing)",
         icon: <Square fill="currentColor" />,
         onPress: take.stop,
       },
@@ -632,28 +656,35 @@ export function baseBindings(device: Device): Bindings {
         : views.mainView === "drumGrid"
           ? drumGridPads(device)
           : {}),
-      save: savePad(device, { label: "Save instrument" }),
-      tapes: viewPad(
+      // Save keeps what the view holds; here, without Shift, nothing.
+      save: savePad(device, { label: "Save (not used here)" }),
+      tapes: endsRecording(
         device,
-        "tapes",
-        ["Tapes", "Close tapes"],
-        <TapeDeckIcon />,
-        () => openTracks(device, true),
+        viewPad(
+          device,
+          "tapes",
+          ["Open the tapes", "Close the tapes"],
+          <TapeDeckIcon />,
+          () => openTracks(device, true),
+        ),
       ),
-      tracks: viewPad(
+      tracks: endsRecording(
         device,
-        "tracks",
-        ["Tracks", "Close tracks"],
-        <TracksIcon />,
-        () => openTracks(device, false),
+        viewPad(
+          device,
+          "tracks",
+          ["Open the tracks", "Close the tracks"],
+          <TracksIcon />,
+          () => openTracks(device, false),
+        ),
       ),
       // With Shift, the chord progressions.
       roll: shift
         ? {
             label:
               device.view === "progressions"
-                ? "Close progressions"
-                : "Chord progressions",
+                ? "Close the chord progressions"
+                : "Open the chord progressions",
             icon: <ListMusic />,
             lit: device.view === "progressions",
             shiftLegend: true,
@@ -662,17 +693,23 @@ export function baseBindings(device: Device): Bindings {
               views.toggleView("progressions");
             },
           }
-        : viewPad(
+        : endsRecording(
             device,
-            "roll",
-            ["Piano roll", "Close piano roll"],
-            <PianoRollIcon />,
-            () => openTake(device, false),
+            viewPad(
+              device,
+              "roll",
+              ["Open the piano roll", "Close the piano roll"],
+              <PianoRollIcon />,
+              () => openTake(device, false),
+            ),
           ),
       // With Shift, the drum beats.
       drumGrid: shift
         ? {
-            label: device.view === "beats" ? "Close beats" : "Drum beats",
+            label:
+              device.view === "beats"
+                ? "Close the drum beats"
+                : "Open the drum beats",
             icon: <Activity />,
             lit: device.view === "beats",
             shiftLegend: true,
@@ -681,19 +718,22 @@ export function baseBindings(device: Device): Bindings {
               views.toggleView("beats");
             },
           }
-        : viewPad(
+        : endsRecording(
             device,
-            "drumGrid",
-            ["Drum grid", "Close drum grid"],
-            <DrumGridIcon />,
-            () => openTake(device, true),
+            viewPad(
+              device,
+              "drumGrid",
+              ["Open the drum grid", "Close the drum grid"],
+              <DrumGridIcon />,
+              () => openTake(device, true),
+            ),
           ),
       adsr: modulePad(device, "adsr", <AdsrIcon />),
       lfo: modulePad(device, "lfo", <WavesHorizontal />),
       fx: modulePad(device, "fx", <AudioLines />),
       metronome: metronomePad(device),
-      mute: { label: "Mute a track", icon: <VolumeX />, onPress: noop },
-      clip: { label: "Clip a track", icon: <Scissors />, onPress: noop },
+      mute: unusedPad("Mute a track", <VolumeX />),
+      clip: unusedPad("Clip a track", <Scissors />),
       up: {
         label: "Octave up",
         icon: <ArrowUp />,
@@ -708,14 +748,14 @@ export function baseBindings(device: Device): Bindings {
       instruments: viewPad(
         device,
         "instruments",
-        ["Instruments", "Close instruments"],
+        ["Open the instruments", "Close the instruments"],
         <LayoutGrid />,
         () => openSynth(device, false),
       ),
       synth: viewPad(
         device,
         "synth",
-        ["Synth parameters", "Close synth parameters"],
+        ["Open the synth parameters", "Close the synth parameters"],
         <AudioWaveform />,
         () => openSynth(device, true),
       ),
@@ -723,14 +763,14 @@ export function baseBindings(device: Device): Bindings {
       chords: viewPad(
         device,
         "chords",
-        ["Chords", "Close chords"],
+        ["Open the chords", "Close the chords"],
         <Music4 />,
         () => views.toggleView("chords"),
       ),
       playStyle: viewPad(
         device,
         "playStyle",
-        ["Play style", "Close play style"],
+        ["Open the play style", "Close the play style"],
         <PlayStyleIcon pattern={performance.playStyle.id} />,
         () => views.toggleView("playStyle"),
       ),
@@ -748,8 +788,10 @@ export function baseBindings(device: Device): Bindings {
       const current = bound?.id === sound.preset.id;
       return {
         label: bound
-          ? `${bound.name}${current ? " (current)" : ""}`
-          : `Empty instrument pad ${pad + 1}`,
+          ? current
+            ? `${bound.name} (playing)`
+            : `Switch to ${bound.name}`
+          : `Empty instrument pad ${pad + 1} (bind one in the instruments)`,
         icon: bound && <PresetIcon icon={bound.icon} />,
         // Lit while either of its two presets plays.
         indicator: bound
@@ -771,7 +813,10 @@ export function baseBindings(device: Device): Bindings {
     chordPad: (index) => {
       const { name, label } = performance.padChords[index];
       return {
-        label: `${name} chord`,
+        label:
+          performance.chord === index
+            ? `Let go of ${name} chords`
+            : `Play ${name} chords on the keys`,
         icon: label,
         pressed: performance.activeChord === index,
         onPress: () => performance.toggleChord(index),

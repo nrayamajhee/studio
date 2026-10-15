@@ -113,7 +113,7 @@ export const tracksMode: Mode = (device) => {
               },
     },
     pads: {
-      ...mixPads(device, "Stop and rewind"),
+      ...mixPads(device),
       save: savePad(device, {
         label: "Save the mix",
         onPress: () => void mix.exportMix("audio"),
@@ -142,7 +142,7 @@ export const tracksMode: Mode = (device) => {
         label: shift
           ? "Trim track to its clip"
           : track
-            ? `Clip ${trackLoop ? "off" : "on"}`
+            ? `${trackLoop ? "Unclip" : "Clip"} ${track.name}`
             : "Clip a track",
         icon: shift ? <ScissorsLineDashed /> : <Scissors />,
         lit: trackLoop !== null,
@@ -161,7 +161,7 @@ export const tracksMode: Mode = (device) => {
         device,
         pickedLane && isTake(pickedLane)
           ? {
-              label: "Delete",
+              label: "Discard the take",
               key: "delete:take",
               prompt: "Press again to discard the take",
               run: () => {
@@ -236,10 +236,7 @@ export const tracksMode: Mode = (device) => {
           </>
         ) : (
           <>
-            Take ·{" "}
-            <ScreenHint>
-              record in the piano roll or drum grid, then save it
-            </ScreenHint>
+            Take · <ScreenHint>record piano or drum, then save it</ScreenHint>
           </>
         ),
         <ScreenHint key="knobs">

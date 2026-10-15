@@ -4,7 +4,7 @@ order = 4
 
 # Pads
 
-Three rows of twelve. The number is the pad's place below; the badge on the pad itself is its key.
+Three rows of twelve. The number is the pad's place below; the badge on the pad itself is its key. Hover a pad to see what pressing it does in the view showing.
 
 ![The 36 pads, numbered in reading order](../../public/docs/the-device/pads.webp)
 
@@ -14,8 +14,8 @@ Three rows of twelve. The number is the pad's place below; the badge on the pad 
 | 2     | Stop                | `` ` ``     | stops and rewinds                                                                                                    |                                   |
 | 3     | Record              | `.`         | arms the take (or the drum grid); Play then records                                                                  |                                   |
 | 4     | Save                | Ctrl S      | keeps what the view holds: a sound, a take or pattern as a track, a progression or beat, a new tape, the mix as FLAC | saves the tracks as MIDI          |
-| 5     | Tapes               | `Z`         | the tapes, a song's tracks on each                                                                                   |                                   |
-| 6     | Synth parameters    | `T`         | the sound's chain and its pages                                                                                      |                                   |
+| 5     | Tapes               | `T`         | the tapes, a song's tracks on each                                                                                   |                                   |
+| 6     | Synth parameters    | `Z`         | the sound's chain and its pages                                                                                      |                                   |
 | 7     | ADSR                | `N`         | the volume envelope                                                                                                  | switches it on or off             |
 | 8     | LFO                 | `]`         | the modulator over the mix                                                                                           | switches it on or off             |
 | 9     | FX                  | `\`         | drive, chorus, delay and reverb                                                                                      | switches it on or off             |

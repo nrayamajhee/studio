@@ -1,7 +1,7 @@
 import { ArrowUp, Pointer } from "lucide-react";
 import { MAX_BPM, MIN_BPM } from "../../../hooks/useTransport";
 import { meterLabel } from "../noteRecorder";
-import { arrowPads, seekKnob } from "./base";
+import { arrowPads, seekKnob, unusedPad } from "./base";
 import type { Mode } from "../../../types/bindings";
 
 // The tempo: the green knob and the arrows set it, a beat per minute at a
@@ -25,7 +25,7 @@ export const tempoMode: Mode = (device) => {
         setBpm(bpm + direction),
       ),
       // ↓ has a job of its own here, so ↑ leaves the octave alone.
-      up: { label: "Up", icon: <ArrowUp />, onPress: () => {} },
+      up: unusedPad("Octave up", <ArrowUp />),
       down: {
         label: tapMode ? "Stop tap tempo" : "Tap tempo",
         icon: <Pointer />,

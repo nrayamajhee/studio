@@ -547,6 +547,13 @@ body {
   }
 }
 
+/* The debug overlay's mark on a part just written fades away. */
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes lfo-scroll {
   to {
     transform: translateX(-50px);
