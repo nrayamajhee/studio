@@ -547,7 +547,7 @@ body {
   }
 }
 
-/* The debug overlay's mark on a part just written fades away. */
+/* The debug overlay's mark on a key just changed fades away. */
 @keyframes fade-out {
   to {
     opacity: 0;

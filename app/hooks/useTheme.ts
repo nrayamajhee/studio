@@ -3,6 +3,8 @@ import { useLocalStorage, useMediaQuery } from "usehooks-ts";
 
 export type Theme = "light" | "dark" | "system";
 
+export const THEME_KEY = "theme";
+
 export const getNextTheme = (currentTheme: Theme): Theme => {
   if (currentTheme === "system") {
     return document.documentElement.classList.contains("dark") === true
@@ -13,7 +15,7 @@ export const getNextTheme = (currentTheme: Theme): Theme => {
 };
 
 export function useTheme() {
-  const [theme, setTheme] = useLocalStorage<Theme>("theme", "system", {
+  const [theme, setTheme] = useLocalStorage<Theme>(THEME_KEY, "system", {
     initializeWithValue: false,
   });
 

@@ -7,7 +7,7 @@ export type FavoriteKind =
   "instruments" | "chords" | "playStyles" | "progressions" | "beats";
 export type Favorites = Readonly<Record<FavoriteKind, readonly string[]>>;
 
-const STORAGE_KEY = "studio.favorites";
+export const FAVORITES_KEY = "studio.favorites";
 const NO_FAVORITES: Favorites = {
   instruments: [],
   chords: [],
@@ -26,7 +26,7 @@ const ids = (value: unknown): readonly string[] =>
 
 function read(): Favorites {
   try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+    const stored = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "null");
     return {
       instruments: ids(stored?.instruments),
       chords: ids(stored?.chords),
@@ -64,7 +64,7 @@ export function toggleFavorite(
     : [...current[kind], id];
   favorites = { ...current, [kind]: next };
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
   } catch {
     // Storage can be unavailable (private mode); the change still applies.
   }

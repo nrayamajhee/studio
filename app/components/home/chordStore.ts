@@ -10,7 +10,7 @@ import {
 } from "./playStyles";
 
 // Which chord each chord pad plays, by chord id, persisted in localStorage.
-const STORAGE_KEY = "studio.padChords";
+export const PAD_CHORDS_KEY = "studio.padChords";
 export const CHORD_PADS = DEFAULT_PAD_CHORDS.length;
 
 const known = new Set(CHORD_PALETTE.map((chord) => chord.id));
@@ -20,7 +20,7 @@ const listeners = new Set<() => void>();
 
 function read(): readonly string[] {
   try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+    const stored = JSON.parse(localStorage.getItem(PAD_CHORDS_KEY) ?? "null");
     if (!Array.isArray(stored)) return DEFAULT_PAD_CHORDS;
     // Four chords, from before there were six, go on the rightmost four
     // pads, the most played.
@@ -39,7 +39,7 @@ function read(): readonly string[] {
 function update(change: (current: readonly string[]) => readonly string[]) {
   padChords = change(padChords ?? read());
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(padChords));
+    localStorage.setItem(PAD_CHORDS_KEY, JSON.stringify(padChords));
   } catch {
     // Storage can be unavailable (private mode); the change still applies.
   }
@@ -71,12 +71,12 @@ export function setPadChord(index: number, id: string) {
 }
 
 // How the chord pads play their chords (see playStyles), kept like them.
-const STYLE_KEY = "studio.playStyle";
+export const PLAY_STYLE_KEY = "studio.playStyle";
 let style: PlayStyle | null = null;
 
 function readStyle(): PlayStyle {
   try {
-    const stored = JSON.parse(localStorage.getItem(STYLE_KEY) ?? "null");
+    const stored = JSON.parse(localStorage.getItem(PLAY_STYLE_KEY) ?? "null");
     return isPlayStyle(stored) ? stored : DEFAULT_PLAY_STYLE;
   } catch {
     return DEFAULT_PLAY_STYLE;
@@ -93,7 +93,7 @@ export function usePlayStyle() {
 export function setPlayStyle(change: Partial<PlayStyle>) {
   style = { ...getStyle(), ...change };
   try {
-    localStorage.setItem(STYLE_KEY, JSON.stringify(style));
+    localStorage.setItem(PLAY_STYLE_KEY, JSON.stringify(style));
   } catch {
     // Storage can be unavailable (private mode); the change still applies.
   }
@@ -101,13 +101,13 @@ export function setPlayStyle(change: Partial<PlayStyle>) {
 }
 
 // Play styles saved from the Device, kept like the rest.
-const SAVED_KEY = "studio.playStyles";
+export const PLAY_STYLES_KEY = "studio.playStyles";
 const NO_SAVED: readonly SavedPlayStyle[] = [];
 let saved: readonly SavedPlayStyle[] | null = null;
 
 function readSaved(): readonly SavedPlayStyle[] {
   try {
-    const stored = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "null");
+    const stored = JSON.parse(localStorage.getItem(PLAY_STYLES_KEY) ?? "null");
     return Array.isArray(stored) ? stored.filter(isSavedPlayStyle) : NO_SAVED;
   } catch {
     return NO_SAVED;
@@ -123,7 +123,7 @@ export function useSavedPlayStyles() {
 function writeSaved(next: readonly SavedPlayStyle[]) {
   saved = next;
   try {
-    localStorage.setItem(SAVED_KEY, JSON.stringify(saved));
+    localStorage.setItem(PLAY_STYLES_KEY, JSON.stringify(saved));
   } catch {
     // Storage can be unavailable (private mode); the change still applies.
   }

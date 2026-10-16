@@ -32,14 +32,14 @@ export type Session = {
   tracks: readonly Track[];
 };
 
-const TAKE_KEY = "studio.take";
-const MODULES_KEY = "studio.takeModules";
-const PATTERN_KEY = "studio.pattern";
+export const TAKE_KEY = "studio.take";
+export const MODULES_KEY = "studio.takeModules";
+export const PATTERN_KEY = "studio.pattern";
 // Where the take kept the tracks it was loaded from, when saving it updated
 // them; dropped on first read.
 const SOURCE_KEYS = ["studio.takeSource", "studio.stepsSource"];
-const TAPES_KEY = "studio.tapes";
-const TAPE_KEY = "studio.tape";
+export const TAPES_KEY = "studio.tapes";
+export const TAPE_KEY = "studio.tape";
 // Where the tracks were kept before there were tapes; they become the first.
 const TRACKS_KEY = "studio.tracks";
 // Where the take and tracks used to be kept together; split into their keys

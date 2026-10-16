@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import type { Route } from "./+types/home";
 import { HotkeyProvider } from "../providers/HotkeyProvider";
 import { SynthDevice } from "../components/home/SynthDevice";
+import { Button } from "../components/design-system/Button";
 import { DebugOverlay } from "../components/page/DebugOverlay";
 import { SkyBackground } from "../components/page/SkyBackground";
 import { ThemeToggle } from "../components/page/ThemeToggle";
@@ -17,6 +19,8 @@ export function meta(_args: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const [debugOpen, setDebugOpen] = useState(false);
+
   return (
     <div className="relative w-full h-dvh overflow-hidden select-none">
       <SkyBackground />
@@ -46,6 +50,17 @@ export default function Home() {
             Docs
           </Link>
           {" | "}
+          <Button
+            unstyled
+            aria-expanded={debugOpen}
+            onClick={() => setDebugOpen((open) => !open)}
+            className="cursor-pointer font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
+          >
+            {/* An element, so Button doesn't set the label in its own type. */}
+            <span>Debug</span>
+          </Button>
+        </span>
+        <span className="shrink-0 whitespace-nowrap">
           <Link
             to="https://github.com/nrayamajhee/studio"
             target="_blank"
@@ -54,19 +69,20 @@ export default function Home() {
           >
             GitHub
           </Link>
+          {" | "}
+          <Link
+            to="https://buymeacoffee.com/nrayamajhee"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
+          >
+            Buy me a coffee!
+          </Link>
         </span>
-        <Link
-          to="https://buymeacoffee.com/nrayamajhee"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 whitespace-nowrap font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
-        >
-          Buy me a coffee!
-        </Link>
       </footer>
 
       <ThemeToggle />
-      {import.meta.env.DEV && <DebugOverlay />}
+      <DebugOverlay open={debugOpen} onOpenChange={setDebugOpen} />
     </div>
   );
 }

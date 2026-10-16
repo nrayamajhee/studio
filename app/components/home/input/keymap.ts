@@ -79,8 +79,8 @@ export const shiftedNote = (semitone: number) =>
 // ADSR, LFO and FX switch on or off with Shift. Play is Space, ` Stop and Esc
 // the tracks. Shift and the arrows are their own keys: ↑ and ↓ move the
 // octave (on the tracks they pick a track, as the blue knob does). ⌫ is
-// Delete (⇧⌫ Revert), and ⌘S (Ctrl S) is Save. / is left to the page's
-// debug overlay.
+// Delete (⇧⌫ Revert), and ⌘S (Ctrl S) is Save. ⌘D (Ctrl D) is left to the
+// page's debug overlay.
 const INSTRUMENT_KEYS = ["1", "2", "3", "4", "5", "6"];
 const CHORD_KEYS = ["7", "8", "9", "0", "-", "="];
 const TOOL_KEYS: Readonly<Record<Tool, string>> = {

@@ -22,7 +22,7 @@ export type PresetLibrary = {
   edits: Readonly<Record<string, PresetEdits>>;
 };
 
-const STORAGE_KEY = "studio.instruments";
+export const PRESETS_KEY = "studio.instruments";
 // Pad bindings stored under an older layout are dropped once, so every pad
 // starts on its built-in pair (the last three pads became kits).
 const PADS_VERSION = 3;
@@ -60,7 +60,7 @@ const isPreset = (value: unknown): value is DevicePreset => {
 
 function read(): PresetLibrary {
   try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+    const stored = JSON.parse(localStorage.getItem(PRESETS_KEY) ?? "null");
     // Saved before some params moved into the vibrato module, values come
     // across under their new ids.
     const migrate = (target: DevicePreset["target"], values: object) =>
@@ -129,7 +129,7 @@ function update(change: (current: PresetLibrary) => PresetLibrary) {
     );
   try {
     localStorage.setItem(
-      STORAGE_KEY,
+      PRESETS_KEY,
       JSON.stringify({
         ...library,
         padsVersion: PADS_VERSION,
