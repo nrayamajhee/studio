@@ -10,7 +10,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "A dev tool for auditioning and tuning the physical-modeling instruments, with a generated parameter panel and diagnostic sweeps run through the real worklet.",
+          "A dev tool for auditioning and tuning the physical-modeling instruments, with a generated parameter panel and diagnostic sweeps run through the real worklet. Play with the mouse or `A W S E D F T G Y H U J K` (`Z`/`X` the octave, hold Space to sustain), and **Copy patch JSON** to move tuned values into `patches/*.ts`.",
       },
     },
   },

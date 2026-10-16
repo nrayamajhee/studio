@@ -34,7 +34,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
     {
       name: "description",
       content:
-        "How Studio and The Device work: the user manual, the Device, the synth engine, installation and Storybook.",
+        "How Studio and The Device work: the Device, guides from the first note to a song, the synth, the library, and development.",
     },
   ];
 }
@@ -48,12 +48,14 @@ export default function DocsRoute({ loaderData }: Route.ComponentProps) {
       <SkyBackground />
       <ThemeToggle />
 
-      <div className="relative mx-auto flex max-w-6xl items-start gap-8 px-4 pt-16 pb-24 sm:px-8 sm:pt-20">
-        <aside className="sticky top-20 hidden h-[calc(100dvh-6.5rem)] w-60 shrink-0 lg:block">
+      {/* The page's top and bottom padding is main's, so the sidebar sits
+          24px from both edges and the row's end never pushes it up. */}
+      <div className="relative mx-auto flex max-w-6xl items-start gap-8 px-4 sm:px-8">
+        <aside className="sticky top-6 mt-6 hidden h-[calc(100dvh-3rem)] w-60 shrink-0 lg:block">
           <DocsSidebar tree={tree} className="h-full" />
         </aside>
 
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0 flex-1 pt-16 pb-24 sm:pt-20">
           <details key={pathname} className="mb-6 lg:hidden">
             <summary
               className={cn(

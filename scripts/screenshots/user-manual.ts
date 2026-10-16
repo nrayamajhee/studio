@@ -1,5 +1,5 @@
-// docs/user-manual: the Device from the first note to a finished song, in
-// the order the manual's chapters press it.
+// docs/guides: the Device from the first note to a finished song, in the
+// order the guides press it.
 import { C4, INSTRUMENT_PADS, PAD, type Device } from "./device";
 
 export default async function userManual(d: Device) {

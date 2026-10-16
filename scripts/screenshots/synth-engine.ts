@@ -1,12 +1,10 @@
-// docs/internals/synth-engine: the screen's Synth parameters pages for each
-// instrument model, the master ADSR, LFO and FX, and a violin's wave.
+// docs/synth: the screen's Synth parameters pages for each instrument model,
+// and the master ADSR, LFO and FX.
 import { PAD, type Device } from "./device";
 
-// Each picture, the sound it shows and its page, in the order the doc shows
-// them, a sound's pages together.
+// Each picture, the sound it shows and its page, a sound's pages together.
 const PAGES: [name: string, instrument: string, page: string][] = [
   ["screen-chain-flute", "Flute", "Chain"],
-  ["screen-glide-flute", "Flute", "Resonator"],
   ["screen-exciter-flute", "Flute", "Exciter"],
   ["screen-exciter-piano", "Grand piano", "Exciter"],
   ["screen-resonator-piano", "Grand piano", "Resonator"],
@@ -14,23 +12,18 @@ const PAGES: [name: string, instrument: string, page: string][] = [
   ["screen-filter-piano", "Grand piano", "Filter"],
   ["screen-vibrato-piano", "Grand piano", "Vibrato"],
   ["screen-body-piano", "Grand piano", "Body"],
-  ["screen-exciter-guitar", "Picked guitar", "Exciter"],
   ["screen-output-electric", "Picked electric", "Output"],
-  ["screen-exciter-sax", "Alto sax", "Exciter"],
-  ["screen-exciter-trumpet", "Trumpet", "Exciter"],
   ["screen-exciter-violin", "Violin", "Exciter"],
   ["screen-exciter-drums", "Drum kit", "Exciter"],
   ["screen-resonator-kick", "Drum kit", "Resonator"],
   ["screen-exciter-harmonium", "Harmonium", "Exciter"],
   ["screen-resonator-harmonium", "Harmonium", "Resonator"],
   ["screen-resonator-xylophone", "Xylophone", "Resonator"],
-  ["screen-resonator-steel-pan", "Steel pan", "Resonator"],
-  ["screen-chain-oscillator", "Oscillator", "Chain"],
   ["screen-exciter-oscillator", "Oscillator", "Exciter"],
 ];
 
 export default async function synthEngine(d: Device) {
-  const { page, press, shot } = d;
+  const { press, shot } = d;
 
   for (const [view, name] of [
     [PAD.adsr, "screen-adsr"],
@@ -53,10 +46,4 @@ export default async function synthEngine(d: Device) {
     await shot(name, { frame: "screen" });
     await press(PAD.synth);
   }
-
-  await d.pickInstrument("Violin");
-  await page.keyboard.down("g");
-  await d.settle(900);
-  await shot("screen-scope-violin", { frame: "screen" });
-  await page.keyboard.up("g");
 }

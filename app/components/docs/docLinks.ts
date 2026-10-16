@@ -7,7 +7,7 @@ export const sourceUrl = (path: string) => `${REPO}/blob/main/${path}`;
 const isAbsolute = (url: string) => /^([a-z][a-z\d+.-]*:|\/\/)/i.test(url);
 
 // A link's target as a repo path, read from the file it is written in
-// (`../library/drum-beats.md` from `docs/user-manual/make-a-song.md` is
+// (`../library/drum-beats.md` from `docs/guides/make-a-song.md` is
 // `docs/library/drum-beats.md`).
 export const resolvePath = (from: string, target: string) => {
   const parts = from.split("/").slice(0, -1);

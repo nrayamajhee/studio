@@ -22,35 +22,10 @@ export const SAMPLE_TREE: DocNode[] = [
     children: [
       {
         kind: "folder",
-        name: "user-manual",
-        path: "docs/user-manual",
-        title: "User manual",
-        order: 1,
-        children: [
-          {
-            kind: "file",
-            name: "introduction.md",
-            path: "docs/user-manual/introduction.md",
-            href: "/docs/user-manual/introduction",
-            title: "User manual",
-            order: 1,
-          },
-          {
-            kind: "file",
-            name: "play-notes-and-chords.md",
-            path: "docs/user-manual/play-notes-and-chords.md",
-            href: "/docs/user-manual/play-notes-and-chords",
-            title: "Play notes and chords",
-            order: 2,
-          },
-        ],
-      },
-      {
-        kind: "folder",
         name: "the-device",
         path: "docs/the-device",
         title: "The Device",
-        order: 2,
+        order: 1,
         children: [
           {
             kind: "file",
@@ -62,10 +37,35 @@ export const SAMPLE_TREE: DocNode[] = [
           },
           {
             kind: "file",
-            name: "knobs.md",
-            path: "docs/the-device/knobs.md",
-            href: "/docs/the-device/knobs",
-            title: "Knobs",
+            name: "screen-and-views.md",
+            path: "docs/the-device/screen-and-views.md",
+            href: "/docs/the-device/screen-and-views",
+            title: "Screen and views",
+            order: 2,
+          },
+        ],
+      },
+      {
+        kind: "folder",
+        name: "guides",
+        path: "docs/guides",
+        title: "Guides",
+        order: 2,
+        children: [
+          {
+            kind: "file",
+            name: "introduction.md",
+            path: "docs/guides/introduction.md",
+            href: "/docs/guides/introduction",
+            title: "Guides",
+            order: 1,
+          },
+          {
+            kind: "file",
+            name: "play-notes-and-chords.md",
+            path: "docs/guides/play-notes-and-chords.md",
+            href: "/docs/guides/play-notes-and-chords",
+            title: "Play notes and chords",
             order: 2,
           },
         ],
