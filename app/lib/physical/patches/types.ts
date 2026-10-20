@@ -127,6 +127,9 @@ export type DrumPieceSpec =
       wires?: { level: number; highpass: number; release: number };
       shell?: readonly [freq: number, t60: number, amp: number];
       brush?: DrumBrush;
+      // The peak a fortissimo hit is calibrated to, in dBFS (−3 unless set):
+      // a brushed snare sits lower, as soft as its strokes.
+      peak?: number;
       level: number;
       pan: number;
     }
@@ -179,6 +182,8 @@ export type DrumPieceSpec =
       // there, as a brush stirred across a head does.
       swell?: boolean;
       bandpass: readonly [freq: number, q: number];
+      // The peak a fortissimo hit is calibrated to, in dBFS (−3 unless set).
+      peak?: number;
       level: number;
       pan: number;
     };

@@ -32,7 +32,7 @@ A chord is several notes sounding together, and the Device plays one from a sing
 
 ## Choose how a chord plays
 
-A chord's notes don't have to start together. **Play style** (`Q`) sets how they come out: all at once (Block), strummed low to high, rolled, or spread into a rhythm: arpeggios, pulses, a down-up strum, a tresillo, a gallop. The chord stays the same; only the timing of its notes changes. Where a style has a rate or a strum gap, the green knob sets it, and Save keeps your version as a new style.
+A chord's notes don't have to start together. **Play style** (`Q`) sets how they come out: all at once (Block), strummed low to high, rolled, spread into a rhythm (pulses, a tresillo, a gallop), strummed like a guitar (down-up, folk, rock eighths, a reggae skank, a waltz) or broken into an arpeggio. The accented rhythms and strums lean a touch harder on some strikes and ease off the upstrokes, and the piano roll keeps how hard each one was. The chord stays the same; only the timing and weight of its notes change. Where a style has a rate or a strum gap, the green knob sets it, and Save keeps your version as a new style.
 
 ![Play style: the Held group, Block picked](../../public/docs/user-manual/play-style.webp)
 

@@ -337,8 +337,28 @@ export function DrumGridIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// A strumming pattern over `steps` steps across an icon: each stroke a
+// short three-note sweep, up from the low note on a down strum ("d") or down
+// from the high one on an up strum ("u"), fainter for a lighter stroke.
+const strokes = (
+  steps: number,
+  list: readonly (readonly [step: number, way: "d" | "u", opacity: number])[],
+) => {
+  const width = 20 / steps;
+  return list.flatMap(([step, way, opacity]) => {
+    const x = 2 + step * width;
+    return (way === "d" ? [17, 12, 7] : [7, 12, 17]).map((y, i) => [
+      x + i * width * 0.2,
+      x + width * 0.8,
+      y,
+      opacity,
+    ]);
+  });
+};
+
 // How a play style plays a chord, as a little piano roll: a bar a note, time
-// to the right and pitch upwards, [from, to, height].
+// to the right and pitch upwards, [from, to, height, opacity], fainter for a
+// softer note as the piano roll draws velocity.
 const STYLE_NOTES: Readonly<Record<PlayStyleId, readonly number[][]>> = {
   block: [
     [5, 19, 17],
@@ -349,6 +369,15 @@ const STYLE_NOTES: Readonly<Record<PlayStyleId, readonly number[][]>> = {
     [x, x + 1.5, 17],
     [x, x + 1.5, 12],
     [x, x + 1.5, 7],
+  ]),
+  accentPulse: [
+    [3, 0.6],
+    [10, 0.6],
+    [17, 1],
+  ].flatMap(([x, opacity]) => [
+    [x, x + 2, 17, opacity],
+    [x, x + 2, 12, opacity],
+    [x, x + 2, 7, opacity],
   ]),
   strum: [
     [4, 19, 17],
@@ -368,6 +397,35 @@ const STYLE_NOTES: Readonly<Record<PlayStyleId, readonly number[][]>> = {
     [15, 20, 12],
     [17, 20, 17],
   ],
+  accentDownUp: strokes(4, [
+    [0, "d", 0.75],
+    [1, "u", 0.5],
+    [2, "d", 1],
+    [3, "u", 0.5],
+  ]),
+  folkStrum: strokes(8, [
+    [0, "d", 1],
+    [2, "d", 0.75],
+    [3, "u", 0.5],
+    [5, "u", 0.5],
+    [6, "d", 0.75],
+    [7, "u", 0.5],
+  ]),
+  rockEighths: strokes(
+    8,
+    Array.from({ length: 8 }, (_, i) => [i, "d", i % 2 ? 0.75 : 1] as const),
+  ),
+  skank: strokes(
+    8,
+    [1, 3, 5, 7].map((i) => [i, "u", 1] as const),
+  ),
+  waltzStrum: strokes(6, [
+    [0, "d", 1],
+    [2, "d", 0.75],
+    [3, "u", 0.5],
+    [4, "d", 0.75],
+    [5, "u", 0.5],
+  ]),
   rollPulse: [3, 12].flatMap((x) => [
     [x, x + 7, 17],
     [x + 2.5, x + 7, 12],
@@ -437,8 +495,12 @@ export function PlayStyleIcon({
 }: SVGProps<SVGSVGElement> & { pattern: PlayStyleId }) {
   return (
     <svg {...base} {...props}>
-      {STYLE_NOTES[pattern].map(([from, to, y]) => (
-        <path key={`${from}-${y}`} d={`M${from} ${y}H${to}`} />
+      {STYLE_NOTES[pattern].map(([from, to, y, opacity]) => (
+        <path
+          key={`${from}-${y}`}
+          d={`M${from} ${y}H${to}`}
+          strokeOpacity={opacity}
+        />
       ))}
     </svg>
   );

@@ -279,14 +279,18 @@ export async function loudness(
   };
 }
 
-// Drums are peak-normalized: every fortissimo hit should land near −3 dBFS.
+// Drums are peak-normalized: every fortissimo hit should land near −3 dBFS,
+// or the piece's own `peak` (a brushed snare sits lower).
 export async function drumLevels(
   render: Renderer,
   kit: KitId,
   sampleRate: number,
 ): Promise<DiagnosticRow[]> {
   const rows: DiagnosticRow[] = [];
-  for (const piece of kitPieces(PATCH_BY_ID[kit] as DrumKitPatch)) {
+  const patch = PATCH_BY_ID[kit] as DrumKitPatch;
+  for (const piece of kitPieces(patch)) {
+    const spec = patch.pieces[piece];
+    const target = (spec && "peak" in spec && spec.peak) || -3;
     const events: EngineEvent[] = [
       { type: "hit", kit, piece, velocity: 1, time: 0 },
     ];
@@ -296,8 +300,8 @@ export async function drumLevels(
       check: "Drum level",
       subject: `${kit} ${piece}`,
       measured: `${fmt(db)} dBFS peak`,
-      expected: "−3 ± 2",
-      pass: Math.abs(db + 3) <= 2,
+      expected: `${fmt(target).replace("-", "−")} ± 2`,
+      pass: Math.abs(db - target) <= 2,
     });
   }
   return rows;

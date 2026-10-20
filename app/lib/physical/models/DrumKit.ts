@@ -55,10 +55,10 @@ const MEMBRANE_M = [0, 1, 2, 0, 3, 1, 4, 2, 0, 5];
 const PITCH_UPDATE = 32;
 const CHOKE_T60 = 0.03;
 const LN_1000 = 6.907755278982137;
-// A brush's bristles land within about a millisecond, and push the head with
-// a fraction of a stick's weight.
-const BRUSH_RISE = 0.0015;
-const BRUSH_PUSH = 0.35;
+// A brush's bristles land over a few milliseconds, sooner on a harder
+// stroke, and push the head softly with a fraction of a stick's weight.
+const BRUSH_RISE: readonly [soft: number, hard: number] = [0.008, 0.003];
+const BRUSH_PUSH = 0.15;
 
 class DrumVoice extends Voice {
   readonly spec: VoiceSpec;
@@ -108,7 +108,9 @@ class DrumVoice extends Voice {
     this.spec = spec;
     this.noise = new Noise(seed);
     this.pulse = new Float32Array(Math.ceil(0.006 * fs) + 2);
-    this.follower = new Follower(0.001, 0.12, fs);
+    // The wires buzz on after the head for their own release.
+    const wires = spec.model === "membrane" ? spec.wires : undefined;
+    this.follower = new Follower(0.001, wires?.release ?? 0.12, fs);
 
     let count = 0;
     if (spec.model === "membrane") count = spec.ratios + (spec.shell ? 1 : 0);
@@ -239,8 +241,9 @@ class DrumVoice extends Voice {
     if (spec.model !== "noise") {
       const [soft, hard] = spec.stick;
       const force = hardness * velocity;
-      const seconds = lerp(soft, hard, force) / 1000;
       const brush = spec.model === "loaded" ? undefined : spec.brush;
+      // A brush pushes the head as softly as a stick's lightest touch.
+      const seconds = (brush ? soft : lerp(soft, hard, force)) / 1000;
       this.pulseLength = stick(this.pulse, seconds, brush ? BRUSH_PUSH : 1, fs);
       this.pulsePos = 0;
       this.bank.scaleDecay(this.decayScale);
@@ -275,14 +278,14 @@ class DrumVoice extends Voice {
     }
   }
 
-  // Harder strokes land the bristles closer together. The burst is scaled to
+  // Harder strokes land the bristles sooner and closer together. The burst is scaled to
   // unit energy (its envelope's square integrates to 3/8 of the rise plus
   // half the decay's time constant), so its length changes the hiss, not how
   // hard the modes are driven.
   private startBrush(brush: DrumBrush, force: number) {
     const fs = this.fs;
     const length = (brush.length / 1000) * lerp(1.3, 0.75, force) * fs;
-    this.brushRise = Math.max(1, Math.round(BRUSH_RISE * fs));
+    this.brushRise = Math.max(1, Math.round(lerp(...BRUSH_RISE, force) * fs));
     this.brushLength = Math.max(this.brushRise + 1, Math.round(length));
     const tau = (this.brushLength - this.brushRise) / LN_1000;
     this.brushCoef = Math.exp(-1 / tau);

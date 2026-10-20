@@ -134,15 +134,16 @@ function usePerformanceValue() {
         : playStyle,
       () => beatMs(liveTiming.current) / playStyle.perBeat,
       {
-        on: (midi) => {
-          deviceEngine.noteOn(midi, KEY_VELOCITY);
-          transport.capture(deviceEngine.takeNote(midi), true, KEY_VELOCITY);
+        on: (midi, velocity) => {
+          deviceEngine.noteOn(midi, velocity);
+          transport.capture(deviceEngine.takeNote(midi), true, velocity);
         },
         off: (midi) => {
           deviceEngine.noteOff(midi);
           transport.capture(deviceEngine.takeNote(midi), false);
         },
       },
+      KEY_VELOCITY,
     );
     held.current.set(root, { semitones, midis, stop });
     syncLitNotes();

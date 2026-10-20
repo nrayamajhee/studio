@@ -3,23 +3,29 @@
 export type PlayStyleId =
   | "block"
   | "pulse"
+  | "accentPulse"
   | "strum"
   | "strumPulse"
   | "rollPulse"
   | "downUp"
+  | "accentDownUp"
   | "roll"
   | "offbeat"
   | "tresillo"
   | "gallop"
+  | "folkStrum"
+  | "rockEighths"
+  | "skank"
+  | "waltzStrum"
   | "up"
   | "down"
   | "upDown"
   | "broken"
   | "alberti";
 
-// What holding a chord does: sustain it, repeat it in a rhythm, or loop
-// through its notes.
-export type PlayStyleGroup = "Held" | "Rhythm" | "Arpeggio";
+// What holding a chord does: sustain it, repeat it in a rhythm, strum it as
+// a guitarist would, or loop through its notes.
+export type PlayStyleGroup = "Held" | "Rhythm" | "Strum" | "Arpeggio";
 
 // The settings a play style listens to: the rate of its steps, the gap of its
 // strums, both or neither.
@@ -61,11 +67,11 @@ export const PLAY_STYLES: readonly {
     settings: ["rate"],
   },
   {
-    id: "strumPulse",
-    name: "Strum pulse",
-    detail: "A strum on every strike",
+    id: "accentPulse",
+    name: "Accent pulse",
+    detail: "Every third strike a touch harder",
     group: "Rhythm",
-    settings: ["rate", "strum"],
+    settings: ["rate"],
   },
   {
     id: "rollPulse",
@@ -73,13 +79,6 @@ export const PLAY_STYLES: readonly {
     detail: "Rolled up a step apart, again and again",
     group: "Rhythm",
     settings: ["rate"],
-  },
-  {
-    id: "downUp",
-    name: "Down-up strum",
-    detail: "Down on the step, up on the next",
-    group: "Rhythm",
-    settings: ["rate", "strum"],
   },
   {
     id: "offbeat",
@@ -101,6 +100,55 @@ export const PLAY_STYLES: readonly {
     detail: "Long, short, short",
     group: "Rhythm",
     settings: ["rate"],
+  },
+  {
+    id: "strumPulse",
+    name: "Strum pulse",
+    detail: "A strum on every strike",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "downUp",
+    name: "Down-up strum",
+    detail: "Down on the step, up on the next",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "accentDownUp",
+    name: "Accent down-up",
+    detail: "Light ups, every other down leaned on",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "folkStrum",
+    name: "Folk strum",
+    detail: "Down, down-up, up-down-up",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "rockEighths",
+    name: "Rock eighths",
+    detail: "A down strum every step",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "skank",
+    name: "Reggae skank",
+    detail: "Short up-strums off the beat",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "waltzStrum",
+    name: "Waltz strum",
+    detail: "Down, down-up, down-up in three",
+    group: "Strum",
+    settings: ["rate", "strum"],
   },
   {
     id: "up",
@@ -145,21 +193,81 @@ export const CHORD_RATES: readonly number[] = [1, 2, 3, 4, 6, 8];
 export const STRUM_GAPS: readonly number[] = [5, 10, 15, 20, 30, 40, 60, 80];
 
 // A rhythm's strikes over a cycle of steps: the step each lands on, how many
-// steps it holds (a little short of the next, so that one speaks), and
-// whether it sweeps the chord a strum's gap at a time, rising (a down strum)
-// or falling (an up strum).
-type Strike = { at: number; hold: number; sweep?: "rising" | "falling" };
+// steps it holds (a little short of the next, so that one speaks), whether
+// it sweeps the chord a strum's gap at a time, rising (a down strum) or
+// falling (an up strum), and how hard it plays against the key's velocity.
+type Strike = {
+  at: number;
+  hold: number;
+  sweep?: "rising" | "falling";
+  level?: number;
+};
+
+// Strike levels against the keys' velocity (0.8): a touch harder (0.9) or a
+// touch lighter (0.7), as a player leans into a beat or eases off an upstroke.
+const ACCENT = 0.9 / 0.8;
+const LIGHT = 0.7 / 0.8;
 
 const RHYTHMS: Partial<
   Record<PlayStyleId, { cycle: number; strikes: readonly Strike[] }>
 > = {
   pulse: { cycle: 1, strikes: [{ at: 0, hold: 0.5 }] },
+  accentPulse: {
+    cycle: 3,
+    strikes: [
+      { at: 0, hold: 0.5 },
+      { at: 1, hold: 0.5 },
+      { at: 2, hold: 0.5, level: ACCENT },
+    ],
+  },
   strumPulse: { cycle: 1, strikes: [{ at: 0, hold: 0.5, sweep: "rising" }] },
   downUp: {
     cycle: 2,
     strikes: [
       { at: 0, hold: 0.9, sweep: "rising" },
       { at: 1, hold: 0.9, sweep: "falling" },
+    ],
+  },
+  accentDownUp: {
+    cycle: 4,
+    strikes: [
+      { at: 0, hold: 0.9, sweep: "rising" },
+      { at: 1, hold: 0.9, sweep: "falling", level: LIGHT },
+      { at: 2, hold: 0.9, sweep: "rising", level: ACCENT },
+      { at: 3, hold: 0.9, sweep: "falling", level: LIGHT },
+    ],
+  },
+  // Down, down-up, up-down-up over a bar of eighths; where the hand misses
+  // the strings, the strum before rings on.
+  folkStrum: {
+    cycle: 8,
+    strikes: [
+      { at: 0, hold: 1.9, sweep: "rising", level: ACCENT },
+      { at: 2, hold: 0.9, sweep: "rising" },
+      { at: 3, hold: 1.9, sweep: "falling", level: LIGHT },
+      { at: 5, hold: 0.9, sweep: "falling", level: LIGHT },
+      { at: 6, hold: 0.9, sweep: "rising" },
+      { at: 7, hold: 0.9, sweep: "falling", level: LIGHT },
+    ],
+  },
+  rockEighths: {
+    cycle: 2,
+    strikes: [
+      { at: 0, hold: 0.8, sweep: "rising", level: ACCENT },
+      { at: 1, hold: 0.8, sweep: "rising" },
+    ],
+  },
+  // Short up-strums choked off on the offbeats.
+  skank: { cycle: 2, strikes: [{ at: 1, hold: 0.4, sweep: "falling" }] },
+  // A bar of 3/4 in eighths: the downbeat rings, then down-up, down-up.
+  waltzStrum: {
+    cycle: 6,
+    strikes: [
+      { at: 0, hold: 1.9, sweep: "rising", level: ACCENT },
+      { at: 2, hold: 0.9, sweep: "rising" },
+      { at: 3, hold: 0.9, sweep: "falling", level: LIGHT },
+      { at: 4, hold: 0.9, sweep: "rising" },
+      { at: 5, hold: 0.9, sweep: "falling", level: LIGHT },
     ],
   },
   offbeat: { cycle: 2, strikes: [{ at: 1, hold: 0.5 }] },
@@ -228,10 +336,14 @@ export const isSavedPlayStyle = (value: unknown): value is SavedPlayStyle => {
   );
 };
 
-// The rate a built-in style starts at: Pulse a strike a beat, the other
-// rhythms and arpeggios in eighths, and a roll in sixteenths.
+// The rate a built-in style starts at: the pulses a strike a beat, the other
+// rhythms, strums and arpeggios in eighths, and a roll in sixteenths.
 const startingRate = (id: PlayStyleId, group: PlayStyleGroup) =>
-  id === "pulse" ? 1 : group === "Held" ? DEFAULT_PLAY_STYLE.perBeat : 2;
+  id === "pulse" || id === "accentPulse"
+    ? 1
+    : group === "Held"
+      ? DEFAULT_PLAY_STYLE.perBeat
+      : 2;
 
 // A play style as the view lists it: the built-in ones at their starting
 // rate and the default strum, then the saved ones, each at its own, in a
@@ -316,13 +428,13 @@ export function chordNotes(
     duration: number;
     velocity: number;
   }[] = [];
-  const add = (note: number, start: number, end: number) => {
+  const add = (note: number, start: number, end: number, level = 1) => {
     if (start < length && end > start)
       out.push({
         note,
         start,
         duration: Math.min(end, length) - start,
-        velocity,
+        velocity: Math.min(1, velocity * level),
       });
   };
   const rhythm = RHYTHMS[style.id];
@@ -332,12 +444,12 @@ export function chordNotes(
     for (let count = 0; count * stepMs < length; count++) {
       const at = count % rhythm.cycle;
       const start = count * stepMs;
-      for (const { at: hit, hold, sweep } of rhythm.strikes) {
+      for (const { at: hit, hold, sweep, level } of rhythm.strikes) {
         if (hit !== at) continue;
         const order = sweep === "falling" ? [...notes].reverse() : notes;
         const gap = sweep ? style.strum : 0;
         const end = start + hold * stepMs;
-        order.forEach((note, i) => add(note, start + i * gap, end));
+        order.forEach((note, i) => add(note, start + i * gap, end, level));
       }
     }
   } else if (style.id === "rollPulse") {
@@ -361,27 +473,29 @@ export function chordNotes(
 }
 
 export type ChordVoice = {
-  on: (midi: number) => void;
+  on: (midi: number, velocity: number) => void;
   off: (midi: number) => void;
 };
 
-// Plays `midis` in `style` until the returned function stops it, which
-// releases whatever still sounds. A pattern keeps going round while held,
-// each note lasting its step, or a pulse's strike half of it. `stepMs`
-// is read every step, so a new tempo takes hold at once.
+// Plays `midis` in `style` at `velocity` until the returned function stops
+// it, which releases whatever still sounds. A pattern keeps going round while
+// held, each note lasting its step, or a pulse's strike half of it, and an
+// accented rhythm's strikes louder or softer. `stepMs` is read every step,
+// so a new tempo takes hold at once.
 export function playChord(
   midis: readonly number[],
   style: PlayStyle,
   stepMs: () => number,
   voice: ChordVoice,
+  velocity: number,
 ) {
   const notes = [...midis].sort((a, b) => a - b);
   const sounding: number[] = [];
   const timers: ReturnType<typeof setTimeout>[] = [];
   // A rhythm's strike: its sweep's notes still to come, and its end.
   const struck: ReturnType<typeof setTimeout>[] = [];
-  const on = (midi: number) => {
-    voice.on(midi);
+  const on = (midi: number, level = 1) => {
+    voice.on(midi, Math.min(1, velocity * level));
     sounding.push(midi);
   };
   const off = (midi: number) => {
@@ -401,13 +515,13 @@ export function playChord(
       struck.splice(0).forEach(clearTimeout);
       [...sounding].forEach(off);
     };
-    const strike = ({ hold, sweep }: Strike, step: number) => {
+    const strike = ({ hold, sweep, level }: Strike, step: number) => {
       letGo();
       const order = sweep === "falling" ? [...notes].reverse() : notes;
       const gap = sweep ? style.strum : 0;
       order.forEach((midi, i) => {
-        if (i === 0 || gap === 0) on(midi);
-        else struck.push(setTimeout(() => on(midi), i * gap));
+        if (i === 0 || gap === 0) on(midi, level);
+        else struck.push(setTimeout(() => on(midi, level), i * gap));
       });
       struck.push(setTimeout(letGo, hold * step));
     };
