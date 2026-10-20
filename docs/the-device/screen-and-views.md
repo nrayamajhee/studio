@@ -72,7 +72,7 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Tempo](../../public/docs/the-device/view-tempo.webp)
 
-**Opened by:** Tempo. Green and ← → set the BPM (or drag or type the number); ↓ taps it in.
+**Opened by:** Tempo. Green and ← → set the tape's BPM (or drag or type the number); ↓ taps it in. With a track picked on the tracks they set that track's own tempo instead, and ↑ links it to the tape's tempo or gives it its own again.
 
 ### Progressions
 
@@ -90,7 +90,7 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Piano roll](../../public/docs/the-device/view-roll.webp)
 
-**Opened by:** Piano roll, or Record. The take: Record arms, Play records; green scrolls, red sets the time signature, blue the octave; Save keeps it as a track.
+**Opened by:** Piano roll, or Record. The take: Record arms, Play records; green scrolls, red sets the time signature (Shift + red transposes the whole take, a semitone a step), blue the octave (Shift + blue the grid); Save keeps it as a track.
 
 ### Drum grid
 

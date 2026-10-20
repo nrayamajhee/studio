@@ -27,9 +27,10 @@ export type TrackCopy = { start: number; repeats: number };
 export type TrackSource = "roll" | "drumGrid";
 
 // A take kept on the tracks view, with the sound and preset that played it
-// and the timing it was recorded on (its own tempo, meter and grid). `start`
-// slides it along the timeline, in beats. Its notes are never changed in
-// place, but its ADSR, LFO and FX can be, and its sound renders through them.
+// and its timing: its own tempo, which it plays at unless it follows the
+// tape's, and the meter and grid it was recorded on. `start` slides it along
+// the timeline, in the tape's beats. Its notes are never changed in place,
+// but its ADSR, LFO and FX can be, and its sound renders through them.
 export type Track = {
   id: string;
   name: string;
@@ -42,6 +43,9 @@ export type Track = {
   source?: TrackSource;
   take: Take;
   timing: Timing;
+  // Plays at the tape's tempo instead of its own (`timing.bpm`). Missing on
+  // tracks saved before they kept a tempo; see `followsTape`.
+  followTape?: boolean;
   start: number;
   // 0–1, set in tenths by the red knob.
   volume: number;
@@ -116,6 +120,7 @@ export function makeTrack(
     source,
     take: structuredClone(take),
     timing,
+    followTape: false,
     start: 0,
     volume: 1,
     muted: false,
@@ -138,10 +143,38 @@ export type TrackClip = {
   notes: readonly { note: number; start: number; length: number }[];
 };
 
-// One of the take's own beats at `bpm`, in ms: a grid take stretches to the
-// tempo, keeping its beats; a free one plays as recorded.
+// Whether a track plays at the tape's tempo rather than its own. One saved
+// before tracks kept a tempo does as it always did: on a grid it follows the
+// tape, and off one it plays as recorded.
+export const followsTape = (track: Track) =>
+  track.followTape ?? track.timing.perBeat > 0;
+
+// The tempo a track plays at on a tape at `bpm`: the tape's, or its own.
+export const trackBpm = (track: Track, bpm: number) =>
+  followsTape(track) ? bpm : track.timing.bpm;
+
+// One of the take's own beats as the track plays it on a tape at `bpm`, in
+// ms.
 const takeBeatMs = (track: Track, bpm: number) =>
-  60_000 / (track.timing.perBeat > 0 ? bpm : track.take.bpm);
+  60_000 / trackBpm(track, bpm);
+
+// The whole take as the track plays it on a tape at `bpm`, in ms: on a grid
+// stretched to its tempo, keeping its beats, then snapped to the grid; off
+// one scaled from the tempo it was played at.
+function playedTimeline(track: Track, bpm: number) {
+  const tempo = trackBpm(track, bpm);
+  if (track.timing.perBeat > 0)
+    return timeline(track.take, { ...track.timing, bpm: tempo });
+  const stretch = track.take.bpm / tempo;
+  return {
+    length: track.take.length * stretch,
+    notes: track.take.notes.map((note) => ({
+      ...note,
+      start: note.start * stretch,
+      duration: note.duration * stretch,
+    })),
+  };
+}
 
 // The whole take at its own tempo, in ms: quantized on a grid, as played
 // without one.
@@ -178,10 +211,10 @@ const section = (notes: readonly PlayedNote[], from: number, to: number) =>
       };
     });
 
-// One pass of a track's take at `bpm`, in ms: the whole take, or while it
-// loops just the loop.
+// One pass of a track's take on a tape at `bpm`, in ms: the whole take, or
+// while it loops just the loop.
 export function passOf(track: Track, bpm: number) {
-  const pass = timeline(track.take, { ...track.timing, bpm });
+  const pass = playedTimeline(track, bpm);
   if (!track.loop?.on) return pass;
   const beat = takeBeatMs(track, bpm);
   const from = Math.min(track.loop.start * beat, pass.length);
@@ -281,9 +314,8 @@ export function cutToLoop(track: Track, bpm: number): Track {
   const beat = 60_000 / track.take.bpm;
   const from = loop.start * beat;
   const to = Math.min(loop.end * beat, ownTimeline(track).length);
-  // A grid take's beats keep to the tempo; a free one's are its own.
-  const shift =
-    track.timing.perBeat > 0 ? loop.start : loop.start * (bpm / track.take.bpm);
+  // The loop's start in the tape's beats, as the track plays.
+  const shift = (loop.start * takeBeatMs(track, bpm)) / (60_000 / bpm);
   return {
     ...track,
     take: {

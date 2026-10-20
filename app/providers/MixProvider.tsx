@@ -12,7 +12,7 @@ import {
   type MixPart,
 } from "../components/home/exportMix";
 import { barMs, beatMs } from "../components/home/noteRecorder";
-import { audible, passOf, startsOf } from "../components/home/tracks";
+import { audible, passOf, startsOf, trackBpm } from "../components/home/tracks";
 import { useMixScrub } from "../hooks/useMixScrub";
 import { useTrackMix } from "../hooks/useTrackMix";
 import { createStrictContext } from "./createStrictContext";
@@ -156,6 +156,7 @@ function useMixValue() {
         track.loop?.on ? track.loop : null,
         track.repeats,
         track.copies,
+        trackBpm(track, bpm),
         audible(track, tracks) ? track.volume : 0,
       ]),
     ]),

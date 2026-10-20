@@ -5,6 +5,7 @@ import {
   audible,
   passOf,
   startsOf,
+  trackBpm,
   type Track,
 } from "../components/home/tracks";
 
@@ -44,7 +45,7 @@ export function useTrackMix(
   const render = (track: Track) => {
     const key = [
       JSON.stringify(track.sound),
-      track.timing.perBeat > 0 ? bpm : track.take.bpm,
+      trackBpm(track, bpm),
       JSON.stringify(track.take),
       JSON.stringify(loopOf(track)),
     ].join("|");
@@ -148,6 +149,7 @@ export function useTrackMix(
       loopOf(track),
       track.repeats,
       track.copies,
+      trackBpm(track, bpm),
     ]),
   ]);
   const levels = JSON.stringify(tracks.map((track) => levelOf(track, tracks)));

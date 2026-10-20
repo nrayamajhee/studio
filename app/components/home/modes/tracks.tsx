@@ -15,7 +15,7 @@ import {
   ScreenSelection,
   ScreenValue,
 } from "../DeviceScreen";
-import { audible } from "../tracks";
+import { audible, followsTape } from "../tracks";
 import { isTake } from "../../../providers/LanesProvider";
 import { arrowPads, deletePad, mixPads, savePad, seekKnob } from "./base";
 import type { Mode } from "../../../types/bindings";
@@ -31,7 +31,8 @@ export const tracksMode: Mode = (device) => {
   const { shift, lanes, tracks, mix, transport, sound, drumGrid, feedback } =
     device;
   const { lanes: rows, focusIndex, pickedLane, pickedTrack: track } = lanes;
-  const { trackLoop, loopLabel, startLabel, trackSpan, trackFrom } = tracks;
+  const { trackLoop, loopLabel, startLabel, startShort, trackSpan, trackFrom } =
+    tracks;
   const { copies, copyIndex, copy } = tracks;
   const copied = copies.length > 1;
   // The picked copy, named in labels while the track has more than one.
@@ -259,8 +260,8 @@ export const tracksMode: Mode = (device) => {
       footer: [
         track && copy && shift ? (
           <>
-            {copied && `Copy ${copyIndex + 1}/${copies.length} · `}
-            <ScreenSeek>Starts {startLabel(copy.start)}</ScreenSeek>
+            {copied && `${copyIndex + 1}/${copies.length} · `}
+            <ScreenSeek>Starts {startShort(copy.start)}</ScreenSeek>
             {trackLoop && (
               <>
                 {" · Clip "}
@@ -273,11 +274,13 @@ export const tracksMode: Mode = (device) => {
           </>
         ) : track && copy ? (
           <>
-            {copied && `Copy ${copyIndex + 1}/${copies.length} · `}
+            {copied && `${copyIndex + 1}/${copies.length} · `}
             {trackLoop
               ? `Clip ${loopLabel(trackLoop.start)} – ${loopLabel(trackLoop.end)}`
-              : `Starts ${startLabel(copy.start)}`}
-            {` · ×${copy.repeats} · `}
+              : `Starts ${startShort(copy.start)}`}
+            {` · ×${copy.repeats} · ${
+              followsTape(track) ? "Tape tempo" : `${track.timing.bpm} BPM`
+            } · `}
             <ScreenLevel>Vol {Math.round(track.volume * 100)}%</ScreenLevel>
           </>
         ) : (

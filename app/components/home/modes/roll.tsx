@@ -32,7 +32,11 @@ const saveTake = ({
     sound.preset.id,
     deviceEngine.sound(),
     lanes.takeModules,
-    { ...transport.timing, bpm: recorded.bpm },
+    // The tempo it plays at now: on a grid the tape's, off one as recorded.
+    {
+      ...transport.timing,
+      bpm: transport.timing.perBeat > 0 ? transport.bpm : recorded.bpm,
+    },
     "roll",
   );
   lanes.addTrack(kept);
@@ -44,8 +48,9 @@ const saveTake = ({
 
 // The piano roll (record mode): the take on the roll. Record arms it and Play
 // starts it; stopped, the green knob scrolls it in time. The red knob sets
-// the time signature and the blue one the roll's octave (with Shift, the
-// grid); ↑ and ↓ move it a semitone.
+// the time signature (with Shift, transposes the whole take a semitone a
+// step) and the blue one the roll's octave (with Shift, the grid); ↑ and ↓
+// move the roll a semitone.
 export const rollMode: Mode = (device, base) => {
   const { shift, transport, take } = device;
   const { timing } = transport;
@@ -72,13 +77,21 @@ export const rollMode: Mode = (device, base) => {
             take.scrubRollTo,
           )
         : base.knobs.green,
-      red: {
-        label: "Time signature",
-        valueLabel: meterLabel(timing.meter),
-        step: transport.meterIndex,
-        steps: METERS.length,
-        onChange: transport.setMeter,
-      },
+      red: shift
+        ? {
+            label: "Transpose",
+            valueLabel: take.takeNotes ?? "No notes",
+            step: take.transposeStep,
+            steps: take.transposeSteps,
+            onChange: take.transposeTake,
+          }
+        : {
+            label: "Time signature",
+            valueLabel: meterLabel(timing.meter),
+            step: transport.meterIndex,
+            steps: METERS.length,
+            onChange: transport.setMeter,
+          },
       blue: shift
         ? {
             label: "Grid",
@@ -113,14 +126,18 @@ export const rollMode: Mode = (device, base) => {
       },
     },
     // The meter, grid and notes in view, in the colours of the knobs that
-    // set them (Shift turns blue over to the grid); when stopped, the bar
-    // the green knob scrolled to, in green.
+    // set them (Shift turns red over to the take's notes and blue to the
+    // grid); when stopped, the bar the green knob scrolled to, in green.
     screen: {
       status: (
         <>
           {status}
           {" · "}
-          <ScreenLevel>{meterLabel(timing.meter)}</ScreenLevel>{" "}
+          {shift ? (
+            <ScreenLevel>Notes {take.takeNotes ?? "none"}</ScreenLevel>
+          ) : (
+            <ScreenLevel>{meterLabel(timing.meter)}</ScreenLevel>
+          )}{" "}
           {shift ? (
             <ScreenValue>{gridLabel(timing)}</ScreenValue>
           ) : (

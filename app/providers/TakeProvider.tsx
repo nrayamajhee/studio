@@ -8,6 +8,7 @@ import {
   rollNote,
 } from "../components/home/PianoRoll";
 import { barMs, beatMs } from "../components/home/noteRecorder";
+import { setTake } from "../components/home/sessionStore";
 import { useScrub } from "../hooks/useScrub";
 import { createStrictContext } from "./createStrictContext";
 import { useLanes } from "./LanesProvider";
@@ -19,6 +20,8 @@ import { useView } from "./ViewProvider";
 
 const clampRollLow = (low: number) =>
   Math.min(ROLL_TOP, Math.max(ROLL_LOW, low));
+// The highest MIDI note.
+const MIDI_TOP = 127;
 
 function useTakeValue() {
   const { view, setView } = useView();
@@ -75,6 +78,14 @@ function useTakeValue() {
     if (!rollScrolls) stopScrub();
   }, [rollScrolls]);
 
+  // The take's lowest and highest notes. Shift + red moves them all a
+  // semitone a step, keeping them on the roll (C0 to the top of MIDI).
+  const pitches = take?.notes.map(({ note }) => note) ?? [];
+  const takeLow = pitches.length > 0 ? Math.min(...pitches) : null;
+  const takeHigh = pitches.length > 0 ? Math.max(...pitches) : null;
+  const takeSpan =
+    takeLow === null || takeHigh === null ? 0 : takeHigh - takeLow;
+
   // Starts the armed take. The tracks play along from the top, lined up
   // with it.
   const startRecording = () => {
@@ -94,6 +105,33 @@ function useTakeValue() {
       setScrolledLow(clampRollLow(rollLow + 12 * (step - rollOctave))),
     scrollRollPitch: (semitones: number) =>
       setScrolledLow(clampRollLow(rollLow + semitones)),
+    // The take's notes, low to high, as the status shows them.
+    takeNotes:
+      takeLow === null || takeHigh === null
+        ? null
+        : `${rollNote(takeLow)}–${rollNote(takeHigh)}`,
+    transposeStep: takeLow === null ? 0 : takeLow - ROLL_LOW,
+    transposeSteps: Math.max(2, MIDI_TOP - takeSpan - ROLL_LOW + 1),
+    // Moves every note of the take so its lowest is `step` semitones above
+    // the roll's bottom, and scrolls the roll after them if they leave it.
+    transposeTake: (step: number) => {
+      if (!take || takeLow === null || takeHigh === null) return;
+      if (transport.recording) return;
+      const shift = Math.min(
+        MIDI_TOP - takeHigh,
+        Math.max(ROLL_LOW - takeLow, ROLL_LOW + step - takeLow),
+      );
+      if (shift === 0) return;
+      setTake({
+        ...take,
+        notes: take.notes.map((note) => ({ ...note, note: note.note + shift })),
+      });
+      const low = takeLow + shift;
+      const high = takeHigh + shift;
+      if (low < rollLow) setScrolledLow(clampRollLow(low));
+      else if (high > rollLow + ROLL_LANES - 1)
+        setScrolledLow(clampRollLow(high - ROLL_LANES + 1));
+    },
     rollScrolls,
     rollAt,
     rollEnd,

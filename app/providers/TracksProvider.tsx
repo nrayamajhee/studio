@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { positionLabel } from "../components/home/deviceMath";
+import { MAX_BPM, MIN_BPM } from "../hooks/useTransport";
 import {
   clipOf,
   copiesChange,
   cutToLoop,
+  followsTape,
   gridSteps,
   loopStep,
   maxRepeats,
@@ -12,6 +14,7 @@ import {
   settleCopies,
   takeBeats,
   takeBeatsAt,
+  trackBpm,
   type Track,
   type TrackCopy,
 } from "../components/home/tracks";
@@ -155,6 +158,12 @@ function useTracksValue() {
       `Bar ${Math.floor(beats / barBeats) + 1}${
         beats % barBeats ? ` beat ${Math.floor(beats % barBeats) + 1}` : ""
       }`,
+    // The same in short for the footer: the bar, and the beat after a dot
+    // when it isn't the first.
+    startShort: (beats: number) =>
+      `${Math.floor(beats / barBeats) + 1}${
+        beats % barBeats ? `.${Math.floor(beats % barBeats) + 1}` : ""
+      }`,
     copies,
     copyIndex,
     copy,
@@ -253,6 +262,28 @@ function useTracksValue() {
       release();
       showNotice(`Trimmed ${clipped.name} to its clip`);
     },
+    // Sets a track's own tempo, which it plays at from now on: it stops
+    // following the tape's.
+    setTrackTempo: (tempoed: Track, tempo: number) =>
+      updateTrack(tempoed.id, {
+        followTape: false,
+        timing: {
+          ...tempoed.timing,
+          bpm: Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(tempo))),
+        },
+      }),
+    // Links a track to the tape's tempo, or unlinks it, keeping the speed
+    // it plays at now as its own.
+    toggleFollowTape: (linked: Track) =>
+      updateTrack(
+        linked.id,
+        followsTape(linked)
+          ? {
+              followTape: false,
+              timing: { ...linked.timing, bpm: trackBpm(linked, bpm) },
+            }
+          : { followTape: true },
+      ),
     // A track's mute, or with `solo` its solo. The take has neither.
     toggleSwitch: (switched: Track, solo: boolean) => {
       if (solo) updateTrack(switched.id, { soloed: !switched.soloed });

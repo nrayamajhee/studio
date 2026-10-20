@@ -104,6 +104,7 @@ const isTrack = (value: unknown): value is Track => {
     typeof track.soloed === "boolean" &&
     (track.repeats === undefined ||
       (isNumber(track.repeats) && track.repeats >= 1)) &&
+    (track.followTape === undefined || typeof track.followTape === "boolean") &&
     (track.copies === undefined ||
       (Array.isArray(track.copies) &&
         track.copies.every(
