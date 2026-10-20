@@ -18,6 +18,10 @@ export type TrackLoop = {
   on: boolean;
 };
 
+// The whole track again, from `start` (beats), its take (or clip) played
+// `repeats` times back to back.
+export type TrackCopy = { start: number; repeats: number };
+
 // Where a track was made, and so the one place it opens again: the piano
 // roll, or the drum grid.
 export type TrackSource = "roll" | "drumGrid";
@@ -46,6 +50,10 @@ export type Track = {
   loop?: TrackLoop;
   // How many times the take (or its loop) plays back to back; once if unset.
   repeats?: number;
+  // The track again later on, after its first copy (its own start and
+  // repeats), in order along the timeline: with gaps between, never
+  // overlapping.
+  copies?: readonly TrackCopy[];
 };
 
 // Note colours, one per track in turn, bright enough for the black screen.
@@ -122,8 +130,9 @@ export type TrackClip = {
   // Where the first pass starts after the track's start, in beats: a loop
   // plays from its left edge.
   offset: number;
-  // How many passes play back to back.
-  repeats: number;
+  // Each copy of the track, where it starts (beats) and how many passes it
+  // plays back to back, placed so none overlap.
+  copies: readonly TrackCopy[];
   // The pass is the track's loop.
   looped: boolean;
   notes: readonly { note: number; start: number; length: number }[];
@@ -180,9 +189,43 @@ export function passOf(track: Track, bpm: number) {
   return { length: to - from, notes: section(pass.notes, from, to) };
 }
 
-// Where each pass starts (ms) on a timeline `span` beats long at `bpm`: from
-// the track's start (or its loop's left edge), then right after the last, for
-// each of its repeats that starts before the end.
+export const repeatsOf = (track: Track) => track.repeats ?? 1;
+
+// Every copy of a track, the first its own start and repeats.
+export const copiesOf = (track: Track): TrackCopy[] => [
+  { start: track.start, repeats: repeatsOf(track) },
+  ...(track.copies ?? []),
+];
+
+// The change that gives a track `copies`, the first as its own start and
+// repeats.
+export const copiesChange = (copies: readonly TrackCopy[]) => ({
+  start: copies[0].start,
+  repeats: copies[0].repeats,
+  copies: copies.slice(1),
+});
+
+// `copies` in order with none overlapping, a pass `length` beats long: each
+// starts where it is or, if the one before reaches past that, where it ends.
+export function settleCopies(
+  copies: readonly TrackCopy[],
+  length: number,
+): TrackCopy[] {
+  let end = 0;
+  return copies.map(({ start, repeats }) => {
+    const at = Math.max(start, end);
+    end = at + length * repeats;
+    return { start: at, repeats };
+  });
+}
+
+// A track's copies as they play at `bpm`, settled so none overlap.
+export const placedCopies = (track: Track, bpm: number) =>
+  settleCopies(copiesOf(track), passOf(track, bpm).length / (60_000 / bpm));
+
+// Where each pass starts (ms) on a timeline `span` beats long at `bpm`: for
+// each copy, from its start (or its loop's left edge), then right after the
+// last, for each of its repeats that starts before the end.
 export function startsOf(
   track: Track,
   pass: { length: number; notes: readonly PlayedNote[] },
@@ -193,16 +236,16 @@ export function startsOf(
   const starts: number[] = [];
   const loop = track.loop?.on ? track.loop : null;
   const offset = loop ? loop.start * takeBeatMs(track, bpm) : 0;
-  for (
-    let at = track.start * beat + offset;
-    pass.length > 0 && at < span * beat && starts.length < repeatsOf(track);
-    at += pass.length
-  )
-    starts.push(at);
+  const copies = settleCopies(copiesOf(track), pass.length / beat);
+  for (const { start, repeats } of copies)
+    for (
+      let at = start * beat + offset, played = 0;
+      pass.length > 0 && at < span * beat && played < repeats;
+      at += pass.length, played++
+    )
+      starts.push(at);
   return starts;
 }
-
-export const repeatsOf = (track: Track) => track.repeats ?? 1;
 
 // As many repeats as fit in an hour at `bpm`, the longest a take records.
 export function maxRepeats(track: Track, bpm: number) {
@@ -218,7 +261,7 @@ export function clipOf(track: Track, bpm: number): TrackClip {
   return {
     length: length / beat,
     offset: loop ? (loop.start * takeBeatMs(track, bpm)) / beat : 0,
-    repeats: repeatsOf(track),
+    copies: settleCopies(copiesOf(track), length / beat),
     looped: loop !== null,
     notes: notes.map(({ note, start, duration }) => ({
       note,
@@ -230,8 +273,8 @@ export function clipOf(track: Track, bpm: number): TrackClip {
 
 // The track cut down to its loop: the notes outside it deleted, those across
 // its edges clipped to them (never quantized), and the rest moved up to the
-// take's start, which slides to where the loop was so it still sounds there.
-// The loop stays on, now the whole take.
+// take's start, which slides (with every copy) to where the loop was so it
+// still sounds there. The loop stays on, now the whole take.
 export function cutToLoop(track: Track, bpm: number): Track {
   const { loop } = track;
   if (!loop) return track;
@@ -249,6 +292,10 @@ export function cutToLoop(track: Track, bpm: number): Track {
       bpm: track.take.bpm,
     },
     start: track.start + shift,
+    copies: track.copies?.map((copy) => ({
+      ...copy,
+      start: copy.start + shift,
+    })),
     loop: { start: 0, end: (to - from) / beat, on: true },
   };
 }

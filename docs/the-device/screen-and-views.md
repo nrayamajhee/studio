@@ -102,7 +102,7 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Tracks](../../public/docs/the-device/view-tracks.webp)
 
-**Opened by:** Tracks. See [the knob table](overview.md#knobs); ← → slide a track, Shift + ← → repeat it; Mute, Clip, Delete; Save the mix.
+**Opened by:** Tracks. See [the knob table](overview.md#knobs); ← → slide a track, Shift + ← → repeat it, Shift + ↓ picks the next copy of the whole track further along (past the last, adds one: ×2, ×3 on the row's right edge) and Shift + ↑ the one before; Mute, Clip, Delete; Save the mix.
 
 ### Tapes
 

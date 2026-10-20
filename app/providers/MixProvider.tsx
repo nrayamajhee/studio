@@ -155,6 +155,7 @@ function useMixValue() {
         track.take,
         track.loop?.on ? track.loop : null,
         track.repeats,
+        track.copies,
         audible(track, tracks) ? track.volume : 0,
       ]),
     ]),

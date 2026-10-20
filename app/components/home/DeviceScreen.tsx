@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useEffect,
   useEffectEvent,
   useRef,
@@ -233,16 +234,17 @@ export type ScreenBadge = {
   on?: boolean;
 };
 
-// A row of the tracks view: its take's clip, where it starts on the timeline
-// (beats), and whether it's muted, soloed and heard.
+// A row of the tracks view: its take's clip and copies along the timeline,
+// and whether it's muted, soloed and heard.
 export type ScreenTrack = {
   id: string;
   name: string;
   // The preset that plays it.
   detail: string;
   color: string;
-  start: number;
   clip: TrackClip;
+  // On the picked row, the copy the arrows move, outlined in blue.
+  copy?: number;
   // 0–1, drawn as a red bar beside the lane.
   volume: number;
   muted: boolean;
@@ -268,6 +270,10 @@ const trackRow = tv({
     flags: "flex gap-[3px] self-center",
     volume: "relative overflow-hidden rounded-[3px] bg-screen-ink/12",
     level: "absolute inset-x-0 bottom-0 rounded-[3px] bg-synth-red",
+    // How many copies of the track there are, on its right edge: on the
+    // blue outline when it's picked.
+    copies:
+      "absolute top-1/2 right-0 z-2 translate-x-1/2 -translate-y-1/2 rounded-[3px] bg-screen px-[3px] text-[11px] leading-[13px] font-bold text-screen-ink/55 group-aria-pressed:text-synth-blue",
   },
   variants: {
     // The take has no volume, but keeps the strip's column so its lane
@@ -286,8 +292,8 @@ const flag = tv({
 
 // The lane is a window on the timeline; zoomed in (--zoom), its content
 // stretches and slides so the window starts at --from (0–1 of it). A line
-// marks the start of each bar. A clip's edges trim it when dragged: an
-// unmarked strip astride each. A repeat's count is centred over its notes
+// marks the start of each bar. A clipped track's edges trim it when
+// dragged: an unmarked strip astride each. A repeat's count is centred over its notes
 // on a chip of the screen's black.
 const trackLane = tv({
   slots: {
@@ -297,6 +303,10 @@ const trackLane = tv({
     edge: "absolute top-0 bottom-0 z-1 w-[12px] -translate-x-1/2 cursor-ew-resize touch-none",
     count:
       "absolute top-1/2 -translate-1/2 rounded-[3px] bg-screen/70 px-[3px] text-[12px] leading-[15px] font-bold",
+    picked:
+      "pointer-events-none absolute top-0 bottom-0 z-1 rounded-[4px] shadow-[inset_0_0_0_1.5px_var(--color-synth-blue)]",
+    // A copy's span, pressed to pick it (Shift + ↓ ↑ pick from the keys).
+    hit: "absolute top-0 bottom-0 z-1",
   },
   variants: {
     quiet: { true: { base: "opacity-30" } },
@@ -442,10 +452,11 @@ function TrackList({
   );
 }
 
-// A track's lane, like a clip on the studio's timeline: bar lines, the take's
-// notes as short bars at their pitch within the take's range (at least an
-// octave), and fainter repeats after the first pass, marked ×2, ×3… in their
-// middle. A track's own loop is outlined in red where it first plays.
+// A track's lane, like a clip on the studio's timeline: bar lines, then each
+// copy of the track, the take's notes as short bars at their pitch within the
+// take's range (at least an octave), and fainter repeats after its first
+// pass, marked ×2, ×3… in their middle. A track's own loop is outlined in red
+// where it first plays, and the picked copy, when there are several, in blue.
 // Past this many passes the repeats are too narrow to draw one by one (an
 // hour of a short loop runs to thousands), so they show as one faded band
 // labelled with the count. A repeat narrower than this share of the lane has
@@ -507,25 +518,30 @@ function TrackLane({
   barBeats,
   onLoopEdge,
   onLoopEdgeDrag,
+  onPickCopy,
 }: {
   track: ScreenTrack;
   span: number;
   barBeats: number;
   onLoopEdge?: (edge: LoopEdgeId, beats: number) => void;
   onLoopEdgeDrag?: (dragging: boolean) => void;
+  onPickCopy?: (copy: number) => void;
 }) {
-  const { clip, start, color } = track;
-  const passes: number[] = [];
-  for (
-    let at = start + clip.offset;
-    clip.length > 0 && at < span && passes.length < clip.repeats;
-    at += clip.length
-  )
-    passes.push(at);
-  const banded = passes.length > MAX_DRAWN_PASSES;
-  const drawn = banded ? passes.slice(0, 1) : passes;
-  const bandEnd = Math.min(span, passes[passes.length - 1] + clip.length);
-  const labelled = !banded && clip.length / span >= LABELLED_PASS;
+  const { clip, color } = track;
+  // Each copy's passes: from its start (or its loop's left edge), back to
+  // back, as many as it repeats that start before the end.
+  const copies = clip.copies.map(({ start, repeats }) => {
+    const passes: number[] = [];
+    for (
+      let at = start + clip.offset;
+      clip.length > 0 && at < span && passes.length < repeats;
+      at += clip.length
+    )
+      passes.push(at);
+    return passes;
+  });
+  const first = copies[0] ?? [];
+  const labelled = clip.length / span >= LABELLED_PASS;
   const { pattern } = track;
   const pitches = [...clip.notes, ...(pattern?.notes ?? [])].map(
     ({ note }) => note,
@@ -538,6 +554,8 @@ function TrackLane({
     high = middle + 6;
   }
   const percent = (beats: number) => `${(beats / span) * 100}%`;
+  const picked =
+    track.copy !== undefined && copies.length > 1 && copies[track.copy];
   return (
     <span
       className={trackLane({ quiet: !track.audible }).base()}
@@ -572,82 +590,123 @@ function TrackLane({
               ))}
           </>
         )}
-        {drawn.map((at, pass) => (
+        {copies.map((passes, copy) => {
+          const banded = passes.length > MAX_DRAWN_PASSES;
+          const drawn = banded ? passes.slice(0, 1) : passes;
+          const bandEnd = Math.min(
+            span,
+            passes[passes.length - 1] + clip.length,
+          );
+          return (
+            <Fragment key={`copy-${copy}`}>
+              {onPickCopy && copies.length > 1 && passes.length > 0 && (
+                <span
+                  className={lane.hit()}
+                  style={{
+                    left: percent(passes[0]),
+                    width: percent(bandEnd - passes[0]),
+                  }}
+                  onPointerDown={() => onPickCopy(copy)}
+                />
+              )}
+              {drawn.map((at, pass) => (
+                <span
+                  key={`pass-${pass}`}
+                  className={passStyle({
+                    loop: clip.looped && copy === 0 && pass === 0,
+                  })}
+                  style={{
+                    left: percent(at),
+                    width: percent(Math.min(clip.length, span - at)),
+                    background: `color-mix(in srgb, ${color} 12%, transparent)`,
+                  }}
+                />
+              ))}
+              {drawn.flatMap((at, pass) =>
+                clip.notes
+                  .filter((note) => at + note.start < span)
+                  .map((note, i) => (
+                    <span
+                      key={`${pass}-${i}`}
+                      className={clipNote({ repeat: pass > 0 })}
+                      style={{
+                        left: percent(at + note.start),
+                        width: percent(
+                          Math.min(
+                            note.length,
+                            clip.length - note.start,
+                            span - at,
+                          ),
+                        ),
+                        top: `${12 + (1 - (note.note - low) / (high - low)) * 70}%`,
+                        background: color,
+                      }}
+                    />
+                  )),
+              )}
+              {labelled &&
+                !banded &&
+                passes.slice(1).map((at, i) => (
+                  <span
+                    key={`count-${i}`}
+                    className={lane.count()}
+                    style={{
+                      left: percent(at + Math.min(clip.length, span - at) / 2),
+                      color,
+                    }}
+                  >
+                    ×{i + 2}
+                  </span>
+                ))}
+              {banded && (
+                <>
+                  <span
+                    className={passStyle()}
+                    style={{
+                      left: percent(passes[1]),
+                      width: percent(bandEnd - passes[1]),
+                      background: `color-mix(in srgb, ${color} 7%, transparent)`,
+                    }}
+                  />
+                  <span
+                    className={lane.count()}
+                    style={{ left: percent((passes[1] + bandEnd) / 2), color }}
+                  >
+                    ×{passes.length}
+                  </span>
+                </>
+              )}
+            </Fragment>
+          );
+        })}
+        {picked && picked.length > 0 && (
           <span
-            key={`pass-${pass}`}
-            className={passStyle({ loop: clip.looped && pass === 0 })}
+            className={lane.picked()}
             style={{
-              left: percent(at),
-              width: percent(Math.min(clip.length, span - at)),
-              background: `color-mix(in srgb, ${color} 12%, transparent)`,
+              left: percent(picked[0]),
+              width: percent(
+                Math.min(span, picked[picked.length - 1] + clip.length) -
+                  picked[0],
+              ),
             }}
           />
-        ))}
-        {drawn.flatMap((at, pass) =>
-          clip.notes
-            .filter((note) => at + note.start < span)
-            .map((note, i) => (
-              <span
-                key={`${pass}-${i}`}
-                className={clipNote({ repeat: pass > 0 })}
-                style={{
-                  left: percent(at + note.start),
-                  width: percent(
-                    Math.min(note.length, clip.length - note.start, span - at),
-                  ),
-                  top: `${12 + (1 - (note.note - low) / (high - low)) * 70}%`,
-                  background: color,
-                }}
-              />
-            )),
         )}
-        {labelled &&
-          passes.slice(1).map((at, i) => (
-            <span
-              key={`count-${i}`}
-              className={lane.count()}
-              style={{
-                left: percent(at + Math.min(clip.length, span - at) / 2),
-                color,
-              }}
-            >
-              ×{i + 2}
-            </span>
-          ))}
-        {onLoopEdge && passes.length > 0 && clip.length > 0 && (
+        {onLoopEdge && clip.looped && first.length > 0 && clip.length > 0 && (
           <>
             <LoopEdge
               edge="start"
-              at={passes[0]}
+              at={first[0]}
               span={span}
               onMove={onLoopEdge}
               onDrag={onLoopEdgeDrag}
             />
             <LoopEdge
               edge="end"
-              at={Math.min(span, passes[0] + clip.length)}
+              at={Math.min(span, first[0] + clip.length)}
               span={span}
               onMove={onLoopEdge}
               onDrag={onLoopEdgeDrag}
             />
-          </>
-        )}
-        {banded && (
-          <>
-            <span
-              className={passStyle()}
-              style={{
-                left: percent(passes[1]),
-                width: percent(bandEnd - passes[1]),
-                background: `color-mix(in srgb, ${color} 7%, transparent)`,
-              }}
-            />
-            <span
-              className={lane.count()}
-              style={{ left: percent((passes[1] + bandEnd) / 2), color }}
-            >
-              ×{passes.length}
-            </span>
           </>
         )}
       </span>
@@ -939,6 +998,8 @@ export type DeviceScreenProps = {
   onLoopEdge?: (index: number, edge: "start" | "end", beats: number) => void;
   // A clip edge's drag starting and ending.
   onLoopEdgeDrag?: (dragging: boolean) => void;
+  // A copy of a track clicked in its lane: which row, which copy.
+  onSelectCopy?: (index: number, copy: number) => void;
   // The four knob readings for the ADSR, LFO, FX and synth views.
   readouts?: readonly ScreenReadout[];
   // The LFO view's shape (0–3) and rate in Hz.
@@ -1307,6 +1368,7 @@ export function DeviceScreen({
   onActivate,
   onLoopEdge,
   onLoopEdgeDrag,
+  onSelectCopy,
   readouts = [],
   lfoShape = 0,
   lfoRate = 1,
@@ -1528,6 +1590,10 @@ export function DeviceScreen({
                               track.volume * 100,
                             )}%${track.muted ? ", muted" : ""}${
                               track.soloed ? ", solo" : ""
+                            }${
+                              track.clip.copies.length > 1
+                                ? `, ${track.clip.copies.length} copies`
+                                : ""
                             }`
                       }
                       aria-pressed={index === selected}
@@ -1572,7 +1638,17 @@ export function DeviceScreen({
                             : undefined
                         }
                         onLoopEdgeDrag={onLoopEdgeDrag}
+                        onPickCopy={
+                          onSelectCopy && !track.potential
+                            ? (copy) => onSelectCopy(index, copy)
+                            : undefined
+                        }
                       />
+                      {track.clip.copies.length > 1 && (
+                        <span className={row.copies()} aria-hidden="true">
+                          ×{track.clip.copies.length}
+                        </span>
+                      )}
                     </Button>
                   );
                 })

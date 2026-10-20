@@ -1,6 +1,7 @@
 import {
   ArrowDown,
   ArrowUp,
+  CopyPlus,
   Headphones,
   Scissors,
   ScissorsLineDashed,
@@ -14,7 +15,7 @@ import {
   ScreenSelection,
   ScreenValue,
 } from "../DeviceScreen";
-import { audible, repeatsOf } from "../tracks";
+import { audible } from "../tracks";
 import { isTake } from "../../../providers/LanesProvider";
 import { arrowPads, deletePad, mixPads, savePad, seekKnob } from "./base";
 import type { Mode } from "../../../types/bindings";
@@ -23,25 +24,30 @@ import type { Mode } from "../../../types/bindings";
 // green knob seeks the mix and the red one sets the picked track's volume;
 // the arrows slide it by bars. With Shift the knobs zoom and scroll the
 // lanes, or trim a clipped track's edges, the green one slides it by beats
-// and the arrows repeat it.
+// and ← → repeat it; ↓ picks the next copy of the whole track further
+// along, or past the last adds one, and ↑ the copy before. The arrows, Shift + green and Delete act on the
+// picked copy.
 export const tracksMode: Mode = (device) => {
   const { shift, lanes, tracks, mix, transport, sound, drumGrid, feedback } =
     device;
   const { lanes: rows, focusIndex, pickedLane, pickedTrack: track } = lanes;
   const { trackLoop, loopLabel, startLabel, trackSpan, trackFrom } = tracks;
+  const { copies, copyIndex, copy } = tracks;
+  const copied = copies.length > 1;
+  // The picked copy, named in labels while the track has more than one.
+  const copyName = copied ? `copy ${copyIndex + 1} of ` : "";
   const { barBeats } = transport;
 
   return {
     knobs: {
       green:
-        shift && track
+        shift && track && copy
           ? {
               label: "Slide",
-              valueLabel: startLabel(track.start),
-              step: Math.round(track.start),
+              valueLabel: startLabel(copy.start),
+              step: Math.round(copy.start),
               steps: trackSpan + 1,
-              onChange: (beats) =>
-                lanes.updateTrack(track.id, { start: beats }),
+              onChange: tracks.slideTo,
             }
           : {
               ...seekKnob(
@@ -169,31 +175,69 @@ export const tracksMode: Mode = (device) => {
                 feedback.showNotice("Discarded the take");
               },
             }
-          : track && {
-              label: `Delete ${track.name}`,
-              key: `delete:${track.id}`,
-              prompt: `Press again to delete ${track.name}`,
-              run: () => {
-                lanes.deleteTrack(track.id);
-                feedback.showNotice(`Deleted ${track.name}`);
+          : track && copied
+            ? {
+                label: `Delete ${copyName}${track.name}`,
+                key: `delete:${track.id}:${copyIndex}`,
+                prompt: `Press again to delete ${copyName}${track.name}`,
+                run: () => {
+                  tracks.deleteCopy();
+                  feedback.showNotice(`Deleted ${copyName}${track.name}`);
+                },
+              }
+            : track && {
+                label: `Delete ${track.name}`,
+                key: `delete:${track.id}`,
+                prompt: `Press again to delete ${track.name}`,
+                run: () => {
+                  lanes.deleteTrack(track.id);
+                  feedback.showNotice(`Deleted ${track.name}`);
+                },
               },
-            },
       ),
-      up: {
-        label: "Previous track",
-        icon: <ArrowUp />,
-        onPress: () => lanes.stepFocus(-1),
-      },
-      down: {
-        label: "Next track",
-        icon: <ArrowDown />,
-        onPress: () => lanes.stepFocus(1),
-      },
+      // With Shift, the copy before the picked one, and the next copy or
+      // past the last a new one.
+      up:
+        shift && track
+          ? {
+              label: `Previous copy of ${track.name}`,
+              icon: <ArrowUp />,
+              shiftLegend: true,
+              onPress: () => tracks.stepCopy(-1),
+            }
+          : {
+              label: "Previous track",
+              icon: <ArrowUp />,
+              onPress: () => lanes.stepFocus(-1),
+            },
+      down:
+        shift && track
+          ? {
+              label:
+                copyIndex === copies.length - 1
+                  ? `Add a copy of ${track.name}`
+                  : `Next copy of ${track.name}`,
+              icon:
+                copyIndex === copies.length - 1 ? <CopyPlus /> : <ArrowDown />,
+              shiftLegend: true,
+              onPress: () => tracks.stepCopy(1),
+            }
+          : {
+              label: "Next track",
+              icon: <ArrowDown />,
+              onPress: () => lanes.stepFocus(1),
+            },
       ...arrowPads(
         device,
         shift
-          ? ["Repeat track less", "Repeat track more"]
-          : ["Slide track earlier", "Slide track later"],
+          ? [
+              `Repeat ${copyName || "track "}less`,
+              `Repeat ${copyName || "track "}more`,
+            ]
+          : [
+              `Slide ${copyName || "track "}earlier`,
+              `Slide ${copyName || "track "}later`,
+            ],
         (direction) =>
           shift
             ? tracks.repeatTrack(direction)
@@ -213,9 +257,10 @@ export const tracksMode: Mode = (device) => {
       // clipped to), its repeats and volume; with Shift, just what the knobs
       // move, in their colours. Right, what the knobs do now.
       footer: [
-        track && shift ? (
+        track && copy && shift ? (
           <>
-            <ScreenSeek>Starts {startLabel(track.start)}</ScreenSeek>
+            {copied && `Copy ${copyIndex + 1}/${copies.length} · `}
+            <ScreenSeek>Starts {startLabel(copy.start)}</ScreenSeek>
             {trackLoop && (
               <>
                 {" · Clip "}
@@ -226,12 +271,13 @@ export const tracksMode: Mode = (device) => {
               </>
             )}
           </>
-        ) : track ? (
+        ) : track && copy ? (
           <>
+            {copied && `Copy ${copyIndex + 1}/${copies.length} · `}
             {trackLoop
               ? `Clip ${loopLabel(trackLoop.start)} – ${loopLabel(trackLoop.end)}`
-              : `Starts ${startLabel(track.start)}`}
-            {` · ×${repeatsOf(track)} · `}
+              : `Starts ${startLabel(copy.start)}`}
+            {` · ×${copy.repeats} · `}
             <ScreenLevel>Vol {Math.round(track.volume * 100)}%</ScreenLevel>
           </>
         ) : (
@@ -261,8 +307,8 @@ export const tracksMode: Mode = (device) => {
         detail:
           sound.presets.find(({ id }) => id === lane.presetId)?.name ?? "",
         color: lane.color,
-        start: lane.start,
         clip: tracks.clips[i],
+        copy: i === focusIndex ? copyIndex : undefined,
         volume: lane.volume,
         muted: lane.muted,
         soloed: lane.soloed,
@@ -280,6 +326,7 @@ export const tracksMode: Mode = (device) => {
       onSelect: lanes.setFocusIndex,
       onLoopEdge: tracks.dragLoopEdge,
       onLoopEdgeDrag: tracks.setDragging,
+      onSelectCopy: tracks.pickCopy,
     },
   };
 };

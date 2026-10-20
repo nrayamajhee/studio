@@ -73,6 +73,7 @@ In the drum grid, Play loops the pattern. Stopped, the green knob moves the head
 | Set a track's volume    | the red knob                                            |
 | Slide a track by a bar  | ← or →                                                  |
 | Repeat a track          | Shift + → (and Shift + ← for fewer)                     |
+| Play it again later on  | Shift + ↓ adds a copy; Shift + ↑ ↓ pick between copies  |
 | Mute a track            | Mute (`,`); its `M` lights                              |
 | Solo a track            | Shift + Mute; its `S` lights                            |
 | Loop part of a track    | Clip (`X`), then Shift + the red and blue knobs to trim |
@@ -88,6 +89,8 @@ In the drum grid, Play loops the pattern. Stopped, the green knob moves the head
 ![Mute: the Rock kit's M lights and its lane dims](../../public/docs/user-manual/mute.webp)
 
 ![Solo: its S lights and every other track dims](../../public/docs/user-manual/solo.webp)
+
+**Copies** play a whole track again further along the same lane, so a part can drop out and come back: a piano that plays four times, rests for a few bars, then plays twice more. Shift + ↓ adds a copy right after the last, which → then slides along to leave a gap; Shift + ↓ and ↑ step to the next and previous copy, and the arrows, Shift + → and Delete work on the picked one, outlined in blue. A copy never slides back over the one before it, and one that grows pushes the later ones along. The row's right edge counts them: ×2, ×3.
 
 **Clip** loops a section of a track instead of playing it whole; the section is outlined in red. Hold Shift and the knobs change job: red and blue move the clip's start and end, and green slides the track by beats. Shift + Clip cuts the track down to its clip for good.
 

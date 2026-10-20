@@ -147,6 +147,7 @@ export function useTrackMix(
       track.sound,
       loopOf(track),
       track.repeats,
+      track.copies,
     ]),
   ]);
   const levels = JSON.stringify(tracks.map((track) => levelOf(track, tracks)));

@@ -88,7 +88,7 @@ function useDrumGridValue() {
     return {
       length: drawn.length / beat,
       offset: 0,
-      repeats: 1,
+      copies: [{ start: 0, repeats: 1 }],
       looped: false,
       notes: drawn.notes.map(({ note, start, duration }) => ({
         note,

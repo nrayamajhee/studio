@@ -225,11 +225,10 @@ export const Tracks: Story = {
         name: "Picked guitar",
         detail: "Picked guitar",
         color: "#f2884b",
-        start: 0,
         clip: {
           length: 8,
           offset: 0,
-          repeats: 2,
+          copies: [{ start: 0, repeats: 2 }],
           looped: false,
           notes: [60, 64, 67, 72, 67, 64, 60, 55].map((note, i) => ({
             note,
@@ -247,11 +246,10 @@ export const Tracks: Story = {
         name: "Fingerstyle electric",
         detail: "Fingerstyle electric",
         color: "#2f7de1",
-        start: 4,
         clip: {
           length: 6,
           offset: 0,
-          repeats: 1,
+          copies: [{ start: 4, repeats: 1 }],
           looped: false,
           notes: [53, 57, 60].map((note) => ({ note, start: 0, length: 6 })),
         },

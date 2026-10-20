@@ -2,14 +2,18 @@ import { useState, type ReactNode } from "react";
 import { positionLabel } from "../components/home/deviceMath";
 import {
   clipOf,
+  copiesChange,
   cutToLoop,
   gridSteps,
   loopStep,
   maxRepeats,
-  repeatsOf,
+  passOf,
+  placedCopies,
+  settleCopies,
   takeBeats,
   takeBeatsAt,
   type Track,
+  type TrackCopy,
 } from "../components/home/tracks";
 import { createStrictContext } from "./createStrictContext";
 import { useFeedback } from "./FeedbackProvider";
@@ -36,19 +40,19 @@ function useTracksValue() {
   const [zoomStep, setZoomStep] = useState(0);
   const [panFrom, setPanFrom] = useState(0);
   // Each lane's clip at the tempo, on a timeline at least four bars long
-  // that ends on the bar after the last lane's last repeat.
+  // that ends on the bar after the last lane's last copy.
   const clips = lanes.map((lane) => clipOf(lane, bpm));
   const fitSpan =
     barBeats *
     Math.max(
       4,
       Math.ceil((patternClip?.length ?? 0) / barBeats),
-      ...lanes.map((lane, i) =>
-        Math.ceil(
-          (lane.start + clips[i].offset + clips[i].length * clips[i].repeats) /
-            barBeats,
-        ),
-      ),
+      ...clips.map(({ copies, offset, length }) => {
+        const last = copies[copies.length - 1];
+        return Math.ceil(
+          (last.start + offset + length * last.repeats) / barBeats,
+        );
+      }),
     );
   // While a clip is trimmed (an edge dragged, or Shift turning its knobs)
   // the timeline keeps its length, so the lanes don't rescale under the
@@ -68,6 +72,39 @@ function useTracksValue() {
   const trackZoom = trackZooms[Math.min(zoomStep, trackZooms.length - 1)];
   const trackWindow = trackSpan / trackZoom;
   const trackFrom = Math.min(Math.max(0, panFrom), trackSpan - trackWindow);
+
+  // The picked track's copies as they play, and the one its arrows, Shift +
+  // green and Delete act on: picked with Shift + ↓ ↑, and the first again
+  // whenever another track is picked.
+  const [copyPick, setCopyPick] = useState({ id: "", index: 0 });
+  const copies = track ? placedCopies(track, bpm) : [];
+  const copyIndex =
+    track && copyPick.id === track.id
+      ? Math.min(copyPick.index, copies.length - 1)
+      : 0;
+  const copy: TrackCopy | undefined = copies[copyIndex];
+  const passBeats = track ? passOf(track, bpm).length / (60_000 / bpm) : 0;
+  const copyEnd = ({ start, repeats }: TrackCopy) =>
+    start + passBeats * repeats;
+  // Keeps the picked track's copies, settled so none overlap: one that
+  // grows or slides later pushes those after it along.
+  const setCopies = (next: readonly TrackCopy[]) => {
+    if (track)
+      updateTrack(track.id, copiesChange(settleCopies(next, passBeats)));
+  };
+  // Moves the picked copy to `start`, but never before the one ahead of it
+  // ends (or the timeline starts).
+  const moveCopy = (start: number) => {
+    if (!copy) return;
+    const earliest = copyIndex > 0 ? copyEnd(copies[copyIndex - 1]) : 0;
+    setCopies(
+      copies.map((other, i) =>
+        i === copyIndex
+          ? { ...other, start: Math.max(earliest, start) }
+          : other,
+      ),
+    );
+  };
 
   // The picked track's loop while it plays. Shift turns the red and blue
   // knobs over to its edges, a step at a time: red its start, blue its end.
@@ -118,37 +155,69 @@ function useTracksValue() {
       `Bar ${Math.floor(beats / barBeats) + 1}${
         beats % barBeats ? ` beat ${Math.floor(beats % barBeats) + 1}` : ""
       }`,
-    // The arrows slide the picked track along the timeline by bars; Shift
-    // and the blue knob slide it by beats. The take doesn't move.
+    copies,
+    copyIndex,
+    copy,
+    // The arrows slide the picked copy along the timeline by bars; Shift
+    // and the green knob slide it by beats. The take doesn't move.
     slideTrack: (beats: number) => {
-      if (!track) return;
-      updateTrack(track.id, { start: Math.max(0, track.start + beats) });
+      if (copy) moveCopy(copy.start + beats);
     },
-    // Shift and the arrows play the picked track once more or once less,
+    slideTo: moveCopy,
+    // Shift and the arrows play the picked copy once more or once less,
     // back to back: at least once, and for at most an hour.
     repeatTrack: (direction: 1 | -1) => {
-      if (!track) return;
+      if (!track || !copy) return;
       const repeats = Math.min(
         maxRepeats(track, bpm),
-        Math.max(1, repeatsOf(track) + direction),
+        Math.max(1, copy.repeats + direction),
       );
-      updateTrack(track.id, { repeats });
+      setCopies(
+        copies.map((other, i) =>
+          i === copyIndex ? { ...other, repeats } : other,
+        ),
+      );
     },
-    // Dragging a clip's edge trims it to a loop, a grid step at a time
-    // (finer than the knobs); it picks that track too.
+    // Shift + ↓ picks the next copy of the picked track, or past the last
+    // adds one right after it, repeating as often; Shift + ↑ the one before.
+    stepCopy: (direction: 1 | -1) => {
+      if (!track || !copy) return;
+      if (direction > 0 && copyIndex === copies.length - 1) {
+        setCopies([...copies, { start: copyEnd(copy), repeats: copy.repeats }]);
+        showNotice(`Copied ${track.name} (${copies.length + 1})`);
+      }
+      setCopyPick({
+        id: track.id,
+        index: Math.max(0, copyIndex + direction),
+      });
+    },
+    // A copy clicked in a lane: picks its track, and that copy.
+    pickCopy: (index: number, copy: number) => {
+      const clicked = lanes[index];
+      if (!clicked || isTake(clicked)) return;
+      setFocusIndex(index);
+      setCopyPick({ id: clicked.id, index: copy });
+    },
+    // Takes the picked copy out, picking the one before it; the last copy
+    // left is the track.
+    deleteCopy: () => {
+      if (!track || copies.length < 2) return;
+      setCopies(copies.filter((_, i) => i !== copyIndex));
+      setCopyPick({ id: track.id, index: Math.max(0, copyIndex - 1) });
+    },
+    // Dragging a clipped track's edge trims its loop, a grid step at a time
+    // (finer than the knobs); it picks that track too. A track that isn't
+    // clipped has no edges to drag: Clip comes first.
     dragLoopEdge: (index: number, edge: "start" | "end", beats: number) => {
       const dragged = lanes[index];
-      if (!dragged || isTake(dragged)) return;
+      if (!dragged || isTake(dragged) || !dragged.loop?.on) return;
       const unit = 1 / gridSteps(dragged);
       const reach = takeBeats(dragged);
       const at = Math.min(
         reach,
         Math.max(0, Math.round(takeBeatsAt(dragged, bpm, beats) / unit) * unit),
       );
-      // A clip without its loop on trims from the whole take.
-      const { start, end } = dragged.loop?.on
-        ? dragged.loop
-        : { start: 0, end: reach };
+      const { start, end } = dragged.loop;
       setFocusIndex(index);
       updateTrack(dragged.id, {
         loop:
