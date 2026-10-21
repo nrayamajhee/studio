@@ -4,7 +4,7 @@ order = 2
 
 # Drum beats
 
-The Device's drum beats (Shift + Drum grid) are 81 grooves in ten styles, from a kick and a hi-hat to Ravel's _Boléro_ and the tabla's taals. The red knob picks a style and the blue knob a beat. A tap or Play previews it on its own kit at the Device's tempo, and Save loads it into the drum grid, setting the time signature to match. The tempo listed for each beat below is the one it is heard at on record; set it with the tempo knob for that feel.
+The Device's drum beats (Shift + Drum grid) are 83 grooves in ten styles, from a kick and a hi-hat to Ravel's _Boléro_ and the tabla's taals. The red knob picks a style and the blue knob a beat. A tap or Play previews it on its own kit at the Device's tempo, and Save loads it into the drum grid, setting the time signature to match. The tempo listed for each beat below is the one it is heard at on record; set it with the tempo knob for that feel.
 
 Most are the common forms drummers teach rather than transcriptions: written out simply, for the Device's kits, to be played and changed. Where a groove comes from one record or one drummer, its entry names them, and the examples say where to hear the feel. All credit for the grooves goes to the drummers who made them.
 
@@ -46,6 +46,30 @@ Kick        x... .... x.x. ....
 ```
 
 Kick, hat, kick-kick, hat: the kick on 1, the hat on 2, two kicks on 3 and the and after it, and the hat on 4.
+
+### Madal kick kick hat
+
+Madal · 90 BPM · 4/4 · sixteenths
+
+```text
+Tin         .... x... .... x...
+Ka          .... x... .... x...
+Dhin        x... .... x.x. ....
+```
+
+Kick kick hat on the madal: the open bass head (dhin) for the kicks, and the treble rim with a slap on the bass (tin and ka together) where the hat was.
+
+### Tabla kick kick hat
+
+Tabla · 90 BPM · 4/4 · sixteenths
+
+```text
+Na          .... x... .... x...
+Ke          .... x... .... x...
+Ge          x... .... x.x. ....
+```
+
+The same on the tabla, a stroke for each of the madal's: the open bayan (ge) for the kicks, and the dayan's rim (na) with a slap on the bayan (ke) for the hat.
 
 ### Offbeat hat
 
@@ -919,7 +943,7 @@ _Examples:_ "Re-Rewind" (Artful Dodger featuring Craig David)
 
 ### Amen break
 
-Drum kit · 136 BPM · 4/4 · sixteenths
+Rock kit · 136 BPM · 4/4 · sixteenths
 
 ```text
 Ride   x.x. x.x. x.x. x.x.

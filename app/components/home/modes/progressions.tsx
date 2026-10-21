@@ -1,5 +1,10 @@
 import { ScreenHint, ScreenValue } from "../DeviceScreen";
-import { PROGRESSIONS, previewHome, progressionTake } from "../progressions";
+import {
+  PROGRESSIONS,
+  previewHome,
+  previewTempo,
+  progressionTake,
+} from "../progressions";
 import {
   arrowPads,
   favoritesPicker,
@@ -15,10 +20,12 @@ import type { Mode } from "../../../types/bindings";
 
 // Chord progressions (Shift + Piano roll), by kind, after the favorites: the
 // red knob (or ← →) picks a page and the blue one a progression. A tile
-// tapped, or Play, plays it on the preview tape; Play again pauses it. Save
-// waits for the home note: the next key played sets it, and the progression
-// goes onto the tape, a chord a bar at the tempo. Save again lets it go; a
-// tile double-clicked waits for its home note as Save would. Mute stars it.
+// tapped, or Play, plays it on the preview tape in its own key; Play again
+// pauses it. A key played plays it from that note instead, from the top each
+// time. Save waits for the home note: the next key played sets it, and the
+// progression goes onto the tape, a chord a bar at the tempo. Save again lets
+// it go; a tile double-clicked waits for its home note as Save would. Mute
+// stars it.
 export const progressionsMode: Mode = (device, base) => {
   const { browse, performance, feedback, lanes, transport, preview } = device;
   const waiting = performance.homeFor !== null;
@@ -46,6 +53,12 @@ export const progressionsMode: Mode = (device, base) => {
   const taped = (lanes.lanes[0]?.take.notes.length ?? 0) > 0;
   // The progression as it would go onto the tape, in the play style and at
   // the tempo, on the keys' instrument.
+  // Previews run a little faster than the tape (see previewTempo); Save loads
+  // the take at the tape's own tempo.
+  const previewTiming = {
+    ...transport.timing,
+    bpm: previewTempo(transport.timing.bpm),
+  };
   const audition = (index: number) => {
     const progression = listed[index];
     preview.play(
@@ -53,11 +66,20 @@ export const progressionsMode: Mode = (device, base) => {
       progressionTake(
         progression,
         previewHome(progression),
-        transport.timing,
+        previewTiming,
         performance.playStyle,
       ),
     );
   };
+  // The progression from `note` as its home, from the top, as a preview of
+  // its own (Play and the tiles keep to its key).
+  const auditionFrom = (note: number) =>
+    preview.play(
+      `${chosen.id}:from-key`,
+      progressionTake(chosen, note, previewTiming, performance.playStyle),
+      undefined,
+      true,
+    );
   // A tile tapped plays, or pauses, as Play does.
   const tap = (index: number) => {
     select(index);
@@ -109,7 +131,7 @@ export const progressionsMode: Mode = (device, base) => {
             ? taped
               ? "Play the home note (replaces the take)"
               : "Play the home note"
-            : "Save, then play the home note"}
+            : "A note plays it from there · Save to load"}
         </ScreenHint>,
       ],
       tiles: listed
@@ -124,6 +146,12 @@ export const progressionsMode: Mode = (device, base) => {
       selectedBy: "blue",
       onSelect: (index) => tap(shelf.start + index),
       onActivate: (index) => arm(shelf.start + index),
+    },
+    // While Save waits, the key sets the home note as it always did.
+    keyPress: (note) => {
+      if (waiting) return false;
+      auditionFrom(note);
+      return true;
     },
   };
 };

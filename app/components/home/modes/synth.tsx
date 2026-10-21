@@ -10,7 +10,8 @@ import type { ScreenReadout } from "../DeviceScreen";
 import { ICON_CHOICES } from "../presetIcons";
 import { KNOB_TONES, graphNote, pageScene, type Tone } from "../synthGraphs";
 import { CHAIN_STOPS, noteName, type KnobSlots } from "../synthPages";
-import { arrowPads, idleKnob, savePad } from "./base";
+import { isTake } from "../../../providers/LanesProvider";
+import { arrowPads, deletePad, idleKnob, savePad } from "./base";
 import type { KnobBinding, KnobSlot, Mode } from "../../../types/bindings";
 
 const SLOTS: readonly KnobSlot[] = ["chalk", "green", "red", "blue"];
@@ -23,9 +24,11 @@ const EMPTY: ScreenReadout = { label: "", display: "", amount: 0 };
 // their readings. The four knobs set the page's params, in the colours the
 // graph draws them in; held Shift, its extras. ← → turn the pages (with
 // Shift, they step the instrument as anywhere else). Save picks an icon to
-// save the sound as a preset.
+// save the sound as a preset. With a track picked, Shift + Delete resets its
+// sound to its instrument's.
 export const synthMode: Mode = (device, base) => {
-  const { sound, views, browse, shift } = device;
+  const { sound, views, browse, shift, lanes, feedback } = device;
+  const track = isTake(lanes.focusedLane) ? null : lanes.focusedLane;
   const { pages, pageIndex, page, values } = sound;
   const patch = PATCH_BY_ID[sound.preset.target];
   const valueOf = (spec: ParamSpec) => values[spec.id] ?? spec.default;
@@ -108,6 +111,21 @@ export const synthMode: Mode = (device, base) => {
           views.setView("save");
         },
       }),
+      delete: deletePad(
+        device,
+        undefined,
+        track
+          ? {
+              label: `Reset ${track.name}'s sound`,
+              key: `reset:${track.id}`,
+              prompt: `Press again to reset ${track.name}'s sound`,
+              run: () => {
+                sound.revertSound();
+                feedback.showNotice(`Reset ${track.name}'s sound`);
+              },
+            }
+          : undefined,
+      ),
       ...(shift
         ? {}
         : arrowPads(

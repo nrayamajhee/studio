@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useState, type ReactNode } from "react";
 import { useFavorites } from "../components/home/favoritesStore";
 import { resolveBindings } from "../components/home/modes";
 import type { Bindings } from "../types/bindings";
@@ -65,7 +65,13 @@ function useModeValue(): Bindings {
       setIdleSeek,
     },
   };
-  return resolveBindings(device);
+  const bindings = resolveBindings(device);
+  // The view's preview sound plays while it has one; the picked sound comes
+  // back after.
+  const preview = bindings.previewSound ?? null;
+  const playPreview = useEffectEvent(() => device.sound.previewPreset(preview));
+  useEffect(() => playPreview(), [preview?.id]);
+  return bindings;
 }
 
 const [ModeContext, useBindings] =

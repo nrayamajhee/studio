@@ -36,13 +36,13 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Instruments](../../public/docs/the-device/view-instruments.webp)
 
-**Opened by:** Instruments. Red turns the families, blue picks; an instrument pad twice binds the sound; Delete removes a saved one.
+**Opened by:** Instruments. Red turns the families, blue picks, and while the library is open the keys and whatever is playing (the take, the tracks) sound on the picked instrument without it being chosen; closing the library brings back the one you had. An instrument pad twice binds the sound; Delete removes a saved one.
 
 ### Synth parameters
 
 ![Synth parameters](../../public/docs/the-device/view-synth.webp)
 
-**Opened by:** Synth parameters. ← → turn the pages; the knobs set the page's four values; Shift its extras; Save opens the icon picker.
+**Opened by:** Synth parameters. ← → turn the pages; the knobs set the page's four values; Shift its extras; Save opens the icon picker. With a track picked on the tracks, it opens on that track's instrument and settings, and every change is kept with the track; Shift + Delete, twice, resets the track's sound to its instrument's.
 
 ### Save
 
@@ -54,7 +54,7 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![The ADSR page](../../public/docs/the-device/view-module.webp)
 
-**Opened by:** ADSR, LFO or FX. The knobs set its four values and switch it on; the badge shows on or off.
+**Opened by:** ADSR, LFO or FX. The knobs set its four values and switch it on; the badge shows on or off. With a track picked on the tracks they're the track's, and Shift + Delete, twice, puts that one back as it starts, off.
 
 ### Chords
 
@@ -72,25 +72,25 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Tempo](../../public/docs/the-device/view-tempo.webp)
 
-**Opened by:** Tempo. Green and ← → set the tape's BPM (or drag or type the number); ↓ taps it in. With a track picked on the tracks they set that track's own tempo instead, and ↑ links it to the tape's tempo or gives it its own again.
+**Opened by:** Tempo. Green and ← → set the tape's BPM (or drag or type the number); ↓ taps it in. With a track picked on the tracks they set that track's own tempo instead, and ↑ links it to the tape's tempo or gives it its own again. With no track picked, ↑ gives every track the tape's tempo as its own.
 
 ### Progressions
 
 ![Progressions](../../public/docs/the-device/view-progressions.webp)
 
-**Opened by:** Shift + Piano roll. Red turns the kinds, blue picks; a tap or Play previews; Save, then a key, loads it as the take.
+**Opened by:** Shift + Piano roll. Red turns the kinds, blue picks; a tap or Play previews it in its own key, and a key previews it from that note, a little faster than the tape's tempo (by more the slower the tape is); Save, then a key, loads it as the take, at the tape's tempo.
 
 ### Beats
 
 ![Beats](../../public/docs/the-device/view-beats.webp)
 
-**Opened by:** Shift + Drum grid. Red turns the styles, blue picks; a tap or Play previews; Save loads it into the drum grid.
+**Opened by:** Shift + Drum grid. Red turns the styles, blue picks, and the keys play the picked beat's kit (the instrument pads keep their sounds); a tap or Play previews; Save loads it into the drum grid.
 
 ### Piano roll
 
 ![Piano roll](../../public/docs/the-device/view-roll.webp)
 
-**Opened by:** Piano roll, or Record. The take: Record arms, Play records; green scrolls, red sets the time signature (Shift + red transposes the whole take, a semitone a step), blue the octave (Shift + blue the grid); Save keeps it as a track.
+**Opened by:** Piano roll, or Record. The take: Record arms, Play records; green scrolls, red sets the time signature (Shift + red transposes the whole take, a semitone a step), blue the octave; Save keeps it as a track. A take keeps the timing it was played with and follows the tempo.
 
 ### Drum grid
 
@@ -102,7 +102,7 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Tracks](../../public/docs/the-device/view-tracks.webp)
 
-**Opened by:** Tracks. See [the knob table](overview.md#knobs); ← → slide a track, Shift + ← → repeat it, Shift + ↓ picks the next copy of the whole track further along (past the last, adds one: ×2, ×3 on the row's right edge) and Shift + ↑ the one before; Mute, Clip, Delete; Save the mix.
+**Opened by:** Tracks. See [the knob table](overview.md#knobs); ← → slide a track, Shift + ← → repeat it, Shift + ↓ picks the next copy of the whole track further along (past the last, adds one: ×2, ×3 on the row's right edge) and Shift + ↑ the one before; an instrument pad puts its sound on the picked track, which keeps every note it was played with (a tabla track's strokes carry over to the madal or a drum kit, and back); Mute, Clip, Delete; Save the mix.
 
 ### Tapes
 
@@ -114,4 +114,4 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Revert](../../public/docs/the-device/view-revert.webp)
 
-**Opened by:** Shift + Delete. Green picks what to put back; Delete twice reverts it; any other pad closes.
+**Opened by:** Shift + Delete on the main screen. In any other view Shift leaves Delete as it is, so close the view first. Green picks what to put back; Delete twice reverts it; any other pad closes.

@@ -3,6 +3,7 @@ import type {
   DeviceScreenProps,
   ScreenBadge,
 } from "../components/home/DeviceScreen";
+import type { DevicePreset } from "../components/home/deviceEngine";
 import type { Tool } from "../components/home/input/keymap";
 import type { Device } from "./device";
 
@@ -47,6 +48,12 @@ export type Bindings = {
   instrumentPad: (pad: number) => PadBinding;
   chordPad: (index: number) => PadBinding;
   screen: ScreenBinding;
+  // A key played, by the note it sounds, before it plays: true when the mode
+  // takes it for a job of its own, so it doesn't sound.
+  keyPress?: (note: number) => boolean;
+  // A sound the view plays for now without picking it (the instrument being
+  // browsed): the keys and whatever plays sound on it until the view closes.
+  previewSound?: DevicePreset;
 };
 
 // A mode rebinds only what it changes from the base bindings.
@@ -56,6 +63,8 @@ export type ModeBindings = {
   instrumentPad?: (pad: number) => PadBinding;
   chordPad?: (index: number) => PadBinding;
   screen?: Partial<ScreenBinding>;
+  keyPress?: (note: number) => boolean;
+  previewSound?: DevicePreset;
 };
 
 export type Mode = (device: Device, base: Bindings) => ModeBindings;

@@ -36,7 +36,9 @@ A chord's notes don't have to start together. **Play style** (`Q`) sets how they
 
 ![Play style: the Held group, Block picked](../../public/docs/user-manual/play-style.webp)
 
-![The Rhythm group: pulse, strum pulse, roll pulse, down-up strum and more](../../public/docs/user-manual/play-style-rhythm.webp)
+![The Rhythm group: pulse, accent pulse, roll pulse, offbeat, tresillo and gallop](../../public/docs/user-manual/play-style-rhythm.webp)
+
+![The Strum group: strum pulse, the down-up strums, folk strum, rock eighths, reggae skank and waltz strum](../../public/docs/user-manual/play-style-strum.webp)
 
 ## From chords to progressions
 

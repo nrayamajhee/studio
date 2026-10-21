@@ -7,6 +7,7 @@ import {
   type Take,
 } from "./noteRecorder";
 import { INITIAL_PATTERN, isPattern, type DrumPattern } from "./drumPattern";
+import { starterTape } from "./starterSong";
 import type { Track } from "./tracks";
 
 // A tape: a set of tracks, with the tempo and time signature
@@ -104,6 +105,7 @@ const isTrack = (value: unknown): value is Track => {
     typeof track.soloed === "boolean" &&
     (track.repeats === undefined ||
       (isNumber(track.repeats) && track.repeats >= 1)) &&
+    (track.takeTarget === undefined || typeof track.takeTarget === "string") &&
     (track.followTape === undefined || typeof track.followTape === "boolean") &&
     (track.copies === undefined ||
       (Array.isArray(track.copies) &&
@@ -175,8 +177,8 @@ const emptyTape = (
   meter = DEFAULT_TIMING.meter,
 ): Tape => ({ id: tapeId(), name: nextName(tapes), bpm, meter, tracks: [] });
 
-// The tapes as stored, or a first tape holding the tracks kept before there
-// were tapes.
+// The tapes as stored, or on a first visit the starter song, or a first tape
+// holding the tracks kept before there were tapes.
 function readTapes(legacyTracks: unknown) {
   const stored = load(TAPES_KEY);
   const tapes = Array.isArray(stored)
@@ -189,7 +191,11 @@ function readTapes(legacyTracks: unknown) {
     const tape = tapes.some(({ id }) => id === open) ? (open as string) : "";
     return { tapes, tape: tape || tapes[0].id };
   }
-  const first = { ...emptyTape([]), tracks: tracksOf(legacyTracks) };
+  const kept = tracksOf(legacyTracks);
+  const first =
+    kept.length > 0
+      ? { ...emptyTape([]), tracks: kept }
+      : starterTape(tapeId());
   save(TAPES_KEY, [first]);
   save(TAPE_KEY, first.id);
   save(TRACKS_KEY);

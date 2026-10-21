@@ -17,7 +17,14 @@ import {
 } from "../DeviceScreen";
 import { audible, followsTape } from "../tracks";
 import { isTake } from "../../../providers/LanesProvider";
-import { arrowPads, deletePad, mixPads, savePad, seekKnob } from "./base";
+import {
+  arrowPads,
+  deletePad,
+  mixPads,
+  padPreset,
+  savePad,
+  seekKnob,
+} from "./base";
 import type { Mode } from "../../../types/bindings";
 
 // The tracks: the mix plays them all, and the blue knob picks one. The
@@ -26,8 +33,9 @@ import type { Mode } from "../../../types/bindings";
 // lanes, or trim a clipped track's edges, the green one slides it by beats
 // and ← → repeat it; ↓ picks the next copy of the whole track further
 // along, or past the last adds one, and ↑ the copy before. The arrows, Shift + green and Delete act on the
-// picked copy.
-export const tracksMode: Mode = (device) => {
+// picked copy. An instrument pad puts its sound on the picked track as well
+// as the keys, which play the track's notes on it from then on.
+export const tracksMode: Mode = (device, base) => {
   const { shift, lanes, tracks, mix, transport, sound, drumGrid, feedback } =
     device;
   const { lanes: rows, focusIndex, pickedLane, pickedTrack: track } = lanes;
@@ -244,6 +252,20 @@ export const tracksMode: Mode = (device) => {
             ? tracks.repeatTrack(direction)
             : tracks.slideTrack(direction * barBeats),
       ),
+    },
+    instrumentPad: (pad) => {
+      const binding = base.instrumentPad(pad);
+      const bound = padPreset(device, pad);
+      if (!track || !bound || bound.id === track.presetId) return binding;
+      return {
+        ...binding,
+        label: `Play ${track.name} on ${bound.name}`,
+        onPress: () => {
+          binding.onPress();
+          tracks.setTrackInstrument(track, bound);
+          feedback.showNotice(`${track.name} → ${bound.name}`);
+        },
+      };
     },
     screen: {
       title: `Tracks · ${lanes.currentTape?.name ?? ""}`,

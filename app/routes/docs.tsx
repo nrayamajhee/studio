@@ -66,7 +66,7 @@ export default function DocsRoute({ loaderData }: Route.ComponentProps) {
               <Menu className="size-3.5" />
               {doc?.name ?? "Docs"}
             </summary>
-            <DocsSidebar tree={tree} className="mt-2" />
+            <DocsSidebar tree={tree} foldAll className="mt-2 max-h-[70dvh]" />
           </details>
 
           {doc ? (

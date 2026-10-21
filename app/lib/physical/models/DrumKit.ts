@@ -36,6 +36,7 @@ const PIECE_ORDER: readonly DrumPieceId[] = [
   "ride",
   "sweep",
   "stick",
+  "sticks",
   "bell",
   "tambourine",
 ];

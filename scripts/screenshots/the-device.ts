@@ -126,6 +126,8 @@ export default async function theDevice(d: Device) {
   await press(PAD.albums);
   await shot("view-tapes", { frame: "screen" });
 
+  // Revert opens from the main screen only.
+  await press(PAD.albums);
   await press(PAD.delete, { shift: true });
   await shot("view-revert", { frame: "screen" });
 }

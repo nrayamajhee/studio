@@ -6,7 +6,6 @@ import {
   MAX_TAKE_MS,
   METERS,
   NoteRecorder,
-  SUBDIVISIONS,
   beatMs,
   timeline,
   type PlayedNote,
@@ -36,7 +35,6 @@ type Display =
 export const MIN_BPM = 1;
 export const MAX_BPM = 999;
 const DEFAULT_METER = METERS.indexOf(DEFAULT_TIMING.meter);
-const DEFAULT_GRID = SUBDIVISIONS.indexOf(DEFAULT_TIMING.perBeat);
 // Tap tempo is first set this long after the first tap, then follows each
 // tap until the window closes and tap mode ends.
 const TAP_SET_MS = 1000;
@@ -71,12 +69,8 @@ export function useTransport() {
   const [metronome, setMetronome] = useState(false);
   const [bpm, setBpmState] = useState(DEFAULT_TIMING.bpm);
   const [meterIndex, setMeterIndex] = useState(DEFAULT_METER);
-  const [gridIndex, setGridIndex] = useState(DEFAULT_GRID);
-  const timing: Timing = {
-    bpm,
-    meter: METERS[meterIndex],
-    perBeat: SUBDIVISIONS[gridIndex],
-  };
+  // The piano roll has no grid: takes keep the timing they were played with.
+  const timing: Timing = { bpm, meter: METERS[meterIndex], perBeat: 0 };
   // The beat in the bar the metronome last clicked.
   const [beat, setBeat] = useState(0);
   // The take outlives a reload (see sessionStore).
@@ -138,11 +132,6 @@ export function useTransport() {
   const setMeter = (index: number) => {
     timingRef.current = { ...timingRef.current, meter: METERS[index] };
     setMeterIndex(index);
-  };
-
-  const setGrid = (index: number) => {
-    timingRef.current = { ...timingRef.current, perBeat: SUBDIVISIONS[index] };
-    setGridIndex(index);
   };
 
   // Tap mode stops the metronome so its clicks don't pull the taps off.
@@ -221,7 +210,6 @@ export function useTransport() {
     const run = () => {
       const startedAt = performance.now();
       const { length: span, notes } = timeline(take, timingRef.current);
-      const loops = timingRef.current.perBeat > 0;
       const offset = Math.min(from, span);
       from = 0;
       for (const { note, velocity, start, duration } of notes) {
@@ -237,15 +225,9 @@ export function useTransport() {
         notes: [
           ...previous,
           ...notes,
-          ...(loops
-            ? notes.map((note) => ({ ...note, start: note.start + span }))
-            : []),
+          ...notes.map((note) => ({ ...note, start: note.start + span })),
         ],
       };
-      if (!loops) {
-        after(span - offset, () => setState("stopped"));
-        return;
-      }
       previous = notes.map((note) => ({ ...note, start: note.start - span }));
       after(span - offset, run);
     };
@@ -359,8 +341,6 @@ export function useTransport() {
     timing,
     meterIndex,
     setMeter,
-    gridIndex,
-    setGrid,
     tapping,
     tapCount,
     startTapping,

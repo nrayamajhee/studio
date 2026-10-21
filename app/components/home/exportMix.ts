@@ -142,6 +142,7 @@ const GM_DRUMS: Readonly<Record<DrumPieceId, number>> = {
   ride: 51,
   sweep: 40,
   stick: 37,
+  sticks: 31,
   bell: 53,
   tambourine: 54,
   na: 63,

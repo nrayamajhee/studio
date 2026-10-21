@@ -8,9 +8,9 @@ Pick an instrument, open it up to change how it's made, and shape everything you
 
 ## Pick an instrument
 
-The six pads with a red dot are your **instrument pads**: Grand piano, Violin and Picked guitar on top, and the Rock kit, 808 kit and Madal below. Press one (or `1`–`6`) to switch, and the dot lights on the one playing. Hold Shift for six more: Oscillator, Alto sax, Bass guitar, Jazz kit, 909 kit and Tabla.
+The six pads with a red dot are your **instrument pads**: Grand piano, Fingerstyle electric and Violin on top, and the Rock kit, 808 kit and Madal below. Press one (or `1`–`6`) to switch, and the dot lights on the one playing. Hold Shift for six more: Oscillator, Upright bass, Flute, Jazz kit, 909 kit and Tabla.
 
-![The six instrument pads; pad 2 switched the Device to the Violin](../../public/docs/user-manual/instrument-pads.webp)
+![The six instrument pads; pad 2 switched the Device to the Fingerstyle electric](../../public/docs/user-manual/instrument-pads.webp)
 
 For everything else, open **Instruments** (the four-squares pad, `I`). It's a library of every sound, one page per family: struck and plucked strings, bowed, blown, free reeds, tuned percussion, drums and the oscillator, with your own saved sounds last.
 

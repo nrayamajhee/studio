@@ -22,6 +22,7 @@ import {
   clearAllEdits,
   clearEdits,
   presetEdits,
+  replaceEdits,
   setEdit,
   usePresetLibrary,
 } from "../components/home/presetStore";
@@ -95,9 +96,9 @@ function useSoundValue() {
 
   // Keeps the selected param when the next instrument has it too, and the
   // octave shift as far as the next one's range allows.
-  const selectPreset = (next: DevicePreset) => {
+  const selectPreset = (next: DevicePreset, edits = library.edits[next.id]) => {
     deviceEngine.unlock();
-    deviceEngine.loadPreset(next, library.edits[next.id]);
+    deviceEngine.loadPreset(next, edits);
     setPreset(next);
     setOctave((current) => clampOctave(current, next));
     const nextSpecs = moduleOrder(PATCH_BY_ID[next.target]);
@@ -138,6 +139,32 @@ function useSoundValue() {
     // The kit the drum grid plays, while one is picked.
     stepKit: isKit(preset.target) ? preset.target : null,
     selectPreset,
+    // Plays `next` (a preset being browsed) without picking it, or with null
+    // the one picked again.
+    previewPreset: (next: DevicePreset | null) => {
+      const playing = next ?? preset;
+      deviceEngine.loadPreset(playing, library.edits[playing.id]);
+    },
+    // Picks `next` with `values` (a track's own settings), kept as its edits
+    // so the Synth screen shows and turns them.
+    playWith: (
+      next: DevicePreset,
+      values: Readonly<Record<string, number>>,
+    ) => {
+      const own = presetValues(next);
+      const params = new Set(
+        PATCH_BY_ID[next.target].params.map(({ id }) => id),
+      );
+      replaceEdits(
+        next.id,
+        Object.fromEntries(
+          Object.entries(values).filter(
+            ([id, value]) => params.has(id) && own[id] !== value,
+          ),
+        ),
+      );
+      selectPreset(next, presetEdits(next.id));
+    },
     // Saving bakes the edits into the saved preset, so the one it came from
     // goes back to its own values.
     adoptPreset: (saved: DevicePreset) => {

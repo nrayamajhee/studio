@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp, Save } from "lucide-react";
 import { deviceEngine } from "../deviceEngine";
 import { ScreenLevel, ScreenSeek, ScreenValue } from "../DeviceScreen";
-import { METERS, SUBDIVISIONS, gridLabel, meterLabel } from "../noteRecorder";
+import { METERS, meterLabel } from "../noteRecorder";
 import { setTake } from "../sessionStore";
 import { makeTrack } from "../tracks";
 import { seekKnob } from "./base";
@@ -32,11 +32,8 @@ const saveTake = ({
     sound.preset.id,
     deviceEngine.sound(),
     lanes.takeModules,
-    // The tempo it plays at now: on a grid the tape's, off one as recorded.
-    {
-      ...transport.timing,
-      bpm: transport.timing.perBeat > 0 ? transport.bpm : recorded.bpm,
-    },
+    // The tempo it plays at now: the tape's.
+    transport.timing,
     "roll",
   );
   lanes.addTrack(kept);
@@ -49,8 +46,8 @@ const saveTake = ({
 // The piano roll (record mode): the take on the roll. Record arms it and Play
 // starts it; stopped, the green knob scrolls it in time. The red knob sets
 // the time signature (with Shift, transposes the whole take a semitone a
-// step) and the blue one the roll's octave (with Shift, the grid); ↑ and ↓
-// move the roll a semitone.
+// step) and the blue one the roll's octave; ↑ and ↓ move the roll a
+// semitone. The take keeps the timing it was played with.
 export const rollMode: Mode = (device, base) => {
   const { shift, transport, take } = device;
   const { timing } = transport;
@@ -92,21 +89,13 @@ export const rollMode: Mode = (device, base) => {
             steps: METERS.length,
             onChange: transport.setMeter,
           },
-      blue: shift
-        ? {
-            label: "Grid",
-            valueLabel: gridLabel(timing),
-            step: transport.gridIndex,
-            steps: SUBDIVISIONS.length,
-            onChange: transport.setGrid,
-          }
-        : {
-            label: "Pitch",
-            valueLabel: take.rollRange,
-            step: take.rollOctave,
-            steps: take.rollOctaves,
-            onChange: take.setRollOctave,
-          },
+      blue: {
+        label: "Pitch",
+        valueLabel: take.rollRange,
+        step: take.rollOctave,
+        steps: take.rollOctaves,
+        onChange: take.setRollOctave,
+      },
     },
     pads: {
       save: {
@@ -125,9 +114,9 @@ export const rollMode: Mode = (device, base) => {
         onPress: () => take.scrollRollPitch(-1),
       },
     },
-    // The meter, grid and notes in view, in the colours of the knobs that
-    // set them (Shift turns red over to the take's notes and blue to the
-    // grid); when stopped, the bar the green knob scrolled to, in green.
+    // The meter and notes in view, in the colours of the knobs that set them
+    // (Shift turns red over to the take's notes); when stopped, the bar the
+    // green knob scrolled to, in green.
     screen: {
       status: (
         <>
@@ -137,14 +126,9 @@ export const rollMode: Mode = (device, base) => {
             <ScreenLevel>Notes {take.takeNotes ?? "none"}</ScreenLevel>
           ) : (
             <ScreenLevel>{meterLabel(timing.meter)}</ScreenLevel>
-          )}{" "}
-          {shift ? (
-            <ScreenValue>{gridLabel(timing)}</ScreenValue>
-          ) : (
-            gridLabel(timing)
           )}
           {" · "}
-          {shift ? take.rollRange : <ScreenValue>{take.rollRange}</ScreenValue>}
+          <ScreenValue>{take.rollRange}</ScreenValue>
         </>
       ),
       getRoll: transport.roll,

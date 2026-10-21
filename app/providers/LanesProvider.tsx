@@ -3,7 +3,6 @@ import { deviceEngine } from "../components/home/deviceEngine";
 import { meterIndexOf } from "../components/home/deviceMath";
 import { applyModules, type ModuleSettings } from "../components/home/modules";
 import type { ModuleId } from "../components/home/deviceEngine";
-import { SUBDIVISIONS } from "../components/home/noteRecorder";
 import {
   setPattern,
   setTake,
@@ -15,6 +14,7 @@ import {
 import {
   modulesChange,
   trackModules,
+  trackTake,
   type Track,
 } from "../components/home/tracks";
 import { createStrictContext } from "./createStrictContext";
@@ -142,20 +142,17 @@ function useLanesValue() {
       );
       setFocusIndex((index) => Math.max(0, Math.min(index, lanes.length - 2)));
     },
-    // Loads a track as the take, with its instrument, effects, time
-    // signature and grid, so the roll shows and plays it as the track does;
+    // Loads a track as the take, with its instrument, effects and time
+    // signature, so the roll shows and plays it as the track does;
     // saving the take then adds it as a new track, leaving the old one be.
     loadTake: (track: Track) => {
       const own = presets.find(({ id }) => id === track.presetId);
       if (own && own.id !== preset.id) selectPreset(own);
       // The take holds just the track: its drum pattern is cleared too.
-      setTake(track.take);
+      setTake(trackTake(track));
       setPattern((current) => ({ ...current, hits: [] }));
       setTakeModules(trackModules(track));
       transport.setMeter(meterIndexOf(track.timing.meter));
-      transport.setGrid(
-        Math.max(0, SUBDIVISIONS.indexOf(track.timing.perBeat)),
-      );
     },
     discardTake: () => {
       setTake(null);

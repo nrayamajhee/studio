@@ -27,7 +27,7 @@ Every instrument publishes a list of `ParamSpec`s (`patches/params.ts`). The Lab
 ## Calibration and checks
 
 - **Pitch.** Strings are in tune by construction, because the loop filters' delay is compensated at the fundamental. The winds, brass, free reeds and bowed strings use measured `tuningCents` tables per sample rate. Re-measure those after changing their loops.
-- **Loudness.** Each patch's `outputGain` puts a mezzo-forte C4 at −14 LUFS momentary: the loudest 400 ms, K-weighted as ITU-R BS.1770 and EBU R128 meter it (`momentaryLoudness` in `offline/analysis.ts`). Matching that rather than an average over a second makes instruments sound equally loud: a pluck that strikes and fades against a bow that swells and holds. Drum pieces peak at −3 dBFS on a hard hit, or at their own `peak` (the Jazz Kit's brushed snare and sweep at −9).
+- **Loudness.** Each patch's `outputGain` puts a mezzo-forte C4 at −14 LUFS momentary: the loudest 400 ms, K-weighted as ITU-R BS.1770 and EBU R128 meter it (`momentaryLoudness` in `offline/analysis.ts`). Matching that rather than an average over a second makes instruments sound equally loud: a pluck that strikes and fades against a bow that swells and holds. Drum pieces peak at −3 dBFS on a hard hit, or at their own `peak` (the Jazz Kit's brushed snare and sweep at −6).
 - **Offline rendering.** `offline/renderEngine.ts` runs the same `Engine` in plain TypeScript (Node or browser). `offline/renderOffline.ts` renders through the real worklet in an `OfflineAudioContext`.
 - **Diagnostics** (`offline/diagnostics.ts`, runnable from Storybook > Lab / Instrument Lab > Diagnostics):
 

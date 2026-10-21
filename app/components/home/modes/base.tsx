@@ -348,35 +348,54 @@ export const savePad = (
   },
 });
 
+// A job the Delete pad does on a second press.
+type DeleteJob = {
+  label: string;
+  key: string;
+  prompt: string;
+  run: () => void;
+};
+
 // The dedicated Trash: deletes what the view has picked on a second press.
-// Shift + Delete opens Revert from anywhere.
+// Shift + Delete opens Revert on the main screen, and in a view with a reset
+// of its own (a picked track's sound or effect) does that, also on a second
+// press; in any other view Shift leaves it the view's Delete.
 export const deletePad = (
   device: Device,
-  own?: {
-    label: string;
-    key: string;
-    prompt: string;
-    run: () => void;
+  own?: DeleteJob & {
     // Whether there is anything to delete.
     when?: boolean;
   },
-): PadBinding => ({
-  label: device.shift
-    ? "Open revert"
-    : (own?.label ?? "Delete (nothing to delete here)"),
-  icon: device.shift ? <RotateCcw /> : <Trash2 />,
-  lit: own !== undefined && device.feedback.pending === own.key,
-  shiftLegend: device.shift,
-  onPress: (revert = device.shift) => {
-    if (revert) {
-      device.latch.release();
-      device.views.setView("revert");
-      return;
-    }
-    if (!own || own.when === false) return;
-    if (device.feedback.confirm(own.key, own.prompt)) own.run();
-  },
-});
+  reset?: DeleteJob,
+): PadBinding => {
+  const { shift, feedback } = device;
+  const onScope = device.view === "scope";
+  const revert = shift && onScope;
+  const resetting = shift && !onScope ? reset : undefined;
+  const pending = (job?: DeleteJob) =>
+    job !== undefined && feedback.pending === job.key;
+  return {
+    label: revert
+      ? "Open revert"
+      : (resetting?.label ?? own?.label ?? "Delete (nothing to delete here)"),
+    icon: revert || resetting ? <RotateCcw /> : <Trash2 />,
+    lit: pending(own) || pending(reset),
+    shiftLegend: revert || resetting !== undefined,
+    onPress: (shifted = shift) => {
+      if (shifted && onScope) {
+        device.latch.release();
+        device.views.setView("revert");
+        return;
+      }
+      if (shifted && reset) {
+        if (feedback.confirm(reset.key, reset.prompt)) reset.run();
+        return;
+      }
+      if (!own || own.when === false) return;
+      if (feedback.confirm(own.key, own.prompt)) own.run();
+    },
+  };
+};
 
 // Play and Stop for the drum pattern.
 export const drumGridPads = ({ drumGrid }: Device) => {

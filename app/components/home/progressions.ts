@@ -779,6 +779,12 @@ const HOME_LOW = 55;
 // home range when it is written).
 export const previewHome = ({ key }: Progression) => 60 + TONICS[key];
 
+// The tempo a progression is auditioned at: a little faster than the tape's,
+// by more the slower it is (×1.4 at 60 BPM, ×1.14 at 120, ×1.05 at 240), so
+// a slow tempo doesn't drag and a fast one doesn't race.
+export const previewTempo = (bpm: number) =>
+  Math.round(bpm * (1 + 0.4 / (bpm / 60) ** 1.5));
+
 // The progression as a take at `timing`'s tempo, on `home` (a note, moved by
 // octaves into the home range), played in `style` as the chord pads would
 // play it: each chord a bar long, its root moved by octaves to within a

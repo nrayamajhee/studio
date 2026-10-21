@@ -80,6 +80,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
       "exciter.hardness": 0.35,
       "exciter.position": 0.22,
     },
+    pad: 1,
   },
   {
     id: "guitar",
@@ -87,7 +88,6 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Picked guitar",
     target: "guitar",
     octave: 0,
-    pad: 2,
   },
   // The same steel strings plucked with the fingertips: softer, rounder and
   // over the soundhole. Strums brush the strings rather than pick them.
@@ -109,7 +109,6 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Bass guitar",
     target: "bass",
     octave: -24,
-    shiftPad: 2,
   },
   {
     id: "nylonGuitar",
@@ -138,7 +137,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Violin",
     target: "violin",
     octave: 0,
-    pad: 1,
+    pad: 2,
   },
   {
     id: "cello",
@@ -153,6 +152,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Upright bass",
     target: "uprightBass",
     octave: -24,
+    shiftPad: 1,
   },
   {
     id: "harp",
@@ -195,6 +195,7 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Flute",
     target: "flute",
     octave: 12,
+    shiftPad: 2,
   },
   {
     id: "clarinet",
@@ -209,7 +210,6 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     name: "Alto sax",
     target: "saxophone",
     octave: 0,
-    shiftPad: 1,
   },
   {
     id: "harmonica",
@@ -268,6 +268,13 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     target: "jazzDrums",
     octave: 0,
     shiftPad: 3,
+  },
+  {
+    id: "jazzStickDrums",
+    icon: "jazzSticks",
+    name: "Jazz stick kit",
+    target: "jazzStickDrums",
+    octave: 0,
   },
   {
     id: "drums808",

@@ -18,7 +18,9 @@ import type { Mode } from "../../../types/bindings";
 
 // The preset library, by model, after the favorites and before the saved
 // presets: the red knob (or ← →) picks a page and the blue one a preset on
-// it, and pressing a pad twice binds it there and closes the library. Mute
+// it, which the keys and anything playing sound on while the library is
+// open, without picking it; pressing a pad twice binds it there and closes
+// the library. Mute
 // stars the preset; Delete removes a highlighted saved preset; built-in ones
 // can't be deleted.
 export const instrumentsMode: Mode = (device, base) => {
@@ -101,6 +103,7 @@ export const instrumentsMode: Mode = (device, base) => {
         device.views.setView("scope");
       },
     }),
+    previewSound: chosen,
     screen: {
       title: "Instruments",
       unsaved: false,

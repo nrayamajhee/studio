@@ -15,7 +15,7 @@ export const drums: DrumKitPatch = {
     "tambourine",
     "stick",
     "crash",
-    "ride",
+    "sticks",
     "cowbell",
     "kick",
     "closedHat",
@@ -26,14 +26,20 @@ export const drums: DrumKitPatch = {
     "highTom",
   ],
   pieces: {
-    ride: {
+    // Two sticks clicked together: a dry, bright knock of hardwood, a few
+    // close, inharmonic modes that die in a few dozen milliseconds.
+    sticks: {
       model: "metal",
-      modes: { kind: "seeded", seed: 3272, count: 50, low: 500, high: 10000 },
-      t60: 3,
-      noise: { highpass: 6000, decay: 1, level: 0.2 },
-      stick: [0.15, 0.06],
-      level: 0.13,
-      pan: 0.3,
+      modes: {
+        kind: "table",
+        freqs: [2150, 3020, 4410, 6230],
+        amps: [1, 0.75, 0.45, 0.2],
+      },
+      t60: 0.05,
+      noise: { highpass: 4000, decay: 0.012, level: 0.25 },
+      stick: [0.25, 0.1],
+      level: 0.63,
+      pan: 0,
     },
     tambourine: {
       model: "noise",
@@ -42,7 +48,7 @@ export const drums: DrumKitPatch = {
       tailStart: 70,
       tailDecay: 300,
       bandpass: [4500, 2.5],
-      level: 0.38,
+      level: 0.44,
       pan: -0.2,
     },
     stick: {
@@ -170,7 +176,7 @@ export const drums808: DrumKitPatch = {
   params: drumParams(0.08),
   keys: [
     "stick",
-    "closedHat",
+    "sticks",
     "crash",
     "openHat",
     "cowbell",
@@ -183,6 +189,21 @@ export const drums808: DrumKitPatch = {
     "highTom",
   ],
   pieces: {
+    // Two sticks clicked together: a dry, bright knock of hardwood, a few
+    // close, inharmonic modes that die in a few dozen milliseconds.
+    sticks: {
+      model: "metal",
+      modes: {
+        kind: "table",
+        freqs: [2150, 3020, 4410, 6230],
+        amps: [1, 0.75, 0.45, 0.2],
+      },
+      t60: 0.05,
+      noise: { highpass: 4000, decay: 0.012, level: 0.25 },
+      stick: [0.25, 0.1],
+      level: 0.63,
+      pan: 0,
+    },
     stick: {
       model: "metal",
       modes: { kind: "table", freqs: [455, 1667], amps: [1, 0.7] },
@@ -300,7 +321,7 @@ export const rockDrums: DrumKitPatch = {
   params: drumParams(0.18),
   keys: [
     "ride",
-    "stick",
+    "sticks",
     "crash",
     "bell",
     "cowbell",
@@ -313,6 +334,21 @@ export const rockDrums: DrumKitPatch = {
     "highTom",
   ],
   pieces: {
+    // Two sticks clicked together: a dry, bright knock of hardwood, a few
+    // close, inharmonic modes that die in a few dozen milliseconds.
+    sticks: {
+      model: "metal",
+      modes: {
+        kind: "table",
+        freqs: [2150, 3020, 4410, 6230],
+        amps: [1, 0.75, 0.45, 0.2],
+      },
+      t60: 0.05,
+      noise: { highpass: 4000, decay: 0.012, level: 0.25 },
+      stick: [0.25, 0.1],
+      level: 0.63,
+      pan: 0,
+    },
     clap: {
       model: "noise",
       bursts: [0, 11, 22],
@@ -335,18 +371,6 @@ export const rockDrums: DrumKitPatch = {
       stick: [0.15, 0.06],
       level: 0.43,
       pan: 0.3,
-    },
-    stick: {
-      model: "metal",
-      modes: {
-        kind: "table",
-        freqs: [400, 1100, 1800, 2700],
-        amps: [0.6, 1, 0.7, 0.35],
-      },
-      t60: 0.06,
-      stick: [0.2, 0.08],
-      level: 0.53,
-      pan: 0,
     },
     kick: {
       model: "membrane",
@@ -472,18 +496,23 @@ export const jazzDrums: DrumKitPatch = {
     "snare",
     "openHat",
     "lowTom",
-    "clap",
+    "sticks",
     "highTom",
   ],
   pieces: {
-    clap: {
-      model: "noise",
-      bursts: [0, 11, 22],
-      burstLength: 8,
-      tailStart: 33,
-      tailDecay: 180,
-      bandpass: [1300, 1.2],
-      level: 1.03,
+    // Two sticks clicked together: a dry, bright knock of hardwood, a few
+    // close, inharmonic modes that die in a few dozen milliseconds.
+    sticks: {
+      model: "metal",
+      modes: {
+        kind: "table",
+        freqs: [2150, 3020, 4410, 6230],
+        amps: [1, 0.75, 0.45, 0.2],
+      },
+      t60: 0.05,
+      noise: { highpass: 4000, decay: 0.012, level: 0.25 },
+      stick: [0.25, 0.1],
+      level: 0.63,
       pan: 0,
     },
     bell: {
@@ -533,9 +562,9 @@ export const jazzDrums: DrumKitPatch = {
       pitchTau: 20,
       stick: [5, 3],
       wires: { level: 0.35, highpass: 3000, release: 0.07 },
-      brush: { length: 45, highpass: 2000, level: 0.3 },
-      peak: -9,
-      level: 0.38,
+      brush: { length: 45, highpass: 2000, level: 0.45 },
+      peak: -6,
+      level: 0.52,
       pan: 0,
     },
     sweep: {
@@ -546,8 +575,8 @@ export const jazzDrums: DrumKitPatch = {
       tailDecay: 140,
       swell: true,
       bandpass: [4500, 0.9],
-      peak: -9,
-      level: 0.62,
+      peak: -6,
+      level: 0.88,
       pan: 0,
     },
     lowTom: {
@@ -618,6 +647,170 @@ export const jazzDrums: DrumKitPatch = {
   },
 };
 
+// The Jazz kit played with sticks: the same open 18" kick, snare, toms, dark
+// ride and thin crash, struck rather than brushed, with a pair of sticks to
+// count in on.
+export const jazzStickDrums: DrumKitPatch = {
+  id: "jazzStickDrums",
+  name: "Jazz stick kit",
+  family: "drums",
+  range: [0, 127],
+  outputGain: 1,
+  pan: { center: 0, spread: 0 },
+  body: { type: "none" },
+  params: drumParams(0.16),
+  keys: [
+    "ride",
+    "stick",
+    "crash",
+    "bell",
+    "sticks",
+    "kick",
+    "closedHat",
+    "snare",
+    "openHat",
+    "lowTom",
+    "clap",
+    "highTom",
+  ],
+  pieces: {
+    // Two sticks clicked together: a dry, bright knock of hardwood, a few
+    // close, inharmonic modes that die in a few dozen milliseconds.
+    sticks: {
+      model: "metal",
+      modes: {
+        kind: "table",
+        freqs: [2150, 3020, 4410, 6230],
+        amps: [1, 0.75, 0.45, 0.2],
+      },
+      t60: 0.05,
+      noise: { highpass: 4000, decay: 0.012, level: 0.25 },
+      stick: [0.25, 0.1],
+      level: 0.63,
+      pan: 0,
+    },
+    clap: {
+      model: "noise",
+      bursts: [0, 11, 22],
+      burstLength: 8,
+      tailStart: 33,
+      tailDecay: 180,
+      bandpass: [1300, 1.2],
+      level: 1.03,
+      pan: 0,
+    },
+    bell: {
+      model: "metal",
+      modes: {
+        kind: "table",
+        freqs: [640, 1290, 2010, 2750],
+        amps: [1, 0.6, 0.35, 0.2],
+      },
+      t60: 1.2,
+      noise: { highpass: 6000, decay: 0.3, level: 0.05 },
+      stick: [0.15, 0.06],
+      level: 0.44,
+      pan: 0.3,
+    },
+    stick: {
+      model: "metal",
+      modes: {
+        kind: "table",
+        freqs: [360, 950, 1650, 2500],
+        amps: [0.7, 1, 0.6, 0.3],
+      },
+      t60: 0.08,
+      stick: [0.3, 0.12],
+      level: 0.58,
+      pan: 0,
+    },
+    kick: {
+      model: "membrane",
+      f0: 62,
+      ratios: 4,
+      t60: [0.55, 0.2, 0.12, 0.08],
+      pitchDrop: 0.4,
+      pitchTau: 40,
+      stick: [4, 2],
+      click: { highpass: 2000, length: 3, level: 0.1 },
+      shell: [110, 0.12, 0.15],
+      level: 0.58,
+      pan: 0,
+    },
+    snare: {
+      model: "membrane",
+      f0: 210,
+      ratios: 8,
+      t60: [0.22, 0.12],
+      pitchDrop: 0.03,
+      pitchTau: 20,
+      stick: [5, 3],
+      wires: { level: 0.9, highpass: 2200, release: 0.12 },
+      level: 0.89,
+      pan: 0,
+    },
+    lowTom: {
+      model: "membrane",
+      f0: 105,
+      ratios: 6,
+      t60: [0.75],
+      pitchDrop: 0.12,
+      pitchTau: 60,
+      stick: [5, 3],
+      level: 0.68,
+      pan: -0.3,
+    },
+    highTom: {
+      model: "membrane",
+      f0: 165,
+      ratios: 6,
+      t60: [0.6],
+      pitchDrop: 0.12,
+      pitchTau: 60,
+      stick: [5, 3],
+      level: 1.03,
+      pan: 0.2,
+    },
+    closedHat: {
+      model: "metal",
+      modes: { kind: "seeded", seed: 505, count: 40, low: 3000, high: 11000 },
+      t60: 0.06,
+      noise: { highpass: 6500, decay: 0.05, level: 0.3 },
+      stick: [1.2, 0.6],
+      chokes: ["openHat"],
+      level: 1.19,
+      pan: 0.3,
+    },
+    openHat: {
+      model: "metal",
+      modes: { kind: "seeded", seed: 505, count: 40, low: 3000, high: 11000 },
+      t60: 0.7,
+      noise: { highpass: 6500, decay: 0.5, level: 0.25 },
+      stick: [1.2, 0.6],
+      level: 1.14,
+      pan: 0.3,
+    },
+    crash: {
+      model: "metal",
+      modes: { kind: "seeded", seed: 909, count: 60, low: 900, high: 13000 },
+      t60: 1.4,
+      noise: { highpass: 3000, decay: 1, level: 0.45 },
+      stick: [0.6, 0.3],
+      level: 0.22,
+      pan: -0.3,
+    },
+    ride: {
+      model: "metal",
+      modes: { kind: "seeded", seed: 527, count: 60, low: 350, high: 9000 },
+      t60: 3.2,
+      noise: { highpass: 4000, decay: 1.5, level: 0.15 },
+      stick: [0.8, 0.4],
+      level: 0.2,
+      pan: 0.3,
+    },
+  },
+};
+
 // 909-style electronic kit: a punchy kick that drops fast from a hard click,
 // a two-tone snare under bright snappy noise, sweeping toms, sizzling hats
 // and cymbals over dense metallic modes, and the burst clap.
@@ -632,7 +825,7 @@ export const drums909: DrumKitPatch = {
   params: drumParams(0.08),
   keys: [
     "stick",
-    "closedHat",
+    "sticks",
     "crash",
     "openHat",
     "ride",
@@ -645,6 +838,21 @@ export const drums909: DrumKitPatch = {
     "highTom",
   ],
   pieces: {
+    // Two sticks clicked together: a dry, bright knock of hardwood, a few
+    // close, inharmonic modes that die in a few dozen milliseconds.
+    sticks: {
+      model: "metal",
+      modes: {
+        kind: "table",
+        freqs: [2150, 3020, 4410, 6230],
+        amps: [1, 0.75, 0.45, 0.2],
+      },
+      t60: 0.05,
+      noise: { highpass: 4000, decay: 0.012, level: 0.25 },
+      stick: [0.25, 0.1],
+      level: 0.63,
+      pan: 0,
+    },
     stick: {
       model: "metal",
       modes: { kind: "table", freqs: [500, 1720, 2900], amps: [1, 0.7, 0.3] },

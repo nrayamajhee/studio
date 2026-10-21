@@ -76,6 +76,30 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
         closedHat: ".... x... .... x...",
       },
     },
+    // Kick kick hat on the hand drums: the open bass for the kick, and a
+    // treble rim with a bass slap for the hat.
+    {
+      id: "madalKickKickHat",
+      name: "Madal kick kick hat",
+      bpm: 90,
+      kit: "madal",
+      rows: {
+        tin: ".... x... .... x...",
+        ka: ".... x... .... x...",
+        dhin: "x... .... x.x. ....",
+      },
+    },
+    {
+      id: "tablaKickKickHat",
+      name: "Tabla kick kick hat",
+      bpm: 90,
+      kit: "tabla",
+      rows: {
+        na: ".... x... .... x...",
+        ke: ".... x... .... x...",
+        ge: "x... .... x.x. ....",
+      },
+    },
     {
       id: "offbeatHat",
       name: "Offbeat hat",
@@ -843,7 +867,7 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       id: "amen",
       name: "Amen break",
       bpm: 136,
-      kit: "drums",
+      kit: "rockDrums",
       rows: {
         kick: "x.x. .... ..xx ....",
         snare: ".... x..x .x.. x..x",
@@ -1087,6 +1111,7 @@ export function beatPattern(beat: DrumBeat): DrumPattern {
     perBeat: beat.perBeat,
     bars: Math.max(1, Math.ceil(length / stepsPerBar(beat))),
     hits,
+    kit: beat.kit,
   };
 }
 

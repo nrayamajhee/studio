@@ -30,8 +30,6 @@ export const rollNote = (midi: number) =>
   `${NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
 // Two bars of history beside the keys.
 const ROLL_BARS = 2;
-// Grid steps get a line once they are this far apart (CSS px).
-const STEP_LINE_GAP = 6;
 const KEYS_WIDTH = 30;
 // The black keys' share of the keys' width, at the side facing the notes.
 const BLACK_DEPTH = 0.55;
@@ -41,8 +39,7 @@ const LABEL_FONT = "ui-monospace, SFMono-Regular, Menlo, monospace";
 // top, each C named on its key, and the keys are now. Recording, notes run
 // out of them to the right as they are played, in red; otherwise what's
 // coming lies to the right and moves left into them, green as it plays.
-// Lines for the meter scroll with them: bars brightest, then beats, then the
-// grid's steps.
+// Lines for the meter scroll with them: bars brighter than beats.
 export function PianoRoll({
   getFrame,
   timing,
@@ -136,9 +133,7 @@ export function PianoRoll({
       const floor = keysWidth + 3 * ratio;
       const reach = width - floor;
       const { meter } = timed.current;
-      // With no grid, the lines are the beats.
-      const perBeat = timed.current.perBeat || 1;
-      const step = beatMs(timed.current) / perBeat;
+      const step = beatMs(timed.current);
       const span = ROLL_BARS * barMs(timed.current);
       const recording = state === "recording";
       const from = recording ? now - span : now;
@@ -146,15 +141,10 @@ export function PianoRoll({
       const xAt = (time: number) =>
         floor + ((recording ? now - time : time - now) / span) * reach;
 
+      // A line on every beat, brighter on each bar's first.
       context.fillStyle = ink;
-      const steps =
-        timed.current.perBeat > 0 &&
-        (step / span) * reach >= STEP_LINE_GAP * ratio;
       for (let k = Math.ceil(from / step); k * step <= to; k++) {
-        const bar = k % (meter.beats * perBeat) === 0;
-        const beat = k % perBeat === 0;
-        if (!bar && !beat && !steps) continue;
-        context.globalAlpha = bar ? 0.24 : beat ? 0.09 : 0.035;
+        context.globalAlpha = k % meter.beats === 0 ? 0.24 : 0.09;
         context.fillRect(Math.round(xAt(k * step)), 0, ratio, height);
       }
 

@@ -54,15 +54,16 @@ function usePreviewValue() {
     // The id of the preview held, playing or paused.
     cued: cued?.id ?? null,
     // Plays `take` as `id` on `sound`, or without one on the keys'
-    // instrument: from where it paused if it is the one held, else from the
-    // top. One thing plays at a time, so it pauses the take, the drum grid
-    // and the tracks; and not while a take records, which would hear it.
-    play: (id: string, take: Take, sound?: PreviewSound) => {
+    // instrument: from where it paused if it is the one held (unless
+    // `fresh`), else from the top. One thing plays at a time, so it pauses
+    // the take, the drum grid and the tracks; and not while a take records,
+    // which would hear it.
+    play: (id: string, take: Take, sound?: PreviewSound, fresh = false) => {
       if (transport.recording) return;
       transport.pauseTake();
       if (drumGrid.patternRunning) drumGrid.stopPattern();
       mix.pause();
-      const from = cued?.id === id ? cued.at : 0;
+      const from = !fresh && cued?.id === id ? cued.at : 0;
       player.play(take, sound ?? keysSound, from);
       // Played through, it starts from the top again.
       setCued({ id, at: 0, onKeys: !sound });

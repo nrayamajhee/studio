@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { X } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Check, Copy, X } from "lucide-react";
 import { useLocalStorage } from "usehooks-ts";
 import { THEME_KEY, type Theme } from "../../hooks/useTheme";
 import { tv } from "../../lib/utils";
@@ -18,6 +18,7 @@ import {
 } from "../home/chordStore";
 import { FAVORITES_KEY, useFavorites } from "../home/favoritesStore";
 import { PRESETS_KEY, usePresetLibrary } from "../home/presetStore";
+import { DOCS_COLLAPSED_KEY, useDocsCollapsed } from "../docs/docsStore";
 import {
   MODULES_KEY,
   PATTERN_KEY,
@@ -37,16 +38,17 @@ const TOGGLE_CODE = "KeyD";
 
 const debugOverlay = tv({
   slots: {
-    base: "fixed inset-x-3 top-20 bottom-28 z-60 flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/65 text-white/80 shadow-high backdrop-blur-xl sm:inset-x-8 sm:bottom-20 sm:flex-row",
+    // Narrow, the header (with its close button) leads, then the keys, then
+    // the state; wide, the keys run down the left beside the other two.
+    base: "fixed inset-x-3 top-20 bottom-28 z-60 flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/65 text-white/80 shadow-high backdrop-blur-xl sm:inset-x-8 sm:bottom-20 sm:grid sm:grid-cols-[16rem_minmax(0,1fr)] sm:grid-rows-[auto_minmax(0,1fr)]",
     sidebar:
-      "flex max-h-48 shrink-0 flex-col gap-0.5 overflow-y-auto border-b border-white/10 p-2 sm:max-h-none sm:w-64 sm:border-r sm:border-b-0",
+      "flex max-h-48 shrink-0 flex-col gap-0.5 overflow-y-auto border-b border-white/10 p-2 sm:col-start-1 sm:row-span-2 sm:row-start-1 sm:max-h-none sm:border-r sm:border-b-0",
     item: "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left font-mono text-xs hover:bg-white/5",
     written:
       "ml-auto size-1.5 shrink-0 animate-[fade-out_2s_ease-in_forwards] rounded-full bg-emerald-400",
-    main: "flex min-h-0 min-w-0 flex-1 flex-col",
     header:
-      "flex items-center gap-3 border-b border-white/10 py-2 pr-2 pl-4 text-sm",
-    code: "min-h-0 flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed whitespace-pre text-white/80",
+      "flex min-w-0 items-center gap-3 border-b border-white/10 py-2 pr-2 pl-4 text-sm sm:col-start-2 sm:row-start-1",
+    code: "min-h-0 min-w-0 flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed whitespace-pre text-white/80 sm:col-start-2 sm:row-start-2",
   },
   variants: {
     selected: {
@@ -65,6 +67,7 @@ function useSavedState(): readonly (readonly [string, unknown])[] {
   const playStyle = usePlayStyle();
   const playStyles = useSavedPlayStyles();
   const { take, modules, pattern, tapes, tape } = useSession();
+  const docsCollapsed = useDocsCollapsed();
   const [theme] = useLocalStorage<Theme>(THEME_KEY, "system");
   return [
     [PRESETS_KEY, library],
@@ -77,6 +80,7 @@ function useSavedState(): readonly (readonly [string, unknown])[] {
     [PATTERN_KEY, pattern],
     [TAPES_KEY, tapes],
     [TAPE_KEY, tape],
+    [DOCS_COLLAPSED_KEY, docsCollapsed],
     [THEME_KEY, theme],
   ];
 }
@@ -132,9 +136,64 @@ function SavedState({ picked, onPick, onClose, className }: SavedStateProps) {
   const parts = useSavedState();
   const [key, value] = parts.find(([key]) => key === picked) ?? parts[0];
   const command = useCommandLegend();
+  // Copy all: every key and its state as one JSON array of { key, value },
+  // in the sidebar's order. The button says how it went for a moment.
+  const [copied, setCopied] = useState<"done" | "failed" | null>(null);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(null), 1500);
+    return () => clearTimeout(timer);
+  }, [copied]);
+  const copyAll = () => {
+    const json = JSON.stringify(
+      parts.map(([key, value]) => ({ key, value })),
+      null,
+      2,
+    );
+    // No clipboard outside a secure page.
+    (navigator.clipboard?.writeText(json) ?? Promise.reject()).then(
+      () => setCopied("done"),
+      () => setCopied("failed"),
+    );
+  };
 
   return (
     <aside aria-label="Saved state" className={ui.base({ className })}>
+      <div className={ui.header()}>
+        <span className="min-w-0 flex-1 truncate font-mono text-white">
+          {key}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-white/60 hover:text-white"
+          leadingIcon={
+            copied === "done" ? (
+              <Check className="size-4" />
+            ) : (
+              <Copy className="size-4" />
+            )
+          }
+          aria-label="Copy every key's state as one JSON array"
+          title={
+            copied === "done"
+              ? "Copied"
+              : copied === "failed"
+                ? "Couldn't copy"
+                : "Copy all"
+          }
+          onClick={copyAll}
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-white/60 hover:text-white"
+          leadingIcon={<X className="size-4" />}
+          aria-label={`Close the saved state (${command}D)`}
+          title={`Close (${command}D)`}
+          onClick={onClose}
+        />
+      </div>
       <nav className={ui.sidebar()}>
         {parts.map(([part, value]) => (
           <Button
@@ -148,25 +207,9 @@ function SavedState({ picked, onPick, onClose, className }: SavedStateProps) {
           </Button>
         ))}
       </nav>
-      <div className={ui.main()}>
-        <div className={ui.header()}>
-          <span className="min-w-0 flex-1 truncate font-mono text-white">
-            {key}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white/60 hover:text-white"
-            leadingIcon={<X className="size-4" />}
-            aria-label={`Close the saved state (${command}D)`}
-            title={`Close (${command}D)`}
-            onClick={onClose}
-          />
-        </div>
-        <pre className={ui.code()}>
-          {highlight(JSON.stringify(value, null, 2))}
-        </pre>
-      </div>
+      <pre className={ui.code()}>
+        {highlight(JSON.stringify(value, null, 2))}
+      </pre>
     </aside>
   );
 }

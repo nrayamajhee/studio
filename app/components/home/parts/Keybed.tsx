@@ -1,6 +1,7 @@
 import { useRef, type CSSProperties } from "react";
 import { tv } from "../../../lib/utils";
 import { useDeviceHotkey } from "../../../hooks/useDeviceHotkey";
+import { useBindings } from "../../../providers/ModeProvider";
 import { usePerformance } from "../../../providers/PerformanceProvider";
 import { useShift } from "../../../providers/ShiftProvider";
 import { useSound } from "../../../providers/SoundProvider";
@@ -45,6 +46,10 @@ export function Keybed() {
   const { shift } = useShift();
   const { octave, preset } = useSound();
   const { litNotes, chord, pressKey, releaseKey } = usePerformance();
+  const { keyPress } = useBindings();
+  // A key's note as it sounds; the view may take the key for a job of its
+  // own instead of playing it.
+  const noteOf = (semitone: number) => F3_MIDI + semitone + 12 * octave;
   // The note each held piano key started, by its unshifted semitone.
   const keyNotes = useRef(new Map<number, number>());
 
@@ -55,6 +60,7 @@ export function Keybed() {
     if (down) {
       const semitone = shift ? shiftedNote(control.semitone) : control.semitone;
       keyNotes.current.set(control.semitone, semitone);
+      if (keyPress?.(noteOf(semitone))) return;
       pressKey(semitone, held.chord ?? chord);
       return;
     }
@@ -63,7 +69,7 @@ export function Keybed() {
   });
 
   const renderKey = (semitone: number, slot: number, black: boolean) => {
-    const midi = F3_MIDI + semitone + 12 * octave;
+    const midi = noteOf(semitone);
     const piece = isKit(preset.target)
       ? DRUM_PIECES[keyPiece(preset.target, midi)]
       : null;
@@ -80,7 +86,9 @@ export function Keybed() {
         lit={litNotes.has(semitone)}
         className={keybed({ variant }).slot()}
         style={{ "--slot": slot } as CSSProperties}
-        onPress={() => pressKey(semitone)}
+        onPress={() => {
+          if (!keyPress?.(midi)) pressKey(semitone);
+        }}
         onRelease={() => releaseKey(semitone)}
       />
     );

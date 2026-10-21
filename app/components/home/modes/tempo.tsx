@@ -1,4 +1,4 @@
-import { ArrowUp, Link2, Link2Off, Pointer } from "lucide-react";
+import { Link2, Link2Off, ListMusic, Pointer } from "lucide-react";
 import { MAX_BPM, MIN_BPM } from "../../../hooks/useTransport";
 import { isTake } from "../../../providers/LanesProvider";
 import { meterLabel } from "../noteRecorder";
@@ -12,9 +12,10 @@ import type { Mode } from "../../../types/bindings";
 // tap the tempo. It is the take's, and so the tape's: what records, the
 // click, the drum grid and the tracks' bar lines run at. With a track picked
 // on the tracks it is that track's own instead, which it plays at whatever
-// the tape's, and ↑ links it to the tape's or lets it go.
+// the tape's, and ↑ links it to the tape's or lets it go; without one, ↑
+// gives every track the tape's tempo as its own.
 export const tempoMode: Mode = (device) => {
-  const { transport, lanes, tracks } = device;
+  const { transport, lanes, tracks, feedback } = device;
   const { bpm, setBpm, tapMode, tapCount, barBeats } = transport;
   const track = isTake(lanes.focusedLane) ? undefined : lanes.focusedLane;
   const linked = track !== undefined && followsTape(track);
@@ -45,7 +46,18 @@ export const tempoMode: Mode = (device) => {
             lit: linked,
             onPress: () => tracks.toggleFollowTape(track),
           }
-        : unusedPad("Octave up", <ArrowUp />),
+        : {
+            label: `Set every track to ${tempo} BPM`,
+            icon: <ListMusic />,
+            onPress: () => {
+              if (lanes.tracks.length === 0) {
+                feedback.showPrompt("No tracks on this tape");
+                return;
+              }
+              tracks.setAllTrackTempo(tempo);
+              feedback.showNotice(`Every track at ${tempo} BPM`);
+            },
+          },
       // Tapping sets the tape's tempo, so not a track's.
       down: track
         ? unusedPad("Tap tempo", <Pointer />)

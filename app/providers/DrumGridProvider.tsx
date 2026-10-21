@@ -22,6 +22,7 @@ import {
 import {
   STEP_RESOLUTIONS,
   addHit,
+  carryPattern,
   hitStep,
   hitsAt,
   kitRows,
@@ -30,7 +31,11 @@ import {
   takePattern,
   toggleHit,
 } from "../components/home/drumPattern";
-import { trackModules, trackSource } from "../components/home/tracks";
+import {
+  trackModules,
+  trackSource,
+  trackTake,
+} from "../components/home/tracks";
 import { useStepPlayer } from "../hooks/useStepPlayer";
 import { createStrictContext } from "./createStrictContext";
 import { isTake, useLanes } from "./LanesProvider";
@@ -61,6 +66,13 @@ function useDrumGridValue() {
     bpm: transport.bpm,
   }));
   const getStepHead = () => stepPlayer.position() ?? stepHeadRef.current;
+  // The pattern goes with the kit picked: written for another, its hits move
+  // to the pieces or strokes that play them here (a kick to the madal's
+  // dhin, and back).
+  useEffect(() => {
+    if (stepKit && drumPattern.kit !== stepKit)
+      setPattern((current) => carryPattern(current, stepKit));
+  }, [stepKit, drumPattern.kit]);
   // The pattern stays live while the drum grid is the main view, whatever
   // shows over it.
   const drumGridLive = mainView === "drumGrid";
@@ -220,7 +232,7 @@ function useDrumGridValue() {
       // The take holds just the track: its notes is cleared too.
       if (loading && isKit(loading.sound.target)) {
         setPattern(
-          takePattern(loading.take, loading.sound.target, loading.timing),
+          takePattern(trackTake(loading), loading.sound.target, loading.timing),
         );
         setTake(null);
         setTakeModules(trackModules(loading));

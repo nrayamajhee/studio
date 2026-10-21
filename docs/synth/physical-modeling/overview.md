@@ -17,7 +17,7 @@ Each family is a model in `app/lib/physical/models/`:
 - [Strings](strings.md): piano, guitars, ukulele, banjo, basses, harp and sitar; struck or plucked string loops.
 - [Blown](blown.md): flute, alto sax, clarinet, trumpet, bass trumpet and trombone; a jet, reed or lips on a tube.
 - [Bowed](bowed.md): violin and cello; a bow's stick and slip on a string.
-- [Drums](drums.md): the Drum, Rock, Jazz, 808 and 909 kits, madal and tabla; struck membranes and metals as banks of modes.
+- [Drums](drums.md): the Drum, Rock, Jazz, Jazz stick, 808 and 909 kits, madal and tabla; struck membranes and metals as banks of modes.
 - [Free reeds](free-reeds.md): harmonium, harmonica and accordion; a tongue swinging through a slot.
 - [Tuned percussion](tuned-percussion.md): xylophone, steel pan and kalimba; struck bars, domes and tines.
 - [Oscillator](oscillator.md): the one source that isn't a model.

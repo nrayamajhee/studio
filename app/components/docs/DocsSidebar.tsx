@@ -1,9 +1,16 @@
-import { useState } from "react";
-import { ArrowLeft, ChevronRight, FileText } from "lucide-react";
+import { useEffect } from "react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  FileText,
+} from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router";
 import { cn } from "../../lib/utils";
 import type { DocNode } from "../../types/docs";
 import { Button } from "../design-system/Button";
+import { docsCollapsed, setDocsCollapsed, useDocsCollapsed } from "./docsStore";
 
 type DocsTreeProps = {
   nodes: DocNode[];
@@ -71,52 +78,82 @@ function DocsTree({ nodes, depth = 0, collapsed, onToggle }: DocsTreeProps) {
   );
 }
 
+// Every folder with a row of its own (all but the top one), by path.
+const foldersOf = (nodes: readonly DocNode[], depth = 0): string[] =>
+  nodes.flatMap((node) =>
+    node.kind === "folder"
+      ? [
+          ...(depth > 0 ? [node.path] : []),
+          ...foldersOf(node.children, depth + 1),
+        ]
+      : [],
+  );
+
 // The home footer's links: plain, underlined.
 const footLink =
   "font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current";
 
 export type DocsSidebarProps = {
   tree: DocNode[];
+  // A button by the way back that folds every folder, or opens them all.
+  foldAll?: boolean;
   className?: string;
 };
 
 // The docs' file tree floating on the sky, in the order their TOML gives, with
 // the way back to the Device above it and the home footer's GitHub and
-// coffee links at the foot (the bottom of the column when it fills one).
-export function DocsSidebar({ tree, className }: DocsSidebarProps) {
+// coffee links at the foot (the bottom of the column when it fills one). The
+// folders folded stay folded (see docsStore), but going to a doc opens the
+// ones it is in, so it isn't hidden.
+export function DocsSidebar({ tree, foldAll, className }: DocsSidebarProps) {
   const { pathname } = useLocation();
-  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
-  const [shown, setShown] = useState(pathname);
-  // Opening a doc opens the folders it is in, so it is never hidden.
-  if (shown !== pathname) {
-    setShown(pathname);
-    setCollapsed(
-      (current) =>
-        new Set(
-          [...current].filter((path) => !pathname.startsWith(`/${path}/`)),
-        ),
-    );
-  }
+  const folded = useDocsCollapsed();
+  const collapsed = new Set(folded);
+  const folders = foldersOf(tree);
+  const allFolded = folders.every((path) => collapsed.has(path));
+  useEffect(() => {
+    const now = docsCollapsed();
+    const open = now.filter((path) => !pathname.startsWith(`/${path}/`));
+    if (open.length < now.length) setDocsCollapsed(open);
+  }, [pathname]);
   const toggle = (path: string) =>
-    setCollapsed((current) => {
-      const next = new Set(current);
-      if (!next.delete(path)) next.add(path);
-      return next;
-    });
+    setDocsCollapsed(
+      collapsed.has(path)
+        ? folded.filter((other) => other !== path)
+        : [...folded, path],
+    );
 
   return (
     <nav
       aria-label="Docs"
       className={cn("flex flex-col text-sky-ink", className)}
     >
-      <Link
-        to="/"
-        className="flex items-center gap-2 rounded px-2 py-1.5 text-[15px] font-semibold hover:bg-sky-well"
-      >
-        <ArrowLeft className="size-3.5" />
-        Studio
-      </Link>
-      <div className="mt-3 min-h-0 overflow-y-auto overscroll-contain">
+      <div className="flex items-center justify-between gap-2">
+        <Link
+          to="/"
+          className="flex items-center gap-2 rounded px-2 py-1.5 text-[15px] font-semibold hover:bg-sky-well"
+        >
+          <ArrowLeft className="size-3.5" />
+          Studio
+        </Link>
+        {foldAll && (
+          <Button
+            unstyled
+            onClick={() => setDocsCollapsed(allFolded ? [] : folders)}
+            className="flex cursor-pointer items-center gap-1.5 rounded px-2 py-1.5 text-xs font-medium opacity-70 hover:bg-sky-well hover:opacity-100"
+          >
+            {allFolded ? (
+              <ChevronsUpDown className="size-3.5" />
+            ) : (
+              <ChevronsDownUp className="size-3.5" />
+            )}
+            <span>{allFolded ? "Expand all" : "Collapse all"}</span>
+          </Button>
+        )}
+      </div>
+      {/* Only the sticky desktop column keeps its scroll from the page's;
+          on phones the menu scrolls on into the page. */}
+      <div className="mt-3 min-h-0 overflow-y-auto lg:overscroll-contain">
         <DocsTree nodes={tree} collapsed={collapsed} onToggle={toggle} />
       </div>
       <div className="mt-auto px-2 pt-4 text-sm whitespace-nowrap">

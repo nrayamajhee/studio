@@ -20,8 +20,10 @@ const kitPreset = (kit: string) =>
   DEVICE_PRESETS.find(({ target }) => target === kit) ?? DEVICE_PRESETS[0];
 
 // Drum beats (Shift + Drum grid), by style, after the favorites: the red knob
-// (or ← →) picks a page and the blue one a beat. A tile tapped, or Play, plays it on the
-// preview, on its kit at the tempo; Play again pauses it. Save loads it
+// (or ← →) picks a page and the blue one a beat. Picking a beat puts its kit
+// on the keys (the instrument pads keep what they're bound to). A tile
+// tapped, or Play, plays it on the preview, on its kit at the tempo; Play
+// again pauses it. Save loads it
 // into the drum grid on that kit, setting the time signature to its own, and
 // opens the grid to play or keep it; so does a tile double-clicked. Mute
 // stars it.
@@ -41,6 +43,10 @@ export const beatsMode: Mode = (device, base) => {
     categoryOf: ({ style }) => style,
     index: browse.beatIndex,
     setIndex: browse.setBeatIndex,
+    onPick: (beat) => {
+      const kit = kitPreset(beat.kit);
+      if (sound.preset.id !== kit.id) sound.selectPreset(kit);
+    },
   });
   const { shelf, at } = shelfAt(shelves, beatIndex);
   const audition = (index: number) => {

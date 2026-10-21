@@ -1,4 +1,4 @@
-import type { DrumPieceId, KitId } from "../../lib/physical";
+import type { BusId, DrumPieceId, KitId } from "../../lib/physical";
 import { PATCH_BY_ID } from "../../lib/physical/patches";
 import type { DrumKitPatch } from "../../lib/physical/patches/types";
 import { F3_MIDI } from "./deviceMath";
@@ -14,11 +14,13 @@ export type DrumHit = {
 };
 
 // A drum pattern: `bars` bars of the meter, on a grid of `perBeat` steps a
-// beat. Hits past its end are kept for when it grows again.
+// beat, its hits written for `kit` (see carryPattern). Hits past its end are
+// kept for when it grows again.
 export type DrumPattern = {
   perBeat: number;
   bars: number;
   hits: readonly DrumHit[];
+  kit?: KitId;
 };
 
 // Steps a beat the blue knob picks from: eighths to 32nds, and triplets.
@@ -43,6 +45,7 @@ export const kitRows = (kit: KitId): DrumPieceId[] => {
 // from middle C for the hand-drum bols.
 export const PIECE_NOTES: Readonly<Record<DrumPieceId, number>> = {
   kick: 36,
+  sticks: 31,
   stick: 37,
   snare: 38,
   clap: 39,
@@ -78,6 +81,117 @@ const NOTE_PIECES = new Map(
 
 // The piece a take's note strikes on a kit, if it is one.
 export const notePiece = (note: number) => NOTE_PIECES.get(note);
+
+// Where a stroke lands on a drum and how: the open bass, a slap on it, the
+// open treble, its rim with the fundamental damped, a slap on it, or bass and
+// treble at once.
+type Stroke =
+  "openBass" | "bassSlap" | "openTreble" | "trebleRim" | "trebleSlap" | "both";
+
+// The hand drums' strokes by where they land; the first of each kind is the
+// one a stroke from elsewhere becomes.
+const HAND_STROKES: Partial<
+  Record<KitId, Partial<Record<DrumPieceId, Stroke>>>
+> = {
+  madal: {
+    dhin: "openBass",
+    ka: "bassSlap",
+    ta: "openTreble",
+    tin: "trebleRim",
+    ti: "trebleSlap",
+    dha: "both",
+  },
+  tabla: {
+    ge: "openBass",
+    ke: "bassSlap",
+    tin: "openTreble",
+    tun: "openTreble",
+    na: "trebleRim",
+    te: "trebleSlap",
+    dha: "both",
+    dhin: "both",
+  },
+};
+
+// A drum kit's pieces by the stroke that stands in for each on a hand drum,
+// and the piece each stroke comes back as: the kick for the open bass, the
+// snare for a slap on it, the hats for the treble's ring and rim.
+const KIT_STROKES: Partial<Record<DrumPieceId, Stroke>> = {
+  kick: "openBass",
+  lowTom: "openBass",
+  snare: "bassSlap",
+  clap: "bassSlap",
+  openHat: "openTreble",
+  highTom: "openTreble",
+  closedHat: "trebleRim",
+  ride: "trebleRim",
+  bell: "trebleRim",
+  cowbell: "trebleRim",
+  stick: "trebleSlap",
+  sticks: "trebleSlap",
+  tambourine: "trebleSlap",
+  crash: "both",
+};
+const KIT_PIECES: Readonly<Record<Stroke, DrumPieceId>> = {
+  openBass: "kick",
+  bassSlap: "snare",
+  openTreble: "openHat",
+  trebleRim: "closedHat",
+  trebleSlap: "stick",
+  both: "kick",
+};
+
+// What `piece`, played on `from`, becomes on `to`: the same piece between
+// drum kits (each keeps its own), and to or from a hand drum the piece or
+// stroke landing the same way, where the kit has one.
+function carryPiece(piece: DrumPieceId, from: KitId, to: KitId) {
+  const fromHand = HAND_STROKES[from];
+  const toHand = HAND_STROKES[to];
+  if (!fromHand && !toHand) return piece;
+  const stroke = fromHand ? fromHand[piece] : KIT_STROKES[piece];
+  if (!stroke) return piece;
+  const carried = toHand
+    ? (Object.keys(toHand) as DrumPieceId[]).find(
+        (other) => toHand[other] === stroke,
+      )
+    : KIT_PIECES[stroke];
+  return carried && kitRows(to).includes(carried) ? carried : piece;
+}
+
+// The pattern written for `kit`: each hit moved to the piece or stroke that
+// plays it there (a kick to the madal's dhin, the madal's dhin to the
+// tabla's ge, and back), the louder kept where two land together.
+export function carryPattern(pattern: DrumPattern, kit: KitId): DrumPattern {
+  const from = pattern.kit;
+  if (from === kit) return pattern;
+  if (!from) return { ...pattern, kit };
+  const hits = new Map<string, DrumHit>();
+  for (const hit of pattern.hits) {
+    const piece = carryPiece(hit.piece, from, kit);
+    const key = `${piece}@${hit.beat}`;
+    const there = hits.get(key);
+    if (!there || there.velocity < hit.velocity)
+      hits.set(key, { ...hit, piece });
+  }
+  return { ...pattern, kit, hits: [...hits.values()] };
+}
+
+const isKitBus = (bus: BusId): bus is KitId =>
+  PATCH_BY_ID[bus]?.family === "drums";
+
+// A take's note played on `from`, as `to` plays it: between kits the piece or
+// stroke that plays it there (see carryPiece); an instrument's note on a kit
+// the piece its key strikes; a kit's note on an instrument the key on the
+// keybed (from F3) its piece sits on. Null where nothing plays it.
+export function carryNote(note: number, from: BusId, to: BusId) {
+  if (!isKitBus(from))
+    return isKitBus(to) ? PIECE_NOTES[kitKeys(to)[note % 12]] : note;
+  const piece = notePiece(note);
+  if (!piece) return null;
+  if (isKitBus(to)) return PIECE_NOTES[carryPiece(piece, from, to)];
+  const key = kitKeys(from).indexOf(piece);
+  return key < 0 ? null : F3_MIDI + ((((key - F3_MIDI) % 12) + 12) % 12);
+}
 
 export const patternSteps = (pattern: DrumPattern, meter: Meter) =>
   pattern.bars * meter.beats * pattern.perBeat;
@@ -172,6 +286,7 @@ export function takePattern(
     perBeat,
     bars: Math.max(1, Math.min(MAX_STEP_BARS, bars)),
     hits: [...hits.values()],
+    kit,
   };
 }
 
@@ -185,6 +300,8 @@ export const isPattern = (value: unknown): value is DrumPattern => {
     Number.isInteger(pattern.bars) &&
     pattern.bars >= 1 &&
     pattern.bars <= MAX_STEP_BARS &&
+    (pattern.kit === undefined ||
+      PATCH_BY_ID[pattern.kit]?.family === "drums") &&
     Array.isArray(pattern.hits) &&
     pattern.hits.every(
       (hit) =>

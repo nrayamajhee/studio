@@ -245,6 +245,21 @@ export function setEdit(
   });
 }
 
+// Sets a preset's edits all at once (a track's own settings), dropping any
+// it had.
+export function replaceEdits(presetId: string, edits: PresetEdits) {
+  update((lib) => {
+    const others = without(lib.edits, presetId);
+    return {
+      ...lib,
+      edits:
+        Object.keys(edits).length > 0
+          ? { ...others, [presetId]: edits }
+          : others,
+    };
+  });
+}
+
 export function clearEdits(presetId: string) {
   update((lib) => ({ ...lib, edits: without(lib.edits, presetId) }));
 }

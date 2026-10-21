@@ -29,6 +29,7 @@ export type KitId =
   | "drums"
   | "rockDrums"
   | "jazzDrums"
+  | "jazzStickDrums"
   | "drums808"
   | "drums909"
   | "madal"
@@ -50,6 +51,8 @@ export type DrumPieceId =
   // The stick laid across the snare, its shaft clicking on the rim (a drum
   // machine's rim shot).
   | "stick"
+  // Two drumsticks clicked together, as a drummer counts a band in.
+  | "sticks"
   // The ride struck on its raised bell.
   | "bell"
   | "tambourine"

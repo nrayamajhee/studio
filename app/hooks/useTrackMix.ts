@@ -22,7 +22,7 @@ const loopOf = (track: Track) => (track.loop?.on ? track.loop : null);
 // The tracks view's play mode: every track rendered offline with the sound it
 // was saved with, then mixed together on the audio clock, looping over a
 // timeline `span` beats long at `bpm`. A track renders again only when its
-// sound or (on a grid) the tempo changes; volume, mute and solo just move its
+// sound or its tempo changes; volume, mute and solo just move its
 // gain. Changing the arrangement while it plays carries on from the same
 // place.
 export function useTrackMix(

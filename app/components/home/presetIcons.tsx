@@ -75,6 +75,7 @@ import {
   HarmoniumIcon,
   HarpIcon,
   JazzKitIcon,
+  JazzStickKitIcon,
   KalimbaIcon,
   MadalIcon,
   NylonGuitarIcon,
@@ -122,6 +123,7 @@ export const PRESET_ICONS: Record<string, ComponentType> = {
   tabla: TablaIcon,
   rock: RockKitIcon,
   jazz: JazzKitIcon,
+  jazzSticks: JazzStickKitIcon,
   drum808: Drum808Icon,
   drum909: Drum909Icon,
   // The Synth pad shows lucide's AudioWaveform, so presets get their own.

@@ -51,5 +51,7 @@ export function resolveBindings(device: Device): Bindings {
     instrumentPad: mode.instrumentPad ?? base.instrumentPad,
     chordPad: mode.chordPad ?? base.chordPad,
     screen: { ...base.screen, ...mode.screen },
+    keyPress: mode.keyPress,
+    previewSound: mode.previewSound,
   };
 }

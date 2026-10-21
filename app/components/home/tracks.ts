@@ -1,4 +1,5 @@
 import { isKit, type DeviceSound } from "./deviceEngine";
+import { carryNote } from "./drumPattern";
 import { modulesOf, withModules, type ModuleSettings } from "./modules";
 import {
   MAX_TAKE_MS,
@@ -42,6 +43,10 @@ export type Track = {
   // Missing on tracks saved before they kept it; see `trackSource`.
   source?: TrackSource;
   take: Take;
+  // The instrument the take was played on; it plays on the track's own now
+  // (see trackTake). Missing on tracks saved before their instrument could
+  // change: the one they play.
+  takeTarget?: DeviceSound["target"];
   timing: Timing;
   // Plays at the tape's tempo instead of its own (`timing.bpm`). Missing on
   // tracks saved before they kept a tempo; see `followsTape`.
@@ -119,6 +124,7 @@ export function makeTrack(
     modules: structuredClone(modules),
     source,
     take: structuredClone(take),
+    takeTarget: sound.target,
     timing,
     followTape: false,
     start: 0,
@@ -155,29 +161,30 @@ export const trackBpm = (track: Track, bpm: number) =>
 
 // One of the take's own beats as the track plays it on a tape at `bpm`, in
 // ms.
-const takeBeatMs = (track: Track, bpm: number) =>
-  60_000 / trackBpm(track, bpm);
+const takeBeatMs = (track: Track, bpm: number) => 60_000 / trackBpm(track, bpm);
 
-// The whole take as the track plays it on a tape at `bpm`, in ms: on a grid
-// stretched to its tempo, keeping its beats, then snapped to the grid; off
-// one scaled from the tempo it was played at.
-function playedTimeline(track: Track, bpm: number) {
-  const tempo = trackBpm(track, bpm);
-  if (track.timing.perBeat > 0)
-    return timeline(track.take, { ...track.timing, bpm: tempo });
-  const stretch = track.take.bpm / tempo;
+// The take as the track's instrument plays it: the notes it was played with,
+// carried onto the instrument now on the track (a tabla's ge onto a madal's
+// dhin or a drum kit's kick, and back), so changing it loses nothing.
+export function trackTake(track: Track): Take {
+  const from = track.takeTarget ?? track.sound.target;
+  const to = track.sound.target;
+  if (from === to) return track.take;
   return {
-    length: track.take.length * stretch,
-    notes: track.take.notes.map((note) => ({
-      ...note,
-      start: note.start * stretch,
-      duration: note.duration * stretch,
-    })),
+    ...track.take,
+    notes: track.take.notes.flatMap((played) => {
+      const note = carryNote(played.note, from, to);
+      return note === null ? [] : [{ ...played, note }];
+    }),
   };
 }
 
-// The whole take at its own tempo, in ms: quantized on a grid, as played
-// without one.
+// The whole take as the track plays it on a tape at `bpm`, in ms: as played,
+// stretched from the tempo it was played at to the track's, in whole bars.
+const playedTimeline = (track: Track, bpm: number) =>
+  timeline(trackTake(track), { ...track.timing, bpm: trackBpm(track, bpm) });
+
+// The whole take at its own tempo, in ms, in whole bars.
 const ownTimeline = (track: Track) =>
   timeline(track.take, { ...track.timing, bpm: track.take.bpm });
 
@@ -189,11 +196,12 @@ export const takeBeatsAt = (track: Track, bpm: number, beats: number) =>
 export const takeBeats = (track: Track) =>
   ownTimeline(track).length / (60_000 / track.take.bpm);
 
-// A take's grid steps per beat: its own grid, or sixteenths on a free take.
+// The steps a beat a track's clip edges keep to: a drum-grid track's own, or
+// sixteenths on one from the piano roll.
 export const gridSteps = (track: Track) => track.timing.perBeat || 4;
 
-// What a loop's edges move by, in the take's beats: two grid steps (an eighth
-// on a free take), so the knob crosses a take quickly but stays on its grid.
+// What a loop's edges move by, in the take's beats: two steps (an eighth from
+// the piano roll), so the knob crosses a take quickly but stays on its steps.
 export const loopStep = (track: Track) => 2 / gridSteps(track);
 
 // The notes sounding in [from, to) ms, moved to start at 0. A note across an
@@ -307,7 +315,7 @@ export function clipOf(track: Track, bpm: number): TrackClip {
 // The track cut down to its loop: the notes outside it deleted, those across
 // its edges clipped to them (never quantized), and the rest moved up to the
 // take's start, which slides (with every copy) to where the loop was so it
-// still sounds there. The loop stays on, now the whole take.
+// still sounds there. The clip is done with: the track plays whole.
 export function cutToLoop(track: Track, bpm: number): Track {
   const { loop } = track;
   if (!loop) return track;
@@ -328,7 +336,7 @@ export function cutToLoop(track: Track, bpm: number): Track {
       ...copy,
       start: copy.start + shift,
     })),
-    loop: { start: 0, end: (to - from) / beat, on: true },
+    loop: undefined,
   };
 }
 

@@ -1,6 +1,12 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useState, type ReactNode } from "react";
 import { positionLabel } from "../components/home/deviceMath";
 import { MAX_BPM, MIN_BPM } from "../hooks/useTransport";
+import {
+  DEVICE_PRESETS,
+  deviceEngine,
+  type DevicePreset,
+} from "../components/home/deviceEngine";
+import { withModules } from "../components/home/modules";
 import {
   clipOf,
   copiesChange,
@@ -15,6 +21,7 @@ import {
   takeBeats,
   takeBeatsAt,
   trackBpm,
+  trackModules,
   type Track,
   type TrackCopy,
 } from "../components/home/tracks";
@@ -22,6 +29,7 @@ import { createStrictContext } from "./createStrictContext";
 import { useFeedback } from "./FeedbackProvider";
 import { isTake, useLanes } from "./LanesProvider";
 import { useShift } from "./ShiftProvider";
+import { useSound } from "./SoundProvider";
 import { useDrumGrid } from "./DrumGridProvider";
 import { useDeviceTransport } from "./TransportProvider";
 import { useView } from "./ViewProvider";
@@ -35,8 +43,52 @@ function useTracksValue() {
   const { shift, release } = useShift();
   const { showNotice } = useFeedback();
   const { bpm, barBeats } = useDeviceTransport();
-  const { lanes, pickedTrack: track, setFocusIndex, updateTrack } = useLanes();
+  const {
+    lanes,
+    tracks,
+    focusedLane,
+    pickedTrack: track,
+    setFocusIndex,
+    updateTrack,
+  } = useLanes();
   const { patternClip } = useDrumGrid();
+  const sound = useSound();
+
+  // The Synth view with a track picked shows and sets the track's own sound:
+  // opening it puts the track's instrument and settings on the keys, and
+  // each change made there is kept with the track.
+  const synthTrack =
+    view === "synth" && !isTake(focusedLane) ? focusedLane : null;
+  const synthTrackId = synthTrack?.id ?? null;
+  const openTrackSound = useEffectEvent(() => {
+    const opened = synthTrack;
+    if (!opened) return;
+    const preset =
+      sound.presets.find(({ id }) => id === opened.presetId) ??
+      DEVICE_PRESETS.find(({ target }) => target === opened.sound.target);
+    if (preset)
+      sound.playWith(preset, opened.sound.overrides[opened.sound.target] ?? {});
+  });
+  useEffect(() => openTrackSound(), [synthTrackId]);
+  const keepTrackSound = useEffectEvent(() => {
+    const kept = synthTrack;
+    if (!kept || sound.preset.id !== kept.presetId) return;
+    const { target } = kept.sound;
+    const live = deviceEngine.sound().overrides[target] ?? {};
+    const own = kept.sound.overrides[target] ?? {};
+    const same =
+      Object.keys(live).length === Object.keys(own).length &&
+      Object.entries(live).every(([id, value]) => own[id] === value);
+    if (!same)
+      updateTrack(kept.id, {
+        sound: {
+          ...kept.sound,
+          overrides: { ...kept.sound.overrides, [target]: live },
+        },
+      });
+  });
+  const soundKey = JSON.stringify(sound.values);
+  useEffect(() => keepTrackSound(), [synthTrackId, soundKey]);
 
   // The tracks view's zoom (a step of the zooms that fit) and the beat at
   // the left of its lanes.
@@ -272,6 +324,14 @@ function useTracksValue() {
           bpm: Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(tempo))),
         },
       }),
+    // Gives every track the same tempo of its own: `tempo`, the tape's.
+    setAllTrackTempo: (tempo: number) => {
+      for (const each of tracks)
+        updateTrack(each.id, {
+          followTape: false,
+          timing: { ...each.timing, bpm: tempo },
+        });
+    },
     // Links a track to the tape's tempo, or unlinks it, keeping the speed
     // it plays at now as its own.
     toggleFollowTape: (linked: Track) =>
@@ -284,6 +344,16 @@ function useTracksValue() {
             }
           : { followTape: true },
       ),
+    // Puts the preset now playing on a track, as it sounds now, through the
+    // track's own ADSR, LFO and FX. The take keeps the notes it was played
+    // with, and plays them on the new instrument (see trackTake).
+    setTrackInstrument: (changed: Track, preset: DevicePreset) =>
+      updateTrack(changed.id, {
+        name: preset.name,
+        presetId: preset.id,
+        sound: withModules(deviceEngine.sound(), trackModules(changed)),
+        takeTarget: changed.takeTarget ?? changed.sound.target,
+      }),
     // A track's mute, or with `solo` its solo. The take has neither.
     toggleSwitch: (switched: Track, solo: boolean) => {
       if (solo) updateTrack(switched.id, { soloed: !switched.soloed });

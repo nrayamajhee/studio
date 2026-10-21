@@ -740,6 +740,30 @@ export function StickIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// Two drumsticks crossed, their tips clicking together.
+export function SticksIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 21L16 5" />
+      <path d="M20 21L8 5" />
+      <path d="M10.5 3.5l1.5 1.5 1.5-1.5" />
+    </svg>
+  );
+}
+
+// A snare with two sticks crossed over it: a jazz kit played with sticks.
+export function JazzStickKitIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 2.5l7 7" />
+      <path d="M21 2.5l-7 7" />
+      <ellipse cx="12" cy="12" rx="10" ry="3.5" />
+      <path d="M2 12v6a10 3.5 0 0 0 20 0v-6" />
+      <path d="M7 15.3v6M12 15.5v6.5M17 15.3v6" />
+    </svg>
+  );
+}
+
 // A brush's wires fanned out, stirring a curve across the head.
 export function SweepIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -767,6 +791,7 @@ export const DRUM_PIECES: Readonly<
   ride: { name: "Ride", Icon: RideIcon },
   sweep: { name: "Brush sweep", Icon: SweepIcon },
   stick: { name: "Side stick", Icon: StickIcon },
+  sticks: { name: "Sticks", Icon: SticksIcon },
   bell: { name: "Ride bell", Icon: RideBellIcon },
   tambourine: { name: "Tambourine", Icon: TambourineIcon },
   cowbell: { name: "Cowbell", Icon: Bell },
