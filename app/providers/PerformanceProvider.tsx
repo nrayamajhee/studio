@@ -20,7 +20,6 @@ import {
   usePlayStyle,
   useSavedPlayStyles,
 } from "../components/home/chordStore";
-import { beatMs } from "../components/home/noteRecorder";
 import {
   progressionTake,
   type Progression,
@@ -132,7 +131,7 @@ function usePerformanceValue() {
       chordToPlay === null || view === "drumGrid"
         ? DEFAULT_PLAY_STYLE
         : playStyle,
-      () => beatMs(liveTiming.current) / playStyle.perBeat,
+      () => liveTiming.current,
       {
         on: (midi, velocity) => {
           deviceEngine.noteOn(midi, velocity);

@@ -7,6 +7,7 @@ import {
 } from "react";
 import { meterIndexOf } from "../components/home/deviceMath";
 import { METERS } from "../components/home/noteRecorder";
+import { STRAIGHT } from "../components/home/swing";
 import {
   openedTape,
   setTapeTiming,
@@ -23,19 +24,21 @@ function useTransportValue() {
   // is the start of the take.
   const [rollPosition, setRollPosition] = useState<number | null>(null);
 
-  // Each tape keeps its tempo and time signature: opening one sets them, and
-  // changing them is kept with the tape open.
-  const { bpm, meterIndex, setBpm, setMeter } = transport;
-  const tapeTiming = useRef({ bpm, meter: meterIndex });
+  // Each tape keeps its tempo, time signature and swing: opening one sets
+  // them, and changing them is kept with the tape open.
+  const { bpm, meterIndex, swing, setBpm, setMeter, setSwing } = transport;
+  const tapeTiming = useRef({ bpm, meter: meterIndex, swing });
   useEffect(() => {
     const last = tapeTiming.current;
-    if (last.bpm === bpm && last.meter === meterIndex) return;
-    tapeTiming.current = { bpm, meter: meterIndex };
-    setTapeTiming(bpm, METERS[meterIndex]);
-  }, [bpm, meterIndex]);
+    if (last.bpm === bpm && last.meter === meterIndex && last.swing === swing)
+      return;
+    tapeTiming.current = { bpm, meter: meterIndex, swing };
+    setTapeTiming(bpm, METERS[meterIndex], swing);
+  }, [bpm, meterIndex, swing]);
   const applyTapeTiming = (tape: Tape) => {
     setBpm(tape.bpm);
     setMeter(meterIndexOf(tape.meter));
+    setSwing(tape.swing ?? STRAIGHT);
   };
   const applyOpenedTape = useEffectEvent(() => {
     const opened = openedTape();

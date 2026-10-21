@@ -4,7 +4,7 @@ order = 2
 
 # Drum beats
 
-The Device's drum beats (Shift + Drum grid) are 83 grooves in ten styles, from a kick and a hi-hat to Ravel's _Boléro_ and the tabla's taals. The red knob picks a style and the blue knob a beat. A tap or Play previews it on its own kit at the Device's tempo, and Save loads it into the drum grid, setting the time signature to match. The tempo listed for each beat below is the one it is heard at on record; set it with the tempo knob for that feel.
+The Device's drum beats (Shift + Drum grid) are 84 grooves in ten styles, from a kick and a hi-hat to Ravel's _Boléro_ and the tabla's taals. The red knob picks a style and the blue knob a beat. Your favorites come first; New jack swing and its madal version, Sixteenth hats, Madal kick kick hat and Lo-fi start out there. A tap or Play previews it on its own kit at the Device's tempo, and Save loads it into the drum grid, setting the time signature to match. The tempo listed for each beat below is the one it is heard at on record; set it with the tempo knob for that feel.
 
 Most are the common forms drummers teach rather than transcriptions: written out simply, for the Device's kits, to be played and changed. Where a groove comes from one record or one drummer, its entry names them, and the examples say where to hear the feel. All credit for the grooves goes to the drummers who made them.
 
@@ -481,6 +481,18 @@ Kick        x....x ...... ..x... ...x..
 ```
 
 Hip hop's drum machines with swung sixteenths and a backbeat doubled by a clap, built for dancing to R&B.
+
+### Madal new jack swing
+
+Madal · 108 BPM · 4/4 · six steps a beat
+
+```text
+Ka          ..xx.. x.xx.x x..x.x x.x..x
+Ta          ...... X..... ...... X.....
+Dhin        x....x ...... ..x... ...x..
+```
+
+New jack swing on the madal: the open bass head (dhin) for the kick, the closed slap on it (ka) for the swung hats, and the treble ringing open (ta) for the backbeat. Ka drops out where dhin lands, since a hand plays one stroke on a head at a time.
 
 _Examples:_ "My Prerogative" (Bobby Brown), "Rump Shaker" (Wreckx-n-Effect)
 

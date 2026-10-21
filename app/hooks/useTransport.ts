@@ -12,6 +12,12 @@ import {
   type Take,
   type Timing,
 } from "../components/home/noteRecorder";
+import {
+  STRAIGHT,
+  straightenNotes,
+  swingOn,
+  type Swing,
+} from "../components/home/swing";
 
 export type TransportState = "stopped" | "playing" | "recording";
 
@@ -69,8 +75,15 @@ export function useTransport() {
   const [metronome, setMetronome] = useState(false);
   const [bpm, setBpmState] = useState(DEFAULT_TIMING.bpm);
   const [meterIndex, setMeterIndex] = useState(DEFAULT_METER);
-  // The piano roll has no grid: takes keep the timing they were played with.
-  const timing: Timing = { bpm, meter: METERS[meterIndex], perBeat: 0 };
+  const [swing, setSwingState] = useState<Swing>(STRAIGHT);
+  // The piano roll has no grid: takes keep the timing they were played with,
+  // played through the swing.
+  const timing: Timing = {
+    bpm,
+    meter: METERS[meterIndex],
+    perBeat: 0,
+    swing,
+  };
   // The beat in the bar the metronome last clicked.
   const [beat, setBeat] = useState(0);
   // The take outlives a reload (see sessionStore).
@@ -132,6 +145,11 @@ export function useTransport() {
   const setMeter = (index: number) => {
     timingRef.current = { ...timingRef.current, meter: METERS[index] };
     setMeterIndex(index);
+  };
+
+  const setSwing = (next: Swing) => {
+    timingRef.current = { ...timingRef.current, swing: next };
+    setSwingState(next);
   };
 
   // Tap mode stops the metronome so its clicks don't pull the taps off.
@@ -249,7 +267,13 @@ export function useTransport() {
     // A take ends at the hour, even if the timer that ends it fires late.
     const now = Math.min(performance.now(), recorder.origin + MAX_TAKE_MS);
     const length = now - recorder.origin;
-    const notes = recorder.take(now).filter(({ start }) => start < length);
+    const played = recorder.take(now).filter(({ start }) => start < length);
+    // Kept straight, since the take plays back through the swing: what was
+    // played swung comes back as it was.
+    const swung = swingOn(timingRef.current.swing);
+    const notes = swung
+      ? straightenNotes(played, beatMs(timingRef.current), swung)
+      : played;
     display.current = { kind: "idle" };
     if (notes.length === 0) return null;
     const recorded: Take = { notes, length, bpm };
@@ -341,6 +365,8 @@ export function useTransport() {
     timing,
     meterIndex,
     setMeter,
+    swing,
+    setSwing,
     tapping,
     tapCount,
     startTapping,

@@ -4,7 +4,9 @@ import {
   previewHome,
   previewTempo,
   progressionTake,
+  type Progression,
 } from "../progressions";
+import { swingOn, swungTake } from "../swing";
 import {
   arrowPads,
   favoritesPicker,
@@ -53,22 +55,22 @@ export const progressionsMode: Mode = (device, base) => {
   const taped = (lanes.lanes[0]?.take.notes.length ?? 0) > 0;
   // The progression as it would go onto the tape, in the play style and at
   // the tempo, on the keys' instrument.
-  // Previews run a little faster than the tape (see previewTempo); Save loads
-  // the take at the tape's own tempo.
+  // Previews run a little faster than the tape (see previewTempo), swung as
+  // the take plays; Save loads the take at the tape's own tempo.
   const previewTiming = {
     ...transport.timing,
     bpm: previewTempo(transport.timing.bpm),
   };
+  const previewOf = (progression: Progression, note: number) =>
+    swungTake(
+      progressionTake(progression, note, previewTiming, performance.playStyle),
+      swingOn(transport.swing),
+    );
   const audition = (index: number) => {
     const progression = listed[index];
     preview.play(
       progression.id,
-      progressionTake(
-        progression,
-        previewHome(progression),
-        previewTiming,
-        performance.playStyle,
-      ),
+      previewOf(progression, previewHome(progression)),
     );
   };
   // The progression from `note` as its home, from the top, as a preview of
@@ -76,7 +78,7 @@ export const progressionsMode: Mode = (device, base) => {
   const auditionFrom = (note: number) =>
     preview.play(
       `${chosen.id}:from-key`,
-      progressionTake(chosen, note, previewTiming, performance.playStyle),
+      previewOf(chosen, note),
       undefined,
       true,
     );

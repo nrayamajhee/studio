@@ -42,7 +42,7 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Synth parameters](../../public/docs/the-device/view-synth.webp)
 
-**Opened by:** Synth parameters. ← → turn the pages; the knobs set the page's four values; Shift its extras; Save opens the icon picker. With a track picked on the tracks, it opens on that track's instrument and settings, and every change is kept with the track; Shift + Delete, twice, resets the track's sound to its instrument's.
+**Opened by:** Synth parameters. ← → turn the pages; the knobs set the page's four values; Shift its extras; Save opens the icon picker. With a track picked on the tracks, it opens on that track's instrument and settings, and every change is kept with the track. Shift + Delete, twice, resets the sound to its instrument's: the picked track's, or the take's (not over the piano roll or drum grid).
 
 ### Save
 
@@ -54,7 +54,7 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![The ADSR page](../../public/docs/the-device/view-module.webp)
 
-**Opened by:** ADSR, LFO or FX. The knobs set its four values and switch it on; the badge shows on or off. With a track picked on the tracks they're the track's, and Shift + Delete, twice, puts that one back as it starts, off.
+**Opened by:** ADSR, LFO or FX. The knobs set its four values and switch it on; the badge shows on or off. With a track picked on the tracks they're the track's. Shift + Delete, twice, puts the open one back as it starts, off: the picked track's, or the take's (not over the piano roll or drum grid).
 
 ### Chords
 
@@ -66,25 +66,25 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Play style](../../public/docs/the-device/view-play-style.webp)
 
-**Opened by:** Play style. Red turns the groups, blue picks; green sets the rate or strum; Save keeps it as a new style.
+**Opened by:** Play style. Red turns the groups, blue picks, and Mute stars the pick into the Favorites page that comes first (Block, Pulse, Accent pulse, Accent down-up, Folk strum, Up-down and Alberti to begin with); green sets the rate or strum; Save keeps it as a new style.
 
 ### Tempo
 
 ![Tempo](../../public/docs/the-device/view-tempo.webp)
 
-**Opened by:** Tempo. Green and ← → set the tape's BPM (or drag or type the number); ↓ taps it in. With a track picked on the tracks they set that track's own tempo instead, and ↑ links it to the tape's tempo or gives it its own again. With no track picked, ↑ gives every track the tape's tempo as its own.
+**Opened by:** Tempo. Green and ← → set the tape's BPM (or drag or type the number); ↓ taps it in. With a track picked on the tracks they set that track's own tempo instead, and ↑ links it to the tape's tempo or gives it its own again. With no track picked, ↑ gives every track the tape's tempo as its own. Red sets the swing (50% straight to 75%) and blue what it swings (eighths or sixteenths), shown on the top line in their colours: the tape's, which the take, the drum grid and the play styles play through, or the picked track's own. A drum-grid track on triplets plays straight.
 
 ### Progressions
 
 ![Progressions](../../public/docs/the-device/view-progressions.webp)
 
-**Opened by:** Shift + Piano roll. Red turns the kinds, blue picks; a tap or Play previews it in its own key, and a key previews it from that note, a little faster than the tape's tempo (by more the slower the tape is); Save, then a key, loads it as the take, at the tape's tempo.
+**Opened by:** Shift + Piano roll. Red turns the kinds, blue picks, and Mute stars the pick into the Favorites page that comes first (Fast car and Suspended are there to begin with); a tap or Play previews it in its own key, and a key previews it from that note, a little faster than the tape's tempo (by more the slower the tape is); Save, then a key, loads it as the take, at the tape's tempo.
 
 ### Beats
 
 ![Beats](../../public/docs/the-device/view-beats.webp)
 
-**Opened by:** Shift + Drum grid. Red turns the styles, blue picks, and the keys play the picked beat's kit (the instrument pads keep their sounds); a tap or Play previews; Save loads it into the drum grid.
+**Opened by:** Shift + Drum grid. Red turns the styles, blue picks, Mute stars the pick into the Favorites page that comes first (New jack swing, Madal new jack swing, Sixteenth hats, Madal kick kick hat and Lo-fi are there to begin with), and the keys play the picked beat's kit (the instrument pads keep their sounds); a tap or Play previews; Save loads it into the drum grid.
 
 ### Piano roll
 

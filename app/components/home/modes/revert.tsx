@@ -14,6 +14,7 @@ import { turnPage } from "../deviceMath";
 import { ScreenHint, ScreenPad, TILES_PER_PAGE } from "../DeviceScreen";
 import { AdsrIcon } from "../instrumentIcons";
 import { INITIAL_MODULES } from "../modules";
+import { STRAIGHT } from "../swing";
 import { DEFAULT_TIMING, METERS, meterLabel } from "../noteRecorder";
 import { resetPads } from "../presetStore";
 import {
@@ -93,11 +94,12 @@ const revertOptions = ({
     {
       id: "tempo",
       label: "Tempo",
-      detail: `${DEFAULT_TIMING.bpm} BPM in ${meterLabel(DEFAULT_TIMING.meter)}`,
+      detail: `${DEFAULT_TIMING.bpm} BPM in ${meterLabel(DEFAULT_TIMING.meter)}, straight`,
       icon: <Metronome />,
       run: () => {
         transport.setBpm(DEFAULT_TIMING.bpm);
         transport.setMeter(METERS.indexOf(DEFAULT_TIMING.meter));
+        transport.setSwing(STRAIGHT);
       },
     },
     {

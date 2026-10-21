@@ -5,15 +5,19 @@ import { deletePad } from "./base";
 import type { KnobBinding, Mode } from "../../../types/bindings";
 
 // The ADSR, LFO or FX of the focused lane: the four knobs set its params, in
-// knob order, switching it on. With a track picked, Shift + Delete puts it
-// back as it starts, off.
+// knob order, switching it on. Shift + Delete puts it back as it starts,
+// off: the picked track's, or the take's, though not over the piano roll or
+// drum grid.
 export const moduleMode =
   (id: ModuleId): Mode =>
   (device) => {
-    const { lanes, feedback } = device;
+    const { lanes, views, feedback } = device;
     const { modules, modulesOwner, setModuleStep, setModules } = lanes;
     const module = DEVICE_MODULES[id];
     const track = isTake(lanes.focusedLane) ? null : lanes.focusedLane;
+    const owner = track?.name ?? "the take";
+    const resettable =
+      views.openedOver !== "roll" && views.openedOver !== "drumGrid";
     const knob = (index: number): KnobBinding => {
       const spec = module.knobs[index];
       const step = modules.steps[id][index];
@@ -31,11 +35,11 @@ export const moduleMode =
         delete: deletePad(
           device,
           undefined,
-          track
+          resettable
             ? {
-                label: `Reset ${track.name}'s ${module.label}`,
-                key: `reset:${track.id}:${id}`,
-                prompt: `Press again to reset ${track.name}'s ${module.label}`,
+                label: `Reset ${owner}'s ${module.label}`,
+                key: `reset:${track?.id ?? "take"}:${id}`,
+                prompt: `Press again to reset ${owner}'s ${module.label}`,
                 run: () => {
                   setModules({
                     on: { ...modules.on, [id]: false },
@@ -44,7 +48,7 @@ export const moduleMode =
                       [id]: INITIAL_MODULES.steps[id],
                     },
                   });
-                  feedback.showNotice(`Reset ${track.name}'s ${module.label}`);
+                  feedback.showNotice(`Reset ${owner}'s ${module.label}`);
                 },
               }
             : undefined,

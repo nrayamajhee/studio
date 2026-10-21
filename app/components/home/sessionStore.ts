@@ -8,15 +8,17 @@ import {
 } from "./noteRecorder";
 import { INITIAL_PATTERN, isPattern, type DrumPattern } from "./drumPattern";
 import { starterTape } from "./starterSong";
+import { STRAIGHT, isSwing, type Swing } from "./swing";
 import type { Track } from "./tracks";
 
-// A tape: a set of tracks, with the tempo and time signature
-// they play at.
+// A tape: a set of tracks, with the tempo, time signature and swing
+// they play at (straight without one).
 export type Tape = {
   id: string;
   name: string;
   bpm: number;
   meter: Meter;
+  swing?: Swing;
   tracks: readonly Track[];
 };
 
@@ -99,6 +101,7 @@ const isTrack = (value: unknown): value is Track => {
     isNumber(track.timing?.bpm) &&
     isNumber(track.timing.meter?.beats) &&
     isNumber(track.timing.perBeat) &&
+    (track.timing.swing === undefined || isSwing(track.timing.swing)) &&
     isNumber(track.start) &&
     isNumber(track.volume) &&
     typeof track.muted === "boolean" &&
@@ -156,6 +159,7 @@ const isTape = (value: unknown): value is Tape => {
     isNumber(tape.bpm) &&
     isNumber(tape.meter?.beats) &&
     isNumber(tape.meter?.unit) &&
+    (tape.swing === undefined || isSwing(tape.swing)) &&
     Array.isArray(tape.tracks)
   );
 };
@@ -175,7 +179,15 @@ const emptyTape = (
   tapes: readonly Tape[],
   bpm = DEFAULT_TIMING.bpm,
   meter = DEFAULT_TIMING.meter,
-): Tape => ({ id: tapeId(), name: nextName(tapes), bpm, meter, tracks: [] });
+  swing = STRAIGHT,
+): Tape => ({
+  id: tapeId(),
+  name: nextName(tapes),
+  bpm,
+  meter,
+  swing,
+  tracks: [],
+});
 
 // The tapes as stored, or on a first visit the starter song, or a first tape
 // holding the tracks kept before there were tapes.
@@ -294,10 +306,11 @@ export function setTracks(
 
 export const openTape = (id: string) => setTapes(getSnapshot().tapes, id);
 
-// Adds an empty tape at `bpm` and `meter` after the others, and opens it.
-export function newTape(bpm: number, meter: Meter) {
+// Adds an empty tape at `bpm`, `meter` and `swing` after the others, and
+// opens it.
+export function newTape(bpm: number, meter: Meter, swing: Swing) {
   const { tapes } = getSnapshot();
-  const tape = emptyTape(tapes, bpm, meter);
+  const tape = emptyTape(tapes, bpm, meter, swing);
   setTapes([...tapes, tape], tape.id);
   return tape;
 }
@@ -321,20 +334,23 @@ export function deleteTape(id: string) {
   return open;
 }
 
-// Keeps the tempo and time signature with the open tape.
-export function setTapeTiming(bpm: number, meter: Meter) {
+// Keeps the tempo, time signature and swing with the open tape.
+export function setTapeTiming(bpm: number, meter: Meter, swing: Swing) {
   const { tapes, tape } = getSnapshot();
   const open = tapes.find(({ id }) => id === tape);
+  const kept = open?.swing ?? STRAIGHT;
   if (
     !open ||
     (open.bpm === bpm &&
       open.meter.beats === meter.beats &&
-      open.meter.unit === meter.unit)
+      open.meter.unit === meter.unit &&
+      kept.amount === swing.amount &&
+      kept.perBeat === swing.perBeat)
   )
     return;
   setTapes(
     tapes.map((candidate) =>
-      candidate.id === tape ? { ...candidate, bpm, meter } : candidate,
+      candidate.id === tape ? { ...candidate, bpm, meter, swing } : candidate,
     ),
     tape,
   );

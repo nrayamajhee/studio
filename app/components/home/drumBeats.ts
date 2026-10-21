@@ -456,6 +456,22 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       },
     },
     {
+      // New jack swing on the madal: the open bass head (dhin) for the kick,
+      // the closed slap on it (ka) for the swung hats, left out where the
+      // kick lands (one stroke on a head at a time), and the treble ringing
+      // open (ta) for the backbeat.
+      id: "madalNewJackSwing",
+      name: "Madal new jack swing",
+      bpm: 108,
+      kit: "madal",
+      perBeat: 6,
+      rows: {
+        dhin: "x....x ...... ..x... ...x..",
+        ka: "..xx.. x.xx.x x..x.x x.x..x",
+        ta: "...... X..... ...... X.....",
+      },
+    },
+    {
       // After Tony Allen: the hats carry the sixteenths while the kick and
       // snare talk around them.
       id: "afrobeat",

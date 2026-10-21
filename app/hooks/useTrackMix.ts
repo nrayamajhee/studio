@@ -46,6 +46,7 @@ export function useTrackMix(
     const key = [
       JSON.stringify(track.sound),
       trackBpm(track, bpm),
+      JSON.stringify(track.timing.swing),
       JSON.stringify(track.take),
       JSON.stringify(loopOf(track)),
     ].join("|");

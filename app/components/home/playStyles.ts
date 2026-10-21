@@ -1,3 +1,6 @@
+import { beatMs, type Timing } from "./noteRecorder";
+import { swingOn, swingTime } from "./swing";
+
 // How a held chord sounds: all at once, strummed, or as a pattern of its
 // notes in time with the tempo.
 export type PlayStyleId =
@@ -69,7 +72,7 @@ export const PLAY_STYLES: readonly {
   {
     id: "accentPulse",
     name: "Accent pulse",
-    detail: "Every third strike a touch harder",
+    detail: "Four to a bar: three struck bright, two and four light",
     group: "Rhythm",
     settings: ["rate"],
   },
@@ -207,17 +210,24 @@ type Strike = {
 // touch lighter (0.7), as a player leans into a beat or eases off an upstroke.
 const ACCENT = 0.9 / 0.8;
 const LIGHT = 0.7 / 0.8;
+// A piano player's four to the bar: the third struck full (the hardest,
+// brightest hammer) and let ring, the first as the keys play it, two and
+// four light and short. The lengths carry the accent as much as the levels,
+// since a full chord already rides the limiter.
+const FULL = 1 / 0.8;
+const SOFT = 0.5 / 0.8;
 
 const RHYTHMS: Partial<
   Record<PlayStyleId, { cycle: number; strikes: readonly Strike[] }>
 > = {
   pulse: { cycle: 1, strikes: [{ at: 0, hold: 0.5 }] },
   accentPulse: {
-    cycle: 3,
+    cycle: 4,
     strikes: [
-      { at: 0, hold: 0.5 },
-      { at: 1, hold: 0.5 },
-      { at: 2, hold: 0.5, level: ACCENT },
+      { at: 0, hold: 0.6 },
+      { at: 1, hold: 0.35, level: SOFT },
+      { at: 2, hold: 0.9, level: FULL },
+      { at: 3, hold: 0.35, level: SOFT },
     ],
   },
   strumPulse: { cycle: 1, strikes: [{ at: 0, hold: 0.5, sweep: "rising" }] },
@@ -480,15 +490,30 @@ export type ChordVoice = {
 // Plays `midis` in `style` at `velocity` until the returned function stops
 // it, which releases whatever still sounds. A pattern keeps going round while
 // held, each note lasting its step, or a pulse's strike half of it, and an
-// accented rhythm's strikes louder or softer. `stepMs` is read every step,
-// so a new tempo takes hold at once.
+// accented rhythm's strikes louder or softer. `timing` is read every step,
+// so a new tempo or swing takes hold at once; the steps swing from the
+// chord's start as from a beat.
 export function playChord(
   midis: readonly number[],
   style: PlayStyle,
-  stepMs: () => number,
+  timing: () => Timing,
   voice: ChordVoice,
   velocity: number,
 ) {
+  const stepMs = () => beatMs(timing()) / style.perBeat;
+  // Where the next step falls straight (ms since the chord started), and how
+  // long the step about to play lasts, swung.
+  let straight = 0;
+  const nextStep = () => {
+    const now = timing();
+    const beat = beatMs(now);
+    const from = straight;
+    straight += beat / style.perBeat;
+    const swing = swingOn(now.swing, style.perBeat);
+    return swing
+      ? swingTime(straight, beat, swing) - swingTime(from, beat, swing)
+      : straight - from;
+  };
   const notes = [...midis].sort((a, b) => a - b);
   const sounding: number[] = [];
   const timers: ReturnType<typeof setTimeout>[] = [];
@@ -507,7 +532,7 @@ export function playChord(
 
   const rhythm = RHYTHMS[style.id];
   if (style.id === "block" || notes.length < 2) {
-    notes.forEach(on);
+    notes.forEach((midi) => on(midi));
   } else if (rhythm) {
     // Each strike lets go of the last one, and its end cuts off any note of
     // its sweep still to come.
@@ -528,7 +553,7 @@ export function playChord(
     let count = 0;
     let next = performance.now();
     const tick = () => {
-      const step = stepMs();
+      const step = nextStep();
       const at = count++ % rhythm.cycle;
       for (const hit of rhythm.strikes) if (hit.at === at) strike(hit, step);
       // After a stall (a hidden tab) carry on from now rather than catch up.
@@ -545,7 +570,7 @@ export function playChord(
       if (at === 0) [...sounding].forEach(off);
       on(notes[at]);
       // After a stall (a hidden tab) carry on from now rather than catch up.
-      next = Math.max(next + stepMs(), performance.now());
+      next = Math.max(next + nextStep(), performance.now());
       timers[0] = setTimeout(tick, next - performance.now());
     };
     tick();
@@ -564,9 +589,9 @@ export function playChord(
     const step = () => {
       current.forEach(off);
       current = steps[index++ % steps.length].map((i) => notes[i]);
-      current.forEach(on);
+      current.forEach((midi) => on(midi));
       // After a stall (a hidden tab) carry on from now rather than catch up.
-      next = Math.max(next + stepMs(), performance.now());
+      next = Math.max(next + nextStep(), performance.now());
       timers[0] = setTimeout(step, next - performance.now());
     };
     step();

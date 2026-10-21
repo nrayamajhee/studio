@@ -64,6 +64,7 @@ function useDrumGridValue() {
     kit: stepKit ?? "drums",
     meter,
     bpm: transport.bpm,
+    swing: transport.swing,
   }));
   const getStepHead = () => stepPlayer.position() ?? stepHeadRef.current;
   // The pattern goes with the kit picked: written for another, its hits move

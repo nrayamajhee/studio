@@ -1,3 +1,5 @@
+import { swingNotes, swingOn, type Swing } from "./swing";
+
 // A take is kept as played, with the tempo it was played at, so it plays
 // back with the same timing at any tempo or time signature later, stretched
 // to it. Presses are timed to the millisecond whatever the meter.
@@ -30,11 +32,13 @@ export const METERS: readonly Meter[] = [
 ];
 
 // Where beats and bars fall, and on a drum-grid track the steps a beat it
-// was drawn on: 0 for the piano roll, whose takes keep their own timing.
+// was drawn on: 0 for the piano roll, whose takes keep their own timing. Its
+// swing bends the time it plays in (see swing.ts); none is straight.
 export type Timing = {
   bpm: number;
   meter: Meter;
   perBeat: number;
+  swing?: Swing;
 };
 
 export const DEFAULT_TIMING: Timing = {
@@ -116,9 +120,10 @@ export type Take = {
 };
 
 // A take on its own timeline in ms at `timing`: its notes as played,
-// stretched from the tempo they were played at, keeping their beats, over
-// whole bars of the meter. A take stopped within a sixteenth after a bar line
-// ends on it, and a note held past the end stops there.
+// stretched from the tempo they were played at, keeping their beats, and
+// swung by its swing, over whole bars of the meter. A take stopped within a
+// sixteenth after a bar line ends on it, and a note held past the end stops
+// there.
 export function timeline(take: Take | null, timing: Timing) {
   if (!take) return { length: 0, notes: [] as readonly PlayedNote[] };
   const stretch = take.bpm / timing.bpm;
@@ -126,14 +131,15 @@ export function timeline(take: Take | null, timing: Timing) {
   const length =
     Math.max(1, Math.ceil((take.length * stretch - beatMs(timing) / 4) / bar)) *
     bar;
+  const stretched = take.notes.map((note) => ({
+    ...note,
+    start: note.start * stretch,
+    duration: note.duration * stretch,
+  }));
+  const swing = swingOn(timing.swing, timing.perBeat);
   return {
     length,
-    notes: take.notes
-      .map((note) => ({
-        ...note,
-        start: note.start * stretch,
-        duration: note.duration * stretch,
-      }))
+    notes: (swing ? swingNotes(stretched, beatMs(timing), swing) : stretched)
       .filter(({ start }) => start < length)
       .map((note) => ({
         ...note,

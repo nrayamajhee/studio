@@ -3,6 +3,7 @@ import { ScreenHint, ScreenValue } from "../DeviceScreen";
 import { beatPattern, beatPreview, DRUM_BEATS } from "../drumBeats";
 import { METERS, meterLabel } from "../noteRecorder";
 import { setPattern } from "../sessionStore";
+import { swingOn, swungTake } from "../swing";
 import {
   arrowPads,
   favoritesPicker,
@@ -51,7 +52,11 @@ export const beatsMode: Mode = (device, base) => {
   const { shelf, at } = shelfAt(shelves, beatIndex);
   const audition = (index: number) => {
     const beat = listed[index];
-    preview.play(beat.id, beatPreview(beat, transport.bpm), {
+    const swung = swungTake(
+      beatPreview(beat, transport.bpm),
+      swingOn(transport.swing, beat.perBeat),
+    );
+    preview.play(beat.id, swung, {
       target: beat.kit,
       octave: 0,
     });

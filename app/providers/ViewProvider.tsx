@@ -17,6 +17,12 @@ const mainOf = (view: ScreenView): MainView | null =>
       ? view
       : null;
 
+// The screens the other views open over: the main screen, the tracks (and
+// the tapes), the piano roll and the drum grid.
+type BaseView = MainView | "scope";
+const baseOf = (view: ScreenView): BaseView | null =>
+  view === "scope" ? "scope" : mainOf(view);
+
 function useViewValue(initialView: ScreenView) {
   const [view, setView] = useState<ScreenView>(initialView);
   // Where closing a module view goes back to.
@@ -28,12 +34,19 @@ function useViewValue(initialView: ScreenView) {
   );
   const main = mainOf(view);
   if (main && main !== mainView) setMainView(main);
+  // The screen the view showing now was opened over.
+  const [openedOver, setOpenedOver] = useState<BaseView>(
+    baseOf(initialView) ?? "scope",
+  );
+  const under = baseOf(view);
+  if (under && under !== openedOver) setOpenedOver(under);
 
   return {
     view,
     setView,
     activeModule: isModuleView(view) ? view : null,
     mainView,
+    openedOver,
     // A view's own pad opens it, and pressed again goes back to the main
     // screen.
     toggleView: (opens: ScreenView) =>

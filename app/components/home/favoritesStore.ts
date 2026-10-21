@@ -2,18 +2,36 @@ import { useSyncExternalStore } from "react";
 
 // The pickers that keep favorites, and each one's starred items, by id, in
 // the order starred, persisted in localStorage. They lead their picker, on a
-// page of their own.
+// page of their own. A first visit starts with Nishan's.
 export type FavoriteKind =
   "instruments" | "chords" | "playStyles" | "progressions" | "beats";
 export type Favorites = Readonly<Record<FavoriteKind, readonly string[]>>;
 
 export const FAVORITES_KEY = "studio.favorites";
-const NO_FAVORITES: Favorites = {
+// Nishan's favorites: Block, the pulses, the accented down-up, the folk strum
+// and two arpeggios; Fast car and the starter song's Suspended; its New
+// jack swing on the 808 kit and on the madal, Sixteenth hats, Madal kick kick
+// hat and Lo-fi.
+const NISHANS_FAVORITES: Favorites = {
   instruments: [],
   chords: [],
-  playStyles: [],
-  progressions: [],
-  beats: [],
+  playStyles: [
+    "block",
+    "pulse",
+    "accentPulse",
+    "accentDownUp",
+    "folkStrum",
+    "upDown",
+    "alberti",
+  ],
+  progressions: ["fastCar", "suspended"],
+  beats: [
+    "newJackSwing",
+    "madalNewJackSwing",
+    "sixteenthHats",
+    "madalKickKickHat",
+    "loFi",
+  ],
 };
 
 let favorites: Favorites | null = null;
@@ -27,6 +45,7 @@ const ids = (value: unknown): readonly string[] =>
 function read(): Favorites {
   try {
     const stored = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "null");
+    if (stored === null) return NISHANS_FAVORITES;
     return {
       instruments: ids(stored?.instruments),
       chords: ids(stored?.chords),
@@ -35,7 +54,7 @@ function read(): Favorites {
       beats: ids(stored?.beats),
     };
   } catch {
-    return NO_FAVORITES;
+    return NISHANS_FAVORITES;
   }
 }
 
@@ -49,7 +68,7 @@ const subscribe = (listener: () => void) => {
 const getSnapshot = () => (favorites ??= read());
 
 export function useFavorites() {
-  return useSyncExternalStore(subscribe, getSnapshot, () => NO_FAVORITES);
+  return useSyncExternalStore(subscribe, getSnapshot, () => NISHANS_FAVORITES);
 }
 
 // Stars an item, or lets a starred one go; returns its picker's favorites as

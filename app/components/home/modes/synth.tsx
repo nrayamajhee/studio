@@ -24,11 +24,15 @@ const EMPTY: ScreenReadout = { label: "", display: "", amount: 0 };
 // their readings. The four knobs set the page's params, in the colours the
 // graph draws them in; held Shift, its extras. ← → turn the pages (with
 // Shift, they step the instrument as anywhere else). Save picks an icon to
-// save the sound as a preset. With a track picked, Shift + Delete resets its
-// sound to its instrument's.
+// save the sound as a preset. Shift + Delete resets the sound to its
+// instrument's: the picked track's, or the take's, though not over the piano
+// roll or drum grid.
 export const synthMode: Mode = (device, base) => {
   const { sound, views, browse, shift, lanes, feedback } = device;
   const track = isTake(lanes.focusedLane) ? null : lanes.focusedLane;
+  const owner = track?.name ?? sound.preset.name;
+  const resettable =
+    views.openedOver !== "roll" && views.openedOver !== "drumGrid";
   const { pages, pageIndex, page, values } = sound;
   const patch = PATCH_BY_ID[sound.preset.target];
   const valueOf = (spec: ParamSpec) => values[spec.id] ?? spec.default;
@@ -114,14 +118,14 @@ export const synthMode: Mode = (device, base) => {
       delete: deletePad(
         device,
         undefined,
-        track
+        resettable
           ? {
-              label: `Reset ${track.name}'s sound`,
-              key: `reset:${track.id}`,
-              prompt: `Press again to reset ${track.name}'s sound`,
+              label: `Reset ${owner}'s sound`,
+              key: `reset:${track?.id ?? "take"}`,
+              prompt: `Press again to reset ${owner}'s sound`,
               run: () => {
                 sound.revertSound();
-                feedback.showNotice(`Reset ${track.name}'s sound`);
+                feedback.showNotice(`Reset ${owner}'s sound`);
               },
             }
           : undefined,

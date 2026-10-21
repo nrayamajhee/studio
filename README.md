@@ -18,7 +18,7 @@ The reference: where everything is on the Device and what it does. A numbered [o
 
 ### [Guides](docs/guides/introduction.md)
 
-A picture-by-picture walk through the Device, from the first note to a finished song. [Play notes and chords](docs/guides/play-notes-and-chords.md): a key plays a note, a chord pad turns it into several, the play style sets how they come out, and a progression strings chords together. [Shape the sound](docs/guides/shape-the-sound.md): pick an instrument, change how it's made on the Synth screen, and add the ADSR, LFO and FX. [Set the tempo](docs/guides/set-the-tempo.md). [Make a song](docs/guides/make-a-song.md): build the Starter song step by step: the Suspended progression in D, folk-strummed on the oscillator three times round, a New jack swing beat brought in two bars late and played to the end, and the strum again on a second oscillator through drive, chorus, delay and reverb. Then manage the tracks: repeats, copies with gaps, mute and solo, a track's own tempo and instrument, clip and delete, and your own playing recorded in. Then [undo and start over](docs/guides/undo-and-start-over.md).
+A picture-by-picture walk through the Device, from the first note to a finished song. [Play notes and chords](docs/guides/play-notes-and-chords.md): a key plays a note, a chord pad turns it into several, the play style sets how they come out, and a progression strings chords together. [Shape the sound](docs/guides/shape-the-sound.md): pick an instrument, change how it's made on the Synth screen, and add the ADSR, LFO and FX. [Set the tempo](docs/guides/set-the-tempo.md): the BPM, tap tempo, the click, and swing for the tape and each track. [Make a song](docs/guides/make-a-song.md): build the Starter song step by step: the Suspended progression in D, folk-strummed on the oscillator three times round, a New jack swing beat brought in two bars late and played to the end, and the strum again on a second oscillator through drive, chorus, delay and reverb. Then manage the tracks: repeats, copies with gaps, mute and solo, a track's own tempo and instrument, clip and delete, and your own playing recorded in. Then [undo and start over](docs/guides/undo-and-start-over.md).
 
 ### Synth
 
@@ -34,8 +34,8 @@ How the Device makes its sound.
 
 The music behind the Device's pickers.
 
-- [Chord progressions](docs/library/chord-progressions.md): the source material behind the Device's chord progressions (Shift + Piano roll), compiled from all 51 videos of David Bennett's chord progressions playlist. Each entry gives the progression in Roman numerals, songs that use it and a short note on why it works, credited to him throughout.
-- [Drum beats](docs/library/drum-beats.md): the 83 grooves behind the Device's drum beats (Shift + Drum grid), in ten styles from simple kick-and-hat starters through rock, funk, jazz, Latin, hip hop and electronic to classical and the tabla's taals. Each gives its kit, tempo and meter, the pattern as the drum grid plays it, what makes it feel the way it does, and the records and drummers to hear it from, from Hal Blaine's "Be My Baby" to the Amen break and Ravel's _Boléro_.
+- [Chord progressions](docs/library/chord-progressions.md): the source material behind the Device's chord progressions (Shift + Piano roll), compiled from David Bennett's videos: 30 from his chord progressions playlist and 20 from elsewhere on his channel. Each entry links its video and gives the progression in Roman numerals, songs that use it and a short note on why it works, credited to him throughout. The playlist's other 21 videos are listed at the end.
+- [Drum beats](docs/library/drum-beats.md): the 84 grooves behind the Device's drum beats (Shift + Drum grid), in ten styles from simple kick-and-hat starters through rock, funk, jazz, Latin, hip hop and electronic to classical and the tabla's taals. Each gives its kit, tempo and meter, the pattern as the drum grid plays it, what makes it feel the way it does, and the records and drummers to hear it from, from Hal Blaine's "Be My Baby" to the Amen break and Ravel's _Boléro_.
 
 ### Development
 
@@ -48,4 +48,4 @@ Working on Studio: setting it up, its stories, the rules agents follow and the D
 
 ## Credits
 
-The Device's chord progressions are based on the chord progression analyses by **David Bennett** of [David Bennett Music Theory](https://www.youtube.com/channel/UCz2iUx-Imr6HgDC3zAFpjOw), compiled from his [chord progressions playlist](https://www.youtube.com/playlist?list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK). All credit for the analyses, their names and the song examples goes to him; watch his videos for the full explanations.
+The Device's chord progressions are based on the chord progression analyses by **David Bennett** of [David Bennett Music Theory](https://www.youtube.com/channel/UCz2iUx-Imr6HgDC3zAFpjOw), compiled from his [chord progressions playlist](https://www.youtube.com/playlist?list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) and other videos on his channel. All credit for the analyses, their names and the song examples goes to him; watch his videos for the full explanations.

@@ -80,6 +80,10 @@ export default async function userManual(d: Device) {
   await press(PAD.tempo);
   await d.arrowUntil("ArrowLeft", /\b96\b/, 200);
   await shot("tempo", { rings: [pad(PAD.tempo)] });
+  // Swing, set and then put back straight for the rest.
+  await turn("red", /62%/);
+  await shot("swing", { rings: [knob("red"), knob("blue")] });
+  await turn("red", /Straight/, -1);
   await press(PAD.tempo);
 
   // Make a song: a new tape to build the starter song on.
@@ -101,7 +105,6 @@ export default async function userManual(d: Device) {
   await shot("folk-strum", { rings: [d.tile("Folk strum")] });
   await press(PAD.playStyle);
   await press(PAD.roll, { shift: true });
-  await d.arrowUntil("ArrowRight", /Pivot chord/);
   await d.tile("Suspended").click();
   await settle();
   await shot("progressions", { rings: [d.tile("Suspended")] });
@@ -126,7 +129,6 @@ export default async function userManual(d: Device) {
 
   // Make a song: New jack swing, from bar 2 to the end.
   await press(PAD.drumGrid, { shift: true });
-  await d.arrowUntil("ArrowRight", /New jack swing/);
   await d.tile("New jack swing").click();
   await settle();
   await shot("beats", { rings: [d.tile("New jack swing")] });

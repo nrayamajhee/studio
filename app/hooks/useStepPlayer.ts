@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { KitId } from "../lib/physical";
 import { deviceEngine } from "../components/home/deviceEngine";
 import type { Meter } from "../components/home/noteRecorder";
+import { swingOn, swingTime, type Swing } from "../components/home/swing";
 import {
   hitsAt,
   patternSteps,
@@ -20,7 +21,17 @@ export type StepSource = {
   kit: KitId;
   meter: Meter;
   bpm: number;
+  swing?: Swing;
 };
+
+// How late a step of the pattern plays through the swing (s): none
+// straight, or on a triplet grid.
+function lateBy({ pattern, bpm, swing }: StepSource, step: number) {
+  const swung = swingOn(swing, pattern.perBeat);
+  if (!swung) return 0;
+  const at = (step * 60_000) / bpm / pattern.perBeat;
+  return (swingTime(at, 60_000 / bpm, swung) - at) / 1000;
+}
 
 type Scheduled = {
   // The pattern's step, and its count since the loop started.
@@ -39,8 +50,9 @@ type Run = {
 };
 
 // Plays the drum grid's pattern round in a loop, each hit on the audio
-// clock. `source` is read on every top-up, so edits, the tempo and the length
-// take effect on the steps not yet scheduled.
+// clock, the steps swung (unless they're triplets). `source` is read on every
+// top-up, so edits, the tempo, the swing and the length take effect on the
+// steps not yet scheduled.
 export function useStepPlayer(source: () => StepSource) {
   const [running, setRunning] = useState(false);
   const run = useRef<Run | null>(null);
@@ -52,7 +64,8 @@ export function useStepPlayer(source: () => StepSource) {
   const topUp = () => {
     const current = run.current;
     if (!current) return;
-    const { pattern, kit, meter, bpm } = read.current();
+    const playing = read.current();
+    const { pattern, kit, meter, bpm } = playing;
     const steps = patternSteps(pattern, meter);
     const stepTime = 60 / bpm / pattern.perBeat;
     const now = deviceEngine.now();
@@ -60,15 +73,12 @@ export function useStepPlayer(source: () => StepSource) {
     if (current.nextTime < now) current.nextTime = now + LEAD;
     while (current.nextTime < now + LOOKAHEAD) {
       const step = current.next % steps;
+      const time = current.nextTime + lateBy(playing, step);
       for (const hit of hitsAt(pattern, step)) {
         if (current.played.delete(`${hit.piece}@${current.next}`)) continue;
-        deviceEngine.hit(kit, hit.piece, hit.velocity, current.nextTime);
+        deviceEngine.hit(kit, hit.piece, hit.velocity, time);
       }
-      current.recent.push({
-        step,
-        count: current.next,
-        time: current.nextTime,
-      });
+      current.recent.push({ step, count: current.next, time });
       current.next++;
       current.nextTime += stepTime;
     }
@@ -117,14 +127,16 @@ export function useStepPlayer(source: () => StepSource) {
   const nearest = (piece: string) => {
     const current = run.current;
     if (!current) return null;
-    const { pattern, meter } = read.current();
+    const playing = read.current();
+    const { pattern, meter } = playing;
     const tapped = deviceEngine.now();
+    const coming = current.next % patternSteps(pattern, meter);
     const candidates = [
       ...current.recent,
       {
-        step: current.next % patternSteps(pattern, meter),
+        step: coming,
         count: current.next,
-        time: current.nextTime,
+        time: current.nextTime + lateBy(playing, coming),
       },
     ];
     let best = candidates[0];

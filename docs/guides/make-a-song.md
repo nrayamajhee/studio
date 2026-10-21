@@ -24,13 +24,13 @@ Press **Tracks** (`Esc`) to see it: a new tape holds just the **Take**, the row 
 
 A **chord progression** is a short run of chords that a song repeats. The Device knows dozens (see [Chord progressions](../library/chord-progressions.md)). It loads one as the take in whatever key you like, a chord a bar, in your **play style**: how a chord's notes come out.
 
-**1. Pick a play style.** Press **Play style** (`Q`), turn the red knob to the **Strum** page and pick **Folk strum**: down, down-up, up-down-up over a bar of eighths, as a guitarist's hand goes, with the first down leaned on.
+**1. Pick a play style.** Press **Play style** (`Q`). It opens on your **Favorites**; pick **Folk strum** there (it's also on the Strum page): down, down-up, up-down-up over a bar of eighths, as a guitarist's hand goes, with the first down leaned on.
 
-![Play style's Strum page, Folk strum picked at 1/8](../../public/docs/user-manual/folk-strum.webp)
+![Play style's Favorites page, Folk strum picked at 1/8](../../public/docs/user-manual/folk-strum.webp)
 
-**2. Open the progressions.** Hold **Shift** and press the **Piano roll** pad (`Shift V`), then turn to the **Cadences** page. **Suspended** (Isus4 I Isus2 I) never leaves the home chord. It lifts the chord's third to the fourth and lets it fall back, then drops it to the second and lets it rise back. Tap it or press Play to hear it in its own key, or play a key to hear it from that note. Previews play a little faster than the tape's tempo.
+**2. Open the progressions.** Hold **Shift** and press the **Piano roll** pad (`Shift V`), It opens on your **Favorites**, which start out holding Fast car and **Suspended** (Isus4 I Isus2 I); Suspended is also on the Cadences page. Suspended never leaves the home chord. It lifts the chord's third to the fourth and lets it fall back, then drops it to the second and lets it rise back. Tap it or press Play to hear it in its own key, or play a key to hear it from that note. Previews play a little faster than the tape's tempo.
 
-![The progressions' Cadences page, Suspended picked](../../public/docs/user-manual/progressions.webp)
+![The progressions' Favorites page, Suspended picked](../../public/docs/user-manual/progressions.webp)
 
 **3. Save it.** Press **Save**. The screen asks for the **home note**: the key the song will be in.
 
@@ -58,15 +58,15 @@ Press **Play** to hear it loop, and Stop (`` ` ``) when you're done.
 
 ## The drums: New jack swing
 
-**1. Pick a beat.** Hold **Shift** and press the **Drum grid** pad (`Shift B`). The red knob turns the styles (simple, rock, pop, funk and soul, jazz, Latin and reggae, hip hop, electronic, classical and South Asian) and the blue knob picks a beat. Picking one also puts its kit on the keys, and a tap or Play previews it. On the **Funk and soul** page, pick **New jack swing**: swung hats, a kick that skips around the beat, and a snare doubled by a clap on two and four, on the 808 kit. See [Drum beats](../library/drum-beats.md) for them all.
+**1. Pick a beat.** Hold **Shift** and press the **Drum grid** pad (`Shift B`). The red knob turns the styles (simple, rock, pop, funk and soul, jazz, Latin and reggae, hip hop, electronic, classical and South Asian) and the blue knob picks a beat. Picking one also puts its kit on the keys, and a tap or Play previews it. It opens on your **Favorites**, which start out holding **New jack swing**, its madal version and a few more (New jack swing is also on the Funk and soul page). Pick New jack swing: swung hats, a kick that skips around the beat, and a snare doubled by a clap on two and four, on the 808 kit. See [Drum beats](../library/drum-beats.md) for them all.
 
-![The beats' Funk and soul page, New jack swing picked](../../public/docs/user-manual/beats.webp)
+![The beats' Favorites page, New jack swing picked](../../public/docs/user-manual/beats.webp)
 
 **2. Save it.** Press **Save**: the beat loads into the **drum grid** on its kit. The grid has a row per drum and a column per step. Here the steps are sixteenth-note triplets (1/16T), six to a beat, which is what makes it swing.
 
 ![New jack swing in the drum grid on the 808 kit](../../public/docs/user-manual/drum-grid.webp)
 
-Press **Play** to loop it. Stopped, the green knob moves the head and the keys set or clear a drum there; the red knob sets the length and the blue one the resolution. **Record** loops it too and lands what you tap on the nearest step, so you can play a part in as it goes round; Play alone only plays. Pick another kit and the pattern comes along: on the madal or the tabla, the kick plays as the open bass stroke, the snare as a slap on it and the hats on the treble, and back again.
+Press **Play** to loop it. Stopped, the green knob moves the head and the keys set or clear a drum there; the red knob sets the length and the blue one the resolution. **Record** loops it too and lands what you tap on the nearest step, so you can play a part in as it goes round; Play alone only plays. Pick another kit and the pattern comes along: on the madal or the tabla, the kick plays as the open bass stroke and the closed hat as the closed slap on the bass (the madal's ka). The snare becomes a slap on the treble (ti), the toms its rim (tin) and the open hat the treble ringing open (ta), and they all come back again.
 
 ![The drum grid playing](../../public/docs/user-manual/drum-grid-playing.webp)
 

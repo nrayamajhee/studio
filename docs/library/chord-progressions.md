@@ -4,13 +4,15 @@ order = 1
 
 # Chord progressions
 
-The Device's chord progressions (Shift + Piano roll) are based on the chord progression analyses by **David Bennett** of [David Bennett Music Theory](https://www.youtube.com/channel/UCz2iUx-Imr6HgDC3zAFpjOw). They are compiled from all 51 videos of his [chord progressions playlist](https://www.youtube.com/playlist?list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), listed below.
+The Device's chord progressions (Shift + Piano roll) are based on the chord progression analyses by **David Bennett** of [David Bennett Music Theory](https://www.youtube.com/channel/UCz2iUx-Imr6HgDC3zAFpjOw). Each entry below links the video it comes from. 30 are from his [chord progressions playlist](https://www.youtube.com/playlist?list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), and 20 are from other videos on his channel. The playlist's other 21 videos are listed at the end.
 
 All credit for the analyses, the names and the song examples goes to him; watch the videos for the full explanations.
 
 ---
 
 ## 1. 4 Useful Chord Progressions You Should Know
+
+**Video:** [4 Useful Chord Progressions You Should Know](https://www.youtube.com/watch?v=pejqyjTuJHo&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 1 in the playlist
 
 - **Progression 1:** ♭VI – ♭VII – I (_The Mario Cadence / "Kiss From A Rose"_)  
   _Examples:_ _Kiss From A Rose_ (Seal), _Super Mario Bros._ theme, _Lady Madonna_ (The Beatles)  
@@ -28,6 +30,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 2. 5 Popular Chord Progressions and Why They Work
+
+**Video:** [5 popular chord progressions and why they work](https://www.youtube.com/watch?v=cjOQIbkRQ-4&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 2 in the playlist
 
 - **Progression 1:** I – V – ♭VII – IV  
   _Examples:_ _Waterfalls_ (TLC), _Rio_ (Duran Duran), _Rock'n Me_ (Steve Miller Band)  
@@ -48,6 +52,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 3. 7 Super Common Chord Progressions and Why They Work
+
+**Video:** [7 super common chord progressions and why they work](https://www.youtube.com/watch?v=Vyc8lezaa9g&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 8 in the playlist
 
 - **Progression 1:** I – V – vi – IV (_The 4-Chord Pop Progression / Axis Progression_)  
   _Examples:_ _Let It Be_ (The Beatles), _Don't Stop Believin'_ (Journey)  
@@ -75,6 +81,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 4. 6 Common Chord Progressions and Why They Work
 
+**Video:** [6 common chord progressions and why they work](https://www.youtube.com/watch?v=v3YbEL-_eoI&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 13 in the playlist
+
 - **Progression 1:** i – ♭III – ♭VII – IV (_Plagal Cascade_)  
   _Examples:_ _Wonderwall_ (Oasis), _Mad World_ (Tears for Fears)  
   _Theory:_ Ascending/descending fourth movements creating a succession of plagal cadences.
@@ -98,6 +106,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 5. Songs that use the "Purple Rain" chord progression
 
+**Video:** [Songs that use the Purple Rain chord progression](https://www.youtube.com/watch?v=YEZzB2PpIQ8&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 47 in the playlist
+
 - **Progression:** I – vi – V – IV
 - **Key Examples:** _Purple Rain_ (Prince), _Take Me Home, Country Roads_ (John Denver), _Cardigan_ (Taylor Swift)
 - **Theoretical Mechanics:** Swaps the traditional order of IV and V at the end of the phrase, ending on the open subdominant rather than resolving to tonic.
@@ -105,6 +115,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 6. Songs that use the "Where Is My Mind?" chord progression
+
+**Video:** [Songs that use the "Where Is My Mind" progression](https://www.youtube.com/watch?v=ttJlMFsL2ro&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 43 in the playlist
 
 - **Progression:** I – vi – III – IV
 - **Key Examples:** _Where Is My Mind?_ (Pixies), _Say It Ain't So_ (Weezer)
@@ -114,6 +126,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 7. Songs that use the "She's Electric" chord progression
 
+**Video:** [Songs that use the “She’s Electric” chord progression](https://www.youtube.com/watch?v=mUYgS4IP_TU&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 19 in the playlist
+
 - **Progression:** I – III – vi – IV
 - **Key Examples:** _She's Electric_ (Oasis), _Santeria_ (Sublime)
 - **Theoretical Mechanics:** The secondary dominant major mediant (III) successfully resolves into its expected destination (vi), followed by the subdominant.
@@ -121,6 +135,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 8. Songs that use the "Creep" chord progression
+
+**Video:** [Songs that use the Creep chord progression](https://www.youtube.com/watch?v=NyiEMdbfjG8&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 14 in the playlist
 
 - **Progression:** I – III – IV – iv
 - **Key Examples:** _Creep_ (Radiohead), _The Air That I Breathe_ (The Hollies), _Get Free_ (Lana Del Rey)
@@ -130,6 +146,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 9. Pop music has a new favourite chord progression
 
+**Video:** [Pop music has a new favourite chord progression](https://www.youtube.com/watch?v=Tj0tkv2tNSo&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 50 in the playlist
+
 - **Progression:** IV – I – vi – V
 - **Key Examples:** _Fast Car_ (Tracy Chapman), _High Hopes_ (Panic! At The Disco), _Castle on the Hill_ (Ed Sheeran)
 - **Theoretical Mechanics:** Contemporary pop rotation of the 4-chord family that refuses to land on tonic on beat one, sustaining an endless looping feel.
@@ -137,6 +155,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 10. Songs that use the 1-2-3-4 chord progression
+
+**Video:** [Songs that use the 1-2-3-4 chord progression](https://www.youtube.com/watch?v=eC4SEVRT9wE&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 45 in the playlist
 
 - **Progression:** I – ii – iii – IV
 - **Key Examples:** _Like a Rolling Stone_ (Bob Dylan), _Friday I'm In Love_ (The Cure), _Lean On Me_ (Bill Withers)
@@ -146,6 +166,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 11. Songs that use the 4-3-2-1 chord progression
 
+**Video:** [Songs that use the 4-3-2-1 Chord Progression](https://www.youtube.com/watch?v=Vaavaj9DOGY&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 49 in the playlist
+
 - **Progression:** IV – iii – ii – I
 - **Key Examples:** _Lovin' You_ (Minnie Riperton), _Fallin'_ (Alicia Keys), _Baby, Now That I've Found You_ (The Foundations)
 - **Theoretical Mechanics:** Continuous descending stepwise motion; acts as a relaxing, gravity-like resolution downward toward the tonic root.
@@ -153,6 +175,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 12. Songs that use the 4-5-6-1 chord progression
+
+**Video:** [Songs that use the 4-5-6-1 chord progression](https://www.youtube.com/watch?v=2BS0saH0SYk&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 48 in the playlist
 
 - **Progression:** IV – V – vi – I
 - **Key Examples:** _Heat Waves_ (Glass Animals), _When You Were Young_ (The Killers)
@@ -162,6 +186,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 13. Coldplay's go-to chord progression
 
+**Video:** [Coldplay's go-to chord progression](https://www.youtube.com/watch?v=Qd_qpdrl2i4&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 46 in the playlist
+
 - **Progression:** IV – I – V
 - **Key Examples:** _Fix You_, _Clocks_, _In My Place_, _Paradise_ (Coldplay)
 - **Theoretical Mechanics:** Anthemic three-chord cycle omitting tonic closure to keep stadium rock verses and choruses in a perpetual state of wonder.
@@ -169,6 +195,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 14. Songs that use the "Something" chord progression
+
+**Video:** [Songs that use the Something chord progression](https://www.youtube.com/watch?v=AmqiQFyCAGY&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 10 in the playlist
 
 - **Progression:** I – Imaj7 – I7 – IV – iv
 - **Key Examples:** _Something_ (The Beatles), _Can't Take My Eyes Off You_ (Frankie Valli), _Fine By Me_ (Andy Grammer)
@@ -178,6 +206,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 15. Japan's favourite chord progression (Royal Road)
 
+**Video:** [Japan's favourite chord progression and why it works](https://www.youtube.com/watch?v=6aezSL_GvZA&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 9 in the playlist
+
 - **Progression:** IVmaj7 – V7 – iii7 – vi (_Oudou / Royal Road Progression_)
 - **Key Examples:** Classic anime opening themes, J-Pop anthems, _Just the Two of Us_ (verse framework)
 - **Theoretical Mechanics:** Signature bittersweet, nostalgic tension produced by resolving the subdominant major 7th up to dominant, then stepping into the mediant minor 7th.
@@ -185,6 +215,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 16. Songs that use the "Just The Two Of Us" progression
+
+**Video:** [Songs that use the "Just The Two Of Us" chord progression](https://www.youtube.com/watch?v=7vT0RxwL1HE&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 41 in the playlist
 
 - **Progression:** IVmaj7 – III7 – vi7 – I7
 - **Key Examples:** _Just the Two of Us_ (Grover Washington Jr. / Bill Withers), neo-soul and lofi hip-hop
@@ -194,6 +226,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 17. Songs that use the Magnolia chord progression
 
+**Video:** [Songs that use the Magnolia chord progression](https://www.youtube.com/watch?v=UMiRm8NS1ok&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 17 in the playlist
+
 - **Progression:** I – ♭VII – IV
 - **Key Examples:** _Magnolia_ (J.J. Cale), Southern rock and roots ballads
 - **Theoretical Mechanics:** Pure Mixolydian cycle omitting minor chords; creates a laid-back, porch-strumming Americana aesthetic.
@@ -201,6 +235,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 18. Songs that use the Andalusian Cadence
+
+**Video:** [Songs that use the Andalusian Cadence](https://www.youtube.com/watch?v=_g9r-zRcxI0&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 38 in the playlist
 
 - **Progression:** i – ♭VII – ♭VI – V
 - **Key Examples:** _Smooth_ (Santana), _Hava Nagila_, _Good Vibrations_ (The Beach Boys)
@@ -210,6 +246,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 19. Songs that use 2-5-1 chord progressions
 
+**Video:** [Songs that use 2 5 1 chord progressions](https://www.youtube.com/watch?v=6y-LoytFckI&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 22 in the playlist
+
 - **Progression:** ii7 – V7 – Imaj7
 - **Key Examples:** _Autumn Leaves_, _Fly Me to the Moon_, _Sunday Morning_ (Maroon 5)
 - **Theoretical Mechanics:** The foundational engine of jazz harmony and tonal motion; moves around the circle of fifths to provide total harmonic satisfaction.
@@ -217,6 +255,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 20. Songs that use the Circle of Fifths progression
+
+**Video:** [Songs that use the Circle of Fifths progression](https://www.youtube.com/watch?v=-DQJmicTFGQ&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 23 in the playlist
 
 - **Progression:** vi – ii – V – I – IV – vii° – iii (or full 7-chord cycle)
 - **Key Examples:** _I Will Survive_ (Gloria Gaynor), _Still Got the Blues_ (Gary Moore), _Fly Me to the Moon_
@@ -226,6 +266,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 21. Songs that use the Gospel Climb chord progression
 
+**Video:** [Songs that use The Gospel Climb chord progression](https://www.youtube.com/watch?v=twPIJQj9Aeg), on his channel (not in the playlist)
+
 - **Progression:** I – I/♯I° – ii7 – V (or I – III7 – IV – ♯IV°)
 - **Key Examples:** Traditional gospel hymns, _Love On Top_ (Beyoncé), _Living for the City_ (Stevie Wonder)
 - **Theoretical Mechanics:** Employs chromatic bass ascents and passing diminished seventh chords to create a rising, spirited emotional uplift.
@@ -233,6 +275,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 22. Songs that use the Augmented climb chord progression
+
+**Video:** [Songs that use the Augmented climb chord progression](https://www.youtube.com/watch?v=ixIS64xvWSQ&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 18 in the playlist
 
 - **Progression:** I – I+ – I6 – I7
 - **Key Examples:** _Starting Over_ (John Lennon), _Life On Mars?_ (David Bowie), _Baby Hold On_ (Eddie Money)
@@ -242,6 +286,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 23. Songs that use the Blues Rock Chord Progression
 
+**Video:** [Songs that use the Blues Rock Chord Progression](https://www.youtube.com/watch?v=kVxA0EouxkQ&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 51 in the playlist
+
 - **Progression:** I – ♭VII – IV – I
 - **Key Examples:** _Back in Black_ (AC/DC), _Sweet Home Alabama_ (Lynyrd Skynyrd), _Fortunate Son_ (CCR)
 - **Theoretical Mechanics:** Heavy riff-driven Mixolydian power-chord cycle built around the subtonic flat-seven and subdominant.
@@ -249,6 +295,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 24. Songs that use the Angels chord progression
+
+**Video:** [Songs that use the Angels chord progression](https://www.youtube.com/watch?v=5pngzGN1zSI), on his channel (not in the playlist)
 
 - **Progression:** I – IV – vi – V (with open piano voicings)
 - **Key Examples:** _Angels_ (Robbie Williams), power ballads, cinematic arena pop
@@ -258,6 +306,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 25. Songs that use the Backdoor Progression
 
+**Video:** [Songs that use the Backdoor Progression](https://www.youtube.com/watch?v=s1tDB79UEsQ&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 39 in the playlist
+
 - **Progression:** ♭VII7 → I (often preceded by iv7)
 - **Key Examples:** _Pure Imagination_ (Willy Wonka), _Sir Duke_ (Stevie Wonder), _If I Ain't Got You_ (Alicia Keys)
 - **Theoretical Mechanics:** Substitutes the standard dominant seventh with ♭VII7, approaching the tonic from a whole step below while retaining the smooth voice leading of minor iv.
@@ -265,6 +315,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 26. Songs that use the Minor 4 chord
+
+**Video:** [Songs that use the Minor 4 chord](https://www.youtube.com/watch?v=tStINGVUbWo&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 26 in the playlist
 
 - **Progression:** IV – iv – I
 - **Key Examples:** _Wake Me Up When September Ends_ (Green Day), _In My Life_ (The Beatles), _Desperado_ (Eagles)
@@ -274,6 +326,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 27. Songs that use the Neapolitan Chord
 
+**Video:** [Songs that use the Neapolitan Chord](https://www.youtube.com/watch?v=cKpA16YjSKk), on his channel (not in the playlist)
+
 - **Progression:** ♭II6 – V – i
 - **Key Examples:** _Moonlight Sonata_ (Beethoven), _Because_ (The Beatles), dramatic film scores
 - **Theoretical Mechanics:** Major triad built on the lowered second degree, voiced in first inversion as a predominant chord to set up a dramatic cadence.
@@ -281,6 +335,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 28. 21 Songs that use Pachelbel's Canon chord progression
+
+**Video:** [21 Songs that use Pachelbel's Canon chord progression](https://www.youtube.com/watch?v=_PC6jwoHyOk&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 12 in the playlist
 
 - **Progression:** I – V – vi – iii – IV – I – IV – V
 - **Key Examples:** _Canon in D_ (Pachelbel), _Memories_ (Maroon 5), _Basket Case_ (Green Day), _Graduation_ (Vitamin C)
@@ -290,6 +346,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 29. Songs that use Line Cliché chord progressions
 
+**Video:** [Songs that use Line Cliché chord progressions](https://www.youtube.com/watch?v=qLHJ0mSqdmQ&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 15 in the playlist
+
 - **Progression:** i – imaj7 – i7 – i6 (Minor Line Cliché)
 - **Key Examples:** _Stairway to Heaven_ (intro), _Feeling Good_ (Nina Simone), _James Bond Theme_
 - **Theoretical Mechanics:** Stepwise chromatic descent of a single voice within a static harmonic foundation, generating suspense and noir atmosphere.
@@ -297,6 +355,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 30. Songs that use Chromatic Mediant chords
+
+**Video:** [Songs that use Chromatic Mediant chords](https://www.youtube.com/watch?v=PtISkOeSz08), on his channel (not in the playlist)
 
 - **Progression:** Root movement by a major or minor third with non-diatonic chords (I → ♭VI or I → III)
 - **Key Examples:** _Star Wars Main Theme_ (John Williams), _Space Oddity_ (David Bowie), _My Way_
@@ -306,6 +366,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 31. Songs that use the Cadential 6/4 chord progression
 
+**Video:** [Songs that use the Cadential 6/4 chord progression](https://www.youtube.com/watch?v=jU-1N9sJ2f4&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 40 in the playlist
+
 - **Progression:** I6/4 – V7 – I
 - **Key Examples:** _Rainbow Road_ (Mario Kart), classical piano concertos, _Edelweiss_
 - **Theoretical Mechanics:** Tonic chord in second inversion acting as a double appoggiatura over the dominant bass note, resolving into the authentic dominant chord.
@@ -313,6 +375,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 32. Songs that use the Harmonic Minor Axis progression
+
+**Video:** [Songs that use the Harmonic Minor Axis progression](https://www.youtube.com/watch?v=LjOKMNNo7HA&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 20 in the playlist
 
 - **Progression:** i – VI – III – V (or i – ♭VI – ♭III – V)
 - **Key Examples:** _Bad Guy_ (Billie Eilish), dark pop and video game battle themes
@@ -322,6 +386,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 33. Songs that use Tritone Substitution
 
+**Video:** [Songs that use Tritone Substitution](https://www.youtube.com/watch?v=dSvO5Tb18tI&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 34 in the playlist
+
 - **Progression:** ii7 – ♭II7 – Imaj7
 - **Key Examples:** _The Girl from Ipanema_, standard bossa nova and jazz bebop ballads
 - **Theoretical Mechanics:** Swaps the standard V7 chord for a dominant 7th built three whole tones away (♭II7), preserving the identical tritone guide tones while providing chromatic basslines.
@@ -329,6 +395,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 34. Songs that use the Picardy Third
+
+**Video:** [Songs that use the Picardy Third](https://www.youtube.com/watch?v=jGaNdKabvQ4), on his channel (not in the playlist)
 
 - **Progression:** i … I
 - **Key Examples:** Renaissance motets, _Roundabout_ (Yes), _Blackbird_ (coda), _Eleanor Rigby_ (end chord)
@@ -338,6 +406,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 35. Songs that use Secondary Dominants
 
+**Video:** [Songs that use Secondary Dominants](https://www.youtube.com/watch?v=pMopMBiHKfQ), on his channel (not in the playlist)
+
 - **Progression:** V/V → V, V/ii → ii, or V/vi → vi
 - **Key Examples:** _Yesterday_ (The Beatles), _Desperado_ (Eagles), _Don't Look Back in Anger_
 - **Theoretical Mechanics:** Temporarily tonicizes a non-tonic diatonic chord by preceding it with its own custom dominant seventh chord.
@@ -345,6 +415,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 36. Songs that use the Minor 5 chord
+
+**Video:** [Songs that use the Minor 5 chord](https://www.youtube.com/watch?v=OXz57ar0buk), on his channel (not in the playlist)
 
 - **Progression:** I – v – IV
 - **Key Examples:** _Louie Louie_ (The Kingsmen), _Midnight City_ (M83), _All Star_ (Smash Mouth verse)
@@ -354,6 +426,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 37. Songs that use Augmented Chords
 
+**Video:** [Songs that use Augmented Chords](https://www.youtube.com/watch?v=Ys6SDpBgWzc), on his channel (not in the playlist)
+
 - **Progression:** I – I+ – IV (or V+ → I)
 - **Key Examples:** _Oh! Darling_ (The Beatles), _Life On Mars?_ (Bowie), _School Days_ (Chuck Berry)
 - **Theoretical Mechanics:** Symmetrical triad constructed from two major thirds, evoking suspense, floating ambiguity, and dreamlike transitions.
@@ -362,6 +436,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 38. Songs that use Diminished Chords
 
+**Video:** [Songs that use Diminished Chords](https://www.youtube.com/watch?v=2Q_dpxMb328), on his channel (not in the playlist)
+
 - **Progression:** I – ♯I° – ii – ♯ii° – I/V
 - **Key Examples:** _Ain't Misbehavin'_, _God Only Knows_ (The Beach Boys), _Michelle_ (The Beatles)
 - **Theoretical Mechanics:** Fully diminished seventh chords acting as chromatic passing stepping stones that resolve upward by half step.
@@ -369,6 +445,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 39. 26 Songs That Only Use Two Chords
+
+**Video:** [26 Songs That Only Use Two Chords](https://www.youtube.com/watch?v=zpURr5COwI4), on his channel (not in the playlist)
 
 - **Progressions Featured:**
   - I – V (_Everyday People_ - Sly and the Family Stone)
@@ -382,6 +460,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 40. Songs That Only Use 3 Chords
 
+**Video:** [Songs That Only Use 3 Chords](https://www.youtube.com/watch?v=v0i-VYHHk4A), on his channel (not in the playlist)
+
 - **Progressions Featured:**
   - I – IV – V (_Twist and Shout_, _Bad Moon Rising_)
   - I – IV – ♭VII
@@ -391,6 +471,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 41. Every type of Cadence EXPLAINED
+
+**Video:** [Every type of Cadence EXPLAINED](https://www.youtube.com/watch?v=SIcFOkMtDJI), on his channel (not in the playlist)
 
 - **Cadential Formulas:**
   - **Perfect Authentic Cadence (PAC):** V → I (both in root position with 1̂ in soprano)
@@ -403,6 +485,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 42. Songs that use the Dorian mode
 
+**Video:** [Songs that use the Dorian mode](https://www.youtube.com/watch?v=n_Zzztd5ZCk), on his channel (not in the playlist)
+
 - **Progression:** i – IV (or i7 – IV7)
 - **Key Examples:** _Oye Como Va_ (Santana), _Get Lucky_ (Daft Punk), _Mad World_ (verse)
 - **Theoretical Mechanics:** Minor-mode foundation featuring a natural major sixth degree (♮6̂), creating a soulful, less gloomy minor vibe.
@@ -410,6 +494,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 43. Songs that use the Mixolydian mode
+
+**Video:** [Songs that use the Mixolydian mode](https://www.youtube.com/watch?v=8hE3FAM9rVk), on his channel (not in the playlist)
 
 - **Progression:** I – ♭VII – IV
 - **Key Examples:** _Sweet Child O' Mine_ (Guns N' Roses), _Royals_ (Lorde), _Clocks_ (Coldplay)
@@ -419,6 +505,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 44. Songs that use the Aeolian mode
 
+**Video:** [Songs that use the Aeolian mode](https://www.youtube.com/watch?v=7Mgsn4p31kA), on his channel (not in the playlist)
+
 - **Progression:** i – ♭VI – ♭VII
 - **Key Examples:** _Ain't No Sunshine_ (Bill Withers), _All Along the Watchtower_ (Bob Dylan)
 - **Theoretical Mechanics:** Natural minor scale harmony avoiding the raised major leading tone; delivers a dark, earthy, ancient character.
@@ -426,6 +514,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 45. Songs that use the Phrygian mode
+
+**Video:** [Songs that use the Phrygian mode](https://www.youtube.com/watch?v=-DzGlzdbkDI), on his channel (not in the playlist)
 
 - **Progression:** i – ♭II – i
 - **Key Examples:** _Doo Wop (That Thing)_ (Lauryn Hill intro), heavy metal riffs, flamenco themes
@@ -435,6 +525,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 46. Songs that use the Lydian mode
 
+**Video:** [Songs that use the Lydian mode](https://www.youtube.com/watch?v=ll8UwRWVkP4), on his channel (not in the playlist)
+
 - **Progression:** I – II (or Imaj7♯11)
 - **Key Examples:** _The Simpsons Theme_, _Man on the Moon_ (R.E.M. chorus), _Flying_ (The Beatles)
 - **Theoretical Mechanics:** Brightest of all standard diatonic modes, defined by a raised fourth degree (♯4̂) creating a floating, celestial sound.
@@ -442,6 +534,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 47. Songs that use the Phrygian Dominant scale
+
+**Video:** [Songs that use the Phrygian Dominant scale](https://www.youtube.com/watch?v=-CerXEcCJcY), on his channel (not in the playlist)
 
 - **Progression:** I – ♭II – i (Fifth mode of Harmonic Minor)
 - **Key Examples:** _Hava Nagila_, _Miserlou_ (Dick Dale), Middle Eastern and flamenco themes
@@ -451,6 +545,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 48. 40 Songs that use Descending Stepwise chord progressions
 
+**Video:** [40 Songs that use Descending Stepwise chord progressions](https://www.youtube.com/watch?v=dyDFcchDl2M&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK), number 7 in the playlist
+
 - **Progression:** I – V6 – vi – V or I – vii° – vi – V – IV – iii – ii – I
 - **Key Examples:** _A Whiter Shade of Pale_ (Procol Harum), _No Woman No Cry_, _Like a Rolling Stone_
 - **Theoretical Mechanics:** Downward scalar basslines that outline descending diatonic or chromatic movement across full octaves.
@@ -458,6 +554,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 ---
 
 ## 49. Songs that use Suspended Chords (Sus2 & Sus4)
+
+**Video:** [Songs that use Sus4 and Sus2 chords](https://www.youtube.com/watch?v=h3fj8fX9k04), on his channel (not in the playlist)
 
 - **Progression:** Isus4 → I or Isus2 → I
 - **Key Examples:** _Pinball Wizard_ (The Who), _Free Fallin'_ (Tom Petty), _Yellow_ (intro)
@@ -467,6 +565,8 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 50. Songs that modulate using common chords (Pivot Chords)
 
+**Video:** none found. None of his videos' titles is about pivot-chord modulation, so this entry may not come from his analyses.
+
 - **Progression:** I → vi = ii → V → I (new key)
 - **Key Examples:** _Penny Lane_ (The Beatles), _God Only Knows_, _Love On Top_
 - **Theoretical Mechanics:** Uses a chord that exists simultaneously in both the initial and target keys to execute seamless, undetectable modulations.
@@ -475,9 +575,39 @@ All credit for the analyses, the names and the song examples goes to him; watch 
 
 ## 51. How to recognise chord progressions by ear
 
+**Video:** [How to recognise chord progressions by ear](https://www.youtube.com/watch?v=H9e_1DTm-VQ), on his channel (not in the playlist)
+
 - **Key Reference Progressions:**
   - The Pop Loop: I – V – vi – IV
   - The Jazz Cycle: ii – V – I
   - The Blues Base: I – IV – V
   - The Modal Shift: I – ♭VII
 - **Theoretical Mechanics:** Analytical ear-training framework for identifying bass movements, interval leaps, chord qualities (major vs. minor vs. diminished), and cadence points in songwriting.
+
+---
+
+## More from the playlist
+
+The playlist's videos that the entries above don't cover, in its order:
+
+- [3 Minor key chord progressions you should know](https://www.youtube.com/watch?v=XCzZHPD1qKk&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 3)
+- [4 classic chord progressions and why they work](https://www.youtube.com/watch?v=9zbP0GQzUuI&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 4)
+- [the "Eight Days a Week" chord progression](https://www.youtube.com/watch?v=5ANjO8ypYfQ&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 5)
+- [Songs that use the Wonderwall chord progression](https://www.youtube.com/watch?v=DfoM4EfHK0k&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 6)
+- [5 songs with unusual chord progressions](https://www.youtube.com/watch?v=URO0EfmxYw0&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 11)
+- [2 Super Satisfying Chord Progressions And How To Write Your Own](https://www.youtube.com/watch?v=MAAssFBwvUY&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 16)
+- [Songs that use the Running Up That Hill chord progression](https://www.youtube.com/watch?v=6TUUe-FrPOI&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 21)
+- [When did the Axis chord progression become so popular?](https://www.youtube.com/watch?v=U8ImkF7FMPw&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 24)
+- [Taylor Swift's favourite chord progressions](https://www.youtube.com/watch?v=AbW3sES2zCw&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 25)
+- [this new hit song uses the Creep chord progression](https://www.youtube.com/watch?v=OUE_DvJLaJk&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 27)
+- [3 Songs with unique chord progressions](https://www.youtube.com/watch?v=mnSxFSgHh9Y&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 28)
+- [1 Chord Progression, 5 Levels of Complexity](https://www.youtube.com/watch?v=C_i2axaWzaE&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 29)
+- [Songs that use the James Bond chord progression](https://www.youtube.com/watch?v=rew6FBtC0Mo&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 30)
+- [Classical music's favourite chord progression](https://www.youtube.com/watch?v=9vWyS_JGwxQ&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 31)
+- [3 Special Chords That You Can Use](https://www.youtube.com/watch?v=wJqK8LPJKsQ&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 32)
+- [Blur's unique chord progression](https://www.youtube.com/watch?v=WQdeCWnREos&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 33)
+- [These songs have the same chords... let's swap them!](https://www.youtube.com/watch?v=lCr_RbeLUDg&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 35)
+- [These songs have the same chord progression... let's swap them!](https://www.youtube.com/watch?v=SHTPleCXZA0&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 36)
+- [These songs have the same chords... let's swap them!](https://www.youtube.com/watch?v=PNrWsXW3IlI&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 37)
+- [This chord progression is Madness!](https://www.youtube.com/watch?v=dm0mzX-XW50&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 42)
+- [How To Write More Than A Chord Loop](https://www.youtube.com/watch?v=V6KQ2MMAO88&list=PLlx2eo2tD6KpfGmE-MXwcIRQh21neAKsK) (number 44)

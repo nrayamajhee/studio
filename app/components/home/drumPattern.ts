@@ -115,18 +115,20 @@ const HAND_STROKES: Partial<
 
 // A drum kit's pieces by the stroke that stands in for each on a hand drum,
 // and the piece each stroke comes back as: the kick for the open bass, the
-// snare for a slap on it, the hats for the treble's ring and rim.
+// closed hat for the closed slap on it (the madal's ka), the toms for the
+// treble's rim (tin), the snare for the slap on the treble (ti), and the open
+// hat for the treble ringing open (ta).
 const KIT_STROKES: Partial<Record<DrumPieceId, Stroke>> = {
   kick: "openBass",
-  lowTom: "openBass",
-  snare: "bassSlap",
-  clap: "bassSlap",
+  closedHat: "bassSlap",
+  ride: "bassSlap",
+  bell: "bassSlap",
+  cowbell: "bassSlap",
   openHat: "openTreble",
-  highTom: "openTreble",
-  closedHat: "trebleRim",
-  ride: "trebleRim",
-  bell: "trebleRim",
-  cowbell: "trebleRim",
+  highTom: "trebleRim",
+  lowTom: "trebleRim",
+  snare: "trebleSlap",
+  clap: "trebleSlap",
   stick: "trebleSlap",
   sticks: "trebleSlap",
   tambourine: "trebleSlap",
@@ -134,10 +136,10 @@ const KIT_STROKES: Partial<Record<DrumPieceId, Stroke>> = {
 };
 const KIT_PIECES: Readonly<Record<Stroke, DrumPieceId>> = {
   openBass: "kick",
-  bassSlap: "snare",
+  bassSlap: "closedHat",
   openTreble: "openHat",
-  trebleRim: "closedHat",
-  trebleSlap: "stick",
+  trebleRim: "highTom",
+  trebleSlap: "snare",
   both: "kick",
 };
 

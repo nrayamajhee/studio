@@ -58,7 +58,11 @@ export const tapesMode: Mode = (device, base) => {
         icon: <Plus />,
         onPress: () => {
           leaveTape(device);
-          const started = newTape(transport.bpm, transport.timing.meter);
+          const started = newTape(
+            transport.bpm,
+            transport.timing.meter,
+            transport.swing,
+          );
           feedback.showNotice(`Started ${started.name}`);
         },
       }),

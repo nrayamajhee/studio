@@ -25,6 +25,7 @@ import {
   type Track,
   type TrackCopy,
 } from "../components/home/tracks";
+import type { Swing } from "../components/home/swing";
 import { createStrictContext } from "./createStrictContext";
 import { useFeedback } from "./FeedbackProvider";
 import { isTake, useLanes } from "./LanesProvider";
@@ -324,6 +325,9 @@ function useTracksValue() {
           bpm: Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(tempo))),
         },
       }),
+    // A track's own swing, which it keeps whatever the tape's.
+    setTrackSwing: (swung: Track, swing: Swing) =>
+      updateTrack(swung.id, { timing: { ...swung.timing, swing } }),
     // Gives every track the same tempo of its own: `tempo`, the tape's.
     setAllTrackTempo: (tempo: number) => {
       for (const each of tracks)
