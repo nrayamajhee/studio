@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import type { PresetPaging } from "../components/home/deviceEngine";
 import type { ScreenView } from "../components/home/DeviceScreen";
 import type { Favorites } from "../components/home/favoritesStore";
 import type { FeedbackValue } from "../providers/FeedbackProvider";
@@ -23,6 +24,9 @@ export type Browse = {
   setIconIndex: Dispatch<SetStateAction<number>>;
   presetIndex: number;
   setPresetIndex: Dispatch<SetStateAction<number>>;
+  // Whether the instruments are paged by model or by band.
+  presetPaging: PresetPaging;
+  setPresetPaging: (paging: PresetPaging) => void;
   chordIndex: number;
   setChordIndex: Dispatch<SetStateAction<number>>;
   styleIndex: number;

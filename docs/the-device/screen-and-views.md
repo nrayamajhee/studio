@@ -36,7 +36,7 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Instruments](../../public/docs/the-device/view-instruments.webp)
 
-**Opened by:** Instruments. Red turns the families, blue picks, and while the library is open the keys and whatever is playing (the take, the tracks) sound on the picked instrument without it being chosen; closing the library brings back the one you had. An instrument pad twice binds the sound; Delete removes a saved one.
+**Opened by:** Instruments. Red turns the pages, blue picks, and green pages the library by model (struck and plucked, bowed, blown and so on) or by band (Rock band, Jazz combo, Orchestra, Folk, South Asian, World, Electronic), the favorites first and saved sounds last either way. While the library is open the keys and whatever is playing (the take, the tracks) sound on the picked instrument without it being chosen; closing the library brings back the one you had. An instrument pad twice binds the sound, and the library stays open for the next; Delete removes a saved one.
 
 ### Synth parameters
 
@@ -60,7 +60,7 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Chords](../../public/docs/the-device/view-chords.webp)
 
-**Opened by:** Chords. Red turns the kinds, blue picks; a chord pad twice takes the chord.
+**Opened by:** Chords. Red turns the kinds, blue picks; a chord pad twice takes the chord, and the palette stays open for the next.
 
 ### Play style
 

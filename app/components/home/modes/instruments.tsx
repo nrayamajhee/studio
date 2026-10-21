@@ -1,4 +1,8 @@
-import { DEVICE_PRESETS, presetCategory } from "../deviceEngine";
+import {
+  DEVICE_PRESETS,
+  presetPages,
+  type PresetPaging,
+} from "../deviceEngine";
 import { ScreenHint, ScreenValue } from "../DeviceScreen";
 import { PresetIcon } from "../presetIcons";
 import { bindPad, deletePreset } from "../presetStore";
@@ -6,7 +10,7 @@ import {
   arrowPads,
   deletePad,
   favoritesPicker,
-  idleKnob,
+  listFavorites,
   padName,
   padPreset,
   shelfAt,
@@ -16,15 +20,17 @@ import {
 } from "./base";
 import type { Mode } from "../../../types/bindings";
 
-// The preset library, by model, after the favorites and before the saved
-// presets: the red knob (or ← →) picks a page and the blue one a preset on
-// it, which the keys and anything playing sound on while the library is
-// open, without picking it; pressing a pad twice binds it there and closes
-// the library. Mute
-// stars the preset; Delete removes a highlighted saved preset; built-in ones
-// can't be deleted.
+// The preset library, by model or (the green knob) by band, after the
+// favorites and before the saved presets: the red knob (or ← →) picks a page
+// and the blue one a preset on it, which the keys and anything playing sound
+// on while the library is open, without picking it. Pressing a pad twice
+// binds it there, the library staying open for the next. Mute stars the
+// preset; Delete removes a highlighted saved preset; built-in ones can't be
+// deleted.
 export const instrumentsMode: Mode = (device, base) => {
   const { sound, browse, feedback, shift } = device;
+  const paging = presetPages(sound.presets, browse.presetPaging);
+  const byBand = browse.presetPaging === "band";
   const {
     listed,
     shelves,
@@ -36,17 +42,43 @@ export const instrumentsMode: Mode = (device, base) => {
     star,
   } = favoritesPicker(device, {
     kind: "instruments",
-    items: sound.presets,
-    categoryOf: presetCategory,
+    items: paging.items,
+    categoryOf: paging.categoryOf,
     index: browse.presetIndex,
     setIndex: browse.setPresetIndex,
   });
   const trash = chosen.user ? chosen : null;
   const { shelf, at } = shelfAt(shelves, presetIndex);
+  // Repaging keeps the pick: where it was among the favorites, or else on
+  // its page in the new order.
+  const repage = (next: PresetPaging) => {
+    if (next === browse.presetPaging) return;
+    const { items, categoryOf } = presetPages(sound.presets, next);
+    const relisted = listFavorites(
+      items,
+      categoryOf,
+      browse.favorites.instruments,
+    );
+    const on = (page: string) =>
+      relisted.findIndex(
+        (candidate) => candidate.id === chosen.id && candidate.page === page,
+      );
+    const same = on(chosen.page);
+    browse.setPresetPaging(next);
+    browse.setPresetIndex(
+      Math.max(0, same >= 0 ? same : on(categoryOf(chosen))),
+    );
+  };
 
   return {
     knobs: {
-      green: idleKnob(base.knobs.green),
+      green: {
+        label: "Pages",
+        valueLabel: byBand ? "By band" : "By model",
+        step: byBand ? 1 : 0,
+        steps: 2,
+        onChange: (step) => repage(step > 0 ? "band" : "model"),
+      },
       ...shelfKnobs(shelves, presetIndex, chosen.name, select),
     },
     pads: {
@@ -83,7 +115,9 @@ export const instrumentsMode: Mode = (device, base) => {
       mute,
       ...arrowPads(
         device,
-        ["Previous model", "Next model"],
+        byBand
+          ? ["Previous band", "Next band"]
+          : ["Previous model", "Next model"],
         shelfStep(shelves, at, select),
       ),
     },
@@ -100,7 +134,6 @@ export const instrumentsMode: Mode = (device, base) => {
           return;
         bindPad(pad, chosen.id, shift);
         feedback.showNotice(`${padName(device, pad)} → ${chosen.name}`);
-        device.views.setView("scope");
       },
     }),
     previewSound: chosen,

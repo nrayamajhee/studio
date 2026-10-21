@@ -1,4 +1,4 @@
-import { ScreenHint, ScreenValue } from "../DeviceScreen";
+import { GAP, ScreenHint, ScreenValue } from "../DeviceScreen";
 import {
   PROGRESSIONS,
   previewHome,
@@ -133,7 +133,7 @@ export const progressionsMode: Mode = (device, base) => {
             ? taped
               ? "Play the home note (replaces the take)"
               : "Play the home note"
-            : "A note plays it from there · Save to load"}
+            : `A note plays it from there${GAP}Save to load`}
         </ScreenHint>,
       ],
       tiles: listed

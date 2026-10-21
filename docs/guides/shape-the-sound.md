@@ -12,12 +12,12 @@ The six pads with a red dot are your **instrument pads**: Grand piano, Fingersty
 
 ![The six instrument pads; pad 2 switched the Device to the Fingerstyle electric](../../public/docs/user-manual/instrument-pads.webp)
 
-For everything else, open **Instruments** (the four-squares pad, `I`). It's a library of every sound, one page per family: struck and plucked strings, bowed, blown, free reeds, tuned percussion, drums and the oscillator, with your own saved sounds last.
+For everything else, open **Instruments** (the four-squares pad, `I`). It's a library of every sound, one page per family: struck and plucked strings, bowed, blown, free reeds, tuned percussion, drums and the oscillator, with your own saved sounds last. Turn the **green knob** to page them by band instead: Rock band, Jazz combo, Orchestra, Folk, South Asian, World and Electronic.
 
 ![The Instruments library on the Struck & plucked page, Grand piano picked](../../public/docs/user-manual/instruments.webp)
 
 - The **red knob**, or ← and →, turns the pages; the **blue knob**, or a tap, picks a sound to try.
-- To keep one at hand, press an instrument pad **twice**: the sound is bound to that pad and the library closes. Pads hold your own saved sounds the same way.
+- To keep one at hand, press an instrument pad **twice**: the sound is bound to that pad, and the library stays open so you can bind the next. Pads hold your own saved sounds the same way.
 - Press Instruments again to close it. Shift + ← or → also steps through the instruments from anywhere.
 
 ![The Blown page: trumpets, trombone, flute, clarinet and alto sax](../../public/docs/user-manual/instruments-blown.webp)

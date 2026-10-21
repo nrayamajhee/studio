@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useState, type ReactNode } from "react";
+import type { PresetPaging } from "../components/home/deviceEngine";
 import { useFavorites } from "../components/home/favoritesStore";
 import { resolveBindings } from "../components/home/modes";
 import type { Bindings } from "../types/bindings";
@@ -23,6 +24,7 @@ function useModeValue(): Bindings {
   const latch = useShift();
   const [iconIndex, setIconIndex] = useState(0);
   const [presetIndex, setPresetIndex] = useState(0);
+  const [presetPaging, setPresetPaging] = useState<PresetPaging>("model");
   const [chordIndex, setChordIndex] = useState(0);
   const [styleIndex, setStyleIndex] = useState(0);
   const [progressionIndex, setProgressionIndex] = useState(0);
@@ -51,6 +53,8 @@ function useModeValue(): Bindings {
       setIconIndex,
       presetIndex,
       setPresetIndex,
+      presetPaging,
+      setPresetPaging,
       chordIndex,
       setChordIndex,
       styleIndex,

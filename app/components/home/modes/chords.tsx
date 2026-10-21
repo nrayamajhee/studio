@@ -14,7 +14,8 @@ import type { Mode } from "../../../types/bindings";
 
 // The chord palette, by kind, after the favorites: the red knob (or ← →)
 // picks a page and the blue one a chord on it, and pressing a chord pad twice
-// sets it to that chord and closes the palette. Mute stars the chord.
+// sets it to that chord, the palette staying open for the next. Mute stars
+// the chord.
 export const chordsMode: Mode = (device, base) => {
   const { browse, feedback } = device;
   const {
@@ -59,7 +60,6 @@ export const chordsMode: Mode = (device, base) => {
           return;
         setPadChord(index, chosen.id);
         feedback.showNotice(`Chord ${index + 1} → ${chosen.name}`);
-        device.views.setView("scope");
       },
     }),
     screen: {

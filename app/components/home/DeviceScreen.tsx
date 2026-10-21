@@ -1137,6 +1137,9 @@ const screen = tv({
   },
 });
 
+// What parts the items of a footer: two spaces, which don't collapse.
+export const GAP = "\u00a0\u00a0";
+
 // Views sit in the ~565 × 181 space between the two readouts. The library
 // is two rows of 6 tiles filling it, near square; icons are four rows of 12, 48 a page;
 // tracks are four rows a page, like the studio's track list.
@@ -1762,7 +1765,7 @@ export function DeviceScreen({
           <div className={bottom.footer()}>
             <span className={ui.lead()}>
               {titleBelow && titled}
-              {titleBelow && !badges && footer[0] ? " · " : null}
+              {titleBelow && !badges && footer[0] ? GAP : null}
               {!badges && footer[0]}
             </span>
             {!badges && <span className={ui.trail()}>{footer[1]}</span>}

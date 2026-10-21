@@ -6,7 +6,7 @@ import {
 } from "../../../lib/physical/patches/format";
 import type { ParamSpec } from "../../../lib/physical/patches/types";
 import { engineName } from "../deviceEngine";
-import type { ScreenReadout } from "../DeviceScreen";
+import { GAP, type ScreenReadout } from "../DeviceScreen";
 import { ICON_CHOICES } from "../presetIcons";
 import { KNOB_TONES, graphNote, pageScene, type Tone } from "../synthGraphs";
 import { CHAIN_STOPS, noteName, type KnobSlots } from "../synthPages";
@@ -84,11 +84,11 @@ export const synthMode: Mode = (device, base) => {
     (spec): spec is ParamSpec => spec !== null,
   );
   const hint = chain
-    ? "green picks · → opens"
+    ? `green picks${GAP}→ opens`
     : hasShift
       ? `${shift ? "" : "⇧ "}${extras
           .map((spec) => `${spec.label} ${formatParam(spec, valueOf(spec))}`)
-          .join(" · ")}`
+          .join(GAP)}`
       : "";
 
   return {

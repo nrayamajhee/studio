@@ -336,6 +336,75 @@ export const PRESET_CATEGORIES = [...Object.values(MODEL_NAMES), "Saved"];
 export const presetCategory = ({ target, user }: DevicePreset) =>
   user ? "Saved" : MODEL_NAMES[PATCH_BY_ID[target].family];
 
+// The library's other way of paging: by the band each built-in plays in, one
+// band each, in this order. Saved presets still come last.
+const PRESET_BANDS: readonly { name: string; ids: readonly string[] }[] = [
+  {
+    name: "Rock band",
+    ids: ["rockDrums", "drums", "electricGuitar", "electricFinger", "bass"],
+  },
+  {
+    name: "Jazz combo",
+    ids: [
+      "jazzDrums",
+      "jazzStickDrums",
+      "piano",
+      "uprightBass",
+      "saxophone",
+      "trumpet",
+      "trombone",
+      "clarinet",
+    ],
+  },
+  {
+    name: "Orchestra",
+    ids: ["violin", "cello", "harp", "flute", "bassTrumpet", "xylophone"],
+  },
+  {
+    name: "Folk",
+    ids: [
+      "guitar",
+      "guitarFinger",
+      "nylonGuitar",
+      "ukulele",
+      "banjo",
+      "harmonica",
+      "accordion",
+    ],
+  },
+  { name: "South Asian", ids: ["sitar", "harmonium", "tabla", "madal"] },
+  { name: "World", ids: ["steelPan", "kalimba"] },
+  { name: "Electronic", ids: ["drums808", "drums909", "oscillator"] },
+];
+const BAND_PAGES = [...PRESET_BANDS.map(({ name }) => name), "Saved"];
+const BAND_ORDER = PRESET_BANDS.flatMap(({ ids }) => ids);
+
+// How the library pages its presets: by the model that plays them, or by
+// the band they play in.
+export type PresetPaging = "model" | "band";
+
+const presetBand = (preset: DevicePreset) =>
+  preset.user
+    ? "Saved"
+    : (PRESET_BANDS.find(({ ids }) => ids.includes(preset.id))?.name ??
+      "Saved");
+
+// `presets` (as the library lists them, by model) in `paging`'s order, with
+// the page each is on.
+export function presetPages(
+  presets: readonly DevicePreset[],
+  paging: PresetPaging,
+) {
+  if (paging === "model") return { items: presets, categoryOf: presetCategory };
+  const rank = (preset: DevicePreset) =>
+    BAND_PAGES.indexOf(presetBand(preset)) * BAND_ORDER.length +
+    Math.max(0, BAND_ORDER.indexOf(preset.id));
+  return {
+    items: [...presets].sort((a, b) => rank(a) - rank(b)),
+    categoryOf: presetBand,
+  };
+}
+
 export const KNOB_STEPS = 11;
 
 export type ModuleId = "adsr" | "lfo" | "fx";

@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { plural } from "../deviceMath";
-import { ScreenHint, ScreenPad, ScreenSeek } from "../DeviceScreen";
+import { GAP, ScreenHint, ScreenPad, ScreenSeek } from "../DeviceScreen";
 import { TapeDeckIcon } from "../instrumentIcons";
 import { meterLabel } from "../noteRecorder";
 import { deleteTape, newTape, openTape } from "../sessionStore";
@@ -94,7 +94,7 @@ export const tapesMode: Mode = (device, base) => {
       ),
       footer: [
         currentTape
-          ? `${plural(currentTape.tracks.length, "track")} · ${currentTape.bpm} BPM · ${meterLabel(currentTape.meter)}`
+          ? `${plural(currentTape.tracks.length, "track")}${GAP}${currentTape.bpm} BPM${GAP}${meterLabel(currentTape.meter)}`
           : "",
         <ScreenHint key="hint">
           <ScreenPad label="Save">

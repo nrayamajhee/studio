@@ -14,6 +14,7 @@ import {
   ScreenSeek,
   ScreenSelection,
   ScreenValue,
+  GAP,
 } from "../DeviceScreen";
 import { audible, followsTape } from "../tracks";
 import { isTake } from "../../../providers/LanesProvider";
@@ -282,11 +283,11 @@ export const tracksMode: Mode = (device, base) => {
       footer: [
         track && copy && shift ? (
           <>
-            {copied && `${copyIndex + 1}/${copies.length} · `}
+            {copied && `${copyIndex + 1}/${copies.length}${GAP}`}
             <ScreenSeek>Starts {startShort(copy.start)}</ScreenSeek>
             {trackLoop && (
               <>
-                {" · Clip "}
+                {`${GAP}Clip `}
                 <ScreenSelection
                   label={`${loopLabel(trackLoop.start)} –`}
                   value={loopLabel(trackLoop.end)}
@@ -296,18 +297,19 @@ export const tracksMode: Mode = (device, base) => {
           </>
         ) : track && copy ? (
           <>
-            {copied && `${copyIndex + 1}/${copies.length} · `}
+            {copied && `${copyIndex + 1}/${copies.length}${GAP}`}
             {trackLoop
               ? `Clip ${loopLabel(trackLoop.start)} – ${loopLabel(trackLoop.end)}`
               : `Starts ${startShort(copy.start)}`}
-            {` · ×${copy.repeats} · ${
+            {`${GAP}×${copy.repeats}${GAP}${
               followsTape(track) ? "Tape tempo" : `${track.timing.bpm} BPM`
-            } · `}
+            }${GAP}`}
             <ScreenLevel>Vol {Math.round(track.volume * 100)}%</ScreenLevel>
           </>
         ) : (
           <>
-            Take · <ScreenHint>record piano or drum, then save it</ScreenHint>
+            Take{GAP}
+            <ScreenHint>record piano or drum, then save it</ScreenHint>
           </>
         ),
         <ScreenHint key="knobs">
@@ -316,11 +318,11 @@ export const tracksMode: Mode = (device, base) => {
               <ScreenLevel>
                 {shift ? (trackLoop ? "Clip start" : "Zoom") : "Volume"}
               </ScreenLevel>
-              {" · "}
+              {GAP}
             </>
           )}
           <ScreenSeek>{shift && track ? "Slide" : "Seek"}</ScreenSeek>
-          {" · "}
+          {GAP}
           <ScreenValue>
             {shift ? (trackLoop ? "Clip end" : "Scroll") : "Track"}
           </ScreenValue>

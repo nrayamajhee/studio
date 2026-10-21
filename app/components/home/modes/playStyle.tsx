@@ -5,7 +5,7 @@ import {
   setPlayStyle,
   updatePlayStyle,
 } from "../chordStore";
-import { ScreenSeek, ScreenValue } from "../DeviceScreen";
+import { GAP, ScreenSeek, ScreenValue } from "../DeviceScreen";
 import { PlayStyleIcon } from "../instrumentIcons";
 import { gridLabel } from "../noteRecorder";
 import {
@@ -139,7 +139,7 @@ export const playStyleMode: Mode = (device, base) => {
       // nothing to set.
       footer: [
         <ScreenValue key="style">{picked.name}</ScreenValue>,
-        <ScreenSeek key="settings">{settings.join(" · ")}</ScreenSeek>,
+        <ScreenSeek key="settings">{settings.join(GAP)}</ScreenSeek>,
       ],
       tiles: listed
         .slice(group.start, group.start + group.count)

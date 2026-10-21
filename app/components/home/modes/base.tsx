@@ -31,7 +31,7 @@ import {
   KNOB_STEPS,
   deviceEngine,
   engineName,
-  presetCategory,
+  presetPages,
   type ModuleId,
 } from "../deviceEngine";
 import { ScreenSeek, ScreenValue, type ScreenPager } from "../DeviceScreen";
@@ -526,14 +526,13 @@ const openSynth = ({ view, views, sound, browse }: Device, params: boolean) => {
     views.setView("synth");
     return;
   }
+  const { items, categoryOf } = presetPages(sound.presets, browse.presetPaging);
   browse.setPresetIndex(
     Math.max(
       0,
-      listFavorites(
-        sound.presets,
-        presetCategory,
-        browse.favorites.instruments,
-      ).findIndex(({ id }) => id === sound.preset.id),
+      listFavorites(items, categoryOf, browse.favorites.instruments).findIndex(
+        ({ id }) => id === sound.preset.id,
+      ),
     ),
   );
   views.setView("instruments");
