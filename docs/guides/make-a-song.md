@@ -62,7 +62,7 @@ Press **Play** to hear it loop, and Stop (`` ` ``) when you're done.
 
 ![The beats' Favorites page, New jack swing picked](../../public/docs/user-manual/beats.webp)
 
-**2. Save it.** Press **Save**: the beat loads into the **drum grid** on its kit. The grid has a row per drum and a column per step. Here the steps are sixteenth-note triplets (1/16T), six to a beat, which is what makes it swing.
+**2. Save it.** Press **Save**: the beat loads into the **drum grid** on its kit. The grid has a row per drum and a column per step. Here the steps are sixteenths, and loading the beat set the tape's [swing](set-the-tempo.md#swing) to 66% on 1/16: every second sixteenth lands late, which is what makes it swing.
 
 ![New jack swing in the drum grid on the 808 kit](../../public/docs/user-manual/drum-grid.webp)
 

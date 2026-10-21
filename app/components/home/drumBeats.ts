@@ -1,6 +1,7 @@
 import type { DrumPieceId, KitId } from "../../lib/physical";
 import type { Meter, Take } from "./noteRecorder";
 import { patternTake, type DrumHit, type DrumPattern } from "./drumPattern";
+import type { Swing } from "./swing";
 
 export type BeatStyle =
   | "Simple"
@@ -29,12 +30,25 @@ export type DrumBeat = {
   meter: Meter;
   perBeat: number;
   rows: Partial<Record<DrumPieceId, string>>;
+  // The swing it is played with, which loading it sets on the tape; none
+  // leaves the tape's as it is.
+  swing?: Swing;
 };
 
 type BeatSpec = Omit<DrumBeat, "style" | "meter" | "perBeat"> &
   Partial<Pick<DrumBeat, "meter" | "perBeat">>;
 
 const FOUR: Meter = { beats: 4, unit: 4 };
+// The swings the swung beats carry, written straight: every second eighth
+// or sixteenth pushed late. At 66% the late one falls where a triplet's last
+// note would (a shuffle, a jazz ride, a reggae drop); a fast tempo swings
+// lighter, and boom bap and lo-fi lighter still. Beats that need a triplet's
+// middle note too stay on a triplet grid, which no swing touches.
+const SWUNG_EIGHTHS: Swing = { amount: 66, perBeat: 2 };
+const BEBOP: Swing = { amount: 60, perBeat: 2 };
+const NEW_JACK: Swing = { amount: 66, perBeat: 4 };
+const BOOM_BAP: Swing = { amount: 62, perBeat: 4 };
+const LO_FI: Swing = { amount: 60, perBeat: 4 };
 // A preview plays the beat round until it has run this many bars.
 const PREVIEW_BARS = 4;
 const VELOCITY: Readonly<Record<string, number>> = { X: 1, x: 0.8, o: 0.45 };
@@ -337,11 +351,12 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       name: "Shuffle",
       bpm: 104,
       kit: "drums",
-      perBeat: 3,
+      perBeat: 2,
+      swing: SWUNG_EIGHTHS,
       rows: {
-        kick: "x.. ... x.. ...",
-        snare: "... x.. ... x..",
-        closedHat: "x.x x.x x.x x.x",
+        kick: "x. .. x. ..",
+        snare: ".. x. .. x.",
+        closedHat: "xx xx xx xx",
       },
     },
     {
@@ -442,17 +457,18 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       },
     },
     {
-      // Swung sixteenths on a sextuplet grid, a clap doubling the backbeat.
+      // Sixteenths swung hard (66%, the MPC's triplet feel), a clap doubling
+      // the backbeat.
       id: "newJackSwing",
       name: "New jack swing",
       bpm: 108,
       kit: "drums808",
-      perBeat: 6,
+      swing: NEW_JACK,
       rows: {
-        kick: "x....x ...... ..x... ...x..",
-        snare: "...... X..... ...... X.....",
-        clap: "...... x..... ...... x.....",
-        closedHat: "x.xx.x x.xx.x x.xx.x x.xx.x",
+        kick: "x..x .... .x.. ..x.",
+        snare: ".... X... .... X...",
+        clap: ".... x... .... x...",
+        closedHat: "xxxx xxxx xxxx xxxx",
       },
     },
     {
@@ -464,11 +480,11 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       name: "Madal new jack swing",
       bpm: 108,
       kit: "madal",
-      perBeat: 6,
+      swing: NEW_JACK,
       rows: {
-        dhin: "x....x ...... ..x... ...x..",
-        ka: "..xx.. x.xx.x x..x.x x.x..x",
-        ta: "...... X..... ...... X.....",
+        dhin: "x..x .... .x.. ..x.",
+        ka: ".xx. xxxx x.xx xx.x",
+        ta: ".... X... .... X...",
       },
     },
     {
@@ -486,19 +502,20 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       },
     },
   ]),
-  // Swung on a triplet grid: the ride's "ding, ding-a" and the hat's foot on
-  // 2 and 4, the kick feathered.
+  // Swung eighths: the ride's "ding, ding-a" and the hat's foot on 2 and 4,
+  // the kick feathered.
   ...styled("Jazz", [
     {
       id: "swing",
       name: "Swing",
       bpm: 150,
       kit: "jazzDrums",
-      perBeat: 3,
+      perBeat: 2,
+      swing: SWUNG_EIGHTHS,
       rows: {
-        ride: "x.. x.x x.. x.x",
-        closedHat: "... x.. ... x..",
-        kick: "o.. o.. o.. o..",
+        ride: "x. xx x. xx",
+        closedHat: ".. x. .. x.",
+        kick: "o. o. o. o.",
       },
     },
     {
@@ -506,12 +523,13 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       name: "Two-feel",
       bpm: 120,
       kit: "jazzDrums",
-      perBeat: 3,
+      perBeat: 2,
+      swing: SWUNG_EIGHTHS,
       rows: {
-        ride: "x.. x.x x.. x.x",
-        closedHat: "... x.. ... x..",
-        kick: "o.. ... o.. ...",
-        stick: "... ... ... x..",
+        ride: "x. xx x. xx",
+        closedHat: ".. x. .. x.",
+        kick: "o. .. o. ..",
+        stick: ".. .. .. x.",
       },
     },
     {
@@ -520,12 +538,13 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       name: "Bebop",
       bpm: 220,
       kit: "jazzDrums",
-      perBeat: 3,
+      perBeat: 2,
+      swing: BEBOP,
       rows: {
-        ride: "x.. x.x x.. x.x x.. x.x x.. x.x",
-        closedHat: "... x.. ... x.. ... x.. ... x..",
-        snare: "..o ... ..o ... ... ..o ... ...",
-        kick: "... ... ... ... ... ... ... ..X",
+        ride: "x. xx x. xx x. xx x. xx",
+        closedHat: ".. x. .. x. .. x. .. x.",
+        snare: ".o .. .o .. .. .o .. ..",
+        kick: ".. .. .. .. .. .. .. .X",
       },
     },
     {
@@ -533,12 +552,13 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       name: "Brush swing",
       bpm: 120,
       kit: "jazzDrums",
-      perBeat: 3,
+      perBeat: 2,
+      swing: SWUNG_EIGHTHS,
       rows: {
-        sweep: "x.. ... x.. ...",
-        snare: "... x.o ... x.o",
-        closedHat: "... x.. ... x..",
-        kick: "o.. ... o.. ...",
+        sweep: "x. .. x. ..",
+        snare: ".. xo .. xo",
+        closedHat: ".. x. .. x.",
+        kick: "o. .. o. ..",
       },
     },
     {
@@ -546,12 +566,13 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       name: "Brush ballad",
       bpm: 64,
       kit: "jazzDrums",
-      perBeat: 3,
+      perBeat: 2,
+      swing: SWUNG_EIGHTHS,
       rows: {
-        sweep: "x.. x.. x.. x..",
-        snare: "... o.. ... o..",
-        closedHat: "... x.. ... x..",
-        kick: "o.. ... ... ...",
+        sweep: "x. x. x. x.",
+        snare: ".. o. .. o.",
+        closedHat: ".. x. .. x.",
+        kick: "o. .. .. ..",
       },
     },
     {
@@ -560,11 +581,12 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       bpm: 160,
       kit: "jazzDrums",
       meter: { beats: 3, unit: 4 },
-      perBeat: 3,
+      perBeat: 2,
+      swing: SWUNG_EIGHTHS,
       rows: {
-        ride: "x.. x.x x..",
-        closedHat: "... x.. x..",
-        kick: "o.. ... ...",
+        ride: "x. xx x.",
+        closedHat: ".. x. x.",
+        kick: "o. .. ..",
       },
     },
     {
@@ -572,12 +594,13 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       name: "Jazz shuffle",
       bpm: 120,
       kit: "jazzDrums",
-      perBeat: 3,
+      perBeat: 2,
+      swing: SWUNG_EIGHTHS,
       rows: {
-        ride: "x.x x.x x.x x.x",
-        snare: "..o x.. ..o x..",
-        closedHat: "... x.. ... x..",
-        kick: "x.. ... x.. ...",
+        ride: "xx xx xx xx",
+        snare: ".o x. .o x.",
+        closedHat: ".. x. .. x.",
+        kick: "x. .. x. ..",
       },
     },
     {
@@ -598,12 +621,13 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       bpm: 172,
       kit: "jazzDrums",
       meter: { beats: 5, unit: 4 },
-      perBeat: 3,
+      perBeat: 2,
+      swing: SWUNG_EIGHTHS,
       rows: {
-        ride: "x.. x.x x.. x.. x.x",
-        closedHat: "... x.. ... x.. ...",
-        stick: "... ... ... x.. ...",
-        kick: "o.. ... ... o.. ...",
+        ride: "x. xx x. x. xx",
+        closedHat: ".. x. .. x. ..",
+        stick: ".. .. .. x. ..",
+        kick: "o. .. .. o. ..",
       },
     },
   ]),
@@ -686,11 +710,12 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       name: "One drop",
       bpm: 76,
       kit: "drums",
-      perBeat: 3,
+      perBeat: 2,
+      swing: SWUNG_EIGHTHS,
       rows: {
-        kick: "... ... x.. ...",
-        stick: "... ... x.. ...",
-        closedHat: "x.x x.x x.x x.x",
+        kick: ".. .. x. ..",
+        stick: ".. .. x. ..",
+        closedHat: "xx xx xx xx",
       },
     },
     {
@@ -699,11 +724,12 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       name: "Steppers",
       bpm: 80,
       kit: "drums",
-      perBeat: 3,
+      perBeat: 2,
+      swing: SWUNG_EIGHTHS,
       rows: {
-        kick: "x.. x.. x.. x..",
-        stick: "... ... x.. ...",
-        closedHat: "x.x x.x x.x x.x",
+        kick: "x. x. x. x.",
+        stick: ".. .. x. ..",
+        closedHat: "xx xx xx xx",
       },
     },
   ]),
@@ -732,16 +758,16 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       },
     },
     {
-      // Boom bap with swung sixteenths on a sextuplet grid.
+      // Boom bap with its sixteenths swung, as an SP-1200 swings them.
       id: "goldenEra",
       name: "Golden era",
       bpm: 94,
       kit: "drums",
-      perBeat: 6,
+      swing: BOOM_BAP,
       rows: {
-        kick: "x..... ...x.. ..x... ......",
-        snare: "...... X..... ...... X.....",
-        closedHat: "x.ox.o x.ox.o x.ox.o x.ox.o",
+        kick: "x... ..x. .x.. ....",
+        snare: ".... X... .... X...",
+        closedHat: "xoxo xoxo xoxo xoxo",
       },
     },
     {
@@ -793,16 +819,16 @@ export const DRUM_BEATS: readonly DrumBeat[] = [
       },
     },
     {
-      // Lazy, swung sixteenths on a sextuplet grid.
+      // Lazy sixteenths, swung a little.
       id: "loFi",
       name: "Lo-fi",
       bpm: 80,
       kit: "drums",
-      perBeat: 6,
+      swing: LO_FI,
       rows: {
-        kick: "x..... ...... ...x.. ......",
-        snare: "...... x..... ...... x.....",
-        closedHat: "x.ox.o x.ox.o x.ox.o x.ox.o",
+        kick: "x... .... ..x. ....",
+        snare: ".... x... .... x...",
+        closedHat: "xoxo xoxo xoxo xoxo",
       },
     },
     {

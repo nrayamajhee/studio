@@ -19,7 +19,7 @@ Each row is a piece of the kit and each character a step of the drum grid; space
 | `o`  | ghost note, played softly |
 | `.`  | rest                      |
 
-Most beats count sixteenths, four steps a beat. Swung ones use triplets, three a beat, or six steps a beat for swung sixteenths. The 12/8 and 6/8 beats count eighths, two steps each, grouped by the dotted quarter. Tempos count the meter's beat: quarters in 4/4, eighths in 6/8 and 12/8. The tabla's taals are written as their bols, one per mātrā (the taal's own beat), with `|` between its sections.
+Most beats count sixteenths, four steps a beat. Swung ones count straight eighths or sixteenths and carry their own [swing](../guides/set-the-tempo.md#swing), given with each (66% puts the late note where a triplet's last would fall); loading one sets the tape's swing to it. The few that need a triplet's middle note too (Half-time shuffle, Purdie shuffle, Drill and Boléro) count triplets, three or six steps a beat, which no swing touches. The 12/8 and 6/8 beats count eighths, two steps each, grouped by the dotted quarter. Tempos count the meter's beat: quarters in 4/4, eighths in 6/8 and 12/8. The tabla's taals are written as their bols, one per mātrā (the taal's own beat), with `|` between its sections.
 
 ## Simple
 
@@ -340,15 +340,15 @@ A slow backbeat on the cross-stick under steady eighths, leaving room for the vo
 
 ### Shuffle
 
-Drum kit · 104 BPM · 4/4 · triplets
+Drum kit · 104 BPM · 4/4 · eighths, swung 66%
 
 ```text
-Closed hat  x.x x.x x.x x.x
-Snare       ... x.. ... x..
-Kick        x.. ... x.. ...
+Closed hat  xx xx xx xx
+Snare       .. x. .. x.
+Kick        x. .. x. ..
 ```
 
-Swung eighths: the hat on the first and last of each triplet, the kick and snare trading beats.
+Swung eighths: the hat on every eighth, each second one late, the kick and snare trading beats.
 
 _Examples:_ "Pride and Joy" (Stevie Ray Vaughan)
 
@@ -471,30 +471,30 @@ _Examples:_ _Voodoo_ (D'Angelo, Questlove)
 
 ### New jack swing
 
-808 kit · 108 BPM · 4/4 · six steps a beat
+808 kit · 108 BPM · 4/4 · sixteenths, swung 66%
 
 ```text
-Closed hat  x.xx.x x.xx.x x.xx.x x.xx.x
-Clap        ...... x..... ...... x.....
-Snare       ...... X..... ...... X.....
-Kick        x....x ...... ..x... ...x..
+Closed hat  xxxx xxxx xxxx xxxx
+Clap        .... x... .... x...
+Snare       .... X... .... X...
+Kick        x..x .... .x.. ..x.
 ```
 
-Hip hop's drum machines with swung sixteenths and a backbeat doubled by a clap, built for dancing to R&B.
+Hip hop's drum machines with swung sixteenths and a backbeat doubled by a clap, built for dancing to R&B. The swing does the work: at 66%, the MPC's triplet feel, every second sixteenth lands late. Loading the beat sets the tape's swing to it.
+
+_Examples:_ "My Prerogative" (Bobby Brown), "Rump Shaker" (Wreckx-n-Effect)
 
 ### Madal new jack swing
 
-Madal · 108 BPM · 4/4 · six steps a beat
+Madal · 108 BPM · 4/4 · sixteenths, swung 66%
 
 ```text
-Ka          ..xx.. x.xx.x x..x.x x.x..x
-Ta          ...... X..... ...... X.....
-Dhin        x....x ...... ..x... ...x..
+Ka          .xx. xxxx x.xx xx.x
+Ta          .... X... .... X...
+Dhin        x..x .... .x.. ..x.
 ```
 
-New jack swing on the madal: the open bass head (dhin) for the kick, the closed slap on it (ka) for the swung hats, and the treble ringing open (ta) for the backbeat. Ka drops out where dhin lands, since a hand plays one stroke on a head at a time.
-
-_Examples:_ "My Prerogative" (Bobby Brown), "Rump Shaker" (Wreckx-n-Effect)
+New jack swing on the madal, with the same swing: the open bass head (dhin) for the kick, the closed slap on it (ka) for the swung hats, and the treble ringing open (ta) for the backbeat. Ka drops out where dhin lands, since a hand plays one stroke on a head at a time.
 
 ### Afrobeat
 
@@ -513,16 +513,16 @@ _Examples:_ "Zombie" (Fela Kuti and Africa 70, Tony Allen)
 
 ## Jazz
 
-Swung on a triplet grid, time kept on the ride and the hat's foot on 2 and 4, the kick feathered.
+Swung eighths, time kept on the ride and the hat's foot on 2 and 4, the kick feathered.
 
 ### Swing
 
-Jazz kit · 150 BPM · 4/4 · triplets
+Jazz kit · 150 BPM · 4/4 · eighths, swung 66%
 
 ```text
-Ride        x.. x.x x.. x.x
-Closed hat  ... x.. ... x..
-Kick        o.. o.. o.. o..
+Ride        x. xx x. xx
+Closed hat  .. x. .. x.
+Kick        o. o. o. o.
 ```
 
 The ride's ding, ding-a-ding over the hat's foot on 2 and 4, the kick feathered on every beat: time kept on the cymbal rather than the drums.
@@ -531,64 +531,64 @@ _Examples:_ "So What" (Miles Davis, Jimmy Cobb)
 
 ### Two-feel
 
-Jazz kit · 120 BPM · 4/4 · triplets
+Jazz kit · 120 BPM · 4/4 · eighths, swung 66%
 
 ```text
-Ride         x.. x.x x.. x.x
-Closed hat   ... x.. ... x..
-Cross-stick  ... ... ... x..
-Kick         o.. ... o.. ...
+Ride        x. xx x. xx
+Closed hat  .. x. .. x.
+Cross-stick .. .. .. x.
+Kick        o. .. o. ..
 ```
 
 Swing with the bass in halves, kick and cross-stick marking only the strong beats: how a tune's head often sits before the solos open up.
 
 ### Bebop
 
-Jazz kit · 220 BPM · 4/4 · triplets, 2 bars
+Jazz kit · 220 BPM · 4/4 · eighths, swung 60%, 2 bars
 
 ```text
-Ride        x.. x.x x.. x.x x.. x.x x.. x.x
-Closed hat  ... x.. ... x.. ... x.. ... x..
-Snare       ..o ... ..o ... ... ..o ... ...
-Kick        ... ... ... ... ... ... ... ..X
+Ride        x. xx x. xx x. xx x. xx
+Closed hat  .. x. .. x. .. x. .. x.
+Snare       .o .. .o .. .. .o .. ..
+Kick        .. .. .. .. .. .. .. .X
 ```
 
 Kenny Clarke and Max Roach moved the time to the ride and freed the snare and kick to comp, dropping bombs between the soloist's phrases.
 
 ### Brush swing
 
-Jazz kit · 120 BPM · 4/4 · triplets
+Jazz kit · 120 BPM · 4/4 · eighths, swung 66%
 
 ```text
-Closed hat   ... x.. ... x..
-Brush sweep  x.. ... x.. ...
-Snare        ... x.o ... x.o
-Kick         o.. ... o.. ...
+Closed hat  .. x. .. x.
+Brush sweep x. .. x. ..
+Snare       .. xo .. xo
+Kick        o. .. o. ..
 ```
 
 A brush sweeping circles on the head while the other brush taps the backbeat: swing at the volume of a small room.
 
 ### Brush ballad
 
-Jazz kit · 64 BPM · 4/4 · triplets
+Jazz kit · 64 BPM · 4/4 · eighths, swung 66%
 
 ```text
-Closed hat   ... x.. ... x..
-Brush sweep  x.. x.. x.. x..
-Snare        ... o.. ... o..
-Kick         o.. ... ... ...
+Closed hat  .. x. .. x.
+Brush sweep x. x. x. x.
+Snare       .. o. .. o.
+Kick        o. .. .. ..
 ```
 
 Slow sweeps on every beat with a soft tap on 2 and 4, for ballads.
 
 ### Jazz waltz
 
-Jazz kit · 160 BPM · 3/4 · triplets
+Jazz kit · 160 BPM · 3/4 · eighths, swung 66%
 
 ```text
-Ride        x.. x.x x..
-Closed hat  ... x.. x..
-Kick        o.. ... ...
+Ride        x. xx x.
+Closed hat  .. x. x.
+Kick        o. .. ..
 ```
 
 Swing in three: the ride's pattern folded into a bar of three, the hat on 2 and 3.
@@ -597,16 +597,16 @@ _Examples:_ "My Favorite Things" (John Coltrane, Elvin Jones), "Someday My Princ
 
 ### Jazz shuffle
 
-Jazz kit · 120 BPM · 4/4 · triplets
+Jazz kit · 120 BPM · 4/4 · eighths, swung 66%
 
 ```text
-Ride        x.x x.x x.x x.x
-Closed hat  ... x.. ... x..
-Snare       ..o x.. ..o x..
-Kick        x.. ... x.. ...
+Ride        xx xx xx xx
+Closed hat  .. x. .. x.
+Snare       .o x. .o x.
+Kick        x. .. x. ..
 ```
 
-A heavier swing with the ride shuffling every triplet and the snare filling in, between swing and the blues.
+A heavier swing with the ride shuffling every eighth and the snare filling in, between swing and the blues.
 
 ### Second line
 
@@ -624,13 +624,13 @@ _Examples:_ "Iko Iko" (The Dixie Cups), "Hey Pocky A-Way" (The Meters, Zigaboo M
 
 ### Five-four
 
-Jazz kit · 172 BPM · 5/4 · triplets
+Jazz kit · 172 BPM · 5/4 · eighths, swung 66%
 
 ```text
-Ride         x.. x.x x.. x.. x.x
-Closed hat   ... x.. ... x.. ...
-Cross-stick  ... ... ... x.. ...
-Kick         o.. ... ... o.. ...
+Ride        x. xx x. x. xx
+Closed hat  .. x. .. x. ..
+Cross-stick .. .. .. x. ..
+Kick        o. .. .. o. ..
 ```
 
 Swing in five, grouped three and two, with the cross-stick marking where the second group starts.
@@ -726,26 +726,26 @@ _Examples:_ "Dem Bow" (Shabba Ranks), "Gasolina" (Daddy Yankee)
 
 ### One drop
 
-Drum kit · 76 BPM · 4/4 · triplets
+Drum kit · 76 BPM · 4/4 · eighths, swung 66%
 
 ```text
-Closed hat   x.x x.x x.x x.x
-Cross-stick  ... ... x.. ...
-Kick         ... ... x.. ...
+Closed hat  xx xx xx xx
+Cross-stick .. .. x. ..
+Kick        .. .. x. ..
 ```
 
-Reggae's one drop: nothing on 1, kick and rim together on 3, and the hats swinging triplets.
+Reggae's one drop: nothing on 1, kick and rim together on 3, and the hats swinging eighths.
 
 _Examples:_ "One Drop" (Bob Marley and the Wailers, Carlton Barrett)
 
 ### Steppers
 
-Drum kit · 80 BPM · 4/4 · triplets
+Drum kit · 80 BPM · 4/4 · eighths, swung 66%
 
 ```text
-Closed hat   x.x x.x x.x x.x
-Cross-stick  ... ... x.. ...
-Kick         x.. x.. x.. x..
+Closed hat  xx xx xx xx
+Cross-stick .. .. x. ..
+Kick        x. x. x. x.
 ```
 
 The one drop's rim on 3 over a kick on every beat: the march-like drive of roots reggae and dub.
@@ -784,15 +784,15 @@ _Examples:_ "C.R.E.A.M." (Wu-Tang Clan), "Shook Ones, Pt. II" (Mobb Deep)
 
 ### Golden era
 
-Drum kit · 94 BPM · 4/4 · six steps a beat
+Drum kit · 94 BPM · 4/4 · sixteenths, swung 62%
 
 ```text
-Closed hat  x.ox.o x.ox.o x.ox.o x.ox.o
-Snare       ...... X..... ...... X.....
-Kick        x..... ...x.. ..x... ......
+Closed hat  xoxo xoxo xoxo xoxo
+Snare       .... X... .... X...
+Kick        x... ..x. .x.. ....
 ```
 
-Boom bap at its most swung: the hats pushed late on a six-step grid with ghosted offbeats, as early-90s producers chopped jazz and soul breaks.
+Boom bap swung: every second sixteenth on the hats pushed late, the offbeats ghosted, as early-90s producers chopped jazz and soul breaks on swung samplers.
 
 _Examples:_ "They Reminisce Over You (T.R.O.Y.)" (Pete Rock & CL Smooth)
 
@@ -854,15 +854,15 @@ Trap with its hi-hat rolls: sixteenths that break into 32nds before the bar turn
 
 ### Lo-fi
 
-Drum kit · 80 BPM · 4/4 · six steps a beat
+Drum kit · 80 BPM · 4/4 · sixteenths, swung 60%
 
 ```text
-Closed hat  x.ox.o x.ox.o x.ox.o x.ox.o
-Snare       ...... x..... ...... x.....
-Kick        x..... ...... ...x.. ......
+Closed hat  xoxo xoxo xoxo xoxo
+Snare       .... x... .... x...
+Kick        x... .... ..x. ....
 ```
 
-J Dilla's loose swing: sixteenths pushed late on a six-step grid, the kick lazily early, ghosts on the hat.
+J Dilla's loose swing: every second sixteenth pushed a little late, the kick lazily early, ghosts on the hat.
 
 _Examples:_ "Fall in Love" (Slum Village)
 

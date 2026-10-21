@@ -92,7 +92,7 @@ export function starterTape(id: string): Tape {
       kit.id,
       soundOf(kit),
       INITIAL_MODULES,
-      { ...TIMING, perBeat: pattern.perBeat },
+      { ...TIMING, perBeat: pattern.perBeat, swing: newJackSwing.swing },
       "drumGrid",
     ),
     id: "starter-drums",
@@ -105,6 +105,8 @@ export function starterTape(id: string): Tape {
     name: "Starter song",
     bpm: TIMING.bpm,
     meter: TIMING.meter,
+    // The beat's, as loading it into the drum grid leaves it.
+    swing: newJackSwing.swing,
     tracks: [
       {
         ...strummed(0, "starter-oscillator", soundOf(oscillator)),
@@ -117,6 +119,8 @@ export function starterTape(id: string): Tape {
           "starter-sine-and-saw",
           soundOf(oscillator, SINE_AND_SAW),
         ),
+        // Saved after the beat, with its swing.
+        timing: { ...TIMING, swing: newJackSwing.swing },
         start: roundBars * beats,
       },
     ],

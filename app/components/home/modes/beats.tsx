@@ -25,7 +25,8 @@ const kitPreset = (kit: string) =>
 // on the keys (the instrument pads keep what they're bound to). A tile
 // tapped, or Play, plays it on the preview, on its kit at the tempo; Play
 // again pauses it. Save loads it
-// into the drum grid on that kit, setting the time signature to its own, and
+// into the drum grid on that kit, setting the time signature to its own and
+// the tape's swing to its, if it has one (a preview plays with it too), and
 // opens the grid to play or keep it; so does a tile double-clicked. Mute
 // stars it.
 export const beatsMode: Mode = (device, base) => {
@@ -54,7 +55,7 @@ export const beatsMode: Mode = (device, base) => {
     const beat = listed[index];
     const swung = swungTake(
       beatPreview(beat, transport.bpm),
-      swingOn(transport.swing, beat.perBeat),
+      swingOn(beat.swing ?? transport.swing, beat.perBeat),
     );
     preview.play(beat.id, swung, {
       target: beat.kit,
@@ -78,8 +79,13 @@ export const beatsMode: Mode = (device, base) => {
         beats === beat.meter.beats && unit === beat.meter.unit,
     );
     if (meter >= 0) transport.setMeter(meter);
+    if (beat.swing) transport.setSwing(beat.swing);
     views.setView("drumGrid");
-    feedback.showNotice(`${beat.name} in the drum grid`);
+    feedback.showNotice(
+      beat.swing
+        ? `${beat.name} in the drum grid, swing ${beat.swing.amount}%`
+        : `${beat.name} in the drum grid`,
+    );
   };
 
   return {

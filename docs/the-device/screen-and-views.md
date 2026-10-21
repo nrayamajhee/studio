@@ -84,7 +84,7 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Beats](../../public/docs/the-device/view-beats.webp)
 
-**Opened by:** Shift + Drum grid. Red turns the styles, blue picks, Mute stars the pick into the Favorites page that comes first (New jack swing, Madal new jack swing, Sixteenth hats, Madal kick kick hat and Lo-fi are there to begin with), and the keys play the picked beat's kit (the instrument pads keep their sounds); a tap or Play previews; Save loads it into the drum grid.
+**Opened by:** Shift + Drum grid. Red turns the styles, blue picks, Mute stars the pick into the Favorites page that comes first (New jack swing, Madal new jack swing, Sixteenth hats, Madal kick kick hat and Lo-fi are there to begin with), and the keys play the picked beat's kit (the instrument pads keep their sounds); a tap or Play previews; Save loads it into the drum grid, setting the time signature and, for a swung beat (the shuffles, jazz, reggae, New jack swing, boom bap, lo-fi), the tape's swing.
 
 ### Piano roll
 
