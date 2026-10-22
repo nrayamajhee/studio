@@ -5,6 +5,7 @@ import { HotkeyProvider } from "../providers/HotkeyProvider";
 import { SynthDevice } from "../components/home/SynthDevice";
 import { Button } from "../components/design-system/Button";
 import { DebugOverlay } from "../components/page/DebugOverlay";
+import { MidiButton, MidiPanel } from "../components/page/MidiPanel";
 import { SkyBackground } from "../components/page/SkyBackground";
 import { ThemeToggle } from "../components/page/ThemeToggle";
 
@@ -19,7 +20,12 @@ export function meta(_args: Route.MetaArgs) {
 }
 
 export default function Home() {
-  const [debugOpen, setDebugOpen] = useState(false);
+  // One panel over the page at a time.
+  const [panel, setPanel] = useState<"debug" | "midi" | null>(null);
+  const panelOpener = (name: "debug" | "midi") => (open: boolean) =>
+    setPanel((current) => (open ? name : current === name ? null : current));
+  const setDebugOpen = panelOpener("debug");
+  const setMidiOpen = panelOpener("midi");
 
   return (
     <div className="relative w-full h-dvh overflow-hidden select-none">
@@ -52,8 +58,8 @@ export default function Home() {
           {" | "}
           <Button
             unstyled
-            aria-expanded={debugOpen}
-            onClick={() => setDebugOpen((open) => !open)}
+            aria-expanded={panel === "debug"}
+            onClick={() => setDebugOpen(panel !== "debug")}
             className="cursor-pointer font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
           >
             {/* An element, so Button doesn't set the label in its own type. */}
@@ -81,8 +87,11 @@ export default function Home() {
         </span>
       </footer>
 
-      <ThemeToggle />
-      <DebugOverlay open={debugOpen} onOpenChange={setDebugOpen} />
+      <ThemeToggle>
+        <MidiButton open={panel === "midi"} onOpenChange={setMidiOpen} />
+      </ThemeToggle>
+      <DebugOverlay open={panel === "debug"} onOpenChange={setDebugOpen} />
+      <MidiPanel open={panel === "midi"} onOpenChange={setMidiOpen} />
     </div>
   );
 }

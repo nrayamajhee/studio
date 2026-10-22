@@ -173,7 +173,13 @@ function filterParams(cutoff: number, q = Math.SQRT1_2): ParamSpec[] {
 }
 
 // In the order of the LFO's shapes.
-export const LFO_SHAPES = ["Sine", "Triangle", "Square", "Random"] as const;
+export const LFO_SHAPES = [
+  "Sine",
+  "Triangle",
+  "Square",
+  "Saw",
+  "Random",
+] as const;
 
 export type VibratoDefaults = {
   rate?: number;
@@ -724,7 +730,7 @@ export const MASTER_PARAMS: ParamSpec[] = [
     primary: true,
   }),
   param("lfo.depth", "LFO depth", "master", 0, 1, 0, primary),
-  param("lfo.shape", "LFO shape", "master", 0, 3, 0),
+  param("lfo.shape", "LFO shape", "master", 0, LFO_SHAPES.length - 1, 0),
   param("lfo.target", "LFO target", "master", 0, 3, 0),
   // The FX chain; zero leaves the mix as it is.
   param("fx.drive", "Drive", "master", 0, 1, 0, primary),

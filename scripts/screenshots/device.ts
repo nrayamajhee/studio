@@ -201,7 +201,7 @@ export function driveDevice(
   // Steps the playing instrument with Shift + → until the main screen names
   // it (the library only previews a sound until it's bound to a pad).
   const pickInstrument = async (name: string) => {
-    const playing = new RegExp(`\\b${name} ·`);
+    const playing = new RegExp(`%\\s+${name}\\b`);
     for (let i = 0; i < 60 && !playing.test(await screenText()); i++)
       await tap("ArrowRight", { shift: true });
     if (!playing.test(await screenText()))

@@ -7,7 +7,7 @@ import {
   type Take,
 } from "./noteRecorder";
 import { INITIAL_PATTERN, isPattern, type DrumPattern } from "./drumPattern";
-import { starterTape } from "./starterSong";
+import { starterTapes } from "./starterSong";
 import { STRAIGHT, isSwing, type Swing } from "./swing";
 import type { Track } from "./tracks";
 
@@ -189,7 +189,7 @@ const emptyTape = (
   tracks: [],
 });
 
-// The tapes as stored, or on a first visit the starter song, or a first tape
+// The tapes as stored, or on a first visit the starter tapes, or a first tape
 // holding the tracks kept before there were tapes.
 function readTapes(legacyTracks: unknown) {
   const stored = load(TAPES_KEY);
@@ -204,14 +204,12 @@ function readTapes(legacyTracks: unknown) {
     return { tapes, tape: tape || tapes[0].id };
   }
   const kept = tracksOf(legacyTracks);
-  const first =
-    kept.length > 0
-      ? { ...emptyTape([]), tracks: kept }
-      : starterTape(tapeId());
-  save(TAPES_KEY, [first]);
-  save(TAPE_KEY, first.id);
+  const first: Tape[] =
+    kept.length > 0 ? [{ ...emptyTape([]), tracks: kept }] : starterTapes();
+  save(TAPES_KEY, first);
+  save(TAPE_KEY, first[0].id);
   save(TRACKS_KEY);
-  return { tapes: [first], tape: first.id };
+  return { tapes: first, tape: first[0].id };
 }
 
 // The session with `tapes`, `tape` open, and its tracks.

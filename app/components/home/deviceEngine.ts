@@ -6,6 +6,7 @@ import {
   type KitId,
 } from "../../lib/physical";
 import { MASTER_PARAMS, PATCH_BY_ID } from "../../lib/physical/patches";
+import { LFO_SHAPES } from "../../lib/physical/patches/params";
 import type {
   DrumKitPatch,
   ParamSpec,
@@ -308,12 +309,14 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     octave: 0,
     shiftPad: 5,
   },
+  // A saw at half level under the sine, 216° behind it.
   {
     id: "oscillator",
     icon: "waveform",
     name: "Oscillator",
     target: "oscillator",
     octave: 0,
+    overrides: { "exciter.wave2": 4, "exciter.phase": 216 },
     shiftPad: 0,
   },
 ];
@@ -489,8 +492,8 @@ export const DEVICE_MODULES: Readonly<Record<ModuleId, DeviceModule>> = {
       knob("lfo.rate", "Rate", 5),
       knob("lfo.depth", "Depth", 0.5),
       knob("lfo.shape", "Shape", 0, {
-        steps: 4,
-        options: ["Sine", "Triangle", "Square", "Random"],
+        steps: LFO_SHAPES.length,
+        options: LFO_SHAPES,
       }),
       knob("lfo.target", "Target", 0, {
         steps: 4,

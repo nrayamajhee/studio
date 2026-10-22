@@ -151,6 +151,8 @@ const lfoValue = (shape: number, x: number) => {
       return 1 - 4 * Math.abs(phase - 0.5);
     case 2:
       return phase < 0.5 ? 1 : -1;
+    case 3:
+      return 2 * phase - 1;
     default:
       return RANDOM_STEPS[Math.floor(x / LFO_CYCLE) % RANDOM_STEPS.length];
   }

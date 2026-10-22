@@ -1,11 +1,13 @@
 import { useRef, type CSSProperties } from "react";
 import { tv } from "../../../lib/utils";
 import { useDeviceHotkey } from "../../../hooks/useDeviceHotkey";
+import { useFeedback } from "../../../providers/FeedbackProvider";
 import { useBindings } from "../../../providers/ModeProvider";
 import { usePerformance } from "../../../providers/PerformanceProvider";
 import { useShift } from "../../../providers/ShiftProvider";
 import { useSound } from "../../../providers/SoundProvider";
 import { Key } from "../../design-system";
+import type { KitId } from "../../../lib/physical";
 import { isKit, keyPiece } from "../deviceEngine";
 import {
   BLACK_KEYS,
@@ -14,7 +16,9 @@ import {
   engravedNote,
   spokenNote,
 } from "../deviceMath";
+import { GM_DRUMS } from "../exportMix";
 import { hotkeyLabel, shiftedNote } from "../input/keymap";
+import { useMidiListener } from "../input/midi";
 import { DRUM_PIECES } from "../instrumentIcons";
 
 // A recess cut into the bottom edge, like a laptop's lid notch: rounded at
@@ -40,10 +44,21 @@ const keybed = tv({
 
 const { well, keys: keysRow } = keybed();
 
+// The keybed note a kit strikes General MIDI drum key `note` on: the key of
+// the kit's piece for it, if the kit has one, else the note as played.
+const drumKey = (kit: KitId, note: number) => {
+  const at = Array.from({ length: 12 }, (_, step) => F3_MIDI + step).find(
+    (key) => GM_DRUMS[keyPiece(kit, key)] === note,
+  );
+  return at ?? note;
+};
+
 // The piano keys, F3 to E5 shifted by the octave buttons. A kit shows the
-// drum each key plays instead of a note name.
+// drum each key plays instead of a note name. A MIDI keyboard plays them
+// too, its notes as they are, past either end as well.
 export function Keybed() {
   const { shift } = useShift();
+  const { isBusy, showPrompt } = useFeedback();
   const { octave, preset } = useSound();
   const { litNotes, chord, pressKey, releaseKey } = usePerformance();
   const { keyPress } = useBindings();
@@ -66,6 +81,33 @@ export function Keybed() {
     }
     releaseKey(keyNotes.current.get(control.semitone) ?? control.semitone);
     keyNotes.current.delete(control.semitone);
+  });
+
+  // The keybed semitone each MIDI key started, by the key.
+  const midiNotes = useRef(new Map<string, number>());
+  useMidiListener((event) => {
+    if (event.kind !== "note") return;
+    if (!event.down) {
+      const semitone = midiNotes.current.get(event.id);
+      midiNotes.current.delete(event.id);
+      if (semitone !== undefined) releaseKey(semitone);
+      return;
+    }
+    if (isBusy()) return;
+    // Until the page is clicked, the browser keeps the sound off, and the
+    // notes would pile up to play all at once.
+    if (navigator.userActivation && !navigator.userActivation.hasBeenActive) {
+      showPrompt("Click the page to hear MIDI");
+      return;
+    }
+    const note =
+      event.drums && isKit(preset.target)
+        ? drumKey(preset.target, event.note)
+        : event.note;
+    if (keyPress?.(note)) return;
+    const semitone = note - noteOf(0);
+    midiNotes.current.set(event.id, semitone);
+    pressKey(semitone, undefined, event.velocity);
   });
 
   const renderKey = (semitone: number, slot: number, black: boolean) => {

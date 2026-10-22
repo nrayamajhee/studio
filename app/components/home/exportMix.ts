@@ -129,7 +129,7 @@ const GM_PROGRAMS: Readonly<Record<InstrumentId, number>> = {
 // General MIDI percussion keys for each drum piece; the hand-drum bols take
 // the conga and bongo keys nearest their sound, and the brush sweep the
 // brush kits' swirl.
-const GM_DRUMS: Readonly<Record<DrumPieceId, number>> = {
+export const GM_DRUMS: Readonly<Record<DrumPieceId, number>> = {
   kick: 36,
   snare: 38,
   closedHat: 42,

@@ -26,6 +26,7 @@ The Device has a fixed size, scaled to fit the window, and a light and a dark fi
 - [Knobs](#knobs), below: what each knob does in each kind of view.
 - [Screen and views](screen-and-views.md): how every view lays out the screen, and every view with what opens it.
 - [Pads and keybed](pads-and-keybed.md): all 36 pads, their keys and their Shift jobs, and the keys and their letters.
+- [MIDI](midi.md): playing the Device from a MIDI keyboard or controller, and mapping its knobs and pads to the Device's.
 
 ## Knobs
 

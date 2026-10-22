@@ -22,7 +22,7 @@ The Synth screen's **Chain** page draws the same thing for the instrument you're
 
 ![The flute's Chain page: Exciter (Breath), Resonator (Bore), Filter (Lowpass), Body (Bell) and Output (Reverb 25%), with the Breath envelope on the exciter and a 5 Hz vibrato on its level and pitch](../../public/docs/synth-engine/screen-chain-flute.webp)
 
-The **vibrato** (`dsp/generators.ts`, `Lfo`) is one per voice: Rate, Shape (sine, triangle, square, random), and a Delay after which its depth fades in, the way a player starts vibrato late. Three depths say where it goes. Filter always sweeps the filter's cutoff, by octaves. Pitch and Level go to whatever the model has that is physical to move, and otherwise to the voice's output right after the filter:
+The **vibrato** (`dsp/generators.ts`, `Lfo`) is one per voice: Rate, Shape (sine, triangle, square, saw, random), and a Delay after which its depth fades in, the way a player starts vibrato late. Three depths say where it goes. Filter always sweeps the filter's cutoff, by octaves. Pitch and Level go to whatever the model has that is physical to move, and otherwise to the voice's output right after the filter:
 
 ![The piano's Vibrato page: a 5 Hz sine whose Pitch goes to a swept delay, Level to a tremolo and Filter to the cutoff](../../public/docs/synth-engine/screen-vibrato-piano.webp)
 

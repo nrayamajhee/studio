@@ -4,17 +4,17 @@ order = 5
 
 # Make a song
 
-A song on the Device is a **tape**: a stack of **tracks** that play together, each one a take you kept. This guide builds the **Starter song** the Device opens with, step by step. First come the Suspended chords in D, strummed on the oscillator three times round. Then a New jack swing beat comes in on the second bar and plays to the end. Last, the same strum plays once more over the middle round, on an oscillator with a saw wave under its sine. After that, the guide shows what else the tracks can do.
+A song on the Device is a **tape**: a stack of **tracks** that play together, each one a take you kept. The Device comes with two, **Starter 1** and **Starter 2**, and this guide builds Starter 1 step by step. First come the Suspended chords in D, strummed on the oscillator's sine three times round. Then a New jack swing beat comes in on the third bar and plays a bar past the end of the chords. Last, the same strum plays once more over the middle round, on the oscillator with its saw wave back under the sine. After that, the guide shows what else the tracks can do. Starter 2 is a longer one to take apart: Homecoming in A strummed on the oscillator, with the beat, a bass guitar and a fingerstyle electric coming in under it.
 
 ## Start a new tape
 
 Your tapes live in **Tapes** (`T`), a tile each, every one with its own tracks, tempo and time signature.
 
-![Tapes: the Starter song, 3 tracks at 96 BPM in 4/4](../../public/docs/user-manual/tapes.webp)
+![Tapes: Starter 1, 3 tracks at 96 BPM in 4/4, beside Starter 2](../../public/docs/user-manual/tapes.webp)
 
 Press **Save** for a new tape at the tempo playing now. (The green knob or ← → opens another tape, Play plays it, and Delete removes the open one, after asking.)
 
-![Save started Tape 1, beside the Starter song](../../public/docs/user-manual/new-tape.webp)
+![Save started Tape 1, beside the two starters](../../public/docs/user-manual/new-tape.webp)
 
 Press **Tracks** (`Esc`) to see it: a new tape holds just the **Take**, the row for whatever you're working on.
 
@@ -24,13 +24,13 @@ Press **Tracks** (`Esc`) to see it: a new tape holds just the **Take**, the row 
 
 A **chord progression** is a short run of chords that a song repeats. The Device knows dozens (see [Chord progressions](../library/chord-progressions.md)). It loads one as the take in whatever key you like, a chord a bar, in your **play style**: how a chord's notes come out.
 
-**1. Pick a play style.** Press **Play style** (`Q`). It opens on your **Favorites**; pick **Folk strum** there (it's also on the Strum page): down, down-up, up-down-up over a bar of eighths, as a guitarist's hand goes, with the first down leaned on.
+**1. Pick a play style.** Press **Play style** (`Q`). It opens on **Nishan's Picks** (your **Favorites** come first once you star some); pick **Folk strum** there (it's also on the Strum page): down, down-up, up-down-up over a bar of eighths, as a guitarist's hand goes, with the first down leaned on.
 
-![Play style's Favorites page, Folk strum picked at 1/8](../../public/docs/user-manual/folk-strum.webp)
+![Play style's Nishan's Picks page, Folk strum picked at 1/8](../../public/docs/user-manual/folk-strum.webp)
 
-**2. Open the progressions.** Hold **Shift** and press the **Piano roll** pad (`Shift V`), It opens on your **Favorites**, which start out holding Fast car and **Suspended** (Isus4 I Isus2 I); Suspended is also on the Cadences page. Suspended never leaves the home chord. It lifts the chord's third to the fourth and lets it fall back, then drops it to the second and lets it rise back. Tap it or press Play to hear it in its own key, or play a key to hear it from that note. Previews play a little faster than the tape's tempo.
+**2. Open the progressions.** Hold **Shift** and press the **Piano roll** pad (`Shift V`), It opens on **Nishan's Picks**: Fast car, **Suspended** (Isus4 I Isus2 I), Born in the U.S.A. and Homecoming; Suspended is also on the Cadences page. Suspended never leaves the home chord. It lifts the chord's third to the fourth and lets it fall back, then drops it to the second and lets it rise back. Tap it or press Play to hear it in its own key, or play a key to hear it from that note. Previews play a little faster than the tape's tempo.
 
-![The progressions' Favorites page, Suspended picked](../../public/docs/user-manual/progressions.webp)
+![The progressions' Nishan's Picks page, Suspended picked](../../public/docs/user-manual/progressions.webp)
 
 **3. Save it.** Press **Save**. The screen asks for the **home note**: the key the song will be in.
 
@@ -44,23 +44,27 @@ A **chord progression** is a short run of chords that a song repeats. The Device
 
 ![Shift + pad 1 put the take on the Oscillator](../../public/docs/user-manual/oscillator.webp)
 
+**6. Make it a plain sine.** The oscillator comes with two waves: a sine, and a saw at half its level under it. For now, just the sine. Press **Synth** (`Z`) for the oscillator's synth parameters, and **→** to open the **Exciter** page: its two waves, how loud the second is and where it sits against the first. Turn the green knob down to **Wave 2: Off**. Press Synth again to close it, then **Piano roll** (`V`) for the take.
+
+![The Exciter page: Wave 1 Sine, Wave 2 Off](../../public/docs/user-manual/plain-sine.webp)
+
 Press **Play** to hear it loop, and Stop (`` ` ``) when you're done.
 
 ![The take playing](../../public/docs/user-manual/take-playing.webp)
 
-**6. Keep it.** Press **Save** in the piano roll. The take becomes track #1, on the oscillator, and the Tracks view opens with it picked.
+**7. Keep it.** Press **Save** in the piano roll. The take becomes track #1, on the oscillator, and the Tracks view opens with it picked.
 
 ![Track #1 Oscillator](../../public/docs/user-manual/progression-saved-as-track.webp)
 
-**7. Play it three times.** **Shift + →** plays the picked track again right after itself. Press it twice and the four bars go round three times, marked ×2 and ×3: twelve bars. (Shift + ← plays it fewer times.)
+**8. Play it three times.** **Shift + →** plays the picked track again right after itself. Press it twice and the four bars go round three times, marked ×2 and ×3: twelve bars. (Shift + ← plays it fewer times.)
 
 ![Shift + → twice: the chords play three times, marked ×2 and ×3](../../public/docs/user-manual/repeat.webp)
 
 ## The drums: New jack swing
 
-**1. Pick a beat.** Hold **Shift** and press the **Drum grid** pad (`Shift B`). The red knob turns the styles (simple, rock, pop, funk and soul, jazz, Latin and reggae, hip hop, electronic, classical and South Asian) and the blue knob picks a beat. Picking one also puts its kit on the keys, and a tap or Play previews it. It opens on your **Favorites**, which start out holding **New jack swing**, its madal version and a few more (New jack swing is also on the Funk and soul page). Pick New jack swing: swung hats, a kick that skips around the beat, and a snare doubled by a clap on two and four, on the 808 kit. See [Drum beats](../library/drum-beats.md) for them all.
+**1. Pick a beat.** Hold **Shift** and press the **Drum grid** pad (`Shift B`). The red knob turns the styles (simple, rock, pop, funk and soul, jazz, Latin and reggae, hip hop, electronic, classical and South Asian) and the blue knob picks a beat. Picking one also puts its kit on the keys, and a tap or Play previews it. It opens on **Nishan's Picks**: **New jack swing**, its madal version and a few more (New jack swing is also on the Funk and soul page). Pick New jack swing: swung hats, a kick that skips around the beat, and a snare doubled by a clap on two and four, on the 808 kit. See [Drum beats](../library/drum-beats.md) for them all.
 
-![The beats' Favorites page, New jack swing picked](../../public/docs/user-manual/beats.webp)
+![The beats' Nishan's Picks page, New jack swing picked](../../public/docs/user-manual/beats.webp)
 
 **2. Save it.** Press **Save**: the beat loads into the **drum grid** on its kit. The grid has a row per drum and a column per step. Here the steps are sixteenths, and loading the beat set the tape's [swing](set-the-tempo.md#swing) to 66% on 1/16: every second sixteenth lands late, which is what makes it swing.
 
@@ -74,31 +78,31 @@ Press **Play** to loop it. Stopped, the green knob moves the head and the keys s
 
 ![Track #2 808 kit under the chords](../../public/docs/user-manual/beat-saved-as-track.webp)
 
-**4. Bring it in on bar 2, and play it to the end.** **→** slides the picked track a bar later, so the beat starts on bar 2, after a bar of chords on their own. The beat is one bar long, and from bar 2 to the end of the chords is eleven bars. Press **Shift + →** ten times, until the row reads ×11. The footer now says Starts 2 · ×11.
+**4. Bring it in on bar 3, and play it a bar past the end.** **→** slides the picked track a bar later: press it twice, so the beat starts on bar 3, after two bars of chords on their own. The beat is one bar long, and from bar 3 to a bar past the end of the chords is eleven bars. Press **Shift + →** ten times, until the row reads ×11. The footer now says Starts 3 · ×11.
 
-![→ once, then Shift + → ten times: the beat from bar 2 to the end of the chords](../../public/docs/user-manual/drums-placed.webp)
+![→ twice, then Shift + → ten times: the beat from bar 3 to a bar past the chords](../../public/docs/user-manual/drums-placed.webp)
 
-## The second oscillator: a saw under the sine
+## The second oscillator: the saw back under the sine
 
 **1. Load Suspended again.** Press **Tracks** for the main screen. `Shift V` opens the progressions on Suspended: press **Save**, then **D**, and the same strum is the take on the piano roll. The beat left the 808 kit on the keys, so press pad 1 (`1`) for the oscillator again.
 
-**2. Add a second wave.** Press **Synth** (`Z`) for the oscillator's synth parameters, and **→** to open the **Exciter** page: its two waves, how loud the second is and where it sits against the first. Turn the green knob to **Wave 2: Saw** and the blue one to **Phase: 216°**. The sine and the saw now play together, the saw's buzz under the sine's round tone. Press Synth again to close it, then **Piano roll** (`V`) for the take.
+**2. Bring the saw back.** The oscillator still has Wave 2 off, as you left it. Press **Synth** (`Z`), and **→** for the **Exciter** page. Turn the green knob back up to **Wave 2: Saw**: the saw is under the sine again, at half its level and 216° behind it. The two play together, the saw's buzz under the sine's round tone. Press Synth again to close it, then **Piano roll** (`V`) for the take.
 
 ![The Exciter page: Wave 1 Sine, Wave 2 Saw, Osc 2 level 50%, Phase 216°](../../public/docs/user-manual/sine-and-saw.webp)
 
-**3. Keep it once, over the middle round.** Press **Save** for track #3, then **→** four times: it starts on bar 5 and plays once, over the first oscillator's second round. Press **Play** to hear the whole tape: this is the Starter song.
+**3. Keep it once, over the middle round.** Press **Save** for track #3, then **→** four times: it starts on bar 5 and plays once, over the first oscillator's second round. Press **Play** to hear the whole tape: this is Starter 1.
 
 ![Track #3 Oscillator on bar 5, over the middle round](../../public/docs/user-manual/second-oscillator.webp)
 
-![The Starter song playing](../../public/docs/user-manual/starter-song.webp)
+![Starter 1 playing](../../public/docs/user-manual/starter-song.webp)
 
 ## Manage the tracks
 
 **Pick a track** with ↑ ↓ or the blue knob. The footer says where the picked one starts, how many times it plays, its tempo and its volume.
 
-![↓ picks the 808 kit: it starts on bar 2 and plays eleven times](../../public/docs/user-manual/pick-a-track.webp)
+![↓ picks the 808 kit: it starts on bar 3 and plays eleven times](../../public/docs/user-manual/pick-a-track.webp)
 
-**Copies** play a whole track again further along the same lane, so a part can rest and come back. **Shift + ↓** adds a copy after the last, picked, and **→** slides the picked copy along a bar a press. Here two presses leave a two-bar gap where track #3 rests, and then it comes back for the song's last two bars and two more after them. Shift + ↑ and ↓ step between a track's copies, and the ×2 on the row's right edge counts them. A copy never slides back over the one before it, and one that grows pushes the later ones along.
+**Copies** play a whole track again further along the same lane, so a part can rest and come back. **Shift + ↓** adds a copy after the last, picked, and **→** slides the picked copy along a bar a press. Here two presses leave a two-bar gap where track #3 rests, and then it comes back for the chords' last two bars and two more after them. Shift + ↑ and ↓ step between a track's copies, and the ×2 on the row's right edge counts them. A copy never slides back over the one before it, and one that grows pushes the later ones along.
 
 ![Shift + ↓ then → →: a copy of track #3 two bars after the first](../../public/docs/user-manual/add-a-copy.webp)
 

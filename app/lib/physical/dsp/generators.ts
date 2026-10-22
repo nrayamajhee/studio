@@ -23,9 +23,9 @@ export class Noise {
   }
 }
 
-// A low-frequency modulator in [−1, 1]: sine, triangle, square, or random (a
-// new value each cycle). Square and random edges are eased over ~5 ms so they
-// don't click. Its depth can ramp in after a delay, the way a player starts
+// A low-frequency modulator in [−1, 1]: sine, triangle, square, a rising saw,
+// or random (a new value each cycle). Square, saw and random edges are eased
+// over ~5 ms so they don't click. Its depth can ramp in after a delay, the way a player starts
 // vibrato late and widens it; with no delay it runs at full depth at once.
 export class Lfo {
   shape = 0;
@@ -35,6 +35,8 @@ export class Lfo {
   private phase = 0;
   private increment = 0;
   private stepped = 0;
+  // What the saw still has to fall from its last drop, easing out.
+  private drop = 0;
   private random = 0;
   private elapsed = 0;
   private delaySamples = 0;
@@ -78,8 +80,10 @@ export class Lfo {
     if (this.phase >= 1) {
       this.phase -= Math.floor(this.phase);
       this.random = this.noise.next();
+      this.drop += 2;
     }
     const ease = count === 1 ? this.ease : 1 - (1 - this.ease) ** count;
+    this.drop -= this.drop * ease;
     switch (this.shape) {
       case 0:
         return fade * Math.sin(TWO_PI * this.phase);
@@ -88,6 +92,8 @@ export class Lfo {
       case 2:
         this.stepped += ((this.phase < 0.5 ? 1 : -1) - this.stepped) * ease;
         return fade * this.stepped;
+      case 3:
+        return fade * (2 * this.phase - 1 + this.drop);
       default:
         this.stepped += (this.random - this.stepped) * ease;
         return fade * this.stepped;

@@ -17,6 +17,7 @@ import {
   useSavedPlayStyles,
 } from "../home/chordStore";
 import { FAVORITES_KEY, useFavorites } from "../home/favoritesStore";
+import { MIDI_KEY, useMidiSettings } from "../home/input/midi";
 import { PRESETS_KEY, usePresetLibrary } from "../home/presetStore";
 import { DOCS_COLLAPSED_KEY, useDocsCollapsed } from "../docs/docsStore";
 import {
@@ -68,6 +69,7 @@ function useSavedState(): readonly (readonly [string, unknown])[] {
   const playStyles = useSavedPlayStyles();
   const { take, modules, pattern, tapes, tape } = useSession();
   const docsCollapsed = useDocsCollapsed();
+  const midi = useMidiSettings();
   const [theme] = useLocalStorage<Theme>(THEME_KEY, "system");
   return [
     [PRESETS_KEY, library],
@@ -80,6 +82,7 @@ function useSavedState(): readonly (readonly [string, unknown])[] {
     [PATTERN_KEY, pattern],
     [TAPES_KEY, tapes],
     [TAPE_KEY, tape],
+    [MIDI_KEY, midi],
     [DOCS_COLLAPSED_KEY, docsCollapsed],
     [THEME_KEY, theme],
   ];

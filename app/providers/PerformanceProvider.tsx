@@ -115,7 +115,12 @@ function usePerformanceValue() {
     feedback.showNotice(`Loaded ${progression.name} as the take`);
   };
 
-  const pressKey = (root: number, chordToPlay = activeChord) => {
+  // MIDI plays at its own velocity; the keybed has none.
+  const pressKey = (
+    root: number,
+    chordToPlay = activeChord,
+    velocity = KEY_VELOCITY,
+  ) => {
     if (held.current.has(root)) return;
     leaveRevert();
     deviceEngine.unlock();
@@ -142,7 +147,7 @@ function usePerformanceValue() {
           transport.capture(deviceEngine.takeNote(midi), false);
         },
       },
-      KEY_VELOCITY,
+      velocity,
     );
     held.current.set(root, { semitones, midis, stop });
     syncLitNotes();

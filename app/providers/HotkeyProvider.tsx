@@ -10,6 +10,7 @@ import {
 } from "react";
 import { createEmitter } from "../lib/emitter";
 import { keyboardFocus, moveFocus } from "../components/home/input/focus";
+import { useMidiListener } from "../components/home/input/midi";
 import {
   KEYMAP,
   controlId,
@@ -69,8 +70,9 @@ const typing = (event: KeyboardEvent) =>
   event.target.closest("input, textarea, select, [contenteditable]") !== null;
 
 // Binds the Device's keyboard: tracks every mapped key that is down (any
-// number at once, by KeyboardEvent.code), publishes them as state for
-// rendering, and tells listeners about each press and release as it happens.
+// number at once, by KeyboardEvent.code, and MIDI pads), publishes them as
+// state for rendering, and tells listeners about each press and release as
+// it happens.
 export function HotkeyProvider({ children }: { children: ReactNode }) {
   const keys = useRef(new Map<string, Down>());
   const [events] = useState(() => createEmitter<HotkeyEvent>());
@@ -133,6 +135,25 @@ export function HotkeyProvider({ children }: { children: ReactNode }) {
       event.preventDefault();
       keys.current.delete(event.code);
       emit(control, false, entry);
+    }
+    setHeld(summarize(keys.current));
+  });
+
+  // A MIDI control mapped to a pad presses it as the pad's key does, held
+  // under its own name so it never lets go of a key.
+  useMidiListener((event) => {
+    if (event.kind !== "pad") return;
+    const code = `midi:${event.id}`;
+    if (event.down) {
+      if (keys.current.has(code)) return;
+      const entry: Down = { control: event.control, ignored: false };
+      keys.current.set(code, entry);
+      emit(event.control, true, entry);
+    } else {
+      const entry = keys.current.get(code);
+      if (!entry) return;
+      keys.current.delete(code);
+      emit(event.control, false, entry);
     }
     setHeld(summarize(keys.current));
   });

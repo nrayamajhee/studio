@@ -66,7 +66,7 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Play style](../../public/docs/the-device/view-play-style.webp)
 
-**Opened by:** Play style. Red turns the groups, blue picks, and Mute stars the pick into the Favorites page that comes first (Block, Pulse, Accent pulse, Accent down-up, Folk strum, Up-down and Alberti to begin with); green sets the rate or strum; Save keeps it as a new style.
+**Opened by:** Play style. Red turns the groups, blue picks, and Mute stars the pick into the Favorites page that comes first, and Nishan's Picks follow on a page of their own (Block, Pulse, Accent pulse, Accent down-up, Folk strum, Up-down and Alberti); green sets the rate or strum; Save keeps it as a new style.
 
 ### Tempo
 
@@ -78,13 +78,13 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ![Progressions](../../public/docs/the-device/view-progressions.webp)
 
-**Opened by:** Shift + Piano roll. Red turns the kinds, blue picks, and Mute stars the pick into the Favorites page that comes first (Fast car and Suspended are there to begin with); a tap or Play previews it in its own key, and a key previews it from that note, a little faster than the tape's tempo (by more the slower the tape is); Save, then a key, loads it as the take, at the tape's tempo.
+**Opened by:** Shift + Piano roll. Red turns the kinds, blue picks, and Mute stars the pick into the Favorites page that comes first, and Nishan's Picks follow on a page of their own (Fast car, Suspended, Born in the U.S.A. and Homecoming, I IV I IV V IV Isus4 Isus2); a tap or Play previews it in its own key, and a key previews it from that note, a little faster than the tape's tempo (by more the slower the tape is); Save, then a key, loads it as the take, at the tape's tempo.
 
 ### Beats
 
 ![Beats](../../public/docs/the-device/view-beats.webp)
 
-**Opened by:** Shift + Drum grid. Red turns the styles, blue picks, Mute stars the pick into the Favorites page that comes first (New jack swing, Madal new jack swing, Sixteenth hats, Madal kick kick hat and Lo-fi are there to begin with), and the keys play the picked beat's kit (the instrument pads keep their sounds); a tap or Play previews; Save loads it into the drum grid, setting the time signature and, for a swung beat (the shuffles, jazz, reggae, New jack swing, boom bap, lo-fi), the tape's swing.
+**Opened by:** Shift + Drum grid. Red turns the styles, blue picks, Mute stars the pick into the Favorites page that comes first, Nishan's Picks follow on a page of their own (New jack swing, Madal new jack swing, Sixteenth hats, Madal kick kick hat and Lo-fi), and the keys play the picked beat's kit (the instrument pads keep their sounds); a tap or Play previews; Save loads it into the drum grid, setting the time signature and, for a swung beat (the shuffles, jazz, reggae, New jack swing, boom bap, lo-fi), the tape's swing.
 
 ### Piano roll
 

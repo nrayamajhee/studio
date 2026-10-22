@@ -1324,6 +1324,7 @@ const VIBRATO_SHAPES = [
   (t: number) => Math.sin(2 * Math.PI * t),
   (t: number) => 1 - 4 * Math.abs(t - 0.5),
   (t: number) => (t < 0.5 ? 1 : -1),
+  (t: number) => 2 * t - 1,
 ];
 const RANDOM_STEPS = [0.6, -0.35, 0.9, -0.8, 0.15, -0.55, 0.4, -0.1];
 
@@ -1363,7 +1364,7 @@ export function vibratoScene({
     const cycles = after * rate;
     const phase = cycles - Math.floor(cycles);
     const value =
-      shape < 3
+      shape < VIBRATO_SHAPES.length
         ? VIBRATO_SHAPES[shape](phase)
         : RANDOM_STEPS[Math.floor(cycles) % RANDOM_STEPS.length];
     return value * (fade > 0 ? Math.min(1, after / fade) : 1);

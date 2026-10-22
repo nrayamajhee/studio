@@ -14,7 +14,7 @@ Every voice is multiplied by one shared amplitude envelope (the `adsr.*` master 
 
 ## LFO
 
-One modulator over the whole dry mix (`engine/MasterLfo.ts`, the `lfo.*` master params), so every model responds the same way. Shapes: sine, triangle, square, random (a new value each cycle); square and random edges are eased over 5 ms so they don't click. Targets:
+One modulator over the whole dry mix (`engine/MasterLfo.ts`, the `lfo.*` master params), so every model responds the same way. Shapes: sine, triangle, square, a rising saw, random (a new value each cycle); the square's and random's edges and the saw's drop are eased over 5 ms so they don't click. Targets:
 
 | Target | What it moves                                                                                             |
 | ------ | --------------------------------------------------------------------------------------------------------- |

@@ -1,5 +1,5 @@
 // docs/guides: the Device from the first note to a finished song, in the
-// order the guides press it. A fresh browser opens on the starter song.
+// order the guides press it. A fresh browser opens on Starter 1.
 import { C4, INSTRUMENT_PADS, PAD, type Device } from "./device";
 
 export default async function userManual(d: Device) {
@@ -86,7 +86,7 @@ export default async function userManual(d: Device) {
   await turn("red", /Straight/, -1);
   await press(PAD.tempo);
 
-  // Make a song: a new tape to build the starter song on.
+  // Make a song: a new tape to build Starter 1 on.
   await press(PAD.albums);
   await shot("tapes", { rings: [pad(PAD.albums)] });
   await press(PAD.save);
@@ -95,7 +95,7 @@ export default async function userManual(d: Device) {
   await shot("new-tape-tracks", { rings: [pad(PAD.tracks)] });
 
   // Make a song: Folk strum, the Suspended progression on D, then the
-  // oscillator, three times round.
+  // oscillator with its second wave off, three times round.
   const D4 = 5;
   await press(PAD.tracks);
   await press(PAD.playStyle);
@@ -117,6 +117,12 @@ export default async function userManual(d: Device) {
   await shot("oscillator", {
     rings: [pad(PAD.shift), pad(INSTRUMENT_PADS[0])],
   });
+  await press(PAD.synth);
+  await press(PAD.right);
+  await turn("green", /Off/, -1);
+  await shot("plain-sine", { rings: [knob("green")] });
+  await press(PAD.synth);
+  await press(PAD.roll);
   await press(PAD.play);
   await settle(1500);
   await shot("take-playing", { rings: [pad(PAD.play)] });
@@ -127,7 +133,7 @@ export default async function userManual(d: Device) {
   await press(PAD.right, { shift: true });
   await shot("repeat", { rings: [pad(PAD.shift), pad(PAD.right)] });
 
-  // Make a song: New jack swing, from bar 2 to the end.
+  // Make a song: New jack swing, from bar 3 to a bar past the chords.
   await press(PAD.drumGrid, { shift: true });
   await d.tile("New jack swing").click();
   await settle();
@@ -141,11 +147,12 @@ export default async function userManual(d: Device) {
   await press(PAD.save);
   await shot("beat-saved-as-track", { rings: [pad(PAD.save)] });
   await press(PAD.right);
+  await press(PAD.right);
   for (let i = 0; i < 10; i++) await press(PAD.right, { shift: true });
   await shot("drums-placed", { rings: [pad(PAD.shift), pad(PAD.right)] });
 
-  // Make a song: the second oscillator, a saw under its sine, once over the
-  // middle round.
+  // Make a song: the second oscillator, its saw back under the sine, once
+  // over the middle round.
   await press(PAD.tracks);
   await press(PAD.roll, { shift: true });
   await press(PAD.save);
@@ -155,8 +162,7 @@ export default async function userManual(d: Device) {
   await press(PAD.synth);
   await press(PAD.right);
   await turn("green", /Saw/);
-  await turn("blue", /216°/);
-  await shot("sine-and-saw", { rings: [knob("green"), knob("blue")] });
+  await shot("sine-and-saw", { rings: [knob("green")] });
   await press(PAD.synth);
   await press(PAD.roll);
   await press(PAD.save);

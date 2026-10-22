@@ -35,7 +35,11 @@ import {
   type ModuleId,
 } from "../deviceEngine";
 import { ScreenSeek, ScreenValue, type ScreenPager } from "../DeviceScreen";
-import { toggleFavorite, type FavoriteKind } from "../favoritesStore";
+import {
+  NISHANS_PICKS,
+  toggleFavorite,
+  type FavoriteKind,
+} from "../favoritesStore";
 import {
   AdsrIcon,
   DrumGridIcon,
@@ -192,19 +196,24 @@ export function shelfKnobs(
 }
 
 const FAVORITES = "Favorites";
+const PICKS = "Nishan's Picks";
 
-// A picker's items led by its favorites, on a page of their own, then every
-// one on its category's page.
+// A picker's items led by its favorites, on a page of their own, and
+// Nishan's Picks on the next, then every one on its category's page.
 export function listFavorites<T extends { id: string }>(
   items: readonly T[],
   categoryOf: (item: T) => string,
   favorites: readonly string[],
+  kind: FavoriteKind,
 ) {
-  return [
-    ...favorites.flatMap((id) => {
+  const page = (ids: readonly string[], name: string) =>
+    ids.flatMap((id) => {
       const item = items.find((candidate) => candidate.id === id);
-      return item ? [{ ...item, page: FAVORITES }] : [];
-    }),
+      return item ? [{ ...item, page: name }] : [];
+    });
+  return [
+    ...page(favorites, FAVORITES),
+    ...page(NISHANS_PICKS[kind], PICKS),
     ...items.map((item) => ({ ...item, page: categoryOf(item) })),
   ];
 }
@@ -213,9 +222,9 @@ export function listFavorites<T extends { id: string }>(
 // the item picked, at `index` (or, where the pick is what plays, `picked`,
 // wherever that is if it was picked elsewhere), with `select` to pick
 // another, which sets `index` and passes the item to `onPick`. Mute stars the
-// pick or lets it go: the pick stays on its item, on its category's page,
-// or, let go from the favorites' page, moves to the next favorite while any
-// are left (unless it plays).
+// pick or lets it go: the pick stays on its item, on the page it was on (its
+// category's, from the favorites'), or, let go from the favorites' page,
+// moves to the next favorite while any are left (unless it plays).
 export function favoritesPicker<T extends { id: string; name: string }>(
   { browse, feedback }: Device,
   {
@@ -237,7 +246,7 @@ export function favoritesPicker<T extends { id: string; name: string }>(
   },
 ) {
   const favorites = browse.favorites[kind];
-  const listed = listFavorites(items, categoryOf, favorites);
+  const listed = listFavorites(items, categoryOf, favorites, kind);
   const shelves = shelvesOf(listed, ({ page }) => page);
   const at = Math.min(index, listed.length - 1);
   const pick =
@@ -258,14 +267,14 @@ export function favoritesPicker<T extends { id: string; name: string }>(
       items,
       categoryOf,
       toggleFavorite(kind, chosen.id),
+      kind,
     );
     const left = next.filter(({ page }) => page === FAVORITES).length;
+    const stay = chosen.page === FAVORITES ? categoryOf(chosen) : chosen.page;
     const to =
       picked === undefined && chosen.page === FAVORITES && left > 0
         ? Math.min(pick, left - 1)
-        : next.findIndex(
-            ({ id, page }) => id === chosen.id && page !== FAVORITES,
-          );
+        : next.findIndex(({ id, page }) => id === chosen.id && page === stay);
     if (next[to].id === chosen.id) setIndex(to);
     else select(to, next);
     feedback.showNotice(
@@ -530,9 +539,12 @@ const openSynth = ({ view, views, sound, browse }: Device, params: boolean) => {
   browse.setPresetIndex(
     Math.max(
       0,
-      listFavorites(items, categoryOf, browse.favorites.instruments).findIndex(
-        ({ id }) => id === sound.preset.id,
-      ),
+      listFavorites(
+        items,
+        categoryOf,
+        browse.favorites.instruments,
+        "instruments",
+      ).findIndex(({ id }) => id === sound.preset.id),
     ),
   );
   views.setView("instruments");

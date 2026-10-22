@@ -1,6 +1,8 @@
+import { useFeedback } from "../../../providers/FeedbackProvider";
 import { useBindings } from "../../../providers/ModeProvider";
 import type { KnobSlot } from "../../../types/bindings";
 import { Knob } from "../../design-system";
+import { useMidiListener } from "../input/midi";
 
 const COLORS: Readonly<Record<KnobSlot, string>> = {
   chalk: "var(--color-synth-chalk)",
@@ -15,10 +17,20 @@ export type DeviceKnobProps = {
   slot: KnobSlot;
 };
 
-// One of the Device's knobs, doing what the current mode binds it to.
+// One of the Device's knobs, doing what the current mode binds it to. A
+// MIDI knob mapped to it sets it across its whole range.
 export function DeviceKnob({ slot }: DeviceKnobProps) {
   const { label, valueLabel, step, steps, onChange, fine } =
     useBindings().knobs[slot];
+  const { isBusy } = useFeedback();
+
+  useMidiListener((event) => {
+    if (event.kind !== "knob" || event.slot !== slot || isBusy()) return;
+    const next = event.value * (steps - 1);
+    const to = fine ? next : Math.round(next);
+    if (to !== step) onChange(to);
+  });
+
   return (
     <Knob
       label={label}

@@ -70,8 +70,10 @@ export function PadButtons() {
       {tool("play")}
       {tool("stop", RED)}
       {tool("record", RED)}
+      {/* No key of its own: its control is for a MIDI pad mapped to it. */}
       <DevicePad
         binding={pads.save}
+        control={{ kind: "tool", tool: "save" }}
         command={{ code: "KeyS", legend: "S" }}
         accent={RED}
       />

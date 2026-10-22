@@ -58,6 +58,7 @@ export const instrumentsMode: Mode = (device, base) => {
       items,
       categoryOf,
       browse.favorites.instruments,
+      "instruments",
     );
     const on = (page: string) =>
       relisted.findIndex(

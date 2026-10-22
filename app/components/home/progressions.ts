@@ -78,10 +78,10 @@ export type ProgressionGroup =
   | "Cadences";
 
 // A chord progression, a bar a chord, from David Bennett's videos (see
-// docs/library/chord-progressions.md): named for what it is called, or else for the
-// song it is known for, and in that song's key where one stands out (else
-// C, or A minor). The key is the home note's: the major tonic, or the minor
-// one for a progression written from i.
+// docs/library/chord-progressions.md), or a few of Nishan's own: named for
+// what it is called, or else for the song it is known for, and in that
+// song's key where one stands out (else C, or A minor). The key is the home
+// note's: the major tonic, or the minor one for a progression written from i.
 export type Progression = {
   id: string;
   name: string;
@@ -140,6 +140,9 @@ const I64: Step = [0, "maj", 7];
 // A chord an octave down, so a line keeps falling past the fourth below home
 // rather than jumping back up.
 const down = ([root, quality, bass]: Step): Step => [root - 12, quality, bass];
+// A chord an octave up, so a V climbs to the fifth above home rather than
+// falling to the fourth below it.
+const up = ([root, quality, bass]: Step): Step => [root + 12, quality, bass];
 
 export const PROGRESSIONS: readonly Progression[] = [
   {
@@ -663,6 +666,18 @@ export const PROGRESSIONS: readonly Progression[] = [
     key: "D",
     chords: [I, IV, V],
   },
+  // Nishan's own: Born in the U.S.A.'s I IV twice, then up to the V above
+  // and back down through the IV, the blues turnaround, onto an I suspended
+  // to the fourth the IV held over, then the second, which the I resolves
+  // the next time round.
+  {
+    id: "homecoming",
+    name: "Homecoming",
+    numerals: "I IV I IV V IV Isus4 Isus2",
+    group: "Blues and rock",
+    key: "A",
+    chords: [I, IV, I, IV, up(V), IV, Isus4, Isus2],
+  },
   {
     id: "threeChordRock",
     name: "Three-chord rock",
@@ -803,8 +818,15 @@ export function progressionTake(
   const hold = bar - Math.min(40, beatMs(timing) / 4);
   const notes: PlayedNote[] = chords.flatMap(
     ([offset, quality, bass = 0], index) => {
-      // Written below home, a root stays where it is put (see `down`).
-      const root = home + (offset < 0 ? offset : ((offset + 5) % 12) - 5);
+      // Written below home or an octave up, a root stays where it is put
+      // (see `down` and `up`).
+      const root =
+        home +
+        (offset < 0
+          ? offset
+          : offset >= 12
+            ? offset - 12
+            : ((offset + 5) % 12) - 5);
       const voicing = [
         root + bass - 12,
         ...INTERVALS[quality].map((interval) => root + interval),
