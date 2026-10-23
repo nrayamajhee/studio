@@ -372,12 +372,13 @@ const STYLE_NOTES: Readonly<Record<PlayStyleId, readonly number[][]>> = {
   ]),
   accentPulse: [
     [3, 0.6],
-    [10, 0.6],
-    [17, 1],
+    [8.5, 0.6],
+    [14, 1],
+    [19.5, 0.6],
   ].flatMap(([x, opacity]) => [
-    [x, x + 2, 17, opacity],
-    [x, x + 2, 12, opacity],
-    [x, x + 2, 7, opacity],
+    [x, x + 1.5, 17, opacity],
+    [x, x + 1.5, 12, opacity],
+    [x, x + 1.5, 7, opacity],
   ]),
   strum: [
     [4, 19, 17],

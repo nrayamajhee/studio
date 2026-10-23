@@ -72,7 +72,7 @@ export const PLAY_STYLES: readonly {
   {
     id: "accentPulse",
     name: "Accent pulse",
-    detail: "Four to a bar: three struck bright, two and four light",
+    detail: "Four to a bar, the third struck bright",
     group: "Rhythm",
     settings: ["rate"],
   },
@@ -211,11 +211,10 @@ type Strike = {
 const ACCENT = 0.9 / 0.8;
 const LIGHT = 0.7 / 0.8;
 // A piano player's four to the bar: the third struck full (the hardest,
-// brightest hammer) and let ring, the first as the keys play it, two and
-// four light and short. The lengths carry the accent as much as the levels,
-// since a full chord already rides the limiter.
+// brightest hammer) and let ring, the others as the keys play them. The
+// lengths carry the accent as much as the levels, since a full chord already
+// rides the limiter.
 const FULL = 1 / 0.8;
-const SOFT = 0.5 / 0.8;
 
 const RHYTHMS: Partial<
   Record<PlayStyleId, { cycle: number; strikes: readonly Strike[] }>
@@ -225,9 +224,9 @@ const RHYTHMS: Partial<
     cycle: 4,
     strikes: [
       { at: 0, hold: 0.6 },
-      { at: 1, hold: 0.35, level: SOFT },
+      { at: 1, hold: 0.6 },
       { at: 2, hold: 0.9, level: FULL },
-      { at: 3, hold: 0.35, level: SOFT },
+      { at: 3, hold: 0.6 },
     ],
   },
   strumPulse: { cycle: 1, strikes: [{ at: 0, hold: 0.5, sweep: "rising" }] },

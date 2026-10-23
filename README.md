@@ -14,7 +14,7 @@ These docs, and this README, are also served in the app at `/docs` (`app/routes/
 
 ### [The Device](docs/the-device/overview.md)
 
-The reference: where everything is on the Device and what it does. A numbered [overview](docs/the-device/overview.md) of the whole box with the knobs' jobs in each kind of view, the [screen and views](docs/the-device/screen-and-views.md) from the screen's layout to a picture of every view, the [pads and keybed](docs/the-device/pads-and-keybed.md): all 36 pads with their keys and Shift jobs, and the keys with their letters, and [MIDI](docs/the-device/midi.md): a MIDI keyboard or controller playing the Device, set up in the panel beside the light/dark switch, its keys on the keybed with their velocity and sustain pedal, and its knobs and pads mapped to the Device's by moving them.
+The reference: where everything is on the Device and what it does. A numbered [overview](docs/the-device/overview.md) of the whole box with the knobs' jobs in each kind of view, the [screen and views](docs/the-device/screen-and-views.md) from the screen's layout to a picture of every view, the [pads and keybed](docs/the-device/pads-and-keybed.md): all 36 pads with their keys and Shift jobs, and the keys with their letters, and [MIDI](docs/the-device/midi.md): a MIDI keyboard or controller playing the Device, set up in the panel beside the light/dark switch, its keys on the keybed with their velocity and sustain pedal, and its knobs and pads mapped to the Device's by moving them, or, on an OP-1, mapped from the start.
 
 ### [Guides](docs/guides/introduction.md)
 

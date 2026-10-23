@@ -3,6 +3,7 @@ import { createEmitter } from "../../../lib/emitter";
 import type { KnobSlot } from "../../../types/bindings";
 import { KEY_VELOCITY } from "../deviceMath";
 import { controlId, type Control } from "./keymap";
+import { MIDI_PRESETS } from "./midiPresets";
 
 // A pad on the Device, by the control its key presses.
 export type PadControl = Exclude<Control, { kind: "note" }>;
@@ -36,6 +37,9 @@ export type MidiSettings = {
   // Channel 10 strikes a kit's pieces by their General MIDI keys.
   drums: boolean;
   mappings: readonly MidiMapping[];
+  // The presets already loaded, by name: each loads only the first time its
+  // controller is plugged in, so a mapping forgotten stays forgotten.
+  presets: readonly string[];
 };
 
 export type MidiStatus = "unsupported" | "off" | "asking" | "blocked" | "on";
@@ -183,6 +187,7 @@ const DEFAULTS: MidiSettings = {
   sustain: true,
   drums: true,
   mappings: [],
+  presets: [],
 };
 
 const isMidiNumber = (value: unknown, low = 0, high = 127) =>
@@ -236,6 +241,11 @@ function readSettings(): MidiSettings {
       mappings: Array.isArray(stored.mappings)
         ? stored.mappings.flatMap(
             (mapping: unknown) => readMapping(mapping) ?? [],
+          )
+        : [],
+      presets: Array.isArray(stored.presets)
+        ? stored.presets.filter(
+            (name: unknown): name is string => typeof name === "string",
           )
         : [],
     };
@@ -341,7 +351,39 @@ function refreshPorts() {
       manufacturer: input.manufacturer ?? "",
     });
   });
+  loadPresets(ports);
   setConnection({ ports });
+}
+
+// The first time a controller with a preset is plugged in, its mappings take
+// every knob and pad, and every control, not already mapped.
+function loadPresets(ports: readonly MidiPort[]) {
+  const current = getSettings();
+  const presets = MIDI_PRESETS.filter(
+    (preset) =>
+      !current.presets.includes(preset.name) &&
+      ports.some(({ name }) => name.includes(preset.port)),
+  );
+  if (presets.length === 0) return;
+  const mappings = presets.reduce<readonly MidiMapping[]>(
+    (mapped, preset) => [
+      ...mapped,
+      ...preset.mappings.filter(
+        ({ source, target }) =>
+          !mapped.some(
+            (taken) =>
+              sourceId(taken.source) === sourceId(source) ||
+              sameTarget(taken.target, target),
+          ),
+      ),
+    ],
+    current.mappings,
+  );
+  saveSettings({
+    ...current,
+    mappings,
+    presets: [...current.presets, ...presets.map(({ name }) => name)],
+  });
 }
 
 type HeldNote = { note: number; drums: boolean };
@@ -560,7 +602,7 @@ export function setMidiEnabled(on: boolean) {
 }
 
 export function setMidiSettings(
-  patch: Partial<Omit<MidiSettings, "enabled" | "mappings">>,
+  patch: Partial<Omit<MidiSettings, "enabled" | "mappings" | "presets">>,
 ) {
   const current = getSettings();
   // A key held on the old input or channel would never hear its let-go.

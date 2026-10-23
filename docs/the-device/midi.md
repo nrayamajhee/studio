@@ -42,3 +42,7 @@ Mapping a control again moves it to the new knob or pad. Click the waiting knob 
 The **Monitor**, under the mapping, lists the last eight messages: the channel, the message, what the Device did with it and the input it came from. Pitch bend, program changes and pressure show there but do nothing.
 
 The settings and mappings are kept in `localStorage` under `studio.midi`, which the Debug overlay shows.
+
+## OP-1
+
+A Teenage Engineering OP-1 maps itself the first time it's plugged in. Its four encoders turn the knobs of their colour (orange the red one), and its buttons press every pad but Chord 1 and Instrument 6. A knob, pad or control already mapped keeps its mapping, and a preset mapping forgotten stays forgotten. The preset is in `app/components/home/input/midiPresets.ts`.
