@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+    />
+    <script>
+      try {
+        const theme = JSON.parse(localStorage.getItem("theme") ?? '"system"');
+        const system = matchMedia("(prefers-color-scheme: dark)").matches;
+        if (theme === "dark" || (theme !== "light" && system))
+          document.documentElement.classList.add("dark");
+      } catch {}
+    </script>
+    <link data-trunk rel="css" href="src/main.css" />
+    <link data-trunk rel="rust" data-wasm-opt="z" />
+  </head>
+  <body></body>
+</html>

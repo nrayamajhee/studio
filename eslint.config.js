@@ -15,6 +15,7 @@ export default tseslint.config(
       "node_modules/**",
       "dist/**",
       "public/**",
+      "web-rust/**",
     ],
   },
   js.configs.recommended,

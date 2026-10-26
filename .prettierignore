@@ -3,3 +3,5 @@ build
 .react-router
 storybook-static
 package-lock.json
+web-rust/target
+web-rust/dist
