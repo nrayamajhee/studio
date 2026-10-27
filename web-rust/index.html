@@ -25,6 +25,19 @@
     </script>
     <link data-trunk rel="tailwind-css" href="src/tailwind.css" />
     <link data-trunk rel="rust" data-wasm-opt="z" />
+    <!-- The docs' screenshots and diagrams, served under /public. -->
+    <link
+      data-trunk
+      rel="copy-dir"
+      href="../public/docs"
+      data-target-path="public/docs"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="../public/screenshot.png"
+      data-target-path="public"
+    />
   </head>
   <body></body>
 </html>

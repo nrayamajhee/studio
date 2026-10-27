@@ -10,7 +10,7 @@ Studio is a browser-based instrument. The home page hosts **The Device**: an all
 
 ## Docs
 
-These docs, and this README, are also served in the app at `/docs` (`app/routes/docs.tsx`). The route reads every markdown file under `docs/` at build time and lists it in its sidebar. Each doc opens with a TOML config between two `---` lines giving its place in its folder (`order = 2`), and each folder has a `_meta.toml` giving its own `order` and the `title` the sidebar shows. A screenshot can have a dark twin beside it, `name.dark.webp` next to `name.webp`, which the route shows in the dark theme.
+These docs, and this README, are also served in the app at `/docs` (`app/routes/docs.tsx`, and in web-rust its `build.rs`). The route reads every markdown file under `docs/` at build time and lists it in its sidebar. Each doc opens with a TOML config between two `---` lines giving its place in its folder (`order = 2`), and each folder has a `_meta.toml` giving its own `order` and the `title` the sidebar shows. A screenshot can have a dark twin beside it, `name.dark.webp` next to `name.webp`, which the route shows in the dark theme.
 
 ### [The Device](docs/the-device/overview.md)
 

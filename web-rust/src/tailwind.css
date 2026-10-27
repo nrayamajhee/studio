@@ -308,3 +308,84 @@ body {
     opacity: 0;
   }
 }
+
+/* The docs page: each doc on a sheet of paper laid over the sky, almost
+   white by day and near black at night. Ink and paper fade with the sky
+   like the Device does. */
+@theme static {
+  --color-paper: color-mix(in srgb, #fbfbfa, #19191b var(--theme-mix));
+  --color-paper-ink: color-mix(in srgb, #000, #fff var(--theme-mix));
+  --color-paper-muted: color-mix(in srgb, #4f4d48, #bab8b2 var(--theme-mix));
+  --color-paper-rule: color-mix(
+    in srgb,
+    rgb(20 20 19 / 0.18),
+    rgb(255 255 255 / 0.16) var(--theme-mix)
+  );
+  --color-paper-well: color-mix(
+    in srgb,
+    rgb(20 20 19 / 0.08),
+    rgb(0 0 0 / 0.28) var(--theme-mix)
+  );
+  --color-paper-link: color-mix(in srgb, #1d41b8, #a9c3f8 var(--theme-mix));
+  --color-paper-sheen: color-mix(
+    in srgb,
+    rgb(255 255 255 / 0.24),
+    rgb(255 255 255 / 0.06) var(--theme-mix)
+  );
+  --shadow-paper:
+    0 1px 2px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.06),
+        rgb(0 0 0 / 0.25) var(--theme-mix)
+      ),
+    0 10px 30px -12px
+      color-mix(
+        in srgb,
+        rgb(20 20 19 / 0.16),
+        rgb(0 0 0 / 0.4) var(--theme-mix)
+      ),
+    inset 0 1px 0
+      color-mix(
+        in srgb,
+        rgb(255 255 255 / 0.6),
+        rgb(255 255 255 / 0.08) var(--theme-mix)
+      );
+}
+
+/* Paper fibre: light falling from the top over a fine grain and a slow
+   mottle in neutral grey, faint so the sheet stays almost white, on a
+   layer under the content that thins further at night (with --theme-dark, so it follows the cross-fade). Each filter
+   covers exactly its tile and each frequency fits the tile a whole number
+   of times (0.8 × 200, 0.01 × 800), so the stitched noise tiles without
+   seams. */
+@utility paper-grain {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background-image:
+      linear-gradient(180deg, var(--color-paper-sheen), transparent 720px),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.28 0 0 0 -0.06'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800'%3E%3Cfilter id='m' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.14 0 0 0 -0.02'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+    background-size:
+      100% 100%,
+      200px 200px,
+      800px 800px;
+    background-repeat: no-repeat, repeat, repeat;
+    opacity: calc(0.25 - 0.05 * var(--theme-dark));
+  }
+}
+
+/* The debug overlay's mark on a key just changed fades away. */
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}

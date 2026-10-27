@@ -11,6 +11,8 @@ use web_sys::{Event, KeyboardEvent};
 use crate::device::{Device, system_dark_query};
 use crate::keymap;
 use crate::pads::{self, Job, PADS};
+use crate::router::{Page, Router};
+use crate::ui::debug::TOGGLE_CODE;
 
 /// Runs a pad's job, from its key or the pointer. A key holds Shift or a
 /// chord while down; the pointer latches them.
@@ -35,8 +37,25 @@ pub fn press_pad(device: &Device, pad: usize, from_key: bool) {
   }
 }
 
-pub fn listen_to_page(device: &'static Device) {
+pub fn listen_to_page(device: &'static Device, router: &'static Router) {
   let window = window();
+  let home = move || fluid::untrack(|| router.page()) == Page::Home;
+
+  // Browsers keep audio off until a gesture; any on the Device's page
+  // starts it (or resumes it), wherever it lands.
+  for name in ["pointerup", "keydown", "touchend"] {
+    listen(
+      &window,
+      name,
+      ListenerOptions::new().capture(),
+      move |_: Event| {
+        if home() {
+          device.sound.unlock();
+        }
+      },
+    )
+    .forget();
+  }
   // The keybed semitone each held key started, by its code, so a key lets go
   // of the note it played even if Shift was let go first.
   let pressed: &'static RefCell<HashMap<String, u8>> = Box::leak(Box::default());
@@ -46,6 +65,17 @@ pub fn listen_to_page(device: &'static Device) {
     "keydown",
     ListenerOptions::new(),
     move |event: KeyboardEvent| {
+      if !home() {
+        return;
+      }
+      // ⌘D (Ctrl D) opens and closes the Debug panel, in place of a bookmark.
+      if event.code() == TOGGLE_CODE && (event.meta_key() || event.ctrl_key()) && !event.alt_key() {
+        event.prevent_default();
+        if !event.repeat() {
+          device.debug.update(|open| *open = !*open);
+        }
+        return;
+      }
       if event.meta_key() || event.ctrl_key() || event.alt_key() {
         return;
       }

@@ -9,6 +9,8 @@
 //! pieced together from parts.
 
 mod corner;
+pub mod debug;
+pub mod docs;
 mod grille;
 mod keybed;
 mod knob;
@@ -23,13 +25,19 @@ use web_sys::{DocumentFragment, Element, HtmlElement, HtmlTemplateElement};
 use crate::device::{Device, KNOB_STEPS, device};
 use knob::{Knob, knob};
 
+/// The home page: the Device on the sky, the footer, the corner buttons and
+/// the Debug panel.
 pub fn page() -> Element {
+  let device = device();
+  // Leaving the page lets go of every key, as web-react's unmount does.
+  fluid::on_cleanup(move || device.release_all());
   html! {
     div class="relative h-dvh w-full overflow-hidden select-none" {
       { sky::sky() }
       main class="absolute inset-0 z-10 py-20" { { synth() } }
       { footer() }
       { corner::corner() }
+      if |device| device.debug.value() { { debug::overlay() } }
     }
   }
 }
@@ -119,6 +127,7 @@ const LINK: &str =
   "font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current";
 
 fn footer() -> Element {
+  let device = device();
   html! {
     footer class="absolute inset-x-0 bottom-6 z-10 flex items-end justify-between gap-4 px-6 text-sm text-sky-ink select-text sm:px-8" {
       span {
@@ -126,7 +135,18 @@ fn footer() -> Element {
         br class="sm:hidden" {}
         a class={ LINK } href="https://nishan.rayamajhee.com/" target="_blank" rel="noopener noreferrer" { "Nishan Rayamajhee" }
         " | "
-        a class={ LINK } href="https://github.com/nrayamajhee/studio/tree/main/docs" target="_blank" rel="noopener noreferrer" { "Docs" }
+        a class={ LINK } href="/docs" { "Docs" }
+        " | "
+        // rustdoc's pages, not one of the app's: the link loads them.
+        a class={ LINK } href="/rust-doc/" { "Rust docs" }
+        " | "
+        button
+        class="cursor-pointer font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
+        aria-expanded={ move || device.debug.value().to_string() }
+        @click={ move |_| device.debug.update(|open| *open = !*open) }
+        {
+          span { "Debug" }
+        }
       }
       span class="shrink-0 whitespace-nowrap" {
         a class={ LINK } href="https://github.com/nrayamajhee/studio" target="_blank" rel="noopener noreferrer" { "GitHub" }
@@ -146,6 +166,26 @@ pub fn apply_theme(device: &'static Device) {
       let _ = root.class_list().toggle_with_force("dark", dark);
     }
   });
+}
+
+/// A lucide icon (`icons::*`, its name and inner markup) as web-react renders
+/// it, with `class` after lucide's own.
+pub fn icon((name, paths): (&str, &str), class: &str) -> DocumentFragment {
+  markup(&format!(
+    r#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-{name} {class}" aria-hidden="true">{paths}</svg>"#
+  ))
+}
+
+/// ⌘ on a Mac, Ctrl elsewhere, as web-react's keycaps show it.
+pub fn is_mac() -> bool {
+  gloo_utils::window()
+    .navigator()
+    .platform()
+    .is_ok_and(|platform| {
+      ["Mac", "iPhone", "iPad"]
+        .iter()
+        .any(|name| platform.contains(name))
+    })
 }
 
 /// Trusted markup (the icons web-react renders, a note's name) as nodes, to

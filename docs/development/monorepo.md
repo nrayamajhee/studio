@@ -60,7 +60,7 @@ The backend: a Rust binary on axum and tokio, with PostgreSQL through sqlx.
 
 ## Steps
 
-1. **web-rust** (done): the Trunk app with fluid and Tailwind: the home page and the Device's main view, matching web-react's in both themes and every size, and playing the same: keys, chords, octave, presets, knobs and the pads' keys.
+1. **web-rust** (done): the Trunk app with fluid and Tailwind: the home page and the Device's main view, matching web-react's in both themes and every size, and playing the same: keys, chords, octave, presets, knobs and the pads' keys. Its footer opens the docs (rendered from this folder at build time), the crates' Rust docs and the Debug panel, and its `Dockerfile` builds it and serves it with nginx.
 2. **Move the React app to `web-react/`** with `git mv`, so history follows the files: `app`, `public`, `scripts`, `.storybook`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `react-router.config.ts`, `eslint.config.js`, `vitest.shims.d.ts`, `.prettierrc`, `.prettierignore`, `Dockerfile` and `.dockerignore`. Then:
    - `docs/` and `README.md` stay at the root. In `docs.server.ts`, the globs `"/README.md"` and `"/docs/**/*.md"` become relative (`"../../../../docs/**/*.md"`), and `vite.config.ts` sets `server.fs.allow: [".."]` so Vite may read them.
    - `public/docs/` (the screenshots and diagrams) and `public/screenshot.png` stay in `web-react/public`; the README's image path becomes `web-react/public/screenshot.png`.

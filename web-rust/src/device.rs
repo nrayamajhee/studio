@@ -112,6 +112,8 @@ pub struct Device {
   pub values: Rc<Signal<Vec<Vec<usize>>>>,
   /// The volume or level just turned, over the screen for a moment.
   pub overlay: Rc<Signal<Option<(&'static str, usize)>>>,
+  /// Whether the Debug panel is open over the page.
+  pub debug: Rc<Signal<bool>>,
   /// The chord the keys play: the one a key holds, else the latched one.
   pub active_chord: Memo<Option<usize>>,
   /// The keybed keys lit by what is held, chords included.
@@ -195,6 +197,7 @@ impl Device {
       selected: Rc::new(Signal::new(0)),
       values,
       overlay: Rc::new(Signal::new(None)),
+      debug: Rc::new(Signal::new(false)),
       active_chord,
       lit,
       unsaved,

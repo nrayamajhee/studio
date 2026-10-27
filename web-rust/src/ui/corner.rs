@@ -12,14 +12,28 @@ const CORNER_BUTTON: &str = "relative inline-flex aspect-square w-auto cursor-po
 const ICON: &str = "inline-flex flex-shrink-0 items-center justify-center [&_svg]:size-4";
 
 pub fn corner() -> Element {
-  let device = device();
-  let next = move || device.theme.value().next(device.system_dark.value());
   // TODO: the MIDI panel comes with MIDI input, the port's last step.
   html! {
     div class="fixed top-4 right-4 z-50 flex gap-2 sm:top-6 sm:right-6" {
       button aria-label="MIDI" aria-expanded="false" class={ CORNER_BUTTON } @mousedown.prevent={ |_| blur_active() } {
         span class={ ICON } { { markup(KEYBOARD_MUSIC) } }
       }
+      { theme_button() }
+    }
+  }
+}
+
+/// The light/dark switch alone, as the docs page has it.
+pub fn theme_toggle() -> Element {
+  html! {
+    div class="fixed top-4 right-4 z-50 flex gap-2 sm:top-6 sm:right-6" { { theme_button() } }
+  }
+}
+
+fn theme_button() -> Element {
+  let device = device();
+  let next = move || device.theme.value().next(device.system_dark.value());
+  html! {
       button
       class={ CORNER_BUTTON }
       aria-label={ move || format!("Theme: {}. Click to switch to {}.", device.theme.value().name(), next().name()) }
@@ -30,6 +44,5 @@ pub fn corner() -> Element {
           if |next| next() == Theme::Light { { markup(SUN) } } else { { markup(MOON) } }
         }
       }
-    }
   }
 }

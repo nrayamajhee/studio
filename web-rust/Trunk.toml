@@ -6,13 +6,17 @@ dist = "dist"
 port = 8080
 
 [watch]
-# The app, and the sound engine it hosts and runs in its worklet; never
-# the build output, which would rebuild forever.
+# The app, the docs it renders and the sound engine it hosts and runs in
+# its worklet; never the build output, which would rebuild forever.
 watch = [
   "index.html",
   "favicon.svg",
   "Cargo.toml",
+  "build.rs",
   "src",
+  "../README.md",
+  "../docs",
+  "../public",
   "../sound-engine/Cargo.toml",
   "../sound-engine/data",
   "../sound-engine/src",
@@ -30,3 +34,9 @@ tailwindcss = "4.3.3"
 stage = "post_build"
 command = "sh"
 command_arguments = ["-c", "../sound-engine/worklet/build.sh \"$TRUNK_STAGING_DIR\""]
+
+# The crates' Rust docs, private items included, served at /rust-doc/.
+[[hooks]]
+stage = "post_build"
+command = "sh"
+command_arguments = ["-c", "scripts/rust-doc.sh \"$TRUNK_STAGING_DIR\""]

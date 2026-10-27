@@ -5,7 +5,7 @@
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
 
-use sound_engine::host::Synth;
+use sound_engine::host::{Status, Synth};
 use web_sys::AnalyserNode;
 
 use crate::device::KNOB_STEPS;
@@ -41,6 +41,11 @@ impl Sound {
     } else {
       self.synth.start();
     }
+  }
+
+  /// What the engine is doing, for the Debug panel.
+  pub fn status(&self) -> Status {
+    self.synth.status()
   }
 
   /// The output the scope draws, once the engine runs.

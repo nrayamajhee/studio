@@ -3,7 +3,7 @@
 //! parameter the knobs set in the footer, each in its knob's colour. The
 //! volume or level shows over it for a moment as its knob turns.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use fluid_macro::html;
@@ -74,21 +74,38 @@ fn scope() -> Element {
 /// The callback each animation frame asks for the next with.
 type Frame = Rc<RefCell<Option<Closure<dyn FnMut()>>>>;
 
-/// Runs `frame` on every animation frame for the page's lifetime, with a
-/// buffer it can keep samples in.
+/// Runs `frame` on every animation frame until the current scope is
+/// disposed, with a buffer it can keep samples in.
 fn animate(mut frame: impl FnMut(&mut Vec<f32>) + 'static) {
   let next: Frame = Rc::default();
+  // The frame asked for last, so leaving the page can call it off.
+  let asked = Rc::new(Cell::new(0));
   let again = next.clone();
   let mut samples = Vec::new();
-  *next.borrow_mut() = Some(Closure::new(move || {
-    if let Some(callback) = again.borrow().as_ref() {
-      let _ = window().request_animation_frame(callback.as_ref().unchecked_ref());
+  *next.borrow_mut() = Some(Closure::new({
+    let asked = asked.clone();
+    move || {
+      if let Some(callback) = again.borrow().as_ref() {
+        asked.set(
+          window()
+            .request_animation_frame(callback.as_ref().unchecked_ref())
+            .unwrap_or(0),
+        );
+      }
+      frame(&mut samples);
     }
-    frame(&mut samples);
   }));
   if let Some(callback) = next.borrow().as_ref() {
-    let _ = window().request_animation_frame(callback.as_ref().unchecked_ref());
+    asked.set(
+      window()
+        .request_animation_frame(callback.as_ref().unchecked_ref())
+        .unwrap_or(0),
+    );
   }
+  fluid::on_cleanup(move || {
+    let _ = window().cancel_animation_frame(asked.get());
+    drop(next.borrow_mut().take());
+  });
 }
 
 fn draw(

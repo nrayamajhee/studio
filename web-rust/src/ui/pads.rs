@@ -28,11 +28,7 @@ pub fn pads() -> Element {
 
 /// ⌘ on a Mac, Ctrl elsewhere, as the Save pad's legend shows.
 fn command_legend() -> &'static str {
-  let mac = gloo_utils::window()
-    .navigator()
-    .platform()
-    .is_ok_and(|platform| platform.starts_with("Mac"));
-  if mac { "⌘S" } else { "Ctrl S" }
+  if super::is_mac() { "⌘S" } else { "Ctrl S" }
 }
 
 /// What the pad does now, as its label and tooltip say.
