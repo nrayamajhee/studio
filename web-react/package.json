@@ -13,8 +13,8 @@
     "build-storybook": "storybook build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write . ../README.md ../docs ../sound-engine/README.md ../sound-engine/scripts ../web-rust/README.md",
+    "format:check": "prettier --check . ../README.md ../docs ../sound-engine/README.md ../sound-engine/scripts ../web-rust/README.md",
     "clean": "rm -rf node_modules build .react-router storybook-static",
     "diagrams": "tsx scripts/diagrams/index.ts",
     "screenshots": "tsx scripts/screenshots/index.ts"

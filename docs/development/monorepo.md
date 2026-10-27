@@ -25,7 +25,7 @@ web-rust ──┤
            └─ wasm ─► sound-engine ─► AudioWorklet (DSP) + Web Audio nodes
 ```
 
-- **web-react** stays the shipping app until web-rust catches up with it. It keeps its own TypeScript engine (`app/lib/physical`), so nothing in it depends on the Rust crates.
+- **web-react** stays the shipping app until web-rust catches up with it. It keeps its own TypeScript engine (`web-react/app/lib/physical`), so nothing in it depends on the Rust crates.
 - **web-rust** is the UI only. It handles the DOM, input and state, and asks sound-engine for every sound. It never touches an `AudioContext` itself.
 - **sound-engine** owns the audio. web-rust takes it as a path dependency with its `web` feature (`sound-engine = { path = "../sound-engine", features = ["web"] }`) for the host, which builds the audio graph and sends events; the engine itself is a second wasm module, `sound-engine/worklet`, which runs on the audio thread.
 - **editor** is the backend both front ends save to: tapes, tracks, presets and user progressions as rows in PostgreSQL, served as JSON.
@@ -61,10 +61,12 @@ The backend: a Rust binary on axum and tokio, with PostgreSQL through sqlx.
 ## Steps
 
 1. **web-rust** (done): the Trunk app with fluid and Tailwind: the home page and the Device's main view, matching web-react's in both themes and every size, and playing the same: keys, chords, octave, presets, knobs and the pads' keys. Its footer opens the docs (rendered from this folder at build time), the crates' Rust docs and the Debug panel, and its `Dockerfile` builds it and serves it with nginx.
-2. **Move the React app to `web-react/`** with `git mv`, so history follows the files: `app`, `public`, `scripts`, `.storybook`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `react-router.config.ts`, `eslint.config.js`, `vitest.shims.d.ts`, `.prettierrc`, `.prettierignore`, `Dockerfile` and `.dockerignore`. Then:
-   - `docs/` and `README.md` stay at the root. In `docs.server.ts`, the globs `"/README.md"` and `"/docs/**/*.md"` become relative (`"../../../../docs/**/*.md"`), and `vite.config.ts` sets `server.fs.allow: [".."]` so Vite may read them.
-   - `public/docs/` (the screenshots and diagrams) and `public/screenshot.png` stay in `web-react/public`; the README's image path becomes `web-react/public/screenshot.png`.
-   - The docs' links to the code (`app/...`) become `web-react/app/...`, and their commands gain a `cd web-react`.
+2. **web-react** (done): the React app moved to `web-react/` with `git mv`, so history follows the files: `app`, `public`, `scripts`, `.storybook`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `react-router.config.ts`, `eslint.config.js`, `vitest.shims.d.ts`, `.prettierrc`, `.prettierignore`, `Dockerfile` and `.dockerignore`. Then:
+   - `docs/` and `README.md` stay at the root. `docs.server.ts` globs them relatively (`"../../../../docs/**/*.md"`) and keys them by their repo paths, and `vite.config.ts` sets `server.fs.allow: [".."]` so Vite may read them.
+   - `public/docs/` (the screenshots and diagrams) and `public/screenshot.png` stay in `web-react/public`, and the docs' images point there; web-rust's build copies them from there too.
+   - The docs' links to the code (`app/...`) became `web-react/app/...`, and their commands run from `web-react`.
+   - web-rust's `export-presets.tsx` moved to `web-react/scripts/`, since it imports React; sound-engine's scripts stay put and run from `web-react` (`npx tsx ../sound-engine/scripts/parity.ts`).
+   - The Dockerfile builds from the repo's root, with `web-react/Dockerfile.dockerignore` keeping the context to `web-react/`, `docs/` and `README.md`.
    - The `.agents/skills` and `.claude/skills` link stay at the root.
 3. **sound-engine** (done): the engine ported whole, its worklet and host, and web-rust playing through it: notes, chords, presets, knobs and the scope.
 4. **editor**: the axum app, its first migration (tapes and tracks), and the save and load routes; then web-react and web-rust save tapes to it.

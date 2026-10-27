@@ -45,4 +45,4 @@ The settings and mappings are kept in `localStorage` under `studio.midi`, which 
 
 ## OP-1
 
-A Teenage Engineering OP-1 maps itself the first time it's plugged in. Its four encoders turn the knobs of their colour (orange the red one), and its buttons press every pad but Chord 1 and Instrument 6. A knob, pad or control already mapped keeps its mapping, and a preset mapping forgotten stays forgotten. The preset is in `app/components/home/input/midiPresets.ts`.
+A Teenage Engineering OP-1 maps itself the first time it's plugged in. Its four encoders turn the knobs of their colour (orange the red one), and its buttons press every pad but Chord 1 and Instrument 6. A knob, pad or control already mapped keeps its mapping, and a preset mapping forgotten stays forgotten. The preset is in `web-react/app/components/home/input/midiPresets.ts`.

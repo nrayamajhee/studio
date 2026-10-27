@@ -15,8 +15,8 @@ RUN curl -fsSL "https://github.com/trunk-rs/trunk/releases/download/v${TRUNK_VER
 WORKDIR /studio
 COPY README.md ./
 COPY docs docs
-COPY public/docs public/docs
-COPY public/screenshot.png public/
+COPY web-react/public/docs web-react/public/docs
+COPY web-react/public/screenshot.png web-react/public/
 COPY sound-engine sound-engine
 COPY web-rust web-rust
 WORKDIR /studio/web-rust

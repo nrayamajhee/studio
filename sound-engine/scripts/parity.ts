@@ -3,12 +3,15 @@
 // kit) with a param change, and one run through the master stage. Writes
 // each case's events (JSON) and the TypeScript output (interleaved f32) to
 // sound-engine/target/parity; `cargo run --release --example parity` then
-// renders the events in Rust and compares. Run from the repo root:
-//   npx tsx sound-engine/scripts/parity.ts
+// renders the events in Rust and compares. Run from web-react:
+//   npx tsx ../sound-engine/scripts/parity.ts
 import { mkdirSync, writeFileSync } from "node:fs";
-import type { EngineEvent } from "../../app/lib/physical/messages";
-import { renderEngine } from "../../app/lib/physical/offline/renderEngine";
-import { MASTER_PARAMS, PATCHES } from "../../app/lib/physical/patches";
+import type { EngineEvent } from "../../web-react/app/lib/physical/messages";
+import { renderEngine } from "../../web-react/app/lib/physical/offline/renderEngine";
+import {
+  MASTER_PARAMS,
+  PATCHES,
+} from "../../web-react/app/lib/physical/patches";
 
 const SAMPLE_RATE = 48000;
 const DURATION = 2.5;

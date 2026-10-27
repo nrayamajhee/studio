@@ -32,7 +32,7 @@ Serves the app on port `8080` (`http://localhost:8080`) and rebuilds it on every
 trunk build --release
 ```
 
-Writes the app to `web-rust/dist`, with the worklet's `sound-worklet.js` and `sound-worklet.wasm`, the Rust docs in `rust-doc/` and the docs' images in `public/`. The app routes `/` and `/docs/...` itself, so a server for it sends `index.html` for any path that isn't a file, as `nginx.conf` does.
+Writes the app to `web-rust/dist`, with the worklet's `sound-worklet.js` and `sound-worklet.wasm`, the Rust docs in `rust-doc/` and the docs' images (from `web-react/public/`) in `public/`. The app routes `/` and `/docs/...` itself, so a server for it sends `index.html` for any path that isn't a file, as `nginx.conf` does.
 
 ## Docker
 
@@ -43,7 +43,7 @@ docker build -f web-rust/Dockerfile -t studio-web-rust .
 docker run --rm -p 8080:8080 studio-web-rust
 ```
 
-`Dockerfile.dockerignore` keeps the context to those folders. On Railway, leave the service's root directory unset (the repo's root), set the Dockerfile Path to `/web-rust/Dockerfile`, and watch every path the image is built from, so a change to any of them deploys: `/web-rust/**`, `/sound-engine/**`, `/docs/**`, `/README.md`, `/public/docs/**` and `/public/screenshot.png`. Railway sets `PORT` itself. The Dockerfile has no cache mounts, since Railway's builder refuses any whose id isn't tied to the service.
+`Dockerfile.dockerignore` keeps the context to those folders. On Railway, leave the service's root directory unset (the repo's root), set the Dockerfile Path to `/web-rust/Dockerfile`, and watch every path the image is built from, so a change to any of them deploys: `/web-rust/**`, `/sound-engine/**`, `/docs/**`, `/README.md`, `/web-react/public/docs/**` and `/web-react/public/screenshot.png`. Railway sets `PORT` itself. The Dockerfile has no cache mounts, since Railway's builder refuses any whose id isn't tied to the service.
 
 ## Checks
 
@@ -59,7 +59,7 @@ docker run --rm -p 8080:8080 studio-web-rust
 - `src/sound.rs`: what the Device plays, as web-react's `deviceEngine` sends it: the Device's actions call it, and it sends events to sound-engine's host.
 - `src/ui/`: the pages, built with `html!`, one module per part as web-react has one component: the sky, the knobs, grilles, screen, pads and keybed, the corner buttons, the Debug panel and the docs page. Each part is a function returning its element, placed in its parent as a child (`{ pads() }`). Reactive text is `#text{ .. }`, state classes are `class:".."` toggles, conditional parts are `if`, and handlers are typed (`@pointerdown={ move |event: PointerEvent| .. }`); only what a signal change touches is redrawn.
 - `src/keymap.rs`, `src/notes.rs`, `src/pads.rs`: plain Rust with no web-sys types, so `cargo test` runs them without a browser.
-- `src/presets.rs`: the six presets, generated from web-react's code by `scripts/export-presets.tsx` (run it from the repo root with `npx tsx`): the instrument each plays, every parameter with the display and value of each knob step, and each kit's pieces.
+- `src/presets.rs`: the six presets, generated from web-react's code by its `scripts/export-presets.tsx` (run it from `web-react` with `npx tsx`): the instrument each plays, every parameter with the display and value of each knob step, and each kit's pieces.
 - `src/icons.rs`: the pads' and pages' icons, taken from what web-react renders.
 - `build.rs`, `src/docs/`: the docs, rendered from markdown with pulldown-cmark at build time; `src/docs/style.rs` holds the classes the HTML gets, where Tailwind finds them.
 - `src/tailwind.css`: Tailwind's entry, with web-react's theme tokens and page styles. Tailwind scans `src/**/*.rs` for classes, so write every class out whole, never pieced together.

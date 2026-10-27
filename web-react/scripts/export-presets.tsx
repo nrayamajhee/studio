@@ -1,7 +1,7 @@
-// Writes src/presets.rs from web-react's own code: the six presets on the
+// Writes web-rust's src/presets.rs from web-react's own code: the six presets on the
 // instrument pads with what the screen shows of them and what the engine is
-// sent. Run from the repo root after changing a preset or a patch:
-//   npx tsx web-rust/scripts/export-presets.tsx && (cd web-rust && cargo fmt)
+// sent. Run from web-react after changing a preset or a patch:
+//   npx tsx scripts/export-presets.tsx && (cd ../web-rust && cargo fmt)
 import { writeFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -12,21 +12,18 @@ import {
   keyPiece,
   presetValues,
   type DevicePreset,
-} from "../../app/components/home/deviceEngine";
-import { F3_MIDI, clampOctave } from "../../app/components/home/deviceMath";
-import { DRUM_PIECES } from "../../app/components/home/instrumentIcons";
-import type { KitId } from "../../app/lib/physical";
-import { PATCH_BY_ID } from "../../app/lib/physical/patches";
+} from "../app/components/home/deviceEngine";
+import { F3_MIDI, clampOctave } from "../app/components/home/deviceMath";
+import { DRUM_PIECES } from "../app/components/home/instrumentIcons";
+import type { KitId } from "../app/lib/physical";
+import { PATCH_BY_ID } from "../app/lib/physical/patches";
 import {
   formatParam,
   stepToValue,
   valueToStep,
-} from "../../app/lib/physical/patches/format";
-import {
-  moduleLabel,
-  paramModules,
-} from "../../app/lib/physical/patches/params";
-import type { ParamSpec, Patch } from "../../app/lib/physical/patches/types";
+} from "../app/lib/physical/patches/format";
+import { moduleLabel, paramModules } from "../app/lib/physical/patches/params";
+import type { ParamSpec, Patch } from "../app/lib/physical/patches/types";
 
 // As SoundProvider orders and names the params the knobs pick.
 const moduleOrder = ({ params, family }: Patch) =>
@@ -152,5 +149,5 @@ pub struct Preset {
 
 pub const PRESETS: [Preset; ${pads.length}] = [${pads.map(preset).join(",\n")}];
 `;
-writeFileSync(new URL("../src/presets.rs", import.meta.url), out);
+writeFileSync(new URL("../../web-rust/src/presets.rs", import.meta.url), out);
 console.log(`wrote ${pads.length} presets`);

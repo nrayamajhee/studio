@@ -15,9 +15,9 @@ order = 3
 
 ## 2. Styling & Types
 
-- **Tailwind only**: no CSS modules. Style with Tailwind classes; use `tv` (from `app/lib/utils`, which shares `cn`'s merge config) for variants and multi-part components. Add new theme values as tokens in `app.css` (`@theme static`) and register custom shadow or spacing names in `lib/utils.ts` so merging handles them.
+- **Tailwind only**: no CSS modules. Style with Tailwind classes; use `tv` (from `web-react/app/lib/utils`, which shares `cn`'s merge config) for variants and multi-part components. Add new theme values as tokens in `app.css` (`@theme static`) and register custom shadow or spacing names in `lib/utils.ts` so merging handles them.
 - Controls that draw themselves use `<Button unstyled>`.
-- **Types, never interfaces** (enforced by ESLint). Shared types go in `app/types/`.
+- **Types, never interfaces** (enforced by ESLint). Shared types go in `web-react/app/types/`.
 
 ## 3. Comment Removal & Clean Code Policy
 

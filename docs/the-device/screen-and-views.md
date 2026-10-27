@@ -10,7 +10,7 @@ Every pad that opens something opens a **view**: the same knobs, pads and keys, 
 
 Every view lays the screen out the same way.
 
-![The main screen: A the octave, B the level, C the wave, D the sound's name, E the setting the knobs change](../../public/docs/the-device/screen-scope.webp)
+![The main screen: A the octave, B the level, C the wave, D the sound's name, E the setting the knobs change](../../web-react/public/docs/the-device/screen-scope.webp)
 
 - **A, the status line's left**: the title or, on the main screen, the octave.
 - **B, the status line's right**: a count or setting, in the colour of the knob that sets it.
@@ -20,7 +20,7 @@ Every view lays the screen out the same way.
 
 In a list, the status line is a **pager**: the page you're on in the middle, the ones either side, turned by the red knob or ← →. The tile picked by the blue knob is highlighted, and a badge marks a sound bound to an instrument pad (`1`, `⇧3`).
 
-![The Instruments list: A the pager, C the tiles, D the picked sound, E the hint](../../public/docs/the-device/screen-list.webp)
+![The Instruments list: A the pager, C the tiles, D the picked sound, E the hint](../../web-react/public/docs/the-device/screen-list.webp)
 
 A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the home note`) and levels appear over the middle.
 
@@ -28,90 +28,90 @@ A title with a dot, `Grand piano •`, has unsaved changes. Prompts (`Play the h
 
 ### Main screen
 
-![Main screen](../../public/docs/the-device/view-scope.webp)
+![Main screen](../../web-react/public/docs/the-device/view-scope.webp)
 
 **Opened by:** nothing; it's there whenever no other view is open. The wave of what's playing; green picks a setting, blue changes it, red sets the level.
 
 ### Instruments
 
-![Instruments](../../public/docs/the-device/view-instruments.webp)
+![Instruments](../../web-react/public/docs/the-device/view-instruments.webp)
 
 **Opened by:** Instruments. Red turns the pages, blue picks, and green pages the library by model (struck and plucked, bowed, blown and so on) or by band (Rock band, Jazz combo, Orchestra, Folk, South Asian, World, Electronic), the favorites first and saved sounds last either way. While the library is open the keys and whatever is playing (the take, the tracks) sound on the picked instrument without it being chosen; closing the library brings back the one you had. An instrument pad twice binds the sound, and the library stays open for the next; Delete removes a saved one.
 
 ### Synth parameters
 
-![Synth parameters](../../public/docs/the-device/view-synth.webp)
+![Synth parameters](../../web-react/public/docs/the-device/view-synth.webp)
 
 **Opened by:** Synth parameters. ← → turn the pages; the knobs set the page's four values; Shift its extras; Save opens the icon picker. With a track picked on the tracks, it opens on that track's instrument and settings, and every change is kept with the track. Shift + Delete, twice, resets the sound to its instrument's: the picked track's, or the take's (not over the piano roll or drum grid).
 
 ### Save
 
-![Save](../../public/docs/the-device/view-save.webp)
+![Save](../../web-react/public/docs/the-device/view-save.webp)
 
 **Opened by:** Save, from the synth parameters. Green picks an icon; Save keeps the sound, or an instrument pad saves it there.
 
 ### ADSR, LFO and FX
 
-![The ADSR page](../../public/docs/the-device/view-module.webp)
+![The ADSR page](../../web-react/public/docs/the-device/view-module.webp)
 
 **Opened by:** ADSR, LFO or FX. The knobs set its four values and switch it on; the badge shows on or off. With a track picked on the tracks they're the track's. Shift + Delete, twice, puts the open one back as it starts, off: the picked track's, or the take's (not over the piano roll or drum grid).
 
 ### Chords
 
-![Chords](../../public/docs/the-device/view-chords.webp)
+![Chords](../../web-react/public/docs/the-device/view-chords.webp)
 
 **Opened by:** Chords. Red turns the kinds, blue picks; a chord pad twice takes the chord, and the palette stays open for the next.
 
 ### Play style
 
-![Play style](../../public/docs/the-device/view-play-style.webp)
+![Play style](../../web-react/public/docs/the-device/view-play-style.webp)
 
 **Opened by:** Play style. Red turns the groups, blue picks, and Mute stars the pick into the Favorites page that comes first, and Nishan's Picks follow on a page of their own (Block, Pulse, Accent pulse, Accent down-up, Folk strum, Up-down and Alberti); green sets the rate or strum; Save keeps it as a new style.
 
 ### Tempo
 
-![Tempo](../../public/docs/the-device/view-tempo.webp)
+![Tempo](../../web-react/public/docs/the-device/view-tempo.webp)
 
 **Opened by:** Tempo. Green and ← → set the tape's BPM (or drag or type the number); ↓ taps it in. With a track picked on the tracks they set that track's own tempo instead, and ↑ links it to the tape's tempo or gives it its own again. With no track picked, ↑ gives every track the tape's tempo as its own. Red sets the swing (50% straight to 75%) and blue what it swings (eighths or sixteenths), shown on the top line in their colours: the tape's, which the take, the drum grid and the play styles play through, or the picked track's own. A drum-grid track on triplets plays straight.
 
 ### Progressions
 
-![Progressions](../../public/docs/the-device/view-progressions.webp)
+![Progressions](../../web-react/public/docs/the-device/view-progressions.webp)
 
 **Opened by:** Shift + Piano roll. Red turns the kinds, blue picks, and Mute stars the pick into the Favorites page that comes first, and Nishan's Picks follow on a page of their own (Fast car, Suspended, Born in the U.S.A. and Homecoming, I IV I IV V IV Isus4 Isus2); a tap or Play previews it in its own key, and a key previews it from that note, a little faster than the tape's tempo (by more the slower the tape is); Save, then a key, loads it as the take, at the tape's tempo.
 
 ### Beats
 
-![Beats](../../public/docs/the-device/view-beats.webp)
+![Beats](../../web-react/public/docs/the-device/view-beats.webp)
 
 **Opened by:** Shift + Drum grid. Red turns the styles, blue picks, Mute stars the pick into the Favorites page that comes first, Nishan's Picks follow on a page of their own (New jack swing, Madal new jack swing, Sixteenth hats, Madal kick kick hat and Lo-fi), and the keys play the picked beat's kit (the instrument pads keep their sounds); a tap or Play previews; Save loads it into the drum grid, setting the time signature and, for a swung beat (the shuffles, jazz, reggae, New jack swing, boom bap, lo-fi), the tape's swing.
 
 ### Piano roll
 
-![Piano roll](../../public/docs/the-device/view-roll.webp)
+![Piano roll](../../web-react/public/docs/the-device/view-roll.webp)
 
 **Opened by:** Piano roll, or Record. The take: Record arms, Play records; green scrolls, red sets the time signature (Shift + red transposes the whole take, a semitone a step), blue the octave; Save keeps it as a track. A take keeps the timing it was played with and follows the tempo.
 
 ### Drum grid
 
-![Drum grid](../../public/docs/the-device/view-drum-grid.webp)
+![Drum grid](../../web-react/public/docs/the-device/view-drum-grid.webp)
 
 **Opened by:** Drum grid. Green moves the head, keys set hits there; red sets the length, blue the resolution; Save keeps it as a track.
 
 ### Tracks
 
-![Tracks](../../public/docs/the-device/view-tracks.webp)
+![Tracks](../../web-react/public/docs/the-device/view-tracks.webp)
 
 **Opened by:** Tracks. See [the knob table](overview.md#knobs); ← → slide a track, Shift + ← → repeat it, Shift + ↓ picks the next copy of the whole track further along (past the last, adds one: ×2, ×3 on the row's right edge) and Shift + ↑ the one before; an instrument pad puts its sound on the picked track, which keeps every note it was played with (a tabla track's strokes carry over to the madal or a drum kit, and back); Mute, Clip, Delete; Save the mix.
 
 ### Tapes
 
-![Tapes](../../public/docs/the-device/view-tapes.webp)
+![Tapes](../../web-react/public/docs/the-device/view-tapes.webp)
 
 **Opened by:** Tapes. Green and ← → open a tape; Save starts a new one; Delete removes it.
 
 ### Revert
 
-![Revert](../../public/docs/the-device/view-revert.webp)
+![Revert](../../web-react/public/docs/the-device/view-revert.webp)
 
 **Opened by:** Shift + Delete on the main screen. In any other view Shift leaves Delete as it is, so close the view first. Green picks what to put back; Delete twice reverts it; any other pad closes.

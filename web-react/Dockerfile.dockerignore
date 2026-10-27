@@ -1,0 +1,9 @@
+# The build's context is the repo's root; it only needs these.
+*
+!README.md
+!docs
+!web-react
+web-react/node_modules
+web-react/build
+web-react/.react-router
+web-react/storybook-static

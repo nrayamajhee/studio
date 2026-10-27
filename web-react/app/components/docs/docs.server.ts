@@ -1,19 +1,32 @@
 import { parse } from "smol-toml";
 import type { Doc, DocFile, DocFolder, DocNode } from "../../types/docs";
 
-// Every markdown file in docs/ and the README, and each docs folder's
-// _meta.toml, read at build time.
-const SOURCES = import.meta.glob<string>(["/README.md", "/docs/**/*.md"], {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
+// Every markdown file in the repo root's docs/ and its README, and each docs
+// folder's _meta.toml, read at build time and keyed by their repo paths.
+const ROOT = "../../../../";
 
-const FOLDER_META = import.meta.glob<string>("/docs/**/_meta.toml", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
+const fromRoot = (files: Record<string, string>) =>
+  Object.fromEntries(
+    Object.entries(files).map(([key, source]) => [
+      `/${key.slice(ROOT.length)}`,
+      source,
+    ]),
+  );
+
+const SOURCES = fromRoot(
+  import.meta.glob<string>(
+    ["../../../../README.md", "../../../../docs/**/*.md"],
+    { query: "?raw", import: "default", eager: true },
+  ),
+);
+
+const FOLDER_META = fromRoot(
+  import.meta.glob<string>("../../../../docs/**/_meta.toml", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }),
+);
 
 // The screenshots with a dark twin beside them (`name.dark.webp` by
 // `name.webp`), at the paths public/ serves them from. Only the paths are

@@ -42,7 +42,7 @@ fn main() {
   let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
   println!("cargo:rerun-if-changed=../README.md");
   println!("cargo:rerun-if-changed=../docs");
-  println!("cargo:rerun-if-changed=../public/docs");
+  println!("cargo:rerun-if-changed=../web-react/public/docs");
   println!("cargo:rerun-if-changed=src/docs/style.rs");
 
   let mut files = vec![PathBuf::from("README.md")];
@@ -296,16 +296,16 @@ fn doc_link(href: &str, from: &str, hrefs: &HashMap<String, String>) -> (String,
   }
 }
 
-/// Images in public/ are served under /public; others come from GitHub.
+/// Images in web-react's public/ are served under /public; others come from
+/// GitHub.
 fn doc_image(src: &str, from: &str) -> String {
   if is_absolute(src) || src.starts_with('/') {
     return src.to_owned();
   }
   let path = resolve(from, src);
-  if path.starts_with("public/") {
-    format!("/{path}")
-  } else {
-    format!("{REPO}/raw/main/{path}")
+  match path.strip_prefix("web-react/") {
+    Some(public) if public.starts_with("public/") => format!("/{public}"),
+    _ => format!("{REPO}/raw/main/{path}"),
   }
 }
 
@@ -326,7 +326,9 @@ fn image(root: &Path, src: &str, alt: &str, title: Option<&str>, from: &str) -> 
   let dark = light
     .rsplit_once('.')
     .map(|(stem, ext)| format!("{stem}.dark.{ext}"));
-  let twin = dark.filter(|dark| dark.starts_with("/public/") && root.join(&dark[1..]).exists());
+  let twin = dark.filter(|dark| {
+    dark.starts_with("/public/") && root.join("web-react").join(&dark[1..]).exists()
+  });
   let Some(dark) = twin else {
     return format!(
       r#"<img src="{}" alt="{}"{title} class="{frame}">"#,

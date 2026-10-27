@@ -8,7 +8,7 @@ The flute, alto sax, clarinet, trumpet, bass trumpet and trombone are ported fro
 
 A wind instrument is a nonlinear "mouth" coupled to a tube. Pressure waves travel down the tube, reflect off the open end or bell, and come back to disturb the jet or reed. That disturbance is what keeps the note going.
 
-![Breath pressure (max times ADSR times one plus noise and vibrato Level) drives a nonlinear mouth (an air jet, a reed or the lips), which sends a wave down a fractional-length tube; the open end or bell reflects a lowpassed, inverted wave back to the mouth, and the output is taken there](../../../public/docs/synth-engine/diagram-winds.svg)
+![Breath pressure (max times ADSR times one plus noise and vibrato Level) drives a nonlinear mouth (an air jet, a reed or the lips), which sends a wave down a fractional-length tube; the open end or bell reflects a lowpassed, inverted wave back to the mouth, and the output is taken there](../../../web-react/public/docs/synth-engine/diagram-winds.svg)
 
 |            | Flute (STK `Flute`)                                                       | Sax (STK `Saxofony`)                                             | Brass (STK `Brass`)                                                          |
 | ---------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------- |
@@ -18,7 +18,7 @@ A wind instrument is a nonlinear "mouth" coupled to a tube. Pressure waves trave
 
 Each mouth is drawn on its Exciter page; the flute's shows the breath with its noise, beside the jet's `x(x² − 1)` curve:
 
-![The flute's Exciter page: the breath rises and holds with noise; the jet's cubic curve shows how the air sheet flips with the pressure across it](../../../public/docs/synth-engine/screen-exciter-flute.webp)
+![The flute's Exciter page: the breath rises and holds with noise; the jet's cubic curve shows how the air sheet flips with the pressure across it](../../../web-react/public/docs/synth-engine/screen-exciter-flute.webp)
 
 The sax's bell lowpass tracks the note, as a real sax's open tone holes move its reflection; STK's fixed 740 Hz makes low notes overblow and high ones fail to speak.
 

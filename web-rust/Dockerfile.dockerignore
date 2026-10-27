@@ -2,8 +2,8 @@
 *
 !README.md
 !docs
-!public/docs
-!public/screenshot.png
+!web-react/public/docs
+!web-react/public/screenshot.png
 !sound-engine
 !web-rust
 sound-engine/target
