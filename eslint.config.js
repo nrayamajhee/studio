@@ -16,6 +16,7 @@ export default tseslint.config(
       "dist/**",
       "public/**",
       "web-rust/**",
+      "sound-engine/**",
     ],
   },
   js.configs.recommended,

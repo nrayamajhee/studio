@@ -40,7 +40,7 @@ export default defineConfig({
   server: {
     port: 3000,
     watch: {
-      ignored: ["**/web-rust/**"],
+      ignored: ["**/web-rust/**", "**/sound-engine/**"],
     },
   },
   test: {

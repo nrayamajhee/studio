@@ -1,0 +1,21 @@
+[package]
+name = "sound-worklet"
+authors = ["nrayamajhee <nishan@rayamajhee.com>"]
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# The engine as the audio thread runs it: a bare wasm module, without
+# wasm-bindgen, that processor.js instantiates in the AudioWorklet.
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+sound-engine = { path = ".." }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
