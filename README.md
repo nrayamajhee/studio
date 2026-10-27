@@ -10,7 +10,7 @@ Studio is a browser-based instrument. The home page hosts **The Device**: an all
 
 ## Docs
 
-These docs, and this README, are also served in the app at `/docs` (`app/routes/docs.tsx`). The route reads every markdown file under `docs/` at build time and lists it in its sidebar. Each doc opens with a TOML config between two `---` lines giving its place in its folder (`order = 2`), and each folder has a `_meta.toml` giving its own `order` and the `title` the sidebar shows. A screenshot can have a dark twin beside it, `name.dark.webp` next to `name.webp`, which the route shows in the dark theme.
+These docs, and this README, are also served in the app at `/docs` (`app/routes/docs.tsx`, and in web-rust its `build.rs`). The route reads every markdown file under `docs/` at build time and lists it in its sidebar. Each doc opens with a TOML config between two `---` lines giving its place in its folder (`order = 2`), and each folder has a `_meta.toml` giving its own `order` and the `title` the sidebar shows. A screenshot can have a dark twin beside it, `name.dark.webp` next to `name.webp`, which the route shows in the dark theme.
 
 ### [The Device](docs/the-device/overview.md)
 
@@ -45,6 +45,7 @@ Working on Studio: setting it up, its stories, the rules agents follow and the D
 - [Storybook](docs/development/storybook.md): how the component stories are organized: `Design System`, `Home`, `Page`, `Docs` and `Lab` titles, colocated with their components, each linked to its page in the app's `/storybook`. It also covers the conventions every story follows: a `Default` story bound to props, `autodocs`, a one-line description, the `withDevice` and `withDocs` decorators, and light and dark coverage through the theme addon.
 - [Agent guidelines](docs/development/agent-guidelines.md): the rules for AI agents working in this repo. Stories start with a `Default` and add only focused variants. Styling is Tailwind only, with `tv` for variants and types instead of interfaces. Scratch and restating comments are stripped before handing work back, and no interaction tests are written without asking first.
 - [Design rules](docs/development/design-rules.md): the rules the Device's look and controls keep to: fixed native size, two spacing tokens, theme colours that cross-fade, and hotkeys that never overlap.
+- [Monorepo plan](docs/development/monorepo.md): Studio splitting into four sibling folders with no monorepo tooling: `web-react` (this React app, moved), `web-rust` (the Device in Rust, a Trunk wasm app with a [fluid](https://github.com/nrayamajhee/fluid) UI), `sound-engine` (the latency-critical audio in Rust: an AudioWorklet for the models, wrapped Web Audio nodes for the rest) and `editor` (an axum backend on PostgreSQL through sqlx). The first steps are in: [`web-rust`](web-rust/README.md), the home page and the Device's main view, looking and playing as web-react's does, and [`sound-engine`](sound-engine/README.md), web-react's physical models ported to Rust and run in an AudioWorklet, which web-rust plays through.
 
 ## Credits
 

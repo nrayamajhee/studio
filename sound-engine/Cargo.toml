@@ -1,0 +1,43 @@
+[package]
+name = "sound-engine"
+authors = ["nrayamajhee <nishan@rayamajhee.com>"]
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[features]
+web = ["dep:js-sys", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:web-sys"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+js-sys = { version = "0.3", optional = true }
+wasm-bindgen = { version = "0.2", optional = true }
+wasm-bindgen-futures = { version = "0.4", optional = true }
+web-sys = { version = "0.3", optional = true, features = [
+  "AnalyserNode",
+  "AudioContext",
+  "AudioContextOptions",
+  "AudioContextState",
+  "AudioDestinationNode",
+  "AudioNode",
+  "AudioParam",
+  "AudioWorklet",
+  "AudioWorkletNode",
+  "AudioWorkletNodeOptions",
+  "BaseAudioContext",
+  "console",
+  "DynamicsCompressorNode",
+  "GainNode",
+  "MessageEvent",
+  "MessagePort",
+  "Response",
+  "Window",
+  "Worklet",
+] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

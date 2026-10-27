@@ -1,0 +1,42 @@
+[build]
+target = "index.html"
+dist = "dist"
+
+[serve]
+port = 8080
+
+[watch]
+# The app, the docs it renders and the sound engine it hosts and runs in
+# its worklet; never the build output, which would rebuild forever.
+watch = [
+  "index.html",
+  "favicon.svg",
+  "Cargo.toml",
+  "build.rs",
+  "src",
+  "../README.md",
+  "../docs",
+  "../public",
+  "../sound-engine/Cargo.toml",
+  "../sound-engine/data",
+  "../sound-engine/src",
+  "../sound-engine/worklet/Cargo.toml",
+  "../sound-engine/worklet/processor.js",
+  "../sound-engine/worklet/src",
+]
+
+[tools]
+tailwindcss = "4.3.3"
+
+# The AudioWorklet's engine is a separate wasm module with its own
+# processor script, served next to the page.
+[[hooks]]
+stage = "post_build"
+command = "sh"
+command_arguments = ["-c", "../sound-engine/worklet/build.sh \"$TRUNK_STAGING_DIR\""]
+
+# The crates' Rust docs, private items included, served at /rust-doc/.
+[[hooks]]
+stage = "post_build"
+command = "sh"
+command_arguments = ["-c", "scripts/rust-doc.sh \"$TRUNK_STAGING_DIR\""]

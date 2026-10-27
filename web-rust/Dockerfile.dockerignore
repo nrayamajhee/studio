@@ -1,0 +1,12 @@
+# The build's context is the repo's root; it only needs these.
+*
+!README.md
+!docs
+!public/docs
+!public/screenshot.png
+!sound-engine
+!web-rust
+sound-engine/target
+sound-engine/worklet/target
+web-rust/target
+web-rust/dist
