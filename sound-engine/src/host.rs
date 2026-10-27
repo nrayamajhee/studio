@@ -19,6 +19,35 @@ use crate::messages::{EngineEvent, EngineStats};
 
 /// The processor's name, as `worklet/processor.js` registers it.
 const PROCESSOR: &str = "sound-worklet";
+/// How many of the engine's latest warnings the status keeps.
+const WARNINGS: usize = 20;
+
+/// Where the engine is in starting up.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub enum Phase {
+  /// Waiting for the first gesture.
+  #[default]
+  Off,
+  Starting,
+  Ready,
+  /// It couldn't start, or it stopped; the next gesture tries again.
+  Failed(String),
+}
+
+/// What the engine is doing, for the Debug panel.
+#[derive(Clone, Debug, Default)]
+pub struct Status {
+  pub phase: Phase,
+  /// The AudioContext's state: suspended, running or closed.
+  pub context: Option<String>,
+  pub sample_rate: Option<f32>,
+  pub stats: Option<EngineStats>,
+  /// The share of the audio thread's time the engine took.
+  pub load: Option<f64>,
+  /// Events waiting for the engine to start.
+  pub pending: usize,
+  pub warnings: Vec<String>,
+}
 
 #[derive(Default)]
 struct State {
@@ -31,13 +60,36 @@ struct State {
   /// The system volume, after the limiter, so turning it up never clips.
   volume: Option<GainNode>,
   volume_level: f64,
-  booting: bool,
-  ready: bool,
+  phase: Phase,
   /// Events sent before the worklet was ready.
   pending: Vec<EngineEvent>,
   stats: Option<EngineStats>,
   load: Option<f64>,
+  warnings: Vec<String>,
   on_message: Option<Closure<dyn FnMut(MessageEvent)>>,
+  on_error: Option<Closure<dyn FnMut(JsValue)>>,
+}
+
+impl State {
+  fn fail(&mut self, reason: String) {
+    console::error_1(&format!("Audio engine failed: {reason}").into());
+    self.phase = Phase::Failed(reason);
+    // Notes that never played shouldn't all play on the next try.
+    self
+      .pending
+      .retain(|event| matches!(event, EngineEvent::Param { .. }));
+    if let Some(node) = self.node.take() {
+      let _ = node.disconnect();
+    }
+  }
+
+  fn warn(&mut self, warning: String) {
+    console::warn_1(&warning.as_str().into());
+    if self.warnings.len() == WARNINGS {
+      self.warnings.remove(0);
+    }
+    self.warnings.push(warning);
+  }
 }
 
 /// The synth: cheap to clone, every clone the same engine.
@@ -56,31 +108,57 @@ impl Synth {
   }
 
   pub fn ready(&self) -> bool {
-    self.0.borrow().ready
+    self.0.borrow().phase == Phase::Ready
+  }
+
+  pub fn status(&self) -> Status {
+    let state = self.0.borrow();
+    Status {
+      phase: state.phase.clone(),
+      context: state
+        .context
+        .as_ref()
+        .map(|context| format!("{:?}", context.state()).to_lowercase()),
+      sample_rate: state.context.as_ref().map(|context| context.sample_rate()),
+      stats: state.stats,
+      load: state.load,
+      pending: state.pending.len(),
+      warnings: state.warnings.clone(),
+    }
   }
 
   /// Starts the engine, from a user gesture (browsers keep audio off until
-  /// one), or resumes it.
+  /// one), or resumes it. After a failure it tries again.
   pub fn start(&self) {
     self.resume();
     let context = {
       let mut state = self.0.borrow_mut();
-      if state.booting || state.ready {
+      if matches!(state.phase, Phase::Starting | Phase::Ready) {
         return;
       }
-      let Ok(context) = AudioContext::new() else {
-        console::warn_1(&"Audio engine failed to start: no AudioContext".into());
+      // Browsers only run audio worklets on secure pages.
+      if !web_sys::window().is_some_and(|window| window.is_secure_context()) {
+        state.fail("this page isn't secure (https or localhost), and browsers only run audio worklets on secure pages".into());
         return;
+      }
+      let context = match &state.context {
+        Some(context) => context.clone(),
+        None => match AudioContext::new() {
+          Ok(context) => context,
+          Err(error) => {
+            state.fail(reason(&error));
+            return;
+          }
+        },
       };
-      state.booting = true;
+      state.phase = Phase::Starting;
       state.context = Some(context.clone());
       context
     };
     let synth = self.clone();
     spawn_local(async move {
       if let Err(error) = synth.boot(&context).await {
-        synth.0.borrow_mut().booting = false;
-        console::warn_2(&"Audio engine failed to start:".into(), &error);
+        synth.0.borrow_mut().fail(reason(&error));
       }
     });
   }
@@ -172,7 +250,7 @@ impl Synth {
 
   pub fn send(&self, event: EngineEvent) {
     let mut state = self.0.borrow_mut();
-    if state.ready {
+    if state.phase == Phase::Ready {
       if let Some(node) = &state.node {
         post(node, &[event]);
       }
@@ -237,9 +315,27 @@ impl Synth {
       .connect_with_audio_node(&context.destination())?;
 
     let port = node.port()?;
-    let resolve: Rc<RefCell<Option<Function>>> = Rc::default();
-    let ready = Promise::new(&mut |done, _| *resolve.borrow_mut() = Some(done));
+    // Settled by the processor's "ready", or by its failing to start.
+    let settle: Rc<RefCell<Option<(Function, Function)>>> = Rc::default();
+    let ready = Promise::new(&mut |done, failed| *settle.borrow_mut() = Some((done, failed)));
     let state = Rc::downgrade(&self.0);
+    let on_error = Closure::<dyn FnMut(JsValue)>::new({
+      let (state, settle) = (state.clone(), settle.clone());
+      move |_| {
+        let reason = "the audio worklet stopped: its engine couldn't load or run (see the console)";
+        match settle.borrow_mut().take() {
+          Some((_, failed)) => {
+            let _ = failed.call1(&JsValue::NULL, &reason.into());
+          }
+          None => {
+            if let Some(state) = state.upgrade() {
+              state.borrow_mut().fail(reason.into());
+            }
+          }
+        }
+      }
+    });
+    node.set_onprocessorerror(Some(on_error.as_ref().unchecked_ref()));
     let on_message = Closure::<dyn FnMut(MessageEvent)>::new(move |message: MessageEvent| {
       let data = message.data();
       let kind = Reflect::get(&data, &"type".into())
@@ -252,7 +348,7 @@ impl Synth {
       };
       match kind.as_deref() {
         Some("ready") => {
-          if let Some(done) = resolve.borrow_mut().take() {
+          if let Some((done, _)) = settle.borrow_mut().take() {
             let _ = done.call0(&JsValue::NULL);
           }
         }
@@ -268,8 +364,12 @@ impl Synth {
           }
         }
         _ => {
-          let warning = Reflect::get(&data, &"message".into()).unwrap_or(data);
-          console::warn_1(&warning);
+          let warning = Reflect::get(&data, &"message".into())
+            .ok()
+            .and_then(|message| message.as_string());
+          if let (Some(state), Some(warning)) = (state.upgrade(), warning) {
+            state.borrow_mut().warn(warning);
+          }
         }
       }
     });
@@ -282,15 +382,27 @@ impl Synth {
       state.pending.clear();
     }
     state.on_message = Some(on_message);
+    state.on_error = Some(on_error);
     state.node = Some(node);
     state.analyser = Some(analyser);
     state.volume = Some(volume);
-    state.booting = false;
-    state.ready = true;
+    state.phase = Phase::Ready;
     drop(state);
     self.resume();
     Ok(())
   }
+}
+
+/// An error's message, for the status.
+fn reason(error: &JsValue) -> String {
+  error
+    .as_string()
+    .or_else(|| {
+      error
+        .dyn_ref::<js_sys::Error>()
+        .map(|error| error.message().into())
+    })
+    .unwrap_or_else(|| format!("{error:?}"))
 }
 
 fn post(node: &AudioWorkletNode, events: &[EngineEvent]) {

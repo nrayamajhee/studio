@@ -19,7 +19,7 @@ fn normalize_peak(buffer: &mut [f32], length: usize, gain: f64) {
   }
 }
 
-/// e[n] − e[n − b]: removes the harmonics with a node at the pluck or strike
+/// `e[n] − e[n − b]`: removes the harmonics with a node at the pluck or strike
 /// point.
 fn position_comb(buffer: &mut [f32], length: usize, b: usize) {
   if b < 1 {

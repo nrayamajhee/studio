@@ -27,7 +27,7 @@ fn lightest_loss(p: f64, w0: f64, per_period: f64) -> f64 {
 }
 
 /// Single-delay-loop string (extended Karplus-Strong): delay → dispersion
-/// allpasses → one-pole loss·g → fractional tuning allpass → [jawari] →
+/// allpasses → one-pole loss·g → fractional tuning allpass → (jawari) →
 /// + excitation → back into the delay.
 pub struct StringLoop {
   pub delay: DelayLine,

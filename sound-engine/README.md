@@ -43,6 +43,7 @@ worklet/build.sh <out-dir>   # writes sound-worklet.wasm and sound-worklet.js
 - **Unit tests** (natively): `cargo test`
 - **Lint**: `cargo clippy --all-targets`, `cargo clippy --features web --target wasm32-unknown-unknown`, and in `worklet/` `cargo clippy --target wasm32-unknown-unknown`
 - **Format**: `cargo fmt` (check with `cargo fmt --check`), here and in `worklet/`
+- **Stress**: `cargo run --example stress` plays every patch at 22.05 to 96 kHz with each param at its extremes, in a debug build, so an overflow or a bad index panics.
 - **Parity with web-react**: from the repo root, `npx tsx sound-engine/scripts/parity.ts` renders 34 cases (every patch, and the master stage) through the TypeScript engine; then `cargo run --release --example parity` here plays them through this one and prints each case's largest difference.
 
 ## Patches
