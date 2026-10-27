@@ -4,3 +4,6 @@ dist = "dist"
 
 [serve]
 port = 8080
+
+[tools]
+tailwindcss = "4.3.3"

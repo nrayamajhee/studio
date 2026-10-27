@@ -369,6 +369,7 @@ dependencies = [
  "fluid",
  "fluid-macro",
  "gloo-console",
+ "gloo-timers",
  "gloo-utils",
  "wasm-bindgen",
  "web-sys",

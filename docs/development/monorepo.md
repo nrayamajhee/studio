@@ -34,10 +34,10 @@ web-rust ──┤
 
 A Trunk app (`trunk serve` on port `8080`), built to `web-rust/dist`. Its UI uses [fluid](https://github.com/nrayamajhee/fluid), the library [wgpu-test](https://github.com/nrayamajhee/wgpu-test) uses. fluid works like Solid: signals, effects that track the signals they read, and an `html!` macro that builds real DOM elements once and updates only the attributes and text bound to signals.
 
-- **State** is a `Device` of `Rc<Signal<_>>`s: theme, octave, held notes, the last note played. The UI and the keyboard listeners write to it, and fluid effects redraw the parts that read it.
+- **State** is a `Device` of `Rc<Signal<_>>`s: theme, preset, octave, held keys and pads, chords, knob values. The UI and the keyboard listeners write to it, and fluid effects redraw the parts that read it.
 - **Pure logic** (keymap, note names, octave range) has no web-sys types, so `cargo test` runs it natively.
-- **Port order**, following the React app's parts: the shell, screen and keybed (this first step), then pads and their hotkeys, the knobs, the screen's views (instruments, synth, ADSR, LFO, FX), then chords and play styles, drum grid, piano roll, tracks and tapes, and MIDI last.
-- **Look**: the same theme tokens as `web-react/app/app.css` (`--theme-mix` cross-fade, `bezel` and `inset` spacing), written as plain CSS since Trunk has no Tailwind step. The [design rules](./design-rules.md) hold for both apps.
+- **Port order**, following the React app's parts: the home page and the Device's main view (this first step: the knobs, grilles, scope screen, all 36 pads with their keys, the presets, chords and keybed), then the screen's other views (instruments, synth, ADSR, LFO, FX, tempo), play styles and progressions, drum grid, piano roll, tracks and tapes, and MIDI last.
+- **Look**: Tailwind, built by Trunk's own `tailwind-css` pipeline (no npm), from web-react's theme tokens copied into `web-rust/src/tailwind.css`, with the same class strings as web-react's components. The [design rules](./design-rules.md) hold for both apps.
 
 ## sound-engine
 
@@ -62,7 +62,7 @@ The backend: a Rust binary on axum and tokio, with PostgreSQL through sqlx.
 
 ## Steps
 
-1. **web-rust** (done): the Trunk app with fluid, the Device's shell, screen and keybed, played from the mouse and keyboard, in both themes.
+1. **web-rust** (done): the Trunk app with fluid and Tailwind: the home page and the Device's main view, matching web-react's in both themes and every size, and playing the same: keys, chords, octave, presets, knobs and the pads' keys.
 2. **Move the React app to `web-react/`** with `git mv`, so history follows the files: `app`, `public`, `scripts`, `.storybook`, `package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `react-router.config.ts`, `eslint.config.js`, `vitest.shims.d.ts`, `.prettierrc`, `.prettierignore`, `Dockerfile` and `.dockerignore`. Then:
    - `docs/` and `README.md` stay at the root. In `docs.server.ts`, the globs `"/README.md"` and `"/docs/**/*.md"` become relative (`"../../../../docs/**/*.md"`), and `vite.config.ts` sets `server.fs.allow: [".."]` so Vite may read them.
    - `public/docs/` (the screenshots and diagrams) and `public/screenshot.png` stay in `web-react/public`; the README's image path becomes `web-react/public/screenshot.png`.

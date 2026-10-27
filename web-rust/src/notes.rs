@@ -6,8 +6,6 @@ pub const F3_MIDI: u8 = 53;
 pub const KEYS: u8 = 24;
 pub const WHITE_KEYS: [u8; 14] = [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23];
 pub const BLACK_KEYS: [u8; 10] = [1, 3, 5, 8, 10, 13, 15, 17, 20, 22];
-/// How far the octave arrows shift the keybed either way.
-pub const OCTAVE_RANGE: i8 = 3;
 
 const NOTE_NAMES: [&str; 12] = [
   "C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B",

@@ -3,7 +3,8 @@
 //! The same layout as web-react's `keymap.ts`: the piano takes the home row,
 //! white keys F3–B4 along A S D F G H J K L ; ' and each black key on the row
 //! above between its neighbours (W E R, Y U, O P [). Held with Shift, the
-//! row's last five keys carry on past B4 to E5.
+//! row's last five keys carry on past B4 to E5. The pads take the keys the
+//! piano leaves free (see `pads.rs`).
 
 use crate::notes::KEYS;
 
@@ -33,26 +34,12 @@ const NOTE_KEYS: [(&str, &str); 19] = [
 pub const SHIFT_NOTES: u8 = 5;
 const SHIFTED_FROM: u8 = NOTE_KEYS.len() as u8 - SHIFT_NOTES;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Control {
-  /// A piano key, by its unshifted keybed semitone.
-  Note(u8),
-  /// ↑ and ↓ shift the keybed an octave.
-  Octave(i8),
-  Shift,
-}
-
-/// The control a key presses, if any.
-pub fn control(code: &str) -> Option<Control> {
-  match code {
-    "ArrowUp" => Some(Control::Octave(1)),
-    "ArrowDown" => Some(Control::Octave(-1)),
-    "ShiftLeft" | "ShiftRight" => Some(Control::Shift),
-    _ => NOTE_KEYS
-      .iter()
-      .position(|&(key, _)| key == code)
-      .map(|semitone| Control::Note(semitone as u8)),
-  }
+/// The keybed semitone a piano key plays, unshifted.
+pub fn note_for(code: &str) -> Option<u8> {
+  NOTE_KEYS
+    .iter()
+    .position(|&(key, _)| key == code)
+    .map(|semitone| semitone as u8)
 }
 
 /// The note a piano key plays with Shift held: the last five move up past B4.
@@ -80,10 +67,9 @@ mod tests {
 
   #[test]
   fn home_row_plays_the_keybed() {
-    assert_eq!(control("KeyA"), Some(Control::Note(0)));
-    assert_eq!(control("Quote"), Some(Control::Note(18)));
-    assert_eq!(control("ArrowDown"), Some(Control::Octave(-1)));
-    assert_eq!(control("KeyQ"), None);
+    assert_eq!(note_for("KeyA"), Some(0));
+    assert_eq!(note_for("Quote"), Some(18));
+    assert_eq!(note_for("KeyQ"), None);
   }
 
   #[test]

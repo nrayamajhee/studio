@@ -6,15 +6,20 @@
 //! - [`device`]: the state, as signals.
 //! - [`input`]: browser listeners that write to it.
 //! - [`ui`]: the page, whose effects read it.
-//! - [`keymap`] and [`notes`]: plain logic, tested natively with `cargo test`.
+//! - [`keymap`], [`notes`] and [`pads`]: plain logic, tested natively with
+//!   `cargo test`.
+//! - [`presets`] and [`icons`]: the presets and icons as web-react ships them.
 //!
 //! Sound comes later from the `sound-engine` crate; see
 //! `docs/development/monorepo.md`.
 
 mod device;
+mod icons;
 mod input;
 mod keymap;
 mod notes;
+mod pads;
+mod presets;
 mod ui;
 
 use std::rc::Rc;
