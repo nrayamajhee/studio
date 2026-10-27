@@ -36,14 +36,14 @@ Writes the app to `web-rust/dist`, with the worklet's `sound-worklet.js` and `so
 
 ## Docker
 
-The image builds the app with Trunk and serves it with nginx on port `8080`. Build it from the repo's root, which holds everything it reads (the crates, `docs/`, the README and the docs' images):
+The image builds the app with Trunk and serves it with nginx on `$PORT`, 8080 unless the host sets it. Build it from the repo's root, which holds everything it reads (the crates, `docs/`, the README and the docs' images):
 
 ```bash
 docker build -f web-rust/Dockerfile -t studio-web-rust .
 docker run --rm -p 8080:8080 studio-web-rust
 ```
 
-`Dockerfile.dockerignore` keeps the context to those folders.
+`Dockerfile.dockerignore` keeps the context to those folders. On Railway, leave the service's root directory at the repo's root and set `RAILWAY_DOCKERFILE_PATH` to `web-rust/Dockerfile`; Railway sets `PORT` itself. The Dockerfile has no cache mounts, since Railway's builder refuses any whose id isn't tied to the service.
 
 ## Checks
 

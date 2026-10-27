@@ -1,7 +1,7 @@
-# syntax=docker/dockerfile:1
 # Builds web-rust with Trunk (the app, its sound engine's worklet and the
-# docs) and serves it with nginx on port 8080. Build from the repo's root,
-# which holds the crates, docs and images it reads:
+# docs) and serves it with nginx on $PORT (8080 unless the host sets it, as
+# Railway does). Build from the repo's root, which holds the crates, docs and
+# images it reads:
 #   docker build -f web-rust/Dockerfile -t studio-web-rust .
 #   docker run --rm -p 8080:8080 studio-web-rust
 
@@ -20,15 +20,13 @@ COPY public/screenshot.png public/
 COPY sound-engine sound-engine
 COPY web-rust web-rust
 WORKDIR /studio/web-rust
-# The caches keep crates, both crates' builds and the tools Trunk fetches
-# (Tailwind, wasm-bindgen, wasm-opt) from one build to the next.
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-  --mount=type=cache,target=/root/.cache/trunk \
-  --mount=type=cache,target=/studio/web-rust/target \
-  --mount=type=cache,target=/studio/sound-engine/worklet/target \
-  trunk build --release
+# No cache mounts: builders such as Railway's refuse them without an id tied
+# to the service.
+RUN trunk build --release
 
 FROM nginx:1.29-alpine
-COPY web-rust/nginx.conf /etc/nginx/conf.d/default.conf
+# nginx's image fills in ${PORT} from the environment as it starts.
+ENV PORT=8080
+COPY web-rust/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /studio/web-rust/dist /usr/share/nginx/html
 EXPOSE 8080
