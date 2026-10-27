@@ -14,6 +14,7 @@ use gloo_utils::window;
 use crate::notes;
 use crate::pads::CHORDS;
 use crate::presets::{PRESETS, Param, Preset};
+use crate::sound::Sound;
 
 /// Every knob turns through eleven steps, 0–100% in tens, unless a
 /// parameter has fewer.
@@ -121,6 +122,8 @@ pub struct Device {
   /// from the keyboard keeps it sounding.
   pub pointer_keys: Cell<u32>,
   overlay_shown: Cell<u32>,
+  /// What the Device plays: the methods below send it what they change.
+  pub sound: Sound,
 }
 
 /// The Device for the page's lifetime, shared through fluid's context: a
@@ -135,6 +138,13 @@ impl Device {
   pub fn install() -> &'static Device {
     let device: &'static Device = Box::leak(Box::new(Device::new()));
     fluid::provide_context(device);
+    // Held until the engine starts on the first gesture.
+    let sound = &device.sound;
+    sound.set_volume(device.volume.value());
+    sound.set_level(device.level.value());
+    device
+      .values
+      .with(|values| sound.load_preset(device.current(), &values[device.preset.value()]));
     device
   }
 
@@ -190,6 +200,7 @@ impl Device {
       unsaved,
       pointer_keys: Cell::new(0),
       overlay_shown: Cell::new(0),
+      sound: Sound::new(),
     }
   }
 
@@ -202,31 +213,49 @@ impl Device {
   }
 
   /// Presses a keybed key: its note, or with a chord active the chord built
-  /// on it.
+  /// on it, every note at once.
   pub fn press(&self, root: u8) {
     if self.held.with(|held| held.contains_key(&root)) {
       return;
     }
+    self.sound.unlock();
     let intervals = self
       .active_chord
       .value()
       .map_or(&[0][..], |chord| CHORDS[chord].intervals);
     let octave = self.octave.value();
-    let notes = intervals
+    let notes: HeldKey = intervals
       .iter()
       .map(|interval| root + interval)
       .map(|semitone| (semitone, notes::midi(semitone, octave)))
       .collect();
+    let preset = self.current();
+    for &(_, midi) in &notes {
+      self.sound.note_on(preset, midi);
+    }
     self.held.update(|held| held.insert(root, notes));
   }
 
   pub fn release(&self, semitone: u8) {
-    if self.held.with(|held| held.contains_key(&semitone)) {
-      self.held.update(|held| held.remove(&semitone));
+    let Some(notes) = self.held.with(|held| held.get(&semitone).cloned()) else {
+      return;
+    };
+    for (_, midi) in notes {
+      self.sound.note_off(midi);
     }
+    self.held.update(|held| held.remove(&semitone));
   }
 
+  /// Lets go of every key, and of anything still sounding.
   pub fn release_all(&self) {
+    if self.held.with(|held| !held.is_empty()) {
+      self.held.with(|held| {
+        for &(_, midi) in held.values().flatten() {
+          self.sound.note_off(midi);
+        }
+      });
+      self.sound.all_notes_off();
+    }
     fluid::batch(|| {
       self.held.set_if_changed(BTreeMap::new());
       self.held_pads.set_if_changed(BTreeSet::new());
@@ -262,6 +291,10 @@ impl Device {
     if preset == self.preset.value() {
       return;
     }
+    self.sound.unlock();
+    self
+      .values
+      .with(|values| self.sound.load_preset(&PRESETS[preset], &values[preset]));
     let picked = self.param().0.name;
     let selected = PRESETS[preset]
       .params
@@ -314,15 +347,18 @@ impl Device {
 
   pub fn set_value(&self, step: usize) {
     let (preset, selected) = (self.preset.value(), self.selected.value());
+    self.sound.set_value(&PRESETS[preset], selected, step);
     self.values.update(|values| values[preset][selected] = step);
   }
 
   pub fn set_volume(&'static self, step: usize) {
+    self.sound.set_volume(step);
     self.volume.set(step);
     self.show_overlay("Volume", step);
   }
 
   pub fn set_level(&'static self, step: usize) {
+    self.sound.set_level(step);
     self.level.set(step);
     self.show_overlay("Level", step);
   }

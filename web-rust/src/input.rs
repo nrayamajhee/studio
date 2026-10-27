@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 use fluid::{ListenerOptions, listen};
-use gloo_utils::window;
+use gloo_utils::{document, window};
 use web_sys::{Event, KeyboardEvent};
 
 use crate::device::{Device, system_dark_query};
@@ -94,14 +94,28 @@ pub fn listen_to_page(device: &'static Device) {
   .forget();
 
   // Keys let go while the page is in the background never send a keyup.
-  listen(&window, "blur", ListenerOptions::new(), move |_: Event| {
+  let let_go = move || {
     pressed.borrow_mut().clear();
     fluid::batch(|| {
       device.shift_key.set_if_changed(false);
       device.chord_key.set_if_changed(None);
       device.release_all();
     });
+  };
+  listen(&window, "blur", ListenerOptions::new(), move |_: Event| {
+    let_go()
   })
+  .forget();
+  listen(
+    &document(),
+    "visibilitychange",
+    ListenerOptions::new(),
+    move |_: Event| {
+      if document().hidden() {
+        let_go();
+      }
+    },
+  )
   .forget();
 
   if let Some(query) = system_dark_query() {

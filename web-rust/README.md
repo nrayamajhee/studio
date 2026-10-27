@@ -2,7 +2,9 @@
 
 The Device in Rust: a [Trunk](https://trunkrs.dev) app compiled to WebAssembly, its UI made with [fluid](https://github.com/nrayamajhee/fluid), the signals-and-`html!` library [wgpu-test](https://github.com/nrayamajhee/wgpu-test) uses, and styled with Tailwind. It is the first step of the [monorepo plan](../docs/development/monorepo.md).
 
-It has web-react's home page and the Device's main view, with the same Tailwind classes and theme tokens, so it looks the same in both themes and at every size. It plays the same too: the keybed from the pointer (sliding from key to key) or the home row, the chord pads (a key holds a chord, a click latches it), the octave arrows, the six presets with their parameters and kit pieces, the four knobs (drag, scroll or click) with the level overlay and the unsaved mark, and every pad's key. The other pads keep their icons and labels until their views are ported. It makes no sound yet, and the scope stays flat; sound comes from the `sound-engine` crate.
+It has web-react's home page and the Device's main view, with the same Tailwind classes and theme tokens, so it looks the same in both themes and at every size. It plays the same too: the keybed from the pointer (sliding from key to key) or the home row, the chord pads (a key holds a chord, a click latches it), the octave arrows, the six presets with their parameters and kit pieces, the four knobs (drag, scroll or click) with the level overlay and the unsaved mark, and every pad's key. The other pads keep their icons and labels until their views are ported.
+
+It sounds the same as well. The [sound-engine](../sound-engine/README.md) crate runs web-react's physical models, ported to Rust, in an AudioWorklet, and the Device sends it what web-react's does: every note and chord, each preset's parameters when it is picked, every knob turn, the level into the clipper and the volume after it. The scope draws the output. Audio starts on the first press, click or key, as browsers require.
 
 ## Setup
 
@@ -11,7 +13,7 @@ rustup target add wasm32-unknown-unknown
 cargo install trunk --locked
 ```
 
-Trunk downloads the Tailwind CLI itself, at the version `Trunk.toml` pins; there is no npm step.
+Trunk downloads the Tailwind CLI itself, at the version `Trunk.toml` pins; there is no npm step. A hook in `Trunk.toml` builds the AudioWorklet's engine (`../sound-engine/worklet/build.sh`) into the output beside the app, and `trunk serve` rebuilds when either crate changes.
 
 ## Development
 
@@ -28,7 +30,7 @@ Serves the app on port `8080` (`http://localhost:8080`) and rebuilds it on every
 trunk build --release
 ```
 
-Writes the app to `web-rust/dist`.
+Writes the app to `web-rust/dist`, with the worklet's `sound-worklet.js` and `sound-worklet.wasm`.
 
 ## Checks
 
@@ -39,10 +41,12 @@ Writes the app to `web-rust/dist`.
 ## Layout
 
 - `src/device.rs`: the state, as fluid signals and memos: theme, preset, octave, held keys and pads, Shift, chords, knob values and the level overlay. It lives as long as the page and is shared through fluid's context as a `&'static Device`, so closures capture it without cloning.
-- `src/input.rs`: the browser listeners that write to it (`fluid::listen`): keys, blur and the system theme.
+- `src/input.rs`: the browser listeners that write to it (`fluid::listen`): keys, blur and hiding the page, and the system theme.
+- `src/sound.rs`: what the Device plays, as web-react's `deviceEngine` sends it: the Device's actions call it, and it sends events to sound-engine's host.
 - `src/ui/`: the page, built with `html!`, one module per part as web-react has one component: the sky, the knobs, grilles, screen, pads and keybed, and the corner buttons. Each part is a function returning its element, placed in its parent as a child (`{ pads() }`). Reactive text is `#text{ .. }`, state classes are `class:".."` toggles, conditional parts are `if`, and handlers are typed (`@pointerdown={ move |event: PointerEvent| .. }`); only what a signal change touches is redrawn.
 - `src/keymap.rs`, `src/notes.rs`, `src/pads.rs`: plain Rust with no web-sys types, so `cargo test` runs them without a browser.
-- `src/presets.rs`, `src/icons.rs`: the six presets (every parameter with the display of each knob step, and each kit's pieces) and the pads' icons, taken from what web-react renders.
+- `src/presets.rs`: the six presets, generated from web-react's code by `scripts/export-presets.tsx` (run it from the repo root with `npx tsx`): the instrument each plays, every parameter with the display and value of each knob step, and each kit's pieces.
+- `src/icons.rs`: the pads' icons, taken from what web-react renders.
 - `src/tailwind.css`: Tailwind's entry, with web-react's theme tokens and page styles. Tailwind scans `src/**/*.rs` for classes, so write every class out whole, never pieced together.
 
 ## Keys

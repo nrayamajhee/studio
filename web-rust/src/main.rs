@@ -9,10 +9,9 @@
 //! - [`ui`]: the page, whose effects read it.
 //! - [`keymap`], [`notes`] and [`pads`]: plain logic, tested natively with
 //!   `cargo test`.
+//! - [`sound`]: what the Device plays, sent to the `sound-engine` crate's
+//!   engine, which runs in an AudioWorklet.
 //! - [`presets`] and [`icons`]: the presets and icons as web-react ships them.
-//!
-//! Sound comes later from the `sound-engine` crate; see
-//! `docs/development/monorepo.md`.
 
 mod device;
 mod icons;
@@ -21,6 +20,7 @@ mod keymap;
 mod notes;
 mod pads;
 mod presets;
+mod sound;
 mod ui;
 
 use fluid::Context;

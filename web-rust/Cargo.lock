@@ -206,6 +206,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
+name = "sound-engine"
+version = "0.1.0"
+dependencies = [
+ "js-sys",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "syn"
 version = "2.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -307,6 +319,8 @@ dependencies = [
  "gloo-console",
  "gloo-timers",
  "gloo-utils",
+ "js-sys",
+ "sound-engine",
  "wasm-bindgen",
  "web-sys",
 ]

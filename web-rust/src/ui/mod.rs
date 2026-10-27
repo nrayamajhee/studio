@@ -41,7 +41,8 @@ pub fn page() -> Element {
 /// The screen sits over the middle eight pad columns, a grille either side
 /// of it and the knob pairs out past them, lined up with the pads' edges.
 fn synth() -> Element {
-  let [chalk, green, red, blue] = knobs(device());
+  let device = device();
+  let [chalk, green, red, blue] = knobs(device);
   html! {
     div class="grid size-full place-items-center px-[clamp(calc(var(--spacing-bezel)_/_2),4.5vw,calc(2_*_var(--spacing-bezel)))] [--screen-aspect:2.39] [container-type:size]" {
       div class="relative h-[calc(var(--device-height)_*_var(--scale))] w-[calc(1001px_*_var(--scale))] [--device-height:calc(621px_/_var(--screen-aspect)_+_517px)] [--scale:min(1,tan(atan2(100cqw,1001px)),tan(atan2(100cqh,var(--device-height))))]" {
@@ -49,6 +50,8 @@ fn synth() -> Element {
         role="group"
         aria-label="Synthesizer"
         class="absolute top-0 left-0 flex h-(--device-height) w-[1001px] origin-top-left scale-(--scale) flex-col gap-inset overflow-clip rounded-[88px] bg-device p-bezel shadow-device select-none [corner-shape:squircle]"
+        // Browsers keep audio off until a gesture; any on the Device starts it.
+        @pointerup={ move |_| device.sound.unlock() }
         {
           div class="grid h-[calc(621px_/_var(--screen-aspect)_-_var(--spacing-bezel)_+_var(--spacing-inset))] grid-cols-[91px_45px_621px_45px_91px] gap-x-inset" {
             div class="-mt-bezel -mb-inset flex flex-col items-start justify-evenly [--knob-size:81.6px]" {
