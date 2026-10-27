@@ -3,7 +3,6 @@
 //! as rounded.
 
 use fluid_macro::html;
-use wasm_bindgen::prelude::*;
 use web_sys::Element;
 
 const COLUMNS: usize = 10;
@@ -23,24 +22,24 @@ fn drilled(hole: usize) -> bool {
   x * x + y * y <= RADIUS * RADIUS
 }
 
-pub fn grille() -> Result<Element, JsValue> {
-  // Whole-pixel gaps and a whole-pixel start keep the rows even on a 2×
-  // display.
-  let field = html! {
-    span class="mt-[calc(var(--spacing-inset)_-_var(--spacing-bezel))] grid auto-rows-[2.5px] grid-cols-[repeat(10,2.5px)] content-start justify-center gap-[2px] overflow-hidden pt-[14px]" {}
-  };
-  field.set_attribute("aria-hidden", "true")?;
-  let holes: String = (0..COLUMNS * ROWS)
+/// Whole-pixel gaps and a whole-pixel start keep the rows even on a 2×
+/// display. An undrilled corner keeps its place in the grid.
+pub fn grille() -> Element {
+  let holes: Vec<Element> = (0..COLUMNS * ROWS)
     .map(|hole| {
-      if drilled(hole) {
-        r#"<span class="rounded-[50%] bg-grille-hole shadow-grille-hole"></span>"#
-      } else {
-        r#"<span class="invisible rounded-[50%] bg-grille-hole shadow-grille-hole"></span>"#
+      html! {
+        span
+        class="rounded-[50%] bg-grille-hole shadow-grille-hole"
+        class:"invisible"={ !drilled(hole) }
+        {}
       }
     })
     .collect();
-  field.set_inner_html(&holes);
-  Ok(field)
+  html! {
+    span aria-hidden="true" class="mt-[calc(var(--spacing-inset)_-_var(--spacing-bezel))] grid auto-rows-[2.5px] grid-cols-[repeat(10,2.5px)] content-start justify-center gap-[2px] overflow-hidden pt-[14px]" {
+      { holes }
+    }
+  }
 }
 
 #[cfg(test)]

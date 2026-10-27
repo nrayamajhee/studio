@@ -38,9 +38,9 @@ Writes the app to `web-rust/dist`.
 
 ## Layout
 
-- `src/device.rs`: the state, as fluid signals: theme, preset, octave, held keys and pads, Shift, chords, knob values and the level overlay.
-- `src/input.rs`: the browser listeners that write to it: keys, blur and the system theme.
-- `src/ui/`: the page, built with `html!`, one module per part as web-react has one component: the sky, the knobs, grilles, screen, pads and keybed, and the corner buttons. Effects (`#{ |signals| ... }`) redraw only the attributes and text bound to the signals they name.
+- `src/device.rs`: the state, as fluid signals and memos: theme, preset, octave, held keys and pads, Shift, chords, knob values and the level overlay. It lives as long as the page and is shared through fluid's context as a `&'static Device`, so closures capture it without cloning.
+- `src/input.rs`: the browser listeners that write to it (`fluid::listen`): keys, blur and the system theme.
+- `src/ui/`: the page, built with `html!`, one module per part as web-react has one component: the sky, the knobs, grilles, screen, pads and keybed, and the corner buttons. Each part is a function returning its element, placed in its parent as a child (`{ pads() }`). Reactive text is `#text{ .. }`, state classes are `class:".."` toggles, conditional parts are `if`, and handlers are typed (`@pointerdown={ move |event: PointerEvent| .. }`); only what a signal change touches is redrawn.
 - `src/keymap.rs`, `src/notes.rs`, `src/pads.rs`: plain Rust with no web-sys types, so `cargo test` runs them without a browser.
 - `src/presets.rs`, `src/icons.rs`: the six presets (every parameter with the display of each knob step, and each kit's pieces) and the pads' icons, taken from what web-react renders.
 - `src/tailwind.css`: Tailwind's entry, with web-react's theme tokens and page styles. Tailwind scans `src/**/*.rs` for classes, so write every class out whole, never pieced together.

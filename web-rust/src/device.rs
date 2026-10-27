@@ -7,7 +7,7 @@ use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 
-use fluid::{Context, Signal};
+use fluid::{Memo, Signal};
 use gloo_timers::callback::Timeout;
 use gloo_utils::window;
 
@@ -111,119 +111,155 @@ pub struct Device {
   pub values: Rc<Signal<Vec<Vec<usize>>>>,
   /// The volume or level just turned, over the screen for a moment.
   pub overlay: Rc<Signal<Option<(&'static str, usize)>>>,
-  overlay_shown: Rc<Cell<u32>>,
+  /// The chord the keys play: the one a key holds, else the latched one.
+  pub active_chord: Memo<Option<usize>>,
+  /// The keybed keys lit by what is held, chords included.
+  pub lit: Memo<BTreeSet<u8>>,
+  /// Whether the preset's parameters moved off its own values.
+  pub unsaved: Memo<bool>,
+  /// The keybed keys the pointer holds, a bit each, so leaving one held
+  /// from the keyboard keeps it sounding.
+  pub pointer_keys: Cell<u32>,
+  overlay_shown: Cell<u32>,
+}
+
+/// The Device for the page's lifetime, shared through fluid's context: a
+/// `&'static` reference is `Copy`, so closures capture it without clones.
+pub fn device() -> &'static Device {
+  fluid::use_context().expect("the Device is provided at the root scope")
 }
 
 impl Device {
-  pub fn new(ctx: &Context) -> Self {
+  /// Builds the Device and provides it to the current scope. Its memos
+  /// belong to that scope, so call it inside the root `Context::run`.
+  pub fn install() -> &'static Device {
+    let device: &'static Device = Box::leak(Box::new(Device::new()));
+    fluid::provide_context(device);
+    device
+  }
+
+  fn new() -> Self {
+    let chord_key = Rc::new(Signal::new(None));
+    let latched_chord = Rc::new(Signal::new(None));
+    let held = Rc::new(Signal::new(BTreeMap::new()));
+    let preset = Rc::new(Signal::new(0));
+    let values = Rc::new(Signal::new(
+      PRESETS
+        .iter()
+        .map(|preset| preset.params.iter().map(|param| param.step).collect())
+        .collect::<Vec<Vec<usize>>>(),
+    ));
+    let active_chord = fluid::create_memo({
+      let (key, latched) = (chord_key.clone(), latched_chord.clone());
+      move || key.value().or(latched.value())
+    });
+    let lit = fluid::create_memo({
+      let held = held.clone();
+      move || {
+        held.with(|held: &BTreeMap<u8, HeldKey>| {
+          held
+            .values()
+            .flatten()
+            .map(|&(semitone, _)| semitone)
+            .collect()
+        })
+      }
+    });
+    let unsaved = fluid::create_memo({
+      let (preset, values) = (preset.clone(), values.clone());
+      move || values.with(|values| unsaved(preset.value(), values))
+    });
     Self {
-      theme: ctx.create_signal(Theme::stored()),
-      system_dark: ctx.create_signal(system_dark()),
-      preset: ctx.create_signal(0),
-      octave: ctx.create_signal(0),
-      held: ctx.create_signal(BTreeMap::new()),
-      chord_key: ctx.create_signal(None),
-      latched_chord: ctx.create_signal(None),
-      held_pads: ctx.create_signal(BTreeSet::new()),
-      shift_key: ctx.create_signal(false),
-      latched: ctx.create_signal(false),
-      volume: ctx.create_signal(KNOB_STEPS - 1),
-      level: ctx.create_signal(8),
-      selected: ctx.create_signal(0),
-      values: ctx.create_signal(
-        PRESETS
-          .iter()
-          .map(|preset| preset.params.iter().map(|param| param.step).collect())
-          .collect(),
-      ),
-      overlay: ctx.create_signal(None),
-      overlay_shown: Rc::default(),
+      theme: Rc::new(Signal::new(Theme::stored())),
+      system_dark: Rc::new(Signal::new(system_dark())),
+      preset,
+      octave: Rc::new(Signal::new(0)),
+      held,
+      chord_key,
+      latched_chord,
+      held_pads: Rc::new(Signal::new(BTreeSet::new())),
+      shift_key: Rc::new(Signal::new(false)),
+      latched: Rc::new(Signal::new(false)),
+      volume: Rc::new(Signal::new(KNOB_STEPS - 1)),
+      level: Rc::new(Signal::new(8)),
+      selected: Rc::new(Signal::new(0)),
+      values,
+      overlay: Rc::new(Signal::new(None)),
+      active_chord,
+      lit,
+      unsaved,
+      pointer_keys: Cell::new(0),
+      overlay_shown: Cell::new(0),
     }
   }
 
   pub fn current(&self) -> &'static Preset {
-    &PRESETS[*self.preset.get()]
-  }
-
-  /// The chord the keys play: the one a key holds, else the latched one.
-  pub fn active_chord(&self) -> Option<usize> {
-    let held = *self.chord_key.get();
-    held.or(*self.latched_chord.get())
+    &PRESETS[self.preset.value()]
   }
 
   pub fn shift(&self) -> bool {
-    *self.shift_key.get() || *self.latched.get()
+    self.shift_key.value() || self.latched.value()
   }
 
   /// Presses a keybed key: its note, or with a chord active the chord built
   /// on it.
   pub fn press(&self, root: u8) {
-    if self.held.get().contains_key(&root) {
+    if self.held.with(|held| held.contains_key(&root)) {
       return;
     }
     let intervals = self
-      .active_chord()
+      .active_chord
+      .value()
       .map_or(&[0][..], |chord| CHORDS[chord].intervals);
-    let octave = *self.octave.get();
+    let octave = self.octave.value();
     let notes = intervals
       .iter()
       .map(|interval| root + interval)
       .map(|semitone| (semitone, notes::midi(semitone, octave)))
       .collect();
-    let mut held = self.held.get().clone();
-    held.insert(root, notes);
-    self.held.set(held);
+    self.held.update(|held| held.insert(root, notes));
   }
 
   pub fn release(&self, semitone: u8) {
-    if !self.held.get().contains_key(&semitone) {
-      return;
+    if self.held.with(|held| held.contains_key(&semitone)) {
+      self.held.update(|held| held.remove(&semitone));
     }
-    let mut held = self.held.get().clone();
-    held.remove(&semitone);
-    self.held.set(held);
   }
 
   pub fn release_all(&self) {
-    if !self.held.get().is_empty() {
-      self.held.set(BTreeMap::new());
-    }
-    if !self.held_pads.get().is_empty() {
-      self.held_pads.set(BTreeSet::new());
-    }
+    fluid::batch(|| {
+      self.held.set_if_changed(BTreeMap::new());
+      self.held_pads.set_if_changed(BTreeSet::new());
+    });
   }
 
   pub fn hold_pad(&self, pad: usize, down: bool) {
-    if self.held_pads.get().contains(&pad) == down {
-      return;
+    if self.held_pads.with(|held| held.contains(&pad)) != down {
+      self.held_pads.update(|held| {
+        if down {
+          held.insert(pad);
+        } else {
+          held.remove(&pad);
+        }
+      });
     }
-    let mut held = self.held_pads.get().clone();
-    if down {
-      held.insert(pad);
-    } else {
-      held.remove(&pad);
-    }
-    self.held_pads.set(held);
   }
 
   /// Shifts the keybed an octave, as far as the preset reaches.
   pub fn step_octave(&self, by: i8) {
-    let octave = *self.octave.get();
-    self.set_octave(octave + by);
+    self.set_octave(self.octave.value() + by);
   }
 
   fn set_octave(&self, octave: i8) {
     let (lowest, highest) = self.current().octaves;
-    let next = octave.clamp(lowest, highest);
-    if next != *self.octave.get() {
-      self.octave.set(next);
-    }
+    self.octave.set_if_changed(octave.clamp(lowest, highest));
   }
 
   /// Switches the instrument, keeping the octave as far as it reaches and
-  /// the picked parameter when it has one by that name.
+  /// the picked parameter when it has one by that name. One batch, so no
+  /// effect sees the new preset with the old parameter index.
   pub fn select_preset(&self, preset: usize) {
-    if preset == *self.preset.get() {
+    if preset == self.preset.value() {
       return;
     }
     let picked = self.param().0.name;
@@ -232,86 +268,80 @@ impl Device {
       .iter()
       .position(|param| param.name == picked)
       .unwrap_or(0);
-    self.selected.set(selected);
-    self.preset.set(preset);
-    let octave = *self.octave.get();
-    self.set_octave(octave);
+    fluid::batch(|| {
+      self.preset.set(preset);
+      self.selected.set(selected);
+      self.set_octave(self.octave.value());
+    });
   }
 
   /// A chord pad's click latches its chord, or lets go of it.
   pub fn toggle_chord(&self, chord: usize) {
-    let latched = *self.latched_chord.get();
-    self.latched_chord.set(if latched == Some(chord) {
-      None
-    } else {
-      Some(chord)
+    self.latched_chord.update(|latched| {
+      *latched = if *latched == Some(chord) {
+        None
+      } else {
+        Some(chord)
+      }
     });
   }
 
   /// A chord key holds its chord while down. It drops a latched chord, so
   /// that doesn't come back when the key is let go.
   pub fn hold_chord(&self, chord: usize) {
-    if self.latched_chord.get().is_some() {
-      self.latched_chord.set(None);
-    }
-    self.chord_key.set(Some(chord));
+    fluid::batch(|| {
+      self.latched_chord.set_if_changed(None);
+      self.chord_key.set(Some(chord));
+    });
   }
 
   pub fn release_chord(&self, chord: usize) {
-    if *self.chord_key.get() == Some(chord) {
+    if self.chord_key.value() == Some(chord) {
       self.chord_key.set(None);
     }
   }
 
   pub fn toggle_latch(&self) {
-    let latched = !*self.latched.get();
-    self.latched.set(latched);
+    self.latched.update(|latched| *latched = !*latched);
   }
 
   /// The parameter the green knob picked, with its value's knob step.
   pub fn param(&self) -> (&'static Param, usize) {
-    let preset = *self.preset.get();
-    let selected = *self.selected.get();
-    (
-      &PRESETS[preset].params[selected],
-      self.values.get()[preset][selected],
-    )
+    let (preset, selected) = (self.preset.value(), self.selected.value());
+    let step = self.values.with(|values| values[preset][selected]);
+    (&PRESETS[preset].params[selected], step)
   }
 
   pub fn set_value(&self, step: usize) {
-    let preset = *self.preset.get();
-    let selected = *self.selected.get();
-    let mut values = self.values.get().clone();
-    values[preset][selected] = step;
-    self.values.set(values);
+    let (preset, selected) = (self.preset.value(), self.selected.value());
+    self.values.update(|values| values[preset][selected] = step);
   }
 
-  pub fn set_volume(&self, step: usize) {
+  pub fn set_volume(&'static self, step: usize) {
     self.volume.set(step);
     self.show_overlay("Volume", step);
   }
 
-  pub fn set_level(&self, step: usize) {
+  pub fn set_level(&'static self, step: usize) {
     self.level.set(step);
     self.show_overlay("Level", step);
   }
 
   /// Shows a level over the screen; each turn starts its time over.
-  fn show_overlay(&self, label: &'static str, step: usize) {
+  fn show_overlay(&'static self, label: &'static str, step: usize) {
     self.overlay.set(Some((label, step)));
     let shown = self.overlay_shown.get() + 1;
     self.overlay_shown.set(shown);
-    let (overlay, current) = (self.overlay.clone(), self.overlay_shown.clone());
     Timeout::new(OVERLAY_MS, move || {
-      if current.get() == shown {
-        overlay.set(None);
+      if self.overlay_shown.get() == shown {
+        self.overlay.set(None);
       }
     })
     .forget();
   }
 
   pub fn cycle_theme(&self) {
-    let theme = self.theme.get().next(*self.system_dark.get());
+    let theme = self.theme.value().next(self.system_dark.value());
     theme.store();
     self.theme.set(theme);
   }

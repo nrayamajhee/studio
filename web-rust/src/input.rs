@@ -3,12 +3,10 @@
 
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 
-use fluid::add_event_and_forget;
+use fluid::{ListenerOptions, listen};
 use gloo_utils::window;
-use wasm_bindgen::JsCast;
-use web_sys::KeyboardEvent;
+use web_sys::{Event, KeyboardEvent};
 
 use crate::device::{Device, system_dark_query};
 use crate::keymap;
@@ -20,7 +18,7 @@ pub fn press_pad(device: &Device, pad: usize, from_key: bool) {
   // The latched chord's own key lets go of it, and holds nothing.
   if let Job::Chord(chord) = PADS[pad].job
     && from_key
-    && *device.latched_chord.get() == Some(chord)
+    && device.latched_chord.value() == Some(chord)
   {
     device.latched_chord.set(None);
     return;
@@ -37,19 +35,17 @@ pub fn press_pad(device: &Device, pad: usize, from_key: bool) {
   }
 }
 
-pub fn listen(device: &Rc<Device>) {
+pub fn listen_to_page(device: &'static Device) {
   let window = window();
   // The keybed semitone each held key started, by its code, so a key lets go
   // of the note it played even if Shift was let go first.
-  let pressed = Rc::new(RefCell::new(HashMap::<String, u8>::new()));
+  let pressed: &'static RefCell<HashMap<String, u8>> = Box::leak(Box::default());
 
-  {
-    let device = device.clone();
-    let pressed = pressed.clone();
-    add_event_and_forget(&window, "keydown", move |event| {
-      let Some(event) = event.dyn_ref::<KeyboardEvent>() else {
-        return;
-      };
+  listen(
+    &window,
+    "keydown",
+    ListenerOptions::new(),
+    move |event: KeyboardEvent| {
       if event.meta_key() || event.ctrl_key() || event.alt_key() {
         return;
       }
@@ -69,21 +65,21 @@ pub fn listen(device: &Rc<Device>) {
       } else if let Some(pad) = pads::pad_for(&code) {
         event.prevent_default();
         if !event.repeat() {
-          press_pad(&device, pad, true);
+          press_pad(device, pad, true);
         }
       }
-    });
-  }
+    },
+  )
+  .forget();
 
-  {
-    let device = device.clone();
-    let pressed = pressed.clone();
-    add_event_and_forget(&window, "keyup", move |event| {
-      let Some(event) = event.dyn_ref::<KeyboardEvent>() else {
-        return;
-      };
+  listen(
+    &window,
+    "keyup",
+    ListenerOptions::new(),
+    move |event: KeyboardEvent| {
       let code = event.code();
-      if let Some(semitone) = pressed.borrow_mut().remove(&code) {
+      let semitone = pressed.borrow_mut().remove(&code);
+      if let Some(semitone) = semitone {
         device.release(semitone);
       } else if let Some(pad) = pads::pad_for(&code) {
         device.hold_pad(pad, false);
@@ -93,25 +89,26 @@ pub fn listen(device: &Rc<Device>) {
           _ => {}
         }
       }
-    });
-  }
+    },
+  )
+  .forget();
 
   // Keys let go while the page is in the background never send a keyup.
-  {
-    let device = device.clone();
-    add_event_and_forget(&window, "blur", move |_| {
-      pressed.borrow_mut().clear();
-      device.shift_key.set(false);
-      device.chord_key.set(None);
+  listen(&window, "blur", ListenerOptions::new(), move |_: Event| {
+    pressed.borrow_mut().clear();
+    fluid::batch(|| {
+      device.shift_key.set_if_changed(false);
+      device.chord_key.set_if_changed(None);
       device.release_all();
     });
-  }
+  })
+  .forget();
 
   if let Some(query) = system_dark_query() {
-    let device = device.clone();
     let matches = query.clone();
-    add_event_and_forget(&query, "change", move |_| {
+    listen(&query, "change", ListenerOptions::new(), move |_: Event| {
       device.system_dark.set(matches.matches());
-    });
+    })
+    .forget();
   }
 }

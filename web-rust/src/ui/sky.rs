@@ -2,12 +2,11 @@
 //! cross-fading to blue hour in dark mode.
 
 use fluid_macro::html;
-use wasm_bindgen::prelude::*;
 use web_sys::Element;
 
-pub fn sky() -> Result<Element, JsValue> {
-  let sky = html! {
-    div class="home-background pointer-events-none fixed inset-0 overflow-hidden" {
+pub fn sky() -> Element {
+  html! {
+    div aria-hidden="true" class="home-background pointer-events-none fixed inset-0 overflow-hidden" {
       div class="absolute inset-0 opacity-100 transition-opacity duration-400 ease-in-out dark:opacity-0" {
         div
         class="animate-sunset-traverse absolute -bottom-[60vmax] -left-[60vmax] h-[120vmax] w-[120vmax] mix-blend-screen"
@@ -29,7 +28,5 @@ pub fn sky() -> Result<Element, JsValue> {
         {}
       }
     }
-  };
-  sky.set_attribute("aria-hidden", "true")?;
-  Ok(sky)
+  }
 }

@@ -3,7 +3,8 @@
 //! The Device in Rust: a Trunk-built wasm app whose UI is made with
 //! [fluid](https://github.com/nrayamajhee/fluid) signals and its `html!` macro.
 //!
-//! - [`device`]: the state, as signals.
+//! - [`device`]: the state, as signals and memos, shared through fluid's
+//!   context.
 //! - [`input`]: browser listeners that write to it.
 //! - [`ui`]: the page, whose effects read it.
 //! - [`keymap`], [`notes`] and [`pads`]: plain logic, tested natively with
@@ -22,26 +23,20 @@ mod pads;
 mod presets;
 mod ui;
 
-use std::rc::Rc;
-
 use fluid::Context;
 use gloo_utils::body;
-use wasm_bindgen::JsValue;
 
 use crate::device::Device;
 
 fn main() {
-  if let Err(err) = start() {
-    gloo_console::error!("Couldn't start the Device", err);
+  // The root scope owns the Device's memos and every effect on the page.
+  let page = Context::new().run(|| {
+    let device = Device::install();
+    ui::apply_theme(device);
+    input::listen_to_page(device);
+    ui::page()
+  });
+  if let Err(err) = body().append_child(&page) {
+    gloo_console::error!("Couldn't mount the Device", err);
   }
-}
-
-fn start() -> Result<(), JsValue> {
-  let ctx = Context::new();
-  let device = Rc::new(Device::new(&ctx));
-  ui::apply_theme(&ctx, &device);
-  input::listen(&device);
-  let page = ui::page(&ctx, &device)?;
-  body().append_child(&page)?;
-  Ok(())
 }
