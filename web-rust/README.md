@@ -43,7 +43,7 @@ docker build -f web-rust/Dockerfile -t studio-web-rust .
 docker run --rm -p 8080:8080 studio-web-rust
 ```
 
-`Dockerfile.dockerignore` keeps the context to those folders. On Railway, leave the service's root directory at the repo's root and set `RAILWAY_DOCKERFILE_PATH` to `web-rust/Dockerfile`; Railway sets `PORT` itself. The Dockerfile has no cache mounts, since Railway's builder refuses any whose id isn't tied to the service.
+`Dockerfile.dockerignore` keeps the context to those folders. On Railway, leave the service's root directory unset (the repo's root), set the Dockerfile Path to `/web-rust/Dockerfile`, and watch every path the image is built from, so a change to any of them deploys: `/web-rust/**`, `/sound-engine/**`, `/docs/**`, `/README.md`, `/public/docs/**` and `/public/screenshot.png`. Railway sets `PORT` itself. The Dockerfile has no cache mounts, since Railway's builder refuses any whose id isn't tied to the service.
 
 ## Checks
 
