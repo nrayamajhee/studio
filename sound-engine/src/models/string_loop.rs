@@ -26,6 +26,13 @@ fn lightest_loss(p: f64, w0: f64, per_period: f64) -> f64 {
   lo
 }
 
+/// A partial of the loop: its frequency and how long it rings.
+#[derive(Clone, Copy, Debug)]
+pub struct Partial {
+  pub hz: f64,
+  pub t60: f64,
+}
+
 /// Single-delay-loop string (extended Karplus-Strong): delay → dispersion
 /// allpasses → one-pole loss·g → fractional tuning allpass → (jawari) →
 /// + excitation → back into the delay.
@@ -121,6 +128,40 @@ impl StringLoop {
     self.g = g;
     self.g_target = g;
     self.g_coef = 1.;
+  }
+
+  /// The first `count` partials of the tuned loop: each where the round
+  /// trip holds a whole number of cycles (so stiffness stretches them
+  /// sharp), and how long it rings (T60, s) through the loss filter at its
+  /// frequency.
+  pub fn partials(&self, count: usize) -> Vec<Partial> {
+    let fs = self.fs;
+    let round_trip = |w: f64| {
+      self.n_int as f64
+        + self.stages as f64 * allpass1_phase_delay(self.ap_a, w)
+        + one_pole_phase_delay(self.p, w)
+        + allpass1_phase_delay(self.t_a, w)
+        + if self.jawari { 1. } else { 0. }
+    };
+    let mut result = Vec::new();
+    for n in 1..=count {
+      let mut w = n as f64 * self.w0;
+      let mut i = 0;
+      while i < 30 && w < std::f64::consts::PI {
+        w = (TWO_PI * n as f64) / round_trip(w);
+        i += 1;
+      }
+      if w >= std::f64::consts::PI {
+        break;
+      }
+      let per_trip = self.g_target * one_pole_magnitude(self.p, w);
+      let t60 = (-3. / per_trip.log10()) * (round_trip(w) / fs);
+      result.push(Partial {
+        hz: (w * fs) / TWO_PI,
+        t60,
+      });
+    }
+    result
   }
 
   /// Ramps the loop gain toward the value for a new T60 over `ramp` seconds.

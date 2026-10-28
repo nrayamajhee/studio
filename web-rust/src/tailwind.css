@@ -302,10 +302,17 @@ body {
   }
 }
 
-/* The screen's overlay fades in. */
+/* The screen's overlay fades in; the LFO's wave scrolls a cycle (50 of its
+   100-wide box) per period. */
 @keyframes overlay-in {
   from {
     opacity: 0;
+  }
+}
+
+@keyframes lfo-scroll {
+  to {
+    transform: translateX(-50px);
   }
 }
 

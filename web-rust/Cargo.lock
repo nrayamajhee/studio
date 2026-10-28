@@ -279,6 +279,7 @@ name = "sound-engine"
 version = "0.1.0"
 dependencies = [
  "gloo-timers",
+ "indexmap",
  "js-sys",
  "serde",
  "serde_json",

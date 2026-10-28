@@ -8,12 +8,15 @@ mod base;
 mod beats;
 mod chords;
 mod instruments;
+mod module;
 mod play_style;
 mod progressions;
 mod revert;
 pub mod save;
 mod scope;
+mod synth;
 mod tapes;
+mod tempo;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -443,6 +446,11 @@ fn mode_of(view: ScreenView) -> Mode {
     ScreenView::Tapes => tapes::mode,
     ScreenView::Revert => revert::mode,
     ScreenView::Save => save::mode,
+    ScreenView::Synth => synth::mode,
+    ScreenView::Adsr => module::adsr,
+    ScreenView::Lfo => module::lfo,
+    ScreenView::Fx => module::fx,
+    ScreenView::Tempo => tempo::mode,
     _ => |_, _| {},
   }
 }

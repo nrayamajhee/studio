@@ -69,7 +69,8 @@ pub fn piece_name(piece: &str) -> &'static str {
     .map_or("", |piece| piece.name.as_str())
 }
 
-fn escape(text: &str) -> String {
+/// Text as markup: its `&`, `<` and `>` as entities.
+pub fn escape(text: &str) -> String {
   text
     .replace('&', "&amp;")
     .replace('<', "&lt;")

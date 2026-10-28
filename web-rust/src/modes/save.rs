@@ -20,6 +20,11 @@ fn icon_choices() -> Vec<&'static str> {
   preset_icon_keys().collect()
 }
 
+/// Where an icon sits among the choices (the first, if it isn't one).
+pub fn preset_icon_index(icon: &str) -> usize {
+  preset_icon_keys().position(|key| key == icon).unwrap_or(0)
+}
+
 /// Saving bakes the edits into the saved preset, so the one it came from
 /// goes back to its own values.
 fn finish_save(a: &'static App, saved: &DevicePreset, message: String) {

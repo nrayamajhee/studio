@@ -4,7 +4,9 @@
 //! them; the view showing fills the middle; notices take the footer's left,
 //! and prompts, levels and the save's progress show over it all.
 
+pub mod module;
 pub mod scope;
+pub mod tempo;
 pub mod tiles;
 
 use fluid_macro::html;
@@ -92,7 +94,10 @@ struct Foot {
 const READOUT: &str = "absolute top-[9px] right-[20px] left-[20px] flex items-baseline justify-between gap-[16px] font-screen text-[14px] leading-[18px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase";
 const PAGER: &str = "absolute top-[9px] right-[20px] left-[20px] flex items-center gap-[6px] font-screen text-[14px] leading-[18px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase";
 const PAGE_ARROW: &str = "-my-[6px] grid size-[27px] shrink-0 cursor-pointer place-items-center rounded-[11px] text-screen-ink/70 [corner-shape:squircle] hover:bg-screen-ink/15 hover:text-screen-ink active:bg-screen-ink/75 active:text-screen disabled:cursor-default disabled:bg-transparent disabled:text-screen-ink/60 disabled:opacity-25 [&_svg]:size-[18px]";
-const PAGE_TAB: &str = "-my-[4px] max-w-full cursor-pointer truncate rounded-[10px] px-[7px] py-[3px] font-screen text-[14px] leading-[18px] font-semibold tracking-[0.02em] text-screen-ink/45 first-letter:uppercase [corner-shape:squircle] hover:bg-screen-ink/15 hover:text-screen-ink active:bg-screen-ink/75 active:text-screen";
+// A tab's own classes, then those of a tab to step to; the current tab
+// takes its colours instead, as tailwind-merge leaves them in web-react.
+const PAGE_TAB: &str = "-my-[4px] max-w-full truncate rounded-[10px] px-[7px] py-[3px] font-screen text-[14px] leading-[18px] font-semibold tracking-[0.02em] first-letter:uppercase [corner-shape:squircle]";
+const OTHER_TAB: &str = "cursor-pointer text-screen-ink/45 hover:bg-screen-ink/15 hover:text-screen-ink active:bg-screen-ink/75 active:text-screen";
 
 /// The title, with an asterisk after it while the preset has unsaved
 /// edits, as editors mark a file with changes.
@@ -142,7 +147,7 @@ fn pager((pages, at, color): (Vec<String>, usize, PagerColor)) -> Element {
           button
           type="button"
           aria-label={ format!("Go to {name}") }
-          class={ format!("{PAGE_TAB} {place}") }
+          class={ format!("{PAGE_TAB} {OTHER_TAB} {place}") }
           @mousedown.prevent={ |_| blur_active() }
           @click={ move |_| pick_page(page) }
           {
@@ -301,6 +306,10 @@ fn view(view: ScreenView) -> Option<Element> {
     | ScreenView::Beats
     | ScreenView::Tapes
     | ScreenView::Revert => Some(tiles::tiles(view)),
+    ScreenView::Synth | ScreenView::Adsr | ScreenView::Lfo | ScreenView::Fx => {
+      Some(module::module(view))
+    }
+    ScreenView::Tempo => Some(tempo::tempo()),
     _ => None,
   }
 }

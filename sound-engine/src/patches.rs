@@ -4,6 +4,7 @@
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
+use indexmap::IndexMap;
 use serde::Deserialize;
 
 use crate::dsp::math::KeyTable;
@@ -240,7 +241,9 @@ pub enum DrumPieceSpec {
 pub struct DrumKitPatch {
   #[serde(flatten)]
   pub base: BasePatch,
-  pub pieces: BTreeMap<String, DrumPieceSpec>,
+  /// In the order web-react lists them, which the synth view's graphs
+  /// follow.
+  pub pieces: IndexMap<String, DrumPieceSpec>,
   /// The piece each keybed pitch class plays, from C.
   pub keys: Vec<String>,
 }
