@@ -14,7 +14,11 @@ import {
   KNOB_STEPS,
   presetPages,
 } from "../../app/components/home/deviceEngine";
-import { DRUM_BEATS, beatPattern, beatPreview } from "../../app/components/home/drumBeats";
+import {
+  DRUM_BEATS,
+  beatPattern,
+  beatPreview,
+} from "../../app/components/home/drumBeats";
 import {
   carryNote,
   carryPattern,
@@ -28,11 +32,12 @@ import {
   moduleValues,
   modulesOf,
 } from "../../app/components/home/modules";
-import { METERS, timeline, type Take } from "../../app/components/home/noteRecorder";
 import {
-  PLAY_STYLES,
-  chordNotes,
-} from "../../app/components/home/playStyles";
+  METERS,
+  timeline,
+  type Take,
+} from "../../app/components/home/noteRecorder";
+import { PLAY_STYLES, chordNotes } from "../../app/components/home/playStyles";
 import {
   PROGRESSIONS,
   progressionTake,
@@ -97,7 +102,11 @@ const styles = PLAY_STYLES.flatMap(({ id }) =>
 
 const progressions = PROGRESSIONS.map((progression, i) => {
   const timing = timings[i % timings.length];
-  const style = { id: PLAY_STYLES[i % PLAY_STYLES.length].id, perBeat: 2, strum: 20 };
+  const style = {
+    id: PLAY_STYLES[i % PLAY_STYLES.length].id,
+    perBeat: 2,
+    strum: 20,
+  };
   return {
     id: progression.id,
     note: 50 + (i % 20),
@@ -131,14 +140,19 @@ const carries = buses.flatMap((from) =>
   buses.map((to) => ({
     from,
     to,
-    notes: Array.from({ length: 128 }, (_, note) => carryNote(note, from as never, to as never)),
+    notes: Array.from({ length: 128 }, (_, note) =>
+      carryNote(note, from as never, to as never),
+    ),
   })),
 );
 
 const tapes = starterTapes();
 const tracks = tapes.flatMap((tape) =>
   tape.tracks.map((track, i) => {
-    const looped = { ...track, loop: { start: 1 + i * 0.5, end: 3 + i, on: true } };
+    const looped = {
+      ...track,
+      loop: { start: 1 + i * 0.5, end: 3 + i, on: true },
+    };
     const bpm = tape.bpm + i * 7;
     const pass = passOf(looped, bpm);
     return {
@@ -185,7 +199,13 @@ const midi = new Uint8Array(
         volume: 1,
         notes: [
           { note: 36, start: 0, duration: 100, velocity: 1, piece: "kick" },
-          { note: 38, start: 500, duration: 100, velocity: 0.5, piece: "snare" },
+          {
+            note: 38,
+            start: 500,
+            duration: 100,
+            velocity: 0.5,
+            piece: "snare",
+          },
         ],
       },
     ],
@@ -200,7 +220,10 @@ writeFileSync(
   JSON.stringify({
     params,
     take,
-    timelines: timings.map((timing) => ({ timing, timeline: timeline(take, timing) })),
+    timelines: timings.map((timing) => ({
+      timing,
+      timeline: timeline(take, timing),
+    })),
     styles,
     chords,
     progressions,
@@ -208,9 +231,22 @@ writeFileSync(
     carries,
     starterTapes: tapes,
     tracks,
-    modules: { modules, values: moduleValues(modules), back: modulesOf({ target: "piano", octave: 0, overrides: { master: moduleValues(modules) } }) },
+    modules: {
+      modules,
+      values: moduleValues(modules),
+      back: modulesOf({
+        target: "piano",
+        octave: 0,
+        overrides: { master: moduleValues(modules) },
+      }),
+    },
     bands: presetPages(DEVICE_PRESETS, "band").items.map(({ id }) => id),
-    allPresets: allPresets({ instruments: [], buttons: [], shiftButtons: [], edits: {} }).map(({ id }) => id),
+    allPresets: allPresets({
+      instruments: [],
+      buttons: [],
+      shiftButtons: [],
+      edits: {},
+    }).map(({ id }) => id),
     flac: Array.from(flacBytes),
     flacInput: { length },
     midi: Array.from(midi),

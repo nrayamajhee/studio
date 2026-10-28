@@ -91,6 +91,7 @@ const LUCIDE = [
   "Square",
   "Star",
   "Trash2",
+  "Volume2",
   "VolumeX",
   "WavesHorizontal",
   "X",

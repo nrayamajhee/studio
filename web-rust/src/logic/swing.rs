@@ -6,7 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::timing::PlayedNote;
+use super::timing::{PlayedNote, Take};
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -85,6 +85,18 @@ fn moved(notes: &[PlayedNote], shift: impl Fn(f64) -> f64) -> Vec<PlayedNote> {
 /// Notes on a straight timeline (ms from a beat) as `swing` plays them.
 pub fn swing_notes(notes: &[PlayedNote], beat_ms: f64, swing: Swing) -> Vec<PlayedNote> {
   moved(notes, |t| swing_time(t, beat_ms, swing))
+}
+
+/// A take written straight, at its own tempo, as `swing` plays it (none
+/// leaves it straight): for a preview, which plays the notes as they are.
+pub fn swung_take(take: Take, swing: Option<Swing>) -> Take {
+  match swing {
+    Some(swing) => Take {
+      notes: swing_notes(&take.notes, 60_000. / take.bpm, swing),
+      ..take
+    },
+    None => take,
+  }
 }
 
 /// Notes as played through `swing`, put back straight.

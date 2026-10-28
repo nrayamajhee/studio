@@ -5,7 +5,15 @@
 //! from it and a press runs the handler as it is now.
 
 mod base;
+mod beats;
+mod chords;
+mod instruments;
+mod play_style;
+mod progressions;
+mod revert;
+pub mod save;
 mod scope;
+mod tapes;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -162,7 +170,8 @@ pub enum Tone {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Piece {
   Text(Tone, String),
-  /// A pad's icon in an outlined badge, for hints that point at the pad.
+  /// A pad's icon in an outlined badge, for hints that point at the pad
+  /// (dimmed with them).
   Pad {
     label: String,
     icon: Icon,
@@ -216,6 +225,7 @@ impl Rich {
     self.level(label).plain(" ").value(value)
   }
 
+  /// A pad's badge in a hint, dimmed with the hint's text either side.
   pub fn pad(mut self, label: impl Into<String>, icon: Icon) -> Self {
     self.0.push(Piece::Pad {
       label: label.into(),
@@ -425,6 +435,14 @@ type Mode = fn(&'static App, &mut Bindings);
 fn mode_of(view: ScreenView) -> Mode {
   match view {
     ScreenView::Scope => scope::mode,
+    ScreenView::Instruments => instruments::mode,
+    ScreenView::Chords => chords::mode,
+    ScreenView::PlayStyle => play_style::mode,
+    ScreenView::Progressions => progressions::mode,
+    ScreenView::Beats => beats::mode,
+    ScreenView::Tapes => tapes::mode,
+    ScreenView::Revert => revert::mode,
+    ScreenView::Save => save::mode,
     _ => |_, _| {},
   }
 }

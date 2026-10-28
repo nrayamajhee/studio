@@ -5,6 +5,7 @@
 //! and prompts, levels and the save's progress show over it all.
 
 pub mod scope;
+pub mod tiles;
 
 use fluid_macro::html;
 use web_sys::{DocumentFragment, Element};
@@ -17,33 +18,51 @@ use crate::state::feedback::ScreenOverlay;
 use crate::state::view::ScreenView;
 
 /// A line of the screen's text as nodes: plain runs as text, the others in
-/// their knob's colour, and pads as outlined badges.
+/// their knob's colour, and a hint's text and pads (outlined badges) dimmed
+/// together.
 pub fn rich(line: &Rich) -> DocumentFragment {
-  let fragment = gloo_utils::document().create_document_fragment();
+  let document = gloo_utils::document();
+  let fragment = document.create_document_fragment();
+  let mut hint: Option<Element> = None;
   for piece in &line.0 {
     let node: web_sys::Node = match piece {
-      Piece::Text(Tone::Plain, text) => gloo_utils::document().create_text_node(text).into(),
+      Piece::Text(Tone::Plain, text) => document.create_text_node(text).into(),
+      Piece::Text(Tone::Hint, text) => {
+        let span = hint.get_or_insert_with(|| {
+          let span = html! { span class="text-screen-ink/45" {} };
+          let _ = fragment.append_child(&span);
+          span
+        });
+        let _ = span.append_child(&document.create_text_node(text));
+        continue;
+      }
       Piece::Text(tone, text) => {
         let class = match tone {
           Tone::Seek => "text-synth-green",
           Tone::Level => "text-synth-red",
-          Tone::Value => "text-synth-blue",
-          _ => "text-screen-ink/45",
+          _ => "text-synth-blue",
         };
         let span = html! { span class={ class } { { text.clone() } } };
         span.into()
       }
       Piece::Pad { label, icon } => {
-        let span = html! {
+        let pad = html! {
           span
           class="mx-[2px] inline-grid h-[15px] place-items-center rounded-[4px] border border-current/45 px-[4px] align-top [&_svg]:size-[10px]"
           role="img"
           aria-label={ label.as_str() }
           { { markup(&icon.markup()) } }
         };
-        span.into()
+        let span = hint.get_or_insert_with(|| {
+          let span = html! { span class="text-screen-ink/45" {} };
+          let _ = fragment.append_child(&span);
+          span
+        });
+        let _ = span.append_child(&pad);
+        continue;
       }
     };
+    hint = None;
     let _ = fragment.append_child(&node);
   }
   fragment
@@ -126,7 +145,12 @@ fn pager((pages, at, color): (Vec<String>, usize, PagerColor)) -> Element {
           class={ format!("{PAGE_TAB} {place}") }
           @mousedown.prevent={ |_| blur_active() }
           @click={ move |_| pick_page(page) }
-          { { name } }
+          {
+            // A button's text sits as web-react's `Button` sets it.
+            span class="flex min-w-0 flex-col items-center" {
+              span class="truncate text-base leading-snug font-semibold tracking-tight text-inherit transition-colors !text-sm" { { name } }
+            }
+          }
         },
         _ => html! { span {} },
       }
@@ -269,6 +293,14 @@ fn overlay(overlay: ScreenOverlay) -> Element {
 fn view(view: ScreenView) -> Option<Element> {
   match view {
     ScreenView::Scope => Some(scope::scope()),
+    ScreenView::Save
+    | ScreenView::Instruments
+    | ScreenView::Chords
+    | ScreenView::PlayStyle
+    | ScreenView::Progressions
+    | ScreenView::Beats
+    | ScreenView::Tapes
+    | ScreenView::Revert => Some(tiles::tiles(view)),
     _ => None,
   }
 }

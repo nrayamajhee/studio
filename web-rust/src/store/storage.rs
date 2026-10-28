@@ -30,6 +30,16 @@ mod backend {
       let _ = storage.remove_item(key);
     }
   }
+
+  pub fn keys() -> Vec<String> {
+    let Some(storage) = storage() else {
+      return Vec::new();
+    };
+    let length = storage.length().unwrap_or(0);
+    (0..length)
+      .filter_map(|i| storage.key(i).ok().flatten())
+      .collect()
+  }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -55,6 +65,10 @@ mod backend {
 
   pub fn clear() {
     ITEMS.with(|items| items.borrow_mut().clear());
+  }
+
+  pub fn keys() -> Vec<String> {
+    ITEMS.with(|items| items.borrow().keys().cloned().collect())
   }
 }
 
@@ -84,6 +98,15 @@ pub fn save<T: Serialize + ?Sized>(key: &str, value: &T) {
 
 pub fn remove(key: &str) {
   backend::remove(key);
+}
+
+/// Drops every key starting with `prefix`.
+pub fn remove_prefixed(prefix: &str) {
+  for key in backend::keys() {
+    if key.starts_with(prefix) {
+      backend::remove(&key);
+    }
+  }
 }
 
 /// `value` as `JSON.stringify` writes it: whole numbers without a decimal

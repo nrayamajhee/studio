@@ -28,6 +28,9 @@ pub enum Icon {
   /// A drum piece's icon, or for a hand-drum stroke its syllable.
   Piece(String),
   Text(String),
+  /// Text in a span, as a tile's symbol (a chord's, a progression's
+  /// numerals) wraps and clamps.
+  Label(String),
 }
 
 #[derive(Deserialize)]
@@ -101,6 +104,7 @@ impl Icon {
         None => escape(id),
       },
       Self::Text(text) => escape(text),
+      Self::Label(text) => format!("<span>{}</span>", escape(text)),
     }
   }
 

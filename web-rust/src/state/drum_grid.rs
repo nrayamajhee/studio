@@ -329,7 +329,11 @@ impl DrumGrid {
     let run = self.run.borrow();
     let run = run.as_ref()?;
     let now = app().engine.now();
-    let at = run.recent.iter().rev().find(|scheduled| scheduled.time <= now);
+    let at = run
+      .recent
+      .iter()
+      .rev()
+      .find(|scheduled| scheduled.time <= now);
     at.or(run.recent.first()).map(|scheduled| scheduled.step)
   }
 
