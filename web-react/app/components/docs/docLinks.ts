@@ -52,11 +52,12 @@ export const docLink = (
     : { to: sourceUrl(path) + suffix, external: true };
 };
 
-// Images in public/ are served from the site root; others come from GitHub.
+// Images in web-react/public/ are served from the site root; others come
+// from GitHub.
 export const docImage = (src: string, from: string) => {
   if (isAbsolute(src) || src.startsWith("/")) return src;
   const path = resolvePath(from, src);
-  return path.startsWith("public/")
-    ? path.slice("public".length)
+  return path.startsWith("web-react/public/")
+    ? path.slice("web-react/public".length)
     : `${REPO}/raw/main/${path}`;
 };

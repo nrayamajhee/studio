@@ -10,15 +10,15 @@ A song on the Device is a **tape**: a stack of **tracks** that play together, ea
 
 Your tapes live in **Tapes** (`T`), a tile each, every one with its own tracks, tempo and time signature.
 
-![Tapes: Starter 1, 3 tracks at 96 BPM in 4/4, beside Starter 2](../../public/docs/user-manual/tapes.webp)
+![Tapes: Starter 1, 3 tracks at 96 BPM in 4/4, beside Starter 2](../../web-react/public/docs/user-manual/tapes.webp)
 
 Press **Save** for a new tape at the tempo playing now. (The green knob or ← → opens another tape, Play plays it, and Delete removes the open one, after asking.)
 
-![Save started Tape 1, beside the two starters](../../public/docs/user-manual/new-tape.webp)
+![Save started Tape 1, beside the two starters](../../web-react/public/docs/user-manual/new-tape.webp)
 
 Press **Tracks** (`Esc`) to see it: a new tape holds just the **Take**, the row for whatever you're working on.
 
-![Tape 1's tracks: just the take](../../public/docs/user-manual/new-tape-tracks.webp)
+![Tape 1's tracks: just the take](../../web-react/public/docs/user-manual/new-tape-tracks.webp)
 
 ## The chords: Suspended on the oscillator
 
@@ -26,61 +26,61 @@ A **chord progression** is a short run of chords that a song repeats. The Device
 
 **1. Pick a play style.** Press **Play style** (`Q`). It opens on **Nishan's Picks** (your **Favorites** come first once you star some); pick **Folk strum** there (it's also on the Strum page): down, down-up, up-down-up over a bar of eighths, as a guitarist's hand goes, with the first down leaned on.
 
-![Play style's Nishan's Picks page, Folk strum picked at 1/8](../../public/docs/user-manual/folk-strum.webp)
+![Play style's Nishan's Picks page, Folk strum picked at 1/8](../../web-react/public/docs/user-manual/folk-strum.webp)
 
 **2. Open the progressions.** Hold **Shift** and press the **Piano roll** pad (`Shift V`), It opens on **Nishan's Picks**: Fast car, **Suspended** (Isus4 I Isus2 I), Born in the U.S.A. and Homecoming; Suspended is also on the Cadences page. Suspended never leaves the home chord. It lifts the chord's third to the fourth and lets it fall back, then drops it to the second and lets it rise back. Tap it or press Play to hear it in its own key, or play a key to hear it from that note. Previews play a little faster than the tape's tempo.
 
-![The progressions' Nishan's Picks page, Suspended picked](../../public/docs/user-manual/progressions.webp)
+![The progressions' Nishan's Picks page, Suspended picked](../../web-react/public/docs/user-manual/progressions.webp)
 
 **3. Save it.** Press **Save**. The screen asks for the **home note**: the key the song will be in.
 
-![After Save: Play the home note](../../public/docs/user-manual/progression-home-note.webp)
+![After Save: Play the home note](../../web-react/public/docs/user-manual/progression-home-note.webp)
 
 **4. Play D.** Press the D above middle C (`H` on the computer keys). Suspended becomes the **take** in D: Dsus4, D, Dsus2 and D, a bar each, in the folk strum. The **piano roll** opens on it: a row per note, time running left to right.
 
-![Suspended in D as the take, each chord strummed down, down-up, up-down-up](../../public/docs/user-manual/progression-on-the-take.webp)
+![Suspended in D as the take, each chord strummed down, down-up, up-down-up](../../web-react/public/docs/user-manual/progression-on-the-take.webp)
 
 **5. Pick the oscillator.** The take plays on whatever instrument is on the keys, so you can change it now. Hold **Shift** and press instrument pad 1 (`Shift 1`) for the **Oscillator**, the Grand piano's alternate. Picking an alternate brings it to the top of its pad: from now on pad 1 plays the oscillator, and Shift + pad 1 the piano.
 
-![Shift + pad 1 put the take on the Oscillator](../../public/docs/user-manual/oscillator.webp)
+![Shift + pad 1 put the take on the Oscillator](../../web-react/public/docs/user-manual/oscillator.webp)
 
 **6. Make it a plain sine.** The oscillator comes with two waves: a sine, and a saw at half its level under it. For now, just the sine. Press **Synth** (`Z`) for the oscillator's synth parameters, and **→** to open the **Exciter** page: its two waves, how loud the second is and where it sits against the first. Turn the green knob down to **Wave 2: Off**. Press Synth again to close it, then **Piano roll** (`V`) for the take.
 
-![The Exciter page: Wave 1 Sine, Wave 2 Off](../../public/docs/user-manual/plain-sine.webp)
+![The Exciter page: Wave 1 Sine, Wave 2 Off](../../web-react/public/docs/user-manual/plain-sine.webp)
 
 Press **Play** to hear it loop, and Stop (`` ` ``) when you're done.
 
-![The take playing](../../public/docs/user-manual/take-playing.webp)
+![The take playing](../../web-react/public/docs/user-manual/take-playing.webp)
 
 **7. Keep it.** Press **Save** in the piano roll. The take becomes track #1, on the oscillator, and the Tracks view opens with it picked.
 
-![Track #1 Oscillator](../../public/docs/user-manual/progression-saved-as-track.webp)
+![Track #1 Oscillator](../../web-react/public/docs/user-manual/progression-saved-as-track.webp)
 
 **8. Play it three times.** **Shift + →** plays the picked track again right after itself. Press it twice and the four bars go round three times, marked ×2 and ×3: twelve bars. (Shift + ← plays it fewer times.)
 
-![Shift + → twice: the chords play three times, marked ×2 and ×3](../../public/docs/user-manual/repeat.webp)
+![Shift + → twice: the chords play three times, marked ×2 and ×3](../../web-react/public/docs/user-manual/repeat.webp)
 
 ## The drums: New jack swing
 
 **1. Pick a beat.** Hold **Shift** and press the **Drum grid** pad (`Shift B`). The red knob turns the styles (simple, rock, pop, funk and soul, jazz, Latin and reggae, hip hop, electronic, classical and South Asian) and the blue knob picks a beat. Picking one also puts its kit on the keys, and a tap or Play previews it. It opens on **Nishan's Picks**: **New jack swing**, its madal version and a few more (New jack swing is also on the Funk and soul page). Pick New jack swing: swung hats, a kick that skips around the beat, and a snare doubled by a clap on two and four, on the 808 kit. See [Drum beats](../library/drum-beats.md) for them all.
 
-![The beats' Nishan's Picks page, New jack swing picked](../../public/docs/user-manual/beats.webp)
+![The beats' Nishan's Picks page, New jack swing picked](../../web-react/public/docs/user-manual/beats.webp)
 
 **2. Save it.** Press **Save**: the beat loads into the **drum grid** on its kit. The grid has a row per drum and a column per step. Here the steps are sixteenths, and loading the beat set the tape's [swing](set-the-tempo.md#swing) to 66% on 1/16: every second sixteenth lands late, which is what makes it swing.
 
-![New jack swing in the drum grid on the 808 kit](../../public/docs/user-manual/drum-grid.webp)
+![New jack swing in the drum grid on the 808 kit](../../web-react/public/docs/user-manual/drum-grid.webp)
 
 Press **Play** to loop it. Stopped, the green knob moves the head and the keys set or clear a drum there; the red knob sets the length and the blue one the resolution. **Record** loops it too and lands what you tap on the nearest step, so you can play a part in as it goes round; Play alone only plays. Pick another kit and the pattern comes along: on the madal or the tabla, the kick plays as the open bass stroke and the closed hat as the closed slap on the bass (the madal's ka). The snare becomes a slap on the treble (ti), the toms its rim (tin) and the open hat the treble ringing open (ta), and they all come back again.
 
-![The drum grid playing](../../public/docs/user-manual/drum-grid-playing.webp)
+![The drum grid playing](../../web-react/public/docs/user-manual/drum-grid-playing.webp)
 
 **3. Keep it.** Press **Save** again: track #2, picked.
 
-![Track #2 808 kit under the chords](../../public/docs/user-manual/beat-saved-as-track.webp)
+![Track #2 808 kit under the chords](../../web-react/public/docs/user-manual/beat-saved-as-track.webp)
 
 **4. Bring it in on bar 3, and play it a bar past the end.** **→** slides the picked track a bar later: press it twice, so the beat starts on bar 3, after two bars of chords on their own. The beat is one bar long, and from bar 3 to a bar past the end of the chords is eleven bars. Press **Shift + →** ten times, until the row reads ×11. The footer now says Starts 3 · ×11.
 
-![→ twice, then Shift + → ten times: the beat from bar 3 to a bar past the chords](../../public/docs/user-manual/drums-placed.webp)
+![→ twice, then Shift + → ten times: the beat from bar 3 to a bar past the chords](../../web-react/public/docs/user-manual/drums-placed.webp)
 
 ## The second oscillator: the saw back under the sine
 
@@ -88,53 +88,53 @@ Press **Play** to loop it. Stopped, the green knob moves the head and the keys s
 
 **2. Bring the saw back.** The oscillator still has Wave 2 off, as you left it. Press **Synth** (`Z`), and **→** for the **Exciter** page. Turn the green knob back up to **Wave 2: Saw**: the saw is under the sine again, at half its level and 216° behind it. The two play together, the saw's buzz under the sine's round tone. Press Synth again to close it, then **Piano roll** (`V`) for the take.
 
-![The Exciter page: Wave 1 Sine, Wave 2 Saw, Osc 2 level 50%, Phase 216°](../../public/docs/user-manual/sine-and-saw.webp)
+![The Exciter page: Wave 1 Sine, Wave 2 Saw, Osc 2 level 50%, Phase 216°](../../web-react/public/docs/user-manual/sine-and-saw.webp)
 
 **3. Keep it once, over the middle round.** Press **Save** for track #3, then **→** four times: it starts on bar 5 and plays once, over the first oscillator's second round. Press **Play** to hear the whole tape: this is Starter 1.
 
-![Track #3 Oscillator on bar 5, over the middle round](../../public/docs/user-manual/second-oscillator.webp)
+![Track #3 Oscillator on bar 5, over the middle round](../../web-react/public/docs/user-manual/second-oscillator.webp)
 
-![Starter 1 playing](../../public/docs/user-manual/starter-song.webp)
+![Starter 1 playing](../../web-react/public/docs/user-manual/starter-song.webp)
 
 ## Manage the tracks
 
 **Pick a track** with ↑ ↓ or the blue knob. The footer says where the picked one starts, how many times it plays, its tempo and its volume.
 
-![↓ picks the 808 kit: it starts on bar 3 and plays eleven times](../../public/docs/user-manual/pick-a-track.webp)
+![↓ picks the 808 kit: it starts on bar 3 and plays eleven times](../../web-react/public/docs/user-manual/pick-a-track.webp)
 
 **Copies** play a whole track again further along the same lane, so a part can rest and come back. **Shift + ↓** adds a copy after the last, picked, and **→** slides the picked copy along a bar a press. Here two presses leave a two-bar gap where track #3 rests, and then it comes back for the chords' last two bars and two more after them. Shift + ↑ and ↓ step between a track's copies, and the ×2 on the row's right edge counts them. A copy never slides back over the one before it, and one that grows pushes the later ones along.
 
-![Shift + ↓ then → →: a copy of track #3 two bars after the first](../../public/docs/user-manual/add-a-copy.webp)
+![Shift + ↓ then → →: a copy of track #3 two bars after the first](../../web-react/public/docs/user-manual/add-a-copy.webp)
 
 **Click a copy** to pick it. ← → then slide just that copy, Shift + ← → play it more or fewer times, and Delete takes it out.
 
-![Clicking track #3's first copy picks it](../../public/docs/user-manual/click-a-copy.webp)
+![Clicking track #3's first copy picks it](../../web-react/public/docs/user-manual/click-a-copy.webp)
 
 **Mute** (`,`) silences the picked track: its `M` lights and its lane dims. Press it again to bring it back.
 
-![The 808 kit muted: its M lit and its lane dim](../../public/docs/user-manual/mute.webp)
+![The 808 kit muted: its M lit and its lane dim](../../web-react/public/docs/user-manual/mute.webp)
 
 **Shift + Mute** solos it instead, so you hear only that track. Shift + Mute again lets the rest back in.
 
-![The 808 kit soloed: its S lit, every other lane dim](../../public/docs/user-manual/solo.webp)
+![The 808 kit soloed: its S lit, every other lane dim](../../web-react/public/docs/user-manual/solo.webp)
 
 **A track's tempo.** Press **Tempo** (`M`) with a track picked to see its own tempo: a track keeps the tempo it was saved at, so changing the tape's tempo later leaves it be. Press **↑** to link it to the tape's tempo instead, so it speeds up and slows down with the tape.
 
-![Tempo with the 808 kit picked: its own tempo, 96 BPM](../../public/docs/user-manual/track-tempo.webp)
+![Tempo with the 808 kit picked: its own tempo, 96 BPM](../../web-react/public/docs/user-manual/track-tempo.webp)
 
 **A track's instrument.** An instrument pad with a track picked puts that sound on it: here pad 6 turned the 808 kit into the Madal, and pad 5 turns it back. The notes stay as they were played, and a drum track's strokes carry over between the kits, the madal and the tabla.
 
-![Pad 6 with the 808 kit picked: the track becomes the Madal, its beat carried over](../../public/docs/user-manual/track-instrument.webp)
+![Pad 6 with the 808 kit picked: the track becomes the Madal, its beat carried over](../../web-react/public/docs/user-manual/track-instrument.webp)
 
 **Clip** (`X`) loops a section of a track instead of playing it whole; the section is outlined in red. Hold Shift and the knobs change job: red and blue move the clip's start and end, and green slides the track by beats. Shift + Clip cuts the track down to its clip for good, and the track leaves clip mode: it now plays whole, which is the clip.
 
-![Clip on the drums: the beat's bar outlined in red](../../public/docs/user-manual/clip.webp)
+![Clip on the drums: the beat's bar outlined in red](../../web-react/public/docs/user-manual/clip.webp)
 
-![Clip with Shift held: the footer shows Clip start, Slide and Clip end](../../public/docs/user-manual/clip-shift.webp)
+![Clip with Shift held: the footer shows Clip start, Slide and Clip end](../../web-react/public/docs/user-manual/clip-shift.webp)
 
 **Delete** asks first: press it once and the screen asks you to press again. With a copy picked it deletes just that copy; a track's only copy deletes the track.
 
-![Delete asks: Press again to delete 808 kit](../../public/docs/user-manual/delete.webp)
+![Delete asks: Press again to delete 808 kit](../../web-react/public/docs/user-manual/delete.webp)
 
 Everything the Tracks view does:
 
@@ -165,16 +165,16 @@ Everything the Tracks view does:
 
 Pick a sound (here the Grand piano: Shift + pad 1 brings it back to the top of its pad) and open the **Piano roll** (`V`). Press **Record** (`.`) to arm it, then **Play** to start.
 
-![Armed: Press Play to record](../../public/docs/user-manual/record-armed.webp)
+![Armed: Press Play to record](../../web-react/public/docs/user-manual/record-armed.webp)
 
 What you play becomes the take, just as you played it, in time with the click if the metronome is on.
 
-![Recording: Rec in the status line, the notes appearing as they're played](../../public/docs/user-manual/recording.webp)
+![Recording: Rec in the status line, the notes appearing as they're played](../../web-react/public/docs/user-manual/recording.webp)
 
 Press Record again to stop. The take loops in whole bars; stopped, the green knob scrolls through it, the blue knob moves the roll's octave and ↑ ↓ move it a semitone.
 
-![The take on the roll](../../public/docs/user-manual/take.webp)
+![The take on the roll](../../web-react/public/docs/user-manual/take.webp)
 
 Press **Save** to keep it as the next track, and carry on: more progressions, beats and takes, copies and gaps, until the song is done. Then press Save in Tapes for the next one.
 
-![The take saved as track #4 Grand piano](../../public/docs/user-manual/take-saved.webp)
+![The take saved as track #4 Grand piano](../../web-react/public/docs/user-manual/take-saved.webp)

@@ -19,7 +19,7 @@ Setup conventions:
 - Every component starts with a `Default` story that binds cleanly to its props so Autodocs and the Controls panel work out of the box.
 - Components use the `autodocs` tag and `layout: "centered"` (or `"padded"` for surfaces).
 - The Device story renders over the `.home-background` gradient via a decorator.
-- Parts that read the Device's state use the `withDevice` decorator (`app/components/home/storybook/`), which supplies only its providers; `parameters.device.view` opens a view. Stories show the component alone, without decoration.
-- The docs parts use the `withDocs` decorator (`app/components/docs/storybook/`), which gives them a router and the sky's gradient to sit on.
+- Parts that read the Device's state use the `withDevice` decorator (`web-react/app/components/home/storybook/`), which supplies only its providers; `parameters.device.view` opens a view. Stories show the component alone, without decoration.
+- The docs parts use the `withDocs` decorator (`web-react/app/components/docs/storybook/`), which gives them a router and the sky's gradient to sit on.
 - Every component's meta carries a one- or two-line `docs.description.component`.
 - Light/dark coverage comes from the theme addon (`@storybook/addon-themes`); components must be correct in both modes.

@@ -4,11 +4,11 @@ order = 1
 
 # The Device
 
-The home page (`app/routes/home.tsx`) is **The Device**: an all-in-one virtual synthesizer, a compact music box with four knobs, a screen, 36 pads and a keybed, that holds a whole studio: a physically modelled sound engine (see [Physical modeling](../synth/physical-modeling/overview.md)), a chord machine, a drum machine, a piano roll, and tapes of tracks to keep your songs on.
+The home page (`web-react/app/routes/home.tsx`) is **The Device**: an all-in-one virtual synthesizer, a compact music box with four knobs, a screen, 36 pads and a keybed, that holds a whole studio: a physically modelled sound engine (see [Physical modeling](../synth/physical-modeling/overview.md)), a chord machine, a drum machine, a piano roll, and tapes of tracks to keep your songs on.
 
 This section is the reference: where everything is and what it does in each view. To learn it by making a song, start with the [Guides](../guides/introduction.md).
 
-![The Device, numbered: 1–4 the knobs, 5 the screen, 6–9 the pads, 10 the keybed](../../public/docs/the-device/overview.webp)
+![The Device, numbered: 1–4 the knobs, 5 the screen, 6–9 the pads, 10 the keybed](../../web-react/public/docs/the-device/overview.webp)
 
 1. **White knob**: the volume.
 2. **Green knob**: picks: the setting to change, the position in a list, a tape.

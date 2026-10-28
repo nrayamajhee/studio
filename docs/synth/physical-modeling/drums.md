@@ -14,11 +14,11 @@ The Drum Kit, Rock Kit, Jazz Kit, Jazz stick kit, 808 Kit, 909 Kit, madal and ta
    g     = amp x sin(theta)          (impulse response peaks at ~amp)
 ```
 
-![A stick's half-sine pulse, or a brush's push and bristle burst, drives a modal bank of decaying sines (membranes start sharp and settle); the click, snare wires, sizzle and brush hiss are added, then level, velocity and pan to the kit bus](../../../public/docs/synth-engine/diagram-drums.svg)
+![A stick's half-sine pulse, or a brush's push and bristle burst, drives a modal bank of decaying sines (membranes start sharp and settle); the click, snare wires, sizzle and brush hiss are added, then level, velocity and pan to the kit bus](../../../web-react/public/docs/synth-engine/diagram-drums.svg)
 
-![The drum kit's Exciter page: the stick touches for 2 ms, and how high its pulse reaches against the membrane's modes, struck 30% out from the centre](../../../public/docs/synth-engine/screen-exciter-drums.webp)
+![The drum kit's Exciter page: the stick touches for 2 ms, and how high its pulse reaches against the membrane's modes, struck 30% out from the centre](../../../web-react/public/docs/synth-engine/screen-exciter-drums.webp)
 
-![The drum kit's Resonator page: the kick's pitch drops after a hit and settles at 55 Hz](../../../public/docs/synth-engine/screen-resonator-kick.webp)
+![The drum kit's Resonator page: the kick's pitch drops after a hit and settles at 55 Hz](../../../web-react/public/docs/synth-engine/screen-resonator-kick.webp)
 
 | Piece model                                                   | How it's built                                                                                                                                                                                                                                                                                          |
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

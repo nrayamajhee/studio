@@ -12,7 +12,7 @@ The xylophone, steel pan and kalimba (`models/BarInstrument.ts`) are a struck ba
   then:    lowpass -> master ADSR -> pan (by key) -> bus
 ```
 
-![The xylophone's Resonator page: modes at 1, 3, 6.2, 9.9 and 13.9 times the note, at the strike and 200 ms later, the high ones gone](../../../public/docs/synth-engine/screen-resonator-xylophone.webp)
+![The xylophone's Resonator page: modes at 1, 3, 6.2, 9.9 and 13.9 times the note, at the strike and 200 ms later, the high ones gone](../../../web-react/public/docs/synth-engine/screen-resonator-xylophone.webp)
 
 |               | Xylophone                                                                       | Steel pan                                                    | Kalimba                         |
 | ------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------- |

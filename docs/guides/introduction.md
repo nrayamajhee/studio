@@ -6,7 +6,7 @@ order = 1
 
 The Device is an all-in-one virtual synthesizer: a small, self-contained music box with its own sound engine, chord machine, drum machine, piano roll and multitrack tapes, played straight from your keyboard or mouse. These guides walk you through it from the first note to a finished song. For where every control sits and what it does in each view, see [The Device](../the-device/overview.md).
 
-![The Device: four coloured knobs around a black screen, three rows of pads and a keybed](../../public/docs/user-manual/device.webp)
+![The Device: four coloured knobs around a black screen, three rows of pads and a keybed](../../web-react/public/docs/user-manual/device.webp)
 
 Every picture in the guides is the Device as you'll see it. An orange ring marks the control the step presses. Each control also has a keyboard shortcut, printed in the small badge on its corner (Space for Play, `I` for Instruments, and so on), so you can play the whole Device from your computer keyboard.
 
