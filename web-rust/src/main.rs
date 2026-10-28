@@ -25,6 +25,7 @@ mod docs;
 mod icons;
 mod input;
 mod logic;
+mod midi;
 mod modes;
 mod router;
 mod state;
@@ -47,6 +48,7 @@ fn main() {
   let page = Context::new().run(|| {
     let chrome = Chrome::install();
     App::install();
+    midi::Midi::install();
     let router = Router::install();
     ui::apply_theme(chrome);
     input::listen_to_page(router);

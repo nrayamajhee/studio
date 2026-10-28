@@ -61,8 +61,10 @@ pub struct Chrome {
   pub theme: Rc<Signal<Theme>>,
   /// Whether the system prefers dark, followed by the `System` theme.
   pub system_dark: Rc<Signal<bool>>,
-  /// Whether the Debug panel is open over the page.
+  /// Whether the Debug panel is open over the page; one panel shows at a
+  /// time, so opening it closes the MIDI panel, and the other way round.
   pub debug: Rc<Signal<bool>>,
+  pub midi: Rc<Signal<bool>>,
 }
 
 thread_local! {
@@ -81,6 +83,7 @@ impl Chrome {
         system_dark_query().is_some_and(|query| query.matches()),
       )),
       debug: Rc::new(Signal::new(false)),
+      midi: Rc::new(Signal::new(false)),
     }));
     CHROME.with(|cell| {
       let _ = cell.set(chrome);
@@ -95,7 +98,25 @@ impl Chrome {
   }
 
   pub fn toggle_debug(&self) {
-    self.debug.update(|open| *open = !*open);
+    self.set_debug(!self.debug.value());
+  }
+
+  pub fn set_debug(&self, open: bool) {
+    fluid::batch(|| {
+      if open {
+        self.midi.set_if_changed(false);
+      }
+      self.debug.set_if_changed(open);
+    });
+  }
+
+  pub fn set_midi(&self, open: bool) {
+    fluid::batch(|| {
+      if open {
+        self.debug.set_if_changed(false);
+      }
+      self.midi.set_if_changed(open);
+    });
   }
 }
 

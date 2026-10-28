@@ -6,6 +6,7 @@
 //! flashes when it changes, and the keys still play the Device under it.
 //! ⌘D (Ctrl D) opens and closes it.
 
+use crate::midi::{MIDI_KEY, midi};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -29,7 +30,7 @@ use crate::store::library::PRESETS_KEY;
 use crate::store::session::{MODULES_KEY, PATTERN_KEY, TAKE_KEY, TAPE_KEY, TAPES_KEY};
 use crate::store::storage::js_numbers;
 
-const PARTS: [&str; 13] = [
+const PARTS: [&str; 14] = [
   PRESETS_KEY,
   FAVORITES_KEY,
   PAD_CHORDS_KEY,
@@ -40,6 +41,7 @@ const PARTS: [&str; 13] = [
   PATTERN_KEY,
   TAPES_KEY,
   TAPE_KEY,
+  MIDI_KEY,
   DOCS_COLLAPSED_KEY,
   "theme",
   "studio.engine",
@@ -86,6 +88,7 @@ fn part(key: &str) -> Value {
     PATTERN_KEY => a.session.session.with(|session| js(&session.pattern)),
     TAPES_KEY => a.session.session.with(|session| js(&session.tapes)),
     TAPE_KEY => a.session.session.with(|session| json!(session.tape)),
+    MIDI_KEY => midi().stored(),
     DOCS_COLLAPSED_KEY => json!(collapsed().cloned()),
     "theme" => json!(chrome().theme.value().name()),
     _ => engine_state(),
@@ -174,7 +177,7 @@ pub fn overlay() -> Element {
             }
           }
         }
-        button title={ close.clone() } aria-label={ format!("Close the saved state ({}D)", command()) } class={ GHOST } @click={ move |_| chrome().debug.set(false) } {
+        button title={ close.clone() } aria-label={ format!("Close the saved state ({}D)", command()) } class={ GHOST } @click={ move |_| chrome().set_debug(false) } {
           span class={ GHOST_ICON } { { icon(X, "size-4") } }
           span class="flex flex-col min-w-0 items-center" { span class={ GHOST_LABEL } { { close } } }
         }

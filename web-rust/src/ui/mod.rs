@@ -15,6 +15,7 @@ pub mod focus;
 mod grille;
 pub mod keybed;
 mod knob;
+mod midi;
 pub mod pads;
 mod screen;
 mod sky;
@@ -45,6 +46,7 @@ pub fn page() -> Element {
       { footer() }
       { corner::corner() }
       if |chrome| chrome.debug.value() { { debug::overlay() } }
+      if |chrome| chrome.midi.value() { { midi::panel() } }
     }
   }
 }
