@@ -8,12 +8,24 @@ pub struct ParamSet {
   values: Vec<f64>,
 }
 
+/// Param values to start from, by param id.
+pub type Values = std::collections::HashMap<String, f64>;
+
 impl ParamSet {
   pub fn new(specs: &'static [ParamSpec]) -> Self {
-    Self {
+    Self::with(specs, None)
+  }
+
+  /// The specs' defaults, with `overrides` set over them.
+  pub fn with(specs: &'static [ParamSpec], overrides: Option<&Values>) -> Self {
+    let mut set = Self {
       specs,
       values: specs.iter().map(|spec| spec.default).collect(),
+    };
+    for (id, &value) in overrides.into_iter().flatten() {
+      set.set(id, value);
     }
+    set
   }
 
   pub fn index(&self, id: &str) -> Option<usize> {

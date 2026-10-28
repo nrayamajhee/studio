@@ -1,5 +1,5 @@
 use super::modules::{LfoRouting, ModuleSettings};
-use super::param_set::ParamSet;
+use super::param_set::{ParamSet, Values};
 use crate::dsp::filters::DcBlocker;
 use crate::dsp::generators::Smoother;
 use crate::dsp::nonlinear::drive as saturate;
@@ -36,11 +36,16 @@ pub struct Bus {
 }
 
 impl Bus {
-  pub fn new(patch: &'static BasePatch, fs: f64, routing: LfoRouting) -> Self {
+  pub fn new(
+    patch: &'static BasePatch,
+    fs: f64,
+    routing: LfoRouting,
+    overrides: Option<&Values>,
+  ) -> Self {
     Self {
       fs,
       name: patch.name.clone(),
-      params: ParamSet::new(&patch.params),
+      params: ParamSet::with(&patch.params, overrides),
       mods: ModuleSettings::new(routing),
       left: vec![0.; MAX_BLOCK],
       right: vec![0.; MAX_BLOCK],

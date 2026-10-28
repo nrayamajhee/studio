@@ -18,6 +18,7 @@ pub mod presets;
 pub mod progressions;
 pub mod starter;
 pub mod swing;
+pub mod synth_graphs;
 pub mod synth_pages;
 pub mod timing;
 pub mod tracks;

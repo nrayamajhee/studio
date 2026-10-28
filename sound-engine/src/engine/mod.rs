@@ -16,7 +16,7 @@ use event_queue::EventQueue;
 use instrument::Instrument;
 use master_fx::MasterFx;
 use master_lfo::MasterLfo;
-use param_set::ParamSet;
+use param_set::{ParamSet, Values};
 
 use crate::dsp::fdn::Fdn;
 use crate::dsp::generators::Smoother;
@@ -25,6 +25,9 @@ use crate::dsp::peak_limiter::PeakLimiter;
 use crate::messages::{EngineEvent, EngineStats};
 use crate::models::drums::Woodblock;
 use crate::patches::{bus_index, data, piece_index};
+
+/// Params to start from, by owner: an instrument's id, or "master".
+pub type Overrides = std::collections::HashMap<String, Values>;
 
 /// The master limiter turns coherent chord transients (sub-millisecond, too
 /// fast for the browser's compressor) down to −3 dBFS. The tanh knee above
@@ -106,14 +109,21 @@ pub struct Engine {
 
 impl Engine {
   pub fn new(fs: f64) -> Self {
+    Self::with_overrides(fs, &Overrides::new())
+  }
+
+  /// An engine whose instruments and master start at `overrides` (params by
+  /// owner: an instrument's id, or "master"), as web-react's renders set one
+  /// up.
+  pub fn with_overrides(fs: f64, overrides: &Overrides) -> Self {
     let data = data();
-    let master = ParamSet::new(&data.master);
+    let master = ParamSet::with(&data.master, overrides.get("master"));
     let mut engine = Self {
       fs,
       instruments: data
         .patches
         .iter()
-        .map(|patch| Instrument::new(patch, fs))
+        .map(|patch| Instrument::with(patch, fs, overrides.get(patch.id())))
         .collect(),
       volume: Smoother::new(master.get("master.volume"), fs),
       reverb_return: Smoother::new(master.get("reverb.return"), fs),

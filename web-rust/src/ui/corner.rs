@@ -5,7 +5,7 @@ use fluid_macro::html;
 use web_sys::Element;
 
 use super::{blur_active, markup};
-use crate::device::{Theme, device};
+use crate::chrome::Theme;
 use crate::icons::{KEYBOARD_MUSIC, MOON, SUN};
 
 const CORNER_BUTTON: &str = "relative inline-flex aspect-square w-auto cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-white/45 bg-white/50 p-2 text-center text-xs font-medium text-font shadow-low backdrop-blur-xl transition-all duration-400 ease-in-out select-none hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-font-light focus-visible:ring-offset-2 focus-visible:outline-none active:translate-y-0.5 active:bg-stone-200 dark:border-white/15 dark:bg-white/50 dark:text-surface dark:hover:bg-white/65 dark:active:bg-surface-dark";
@@ -31,7 +31,7 @@ pub fn theme_toggle() -> Element {
 }
 
 fn theme_button() -> Element {
-  let device = device();
+  let device = crate::chrome::chrome();
   let next = move || device.theme.value().next(device.system_dark.value());
   html! {
       button

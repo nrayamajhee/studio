@@ -8,7 +8,7 @@
 // `worklet_new` returned; marking them `unsafe` would change nothing there.
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
-use sound_engine::engine::Engine;
+use sound_engine::engine::{Engine, Overrides};
 
 /// The most frames one call renders; a render quantum is 128.
 const MAX_FRAMES: usize = 2048;
@@ -44,6 +44,18 @@ pub extern "C" fn worklet_text(pointer: *mut Worklet, len: usize) -> *mut u8 {
   let worklet = unsafe { worklet(pointer) };
   worklet.text.resize(len, 0);
   worklet.text.as_mut_ptr()
+}
+
+/// Starts the engine over at the params written as JSON into the text
+/// (by owner, as an offline render sets one up), before anything plays.
+#[unsafe(no_mangle)]
+pub extern "C" fn worklet_overrides(pointer: *mut Worklet) {
+  let worklet = unsafe { worklet(pointer) };
+  let overrides: Overrides = std::str::from_utf8(&worklet.text)
+    .ok()
+    .and_then(|json| serde_json::from_str(json).ok())
+    .unwrap_or_default();
+  worklet.engine = Engine::with_overrides(worklet.engine.fs, &overrides);
 }
 
 /// Queues the events written as JSON into the text.

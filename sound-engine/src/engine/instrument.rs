@@ -1,5 +1,6 @@
 use super::bus::Bus;
 use super::modules::{MODEL_ROUTING, OUTPUT_ROUTING};
+use super::param_set::Values;
 use crate::dsp::adsr::AdsrStages;
 use crate::models::bar::BarModel;
 use crate::models::bore::BoreModel;
@@ -44,6 +45,12 @@ pub struct Instrument {
 
 impl Instrument {
   pub fn new(patch: &'static Patch, fs: f64) -> Self {
+    Self::with(patch, fs, None)
+  }
+
+  /// An instrument whose params start at `overrides` rather than its
+  /// patch's defaults, as an offline render sets it up.
+  pub fn with(patch: &'static Patch, fs: f64, overrides: Option<&Values>) -> Self {
     let (routing, base) = match patch {
       Patch::String(p) => (OUTPUT_ROUTING, &p.base),
       Patch::Bore(p) => (MODEL_ROUTING, &p.base),
@@ -53,7 +60,7 @@ impl Instrument {
       Patch::Reed(p) => (reed::ROUTING, &p.base),
       Patch::Bar(p) => (OUTPUT_ROUTING, &p.base),
     };
-    let bus = Bus::new(base, fs, routing);
+    let bus = Bus::new(base, fs, routing, overrides);
     let mods = &bus.mods;
     let model = match patch {
       Patch::String(p) => Model::String(StringModel::new(p, fs, mods)),

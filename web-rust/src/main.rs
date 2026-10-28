@@ -3,51 +3,51 @@
 //! The Device in Rust: a Trunk-built wasm app whose UI is made with
 //! [fluid](https://github.com/nrayamajhee/fluid) signals and its `html!` macro.
 //!
+//! - [`logic`]: the Device's logic as plain Rust, tested natively and
+//!   checked against web-react's outputs.
+//! - [`store`]: what it keeps between visits, under web-react's keys.
+//! - [`state`]: its state, a store per web-react provider, and the sound
+//!   it sends to the `sound-engine` crate's engine in an AudioWorklet.
+//! - [`modes`]: what each control does in each view.
+//! - [`ui`]: the page, whose effects read them; [`input`]: the browser
+//!   listeners that play it.
 //! - [`router`]: the two pages, the Device at `/` and the docs under
-//!   `/docs`, moved between in place.
-//! - [`device`]: the state, as signals and memos, shared through fluid's
-//!   context.
-//! - [`input`]: browser listeners that write to it.
-//! - [`ui`]: the page, whose effects read it.
-//! - [`keymap`], [`notes`] and [`pads`]: plain logic, tested natively with
-//!   `cargo test`.
-//! - [`sound`]: what the Device plays, sent to the `sound-engine` crate's
-//!   engine, which runs in an AudioWorklet.
-//! - [`presets`] and [`icons`]: the presets and icons as web-react ships them.
-//! - [`docs`]: the docs, rendered from the repo's markdown at build time.
+//!   `/docs`; [`docs`]: the docs, rendered from the repo's markdown.
+//! - [`chrome`]: the theme and the Debug panel's toggle; [`icons`]: the
+//!   icons as web-react renders them.
 
-mod device;
+// The stores hold what the views still to be ported read; this goes once
+// they are.
+#![allow(dead_code)]
+
+mod chrome;
 mod docs;
 mod icons;
 mod input;
-mod keymap;
-// Wired into the Device as the port's next steps land.
-#[allow(dead_code)]
 mod logic;
-mod notes;
-mod pads;
-mod presets;
+mod modes;
 mod router;
-mod sound;
-#[allow(dead_code)]
+mod state;
 mod store;
 mod ui;
 
 use fluid::Context;
 use gloo_utils::body;
 
-use crate::device::Device;
+use crate::chrome::Chrome;
 use crate::router::{Page, Router};
+use crate::state::App;
 
 fn main() {
-  // The root scope owns the Device's memos and every effect on the page.
+  // The root scope owns the Device's effects and every effect on the page.
   // Each page lives in its own scope, disposed when the route leaves it;
   // the Device's state outlives both.
   let page = Context::new().run(|| {
-    let device = Device::install();
+    let chrome = Chrome::install();
+    App::install();
     let router = Router::install();
-    ui::apply_theme(device);
-    input::listen_to_page(device, router);
+    ui::apply_theme(chrome);
+    input::listen_to_page(router);
     fluid::show(
       move || router.page(),
       |page| match page {

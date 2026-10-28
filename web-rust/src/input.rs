@@ -1,43 +1,116 @@
-//! Browser listeners that write to the [`Device`]: the keyboard, the
-//! window's focus and the system theme.
-
-use std::cell::RefCell;
-use std::collections::HashMap;
+//! Browser listeners that play the Device, as web-react's
+//! `HotkeyProvider`, `useCommandKey` and focus handling do: the keyboard
+//! (mapped keys held and let go, ⌘ shortcuts, Tab between controls), the
+//! window losing focus, the first gesture that starts audio, and the
+//! system theme.
 
 use fluid::{ListenerOptions, listen};
 use gloo_utils::{document, window};
-use web_sys::{Event, KeyboardEvent};
+use wasm_bindgen::JsCast;
+use web_sys::{Element, Event, HtmlElement, KeyboardEvent};
 
-use crate::device::{Device, system_dark_query};
-use crate::keymap;
-use crate::pads::{self, Job, PADS};
+use crate::chrome::{chrome, system_dark_query};
 use crate::router::{Page, Router};
-use crate::ui::debug::TOGGLE_CODE;
+use crate::state::app;
+use crate::state::keymap::{Control, Tool, control_for};
+use crate::ui::focus::{keyboard_focus, move_focus};
 
-/// Runs a pad's job, from its key or the pointer. A key holds Shift or a
-/// chord while down; the pointer latches them.
-pub fn press_pad(device: &Device, pad: usize, from_key: bool) {
-  // The latched chord's own key lets go of it, and holds nothing.
-  if let Job::Chord(chord) = PADS[pad].job
-    && from_key
-    && device.latched_chord.value() == Some(chord)
-  {
-    device.latched_chord.set(None);
+/// ⌘D (Ctrl D) opens and closes the Debug panel, in place of a bookmark.
+pub const DEBUG_CODE: &str = "KeyD";
+
+/// Typing in a field (the tempo's BPM) isn't playing the Device.
+fn typing(event: &KeyboardEvent) -> bool {
+  event
+    .target()
+    .and_then(|target| target.dyn_into::<Element>().ok())
+    .and_then(|element| {
+      element
+        .closest("input, textarea, select, [contenteditable]")
+        .ok()
+        .flatten()
+    })
+    .is_some()
+}
+
+fn on_key(event: &KeyboardEvent, down: bool) {
+  let hotkeys = &app().hotkeys;
+  if typing(event) {
     return;
   }
-  device.hold_pad(pad, true);
-  match PADS[pad].job {
-    Job::Octave(by) => device.step_octave(by),
-    Job::Preset(preset) => device.select_preset(preset),
-    Job::Shift if from_key => device.shift_key.set(true),
-    Job::Shift => device.toggle_latch(),
-    Job::Chord(chord) if from_key => device.hold_chord(chord),
-    Job::Chord(chord) => device.toggle_chord(chord),
-    Job::None => {}
+  let code = event.code();
+  if code == "Tab" {
+    event.prevent_default();
+    if down {
+      move_focus(if event.shift_key() { -1 } else { 1 });
+    }
+    return;
+  }
+  // Esc lets go of a focused pad first; otherwise it is a hotkey.
+  if event.key() == "Escape" && keyboard_focus() {
+    if down
+      && let Some(active) = document().active_element()
+      && let Some(active) = active.dyn_ref::<HtmlElement>()
+    {
+      let _ = active.blur();
+    }
+    return;
+  }
+  if code == "Enter" && keyboard_focus() {
+    return;
+  }
+  // macOS sends no keyups for other keys while ⌘ is held, so let go first.
+  if event.key() == "Meta" && down {
+    hotkeys.release_all();
+    return;
+  }
+  let Some(control) = control_for(&code) else {
+    return;
+  };
+  if down {
+    // Browser shortcuts (⌘ C, Ctrl Tab…) pass through untouched.
+    if control != Control::Shift && (event.meta_key() || event.ctrl_key() || event.alt_key()) {
+      return;
+    }
+    event.prevent_default();
+    if event.repeat() {
+      return;
+    }
+    hotkeys.press(&code, control);
+  } else if hotkeys.is_down(&code) {
+    event.prevent_default();
+    hotkeys.release(&code);
   }
 }
 
-pub fn listen_to_page(device: &'static Device, router: &'static Router) {
+/// ⌘ (Ctrl off a Mac) with S or ⌫ presses Save or Delete in place of what
+/// the browser would do, with Shift held its Shift job; ⌘D the Debug
+/// panel.
+fn on_command(event: &KeyboardEvent) {
+  if !(event.meta_key() || event.ctrl_key()) || event.alt_key() {
+    return;
+  }
+  let code = event.code();
+  if code == DEBUG_CODE {
+    event.prevent_default();
+    if !event.repeat() {
+      chrome().toggle_debug();
+    }
+    return;
+  }
+  let tool = match code.as_str() {
+    "KeyS" => Tool::Save,
+    "Backspace" => Tool::Delete,
+    _ => return,
+  };
+  event.prevent_default();
+  if event.repeat() || app().feedback.is_busy() {
+    return;
+  }
+  let shift = event.shift_key() || fluid::untrack(|| app().shift.shift());
+  crate::modes::press(Control::Tool(tool), Some(shift));
+}
+
+pub fn listen_to_page(router: &'static Router) {
   let window = window();
   let home = move || fluid::untrack(|| router.page()) == Page::Home;
 
@@ -50,16 +123,12 @@ pub fn listen_to_page(device: &'static Device, router: &'static Router) {
       ListenerOptions::new().capture(),
       move |_: Event| {
         if home() {
-          device.sound.unlock();
+          app().engine.unlock();
         }
       },
     )
     .forget();
   }
-  // The keybed semitone each held key started, by its code, so a key lets go
-  // of the note it played even if Shift was let go first.
-  let pressed: &'static RefCell<HashMap<String, u8>> = Box::leak(Box::default());
-
   listen(
     &window,
     "keydown",
@@ -68,68 +137,28 @@ pub fn listen_to_page(device: &'static Device, router: &'static Router) {
       if !home() {
         return;
       }
-      // ⌘D (Ctrl D) opens and closes the Debug panel, in place of a bookmark.
-      if event.code() == TOGGLE_CODE && (event.meta_key() || event.ctrl_key()) && !event.alt_key() {
-        event.prevent_default();
-        if !event.repeat() {
-          device.debug.update(|open| *open = !*open);
-        }
-        return;
-      }
-      if event.meta_key() || event.ctrl_key() || event.alt_key() {
-        return;
-      }
-      let code = event.code();
-      if let Some(semitone) = keymap::note_for(&code) {
-        event.prevent_default();
-        if event.repeat() {
-          return;
-        }
-        let semitone = if device.shift() {
-          keymap::shifted(semitone)
-        } else {
-          semitone
-        };
-        pressed.borrow_mut().insert(code, semitone);
-        device.press(semitone);
-      } else if let Some(pad) = pads::pad_for(&code) {
-        event.prevent_default();
-        if !event.repeat() {
-          press_pad(device, pad, true);
-        }
-      }
+      on_command(&event);
+      on_key(&event, true);
     },
   )
   .forget();
-
   listen(
     &window,
     "keyup",
     ListenerOptions::new(),
     move |event: KeyboardEvent| {
-      let code = event.code();
-      let semitone = pressed.borrow_mut().remove(&code);
-      if let Some(semitone) = semitone {
-        device.release(semitone);
-      } else if let Some(pad) = pads::pad_for(&code) {
-        device.hold_pad(pad, false);
-        match PADS[pad].job {
-          Job::Shift => device.shift_key.set(false),
-          Job::Chord(chord) => device.release_chord(chord),
-          _ => {}
-        }
-      }
+      on_key(&event, false);
     },
   )
   .forget();
 
-  // Keys let go while the page is in the background never send a keyup.
-  let let_go = move || {
-    pressed.borrow_mut().clear();
+  // Keys let go while the page is in the background never send a keyup,
+  // so everything lets go, and nothing is left sounding.
+  let let_go = || {
+    let a = app();
     fluid::batch(|| {
-      device.shift_key.set_if_changed(false);
-      device.chord_key.set_if_changed(None);
-      device.release_all();
+      a.hotkeys.release_all();
+      a.performance.let_go();
     });
   };
   listen(&window, "blur", ListenerOptions::new(), move |_: Event| {
@@ -151,7 +180,7 @@ pub fn listen_to_page(device: &'static Device, router: &'static Router) {
   if let Some(query) = system_dark_query() {
     let matches = query.clone();
     listen(&query, "change", ListenerOptions::new(), move |_: Event| {
-      device.system_dark.set(matches.matches());
+      chrome().system_dark.set(matches.matches());
     })
     .forget();
   }

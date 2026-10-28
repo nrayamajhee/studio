@@ -34,7 +34,10 @@ fn main() {
       .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
       .collect();
     let frames = expected.len() / 2;
-    let mut engine = Engine::new(SAMPLE_RATE);
+    let overrides = fs::read_to_string(dir.join(format!("{name}.overrides")))
+      .map(|json| serde_json::from_str(&json).expect("overrides parse"))
+      .unwrap_or_default();
+    let mut engine = Engine::with_overrides(SAMPLE_RATE, &overrides);
     engine.schedule_json(&events);
     let mut left = vec![0f32; frames];
     let mut right = vec![0f32; frames];

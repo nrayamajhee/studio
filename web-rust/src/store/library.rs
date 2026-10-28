@@ -23,7 +23,8 @@ pub const PRESETS_KEY: &str = "studio.instruments";
 const PADS_VERSION: u32 = 3;
 pub const INSTRUMENT_PADS: usize = 6;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PresetLibrary {
   pub instruments: Vec<DevicePreset>,
   pub buttons: Vec<String>,

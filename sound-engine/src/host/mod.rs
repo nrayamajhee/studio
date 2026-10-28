@@ -1,7 +1,15 @@
 //! The main thread's side, with the `web` feature: starts the worklet and
 //! wires it into the same Web Audio graph as web-react's `PhysicalSynth`
 //! (the engine, then a limiter, the analyser the scope reads, and the
-//! system volume), and sends it events as JSON.
+//! system volume), and sends it events as JSON. It also renders events
+//! offline through the same worklet, and makes the scrubber and the track
+//! mixer that play those renders into the live output.
+
+mod mixer;
+mod scrubber;
+
+pub use mixer::{MIX_LEAD, MixTrack, TrackMixer};
+pub use scrubber::Scrubber;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -11,10 +19,13 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::{JsFuture, spawn_local};
 use web_sys::{
-  AnalyserNode, AudioContext, AudioContextState, AudioWorkletNode, AudioWorkletNodeOptions,
-  GainNode, MessageEvent, Response, console,
+  AnalyserNode, AudioBuffer, AudioContext, AudioContextState, AudioNode, AudioWorkletNode,
+  AudioWorkletNodeOptions, GainNode, MessageEvent, OfflineAudioContext, OfflineAudioContextOptions,
+  Response, console,
 };
 
+use crate::dsp::math::js_round;
+use crate::engine::Overrides;
 use crate::messages::{EngineEvent, EngineStats};
 
 /// The processor's name, as `worklet/processor.js` registers it.
@@ -57,6 +68,11 @@ struct State {
   context: Option<AudioContext>,
   node: Option<AudioWorkletNode>,
   analyser: Option<AnalyserNode>,
+  /// Where renders join the live output: the limiter, ahead of the
+  /// analyser and the volume.
+  output: Option<AudioNode>,
+  /// The engine's module, kept for offline renders.
+  bytes: Option<ArrayBuffer>,
   /// The system volume, after the limiter, so turning it up never clips.
   volume: Option<GainNode>,
   volume_level: f64,
@@ -205,30 +221,46 @@ impl Synth {
     }
   }
 
-  pub fn note_on(&self, instrument: &str, note: i32, velocity: f64) {
+  /// The audio clock's sample rate, once the engine started.
+  pub fn sample_rate(&self) -> Option<f32> {
+    self
+      .0
+      .borrow()
+      .context
+      .as_ref()
+      .map(|context| context.sample_rate())
+  }
+
+  /// A note, now or at `time` on the audio clock (see `now`).
+  pub fn note_on(&self, instrument: &str, note: i32, velocity: f64, time: Option<f64>) {
     self.send(EngineEvent::NoteOn {
       instrument: instrument.into(),
       note: note.into(),
       velocity,
-      time: None,
+      time,
     });
   }
 
-  pub fn note_off(&self, instrument: &str, note: i32) {
+  pub fn note_off(&self, instrument: &str, note: i32, time: Option<f64>) {
     self.send(EngineEvent::NoteOff {
       instrument: instrument.into(),
       note: note.into(),
-      time: None,
+      time,
     });
   }
 
-  pub fn hit(&self, kit: &str, piece: &str, velocity: f64) {
+  pub fn hit(&self, kit: &str, piece: &str, velocity: f64, time: Option<f64>) {
     self.send(EngineEvent::Hit {
       kit: kit.into(),
       piece: piece.into(),
       velocity,
-      time: None,
+      time,
     });
+  }
+
+  /// The metronome's click, accented on the bar's first beat.
+  pub fn tick(&self, accent: bool, time: Option<f64>) {
+    self.send(EngineEvent::Tick { accent, time });
   }
 
   pub fn set_param(&self, target: &str, id: &str, value: f64) {
@@ -246,6 +278,85 @@ impl Synth {
 
   pub fn panic(&self) {
     self.send(EngineEvent::Panic);
+  }
+
+  /// Renders `events` offline through the worklet at the live sample
+  /// rate, `duration` seconds of it, the engine starting at `overrides`:
+  /// a take to scrub, or a track's pass for the mix. `None` until the
+  /// engine has started.
+  pub async fn render(
+    &self,
+    events: &[EngineEvent],
+    duration: f64,
+    overrides: &Overrides,
+  ) -> Option<AudioBuffer> {
+    let (base, rate, bytes) = {
+      let state = self.0.borrow();
+      (
+        state.base.clone(),
+        state.context.as_ref()?.sample_rate(),
+        state.bytes.clone()?,
+      )
+    };
+    let rendered = async {
+      let length = js_round(duration * f64::from(rate)).max(1.) as u32;
+      let options = OfflineAudioContextOptions::new(length, rate);
+      options.set_number_of_channels(2);
+      let context = OfflineAudioContext::new_with_context_options(&options)?;
+      JsFuture::from(
+        context
+          .audio_worklet()?
+          .add_module(&format!("{base}sound-worklet.js"))?,
+      )
+      .await?;
+      let processor_options = Object::new();
+      Reflect::set(&processor_options, &"bytes".into(), &bytes)?;
+      let text =
+        |value: serde_json::Result<String>| value.map_err(|error| JsValue::from(error.to_string()));
+      Reflect::set(
+        &processor_options,
+        &"overrides".into(),
+        &text(serde_json::to_string(overrides))?.into(),
+      )?;
+      Reflect::set(
+        &processor_options,
+        &"events".into(),
+        &text(serde_json::to_string(events))?.into(),
+      )?;
+      let node_options = AudioWorkletNodeOptions::new();
+      node_options.set_number_of_inputs(0);
+      node_options.set_number_of_outputs(1);
+      node_options.set_output_channel_count(&Array::of1(&2.into()));
+      node_options.set_processor_options(Some(&processor_options));
+      let node = AudioWorkletNode::new_with_options(&context, PROCESSOR, &node_options)?;
+      node.connect_with_audio_node(&context.destination())?;
+      let buffer: AudioBuffer = JsFuture::from(context.start_rendering()?)
+        .await?
+        .dyn_into()?;
+      Ok::<_, JsValue>(buffer)
+    };
+    match rendered.await {
+      Ok(buffer) => Some(buffer),
+      Err(error) => {
+        self
+          .0
+          .borrow_mut()
+          .warn(format!("Couldn't render: {}", reason(&error)));
+        None
+      }
+    }
+  }
+
+  /// Plays a rendered buffer at a drag's speed into the live output.
+  pub fn scrubber(&self, buffer: &AudioBuffer) -> Option<Scrubber> {
+    let state = self.0.borrow();
+    Scrubber::new(state.context.as_ref()?, state.output.as_ref()?, buffer)
+  }
+
+  /// Plays rendered tracks together into the live output.
+  pub fn mixer(&self) -> Option<TrackMixer> {
+    let state = self.0.borrow();
+    TrackMixer::new(state.context.as_ref()?, state.output.as_ref()?)
   }
 
   pub fn send(&self, event: EngineEvent) {
@@ -385,6 +496,8 @@ impl Synth {
     state.on_error = Some(on_error);
     state.node = Some(node);
     state.analyser = Some(analyser);
+    state.output = Some(limiter.into());
+    state.bytes = Some(bytes);
     state.volume = Some(volume);
     state.phase = Phase::Ready;
     drop(state);

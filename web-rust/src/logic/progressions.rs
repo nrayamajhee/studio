@@ -16,12 +16,12 @@ pub const KEY_VELOCITY: f64 = 0.8;
 /// A chord of a progression: its root in semitones above the home note,
 /// what it is built as, and, for an inversion, its bass note in semitones
 /// above the root.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Step(pub i32, pub String, pub i32);
 
 /// A chord progression, a bar a chord, named for what it is called or the
 /// song it is known for, in that song's key where one stands out.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Progression {
   pub id: String,
   pub name: String,

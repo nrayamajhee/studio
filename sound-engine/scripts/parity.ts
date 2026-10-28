@@ -18,7 +18,12 @@ const DURATION = 2.5;
 const dir = new URL("../target/parity/", import.meta.url);
 mkdirSync(dir, { recursive: true });
 
-type Case = { name: string; events: EngineEvent[] };
+type Case = {
+  name: string;
+  events: EngineEvent[];
+  // Params the engine starts at, as an offline render of a track sets it up.
+  overrides?: Record<string, Record<string, number>>;
+};
 const cases: Case[] = [];
 
 for (const patch of PATCHES) {
@@ -123,10 +128,52 @@ cases.push({
   ],
 });
 
-for (const { name, events } of cases) {
+// Engines that start at overrides: a track's sound, the master's modules
+// on, and an instrument's own params moved off their defaults.
+const overridden = (
+  name: string,
+  instrument: string,
+  note: number,
+  overrides: Record<string, Record<string, number>>,
+) =>
+  cases.push({
+    name,
+    overrides,
+    events: [
+      { type: "noteOn", instrument, note, velocity: 0.8, time: 0 } as EngineEvent,
+      { type: "noteOn", instrument, note: note + 7, velocity: 0.6, time: 0.4 } as EngineEvent,
+      { type: "noteOff", instrument, note, time: 1.2 } as EngineEvent,
+      { type: "noteOff", instrument, note: note + 7, time: 1.4 } as EngineEvent,
+    ],
+  });
+overridden("overrides-oscillator", "oscillator", 57, {
+  oscillator: {
+    "exciter.wave": 1,
+    "exciter.wave2": 3,
+    "exciter.level2": 0.4,
+    "exciter.phase": 252,
+  },
+  master: {
+    "master.volume": 0.8,
+    "adsr.attack": 0.05,
+    "adsr.decay": 0.3,
+    "adsr.sustain": 0.6,
+    "adsr.release": 0.4,
+    "fx.chorus": 1,
+    "fx.delay": 0.2,
+    "reverb.return": 0.42,
+  },
+});
+overridden("overrides-violin", "violin", 64, {
+  violin: { "exciter.pressure": 0.7, "vibrato.pitch": 20, "body.mix": 0.3 },
+  master: { "lfo.rate": 3, "lfo.depth": 0.6, "lfo.target": 1 },
+});
+
+for (const { name, events, overrides } of cases) {
   const { left, right } = renderEngine(events, {
     sampleRate: SAMPLE_RATE,
     duration: DURATION,
+    overrides: overrides as never,
   });
   const out = new Float32Array(left.length * 2);
   for (let i = 0; i < left.length; i++) {
@@ -134,6 +181,11 @@ for (const { name, events } of cases) {
     out[2 * i + 1] = right[i];
   }
   writeFileSync(new URL(`${name}.json`, dir), JSON.stringify(events));
+  if (overrides)
+    writeFileSync(
+      new URL(`${name}.overrides`, dir),
+      JSON.stringify(overrides),
+    );
   writeFileSync(new URL(`${name}.f32`, dir), Buffer.from(out.buffer));
 }
 console.log(`wrote ${cases.length} cases at ${SAMPLE_RATE} Hz`);
