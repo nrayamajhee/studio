@@ -39,6 +39,8 @@ use crate::router::{Page, Router};
 use crate::state::App;
 
 fn main() {
+  // A panic says what went wrong in the console, rather than only trapping.
+  std::panic::set_hook(Box::new(|info| gloo_console::error!(info.to_string())));
   // The root scope owns the Device's effects and every effect on the page.
   // Each page lives in its own scope, disposed when the route leaves it;
   // the Device's state outlives both.

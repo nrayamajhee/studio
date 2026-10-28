@@ -452,7 +452,8 @@ impl Mix {
   /// Where the playhead is (beats), or `None`; read every frame.
   pub fn track_position(&self) -> Option<f64> {
     let playing = *self.playing.get_untracked();
-    match self.scrubbed.get_untracked().as_ref() {
+    let scrubbed = *self.scrubbed.get_untracked();
+    match scrubbed {
       Some((to, at)) if !playing || now() - at < TURN_MS => {
         Some(to / fluid::untrack(|| self.beat_ms()))
       }

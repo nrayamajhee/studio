@@ -148,7 +148,9 @@ impl Performance {
       .iter()
       .map(|semitone| F3_MIDI + semitone + 12 * octave)
       .collect();
-    if let Some(progression) = self.home_for.get_untracked().clone() {
+    // Taken out first: writing it lets the signal go.
+    let awaited = self.home_for.get_untracked().clone();
+    if let Some(progression) = awaited {
       self.write_progression(&progression, F3_MIDI + root + 12 * octave);
     }
     // A chord plays in the play style; the drum grid takes it as a block.

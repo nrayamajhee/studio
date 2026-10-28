@@ -5,7 +5,9 @@
 //! and prompts, levels and the save's progress show over it all.
 
 pub mod module;
+pub mod roll;
 pub mod scope;
+pub mod step_grid;
 pub mod tempo;
 pub mod tiles;
 
@@ -310,6 +312,8 @@ fn view(view: ScreenView) -> Option<Element> {
       Some(module::module(view))
     }
     ScreenView::Tempo => Some(tempo::tempo()),
+    ScreenView::Roll => Some(roll::roll()),
+    ScreenView::DrumGrid => Some(step_grid::step_grid()),
     _ => None,
   }
 }

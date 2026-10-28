@@ -7,11 +7,13 @@
 mod base;
 mod beats;
 mod chords;
+mod drum_grid;
 mod instruments;
 mod module;
 mod play_style;
 mod progressions;
 mod revert;
+mod roll;
 pub mod save;
 mod scope;
 mod synth;
@@ -451,7 +453,9 @@ fn mode_of(view: ScreenView) -> Mode {
     ScreenView::Lfo => module::lfo,
     ScreenView::Fx => module::fx,
     ScreenView::Tempo => tempo::mode,
-    _ => |_, _| {},
+    ScreenView::Roll => roll::mode,
+    ScreenView::DrumGrid => drum_grid::mode,
+    ScreenView::Tracks => |_, _| {},
   }
 }
 
