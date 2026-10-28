@@ -449,20 +449,14 @@ impl Mix {
     self.seek(to / beat_ms);
   }
 
-  /// Where the playhead is (beats), or `None`; read every frame.
+  /// Where the playhead is (beats); read every frame. A scrub holds it
+  /// while the mix is stopped; otherwise it is where the mix is, or was
+  /// paused (so it stays put while a mix renders before it plays).
   pub fn track_position(&self) -> Option<f64> {
     let playing = *self.playing.get_untracked();
     let scrubbed = *self.scrubbed.get_untracked();
     match scrubbed {
-      Some((to, at)) if !playing || now() - at < TURN_MS => {
-        Some(to / fluid::untrack(|| self.beat_ms()))
-      }
-      _ if playing => self
-        .mixer
-        .borrow()
-        .as_ref()
-        .and_then(TrackMixer::position)
-        .map(|at| at / self.beat_seconds.get()),
+      Some((to, _)) if !playing => Some(to / fluid::untrack(|| self.beat_ms())),
       _ => Some(self.position()),
     }
   }

@@ -10,6 +10,7 @@ pub mod scope;
 pub mod step_grid;
 pub mod tempo;
 pub mod tiles;
+pub mod tracks;
 
 use fluid_macro::html;
 use web_sys::{DocumentFragment, Element};
@@ -314,7 +315,7 @@ fn view(view: ScreenView) -> Option<Element> {
     ScreenView::Tempo => Some(tempo::tempo()),
     ScreenView::Roll => Some(roll::roll()),
     ScreenView::DrumGrid => Some(step_grid::step_grid()),
-    _ => None,
+    ScreenView::Tracks => Some(tracks::tracks()),
   }
 }
 

@@ -19,6 +19,7 @@ mod scope;
 mod synth;
 mod tapes;
 mod tempo;
+mod tracks;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -455,7 +456,7 @@ fn mode_of(view: ScreenView) -> Mode {
     ScreenView::Tempo => tempo::mode,
     ScreenView::Roll => roll::mode,
     ScreenView::DrumGrid => drum_grid::mode,
-    ScreenView::Tracks => |_, _| {},
+    ScreenView::Tracks => tracks::mode,
   }
 }
 
