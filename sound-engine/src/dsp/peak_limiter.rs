@@ -44,6 +44,11 @@ impl PeakLimiter {
     }
   }
 
+  /// How many frames late what comes out is: the look-ahead.
+  pub fn latency(&self) -> usize {
+    self.delay_l.len() - 1
+  }
+
   pub fn process(&mut self, in_l: f64, in_r: f64) {
     let size = self.delay_l.len();
     let slot = (self.frame % size as f64) as usize;

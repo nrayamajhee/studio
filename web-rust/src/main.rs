@@ -21,11 +21,16 @@ mod docs;
 mod icons;
 mod input;
 mod keymap;
+// Wired into the Device as the port's next steps land.
+#[allow(dead_code)]
+mod logic;
 mod notes;
 mod pads;
 mod presets;
 mod router;
 mod sound;
+#[allow(dead_code)]
+mod store;
 mod ui;
 
 use fluid::Context;

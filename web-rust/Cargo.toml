@@ -11,7 +11,9 @@ fluid-macro = { git = "https://github.com/nrayamajhee/fluid.git" }
 gloo-console = "0.3"
 gloo-timers = "0.3"
 gloo-utils = "0.2"
+indexmap = { version = "2", features = ["serde"] }
 js-sys = "0.3"
+serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 sound-engine = { path = "../sound-engine", features = ["web"] }
 wasm-bindgen = "0.2"
