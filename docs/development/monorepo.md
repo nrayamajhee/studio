@@ -36,7 +36,7 @@ A Trunk app (`trunk serve` on port `8080`), built to `web-rust/dist`. Its UI use
 
 - **State** is a `Device` of `Rc<Signal<_>>`s: theme, preset, octave, held keys and pads, chords, knob values. The UI and the keyboard listeners write to it, and fluid effects redraw the parts that read it.
 - **Pure logic** (keymap, note names, octave range) has no web-sys types, so `cargo test` runs it natively.
-- **Port order**, following the React app's parts: the home page and the Device's main view (this first step: the knobs, grilles, scope screen, all 36 pads with their keys, the presets, chords and keybed), then the screen's other views (instruments, synth, ADSR, LFO, FX, tempo), play styles and progressions, drum grid, piano roll, tracks and tapes, and MIDI last.
+- **Port order** ([the plan](./web-rust-port.md)), following the React app's parts: the home page and the Device's main view (this first step: the knobs, grilles, scope screen, all 36 pads with their keys, the presets, chords and keybed), then the screen's other views (instruments, synth, ADSR, LFO, FX, tempo), play styles and progressions, drum grid, piano roll, tracks and tapes, and MIDI last.
 - **Look**: Tailwind, built by Trunk's own `tailwind-css` pipeline (no npm), from web-react's theme tokens copied into `web-rust/src/tailwind.css`, with the same class strings as web-react's components. The [design rules](./design-rules.md) hold for both apps.
 
 ## sound-engine
