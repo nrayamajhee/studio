@@ -1,13 +1,12 @@
 // Writes web-rust/data/*.json from web-react's own code: the tables the
 // Rust app reads as they are (the chord progressions, the drum beats) and
-// every icon the Device draws, as React renders it. Run from the repo root
+// every icon the Device draws, as React renders it. Run from web-react
 // after changing any of them:
-//   npx tsx web-rust/scripts/export-data.tsx
+//   npx tsx ../web-rust/scripts/export-data.tsx
 import { writeFileSync } from "node:fs";
-import { createElement, type ComponentType } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import * as lucide from "lucide-react";
-import { DRUM_BEATS } from "../../app/components/home/drumBeats";
+import { createRequire } from "node:module";
+import type { ComponentType } from "react";
+import { DRUM_BEATS } from "../../web-react/app/components/home/drumBeats";
 import {
   AdsrIcon,
   DRUM_PIECES,
@@ -17,10 +16,21 @@ import {
   TakeIcon,
   TapeDeckIcon,
   TracksIcon,
-} from "../../app/components/home/instrumentIcons";
-import { PLAY_STYLES } from "../../app/components/home/playStyles";
-import { PRESET_ICONS } from "../../app/components/home/presetIcons";
-import { PROGRESSIONS } from "../../app/components/home/progressions";
+} from "../../web-react/app/components/home/instrumentIcons";
+import { PLAY_STYLES } from "../../web-react/app/components/home/playStyles";
+import { PRESET_ICONS } from "../../web-react/app/components/home/presetIcons";
+import { PROGRESSIONS } from "../../web-react/app/components/home/progressions";
+
+// React and lucide as web-react installs them: the copies its components
+// render with, which a bare import from here wouldn't find.
+const fromWebReact = createRequire(
+  new URL("../../web-react/package.json", import.meta.url),
+);
+const { createElement } = fromWebReact("react") as typeof import("react");
+const { renderToStaticMarkup } = fromWebReact(
+  "react-dom/server",
+) as typeof import("react-dom/server");
+const lucide = fromWebReact("lucide-react") as typeof import("lucide-react");
 
 const out = (name: string, value: unknown) =>
   writeFileSync(

@@ -1,20 +1,20 @@
 // Writes web-rust/tests/graphs.json: the synth view's graph of every page of
 // every instrument, as web-react's `synthGraphs.ts` draws it at the params'
 // defaults and at two other knob steps, which `cargo test` checks the Rust
-// port against (src/logic/synth_graphs.rs). Run from the repo root after
+// port against (src/logic/synth_graphs.rs). Run from web-react after
 // changing either:
-//   npx tsx web-rust/scripts/export-graphs.tsx
+//   npx tsx ../web-rust/scripts/export-graphs.tsx
 import { writeFileSync } from "node:fs";
-import { PATCH_BY_ID } from "../../app/lib/physical/patches";
-import { stepToValue } from "../../app/lib/physical/patches/format";
-import { KNOB_STEPS } from "../../app/components/home/deviceEngine";
+import { PATCH_BY_ID } from "../../web-react/app/lib/physical/patches";
+import { stepToValue } from "../../web-react/app/lib/physical/patches/format";
+import { KNOB_STEPS } from "../../web-react/app/components/home/deviceEngine";
 import {
   KNOB_TONES,
   graphNote,
   pageScene,
   type Tone,
-} from "../../app/components/home/synthGraphs";
-import { synthPages } from "../../app/components/home/synthPages";
+} from "../../web-react/app/components/home/synthGraphs";
+import { synthPages } from "../../web-react/app/components/home/synthPages";
 
 // Each variant sets every param to a knob step (none: its default).
 const VARIANTS = [null, 7, 2] as const;

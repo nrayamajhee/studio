@@ -1,56 +1,59 @@
 // Writes web-rust/tests/fixtures.json: what web-react's own functions give
 // for a spread of inputs, which `cargo test` checks the Rust port against
-// (src/logic/parity.rs). Run from the repo root after changing either:
-//   npx tsx web-rust/scripts/export-fixtures.tsx
+// (src/logic/parity.rs). Run from web-react after changing either:
+//   npx tsx ../web-rust/scripts/export-fixtures.tsx
 import { writeFileSync } from "node:fs";
-import { PATCH_BY_ID } from "../../app/lib/physical/patches";
+import { PATCH_BY_ID } from "../../web-react/app/lib/physical/patches";
 import {
   formatParam,
   stepToValue,
   valueToStep,
-} from "../../app/lib/physical/patches/format";
+} from "../../web-react/app/lib/physical/patches/format";
 import {
   DEVICE_PRESETS,
   KNOB_STEPS,
   presetPages,
-} from "../../app/components/home/deviceEngine";
+} from "../../web-react/app/components/home/deviceEngine";
 import {
   DRUM_BEATS,
   beatPattern,
   beatPreview,
-} from "../../app/components/home/drumBeats";
+} from "../../web-react/app/components/home/drumBeats";
 import {
   carryNote,
   carryPattern,
   patternTake,
   takePattern,
-} from "../../app/components/home/drumPattern";
-import { mixToMidi } from "../../app/components/home/exportMix";
-import { FlacEncoder } from "../../app/components/home/flac";
+} from "../../web-react/app/components/home/drumPattern";
+import { mixToMidi } from "../../web-react/app/components/home/exportMix";
+import { FlacEncoder } from "../../web-react/app/components/home/flac";
 import {
   INITIAL_MODULES,
   moduleValues,
   modulesOf,
-} from "../../app/components/home/modules";
+} from "../../web-react/app/components/home/modules";
 import {
   METERS,
   timeline,
   type Take,
-} from "../../app/components/home/noteRecorder";
-import { PLAY_STYLES, chordNotes } from "../../app/components/home/playStyles";
+} from "../../web-react/app/components/home/noteRecorder";
+import {
+  PLAY_STYLES,
+  chordNotes,
+} from "../../web-react/app/components/home/playStyles";
 import {
   PROGRESSIONS,
   progressionTake,
-} from "../../app/components/home/progressions";
-import { starterTapes } from "../../app/components/home/starterSong";
+} from "../../web-react/app/components/home/progressions";
+import { starterTapes } from "../../web-react/app/components/home/starterSong";
 import {
   clipOf,
   cutToLoop,
   passOf,
   startsOf,
-} from "../../app/components/home/tracks";
-import { isKit } from "../../app/components/home/deviceEngine";
-import { allPresets } from "../../app/components/home/presetStore";
+} from "../../web-react/app/components/home/tracks";
+import { isKit } from "../../web-react/app/components/home/deviceEngine";
+import { allPresets } from "../../web-react/app/components/home/presetStore";
 
 const params = Object.values(PATCH_BY_ID).flatMap((patch) =>
   patch.params.map((spec) => {
