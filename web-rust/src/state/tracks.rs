@@ -28,6 +28,14 @@ const TRACK_ZOOMS: [f64; 15] = [
   1., 1.5, 2., 3., 4., 6., 8., 12., 16., 24., 32., 48., 64., 96., 128.,
 ];
 
+/// The tracks view, as web-react's `TracksProvider`: its timeline (the span the
+/// lanes show, zoomed and panned) and editing the tracks on it.
+///
+/// The timeline fits the tracks, at least four bars, and holds its length while
+/// a clip is trimmed so the lanes don't rescale under the edit. The editing
+/// methods slide, repeat, copy and delete the picked copy of the picked track,
+/// clip and trim it, set its own tempo, swing, instrument, mute and solo, and
+/// keep a track's sound in step while the Synth view edits it.
 pub struct Tracks {
   zoom_step: Rc<Signal<usize>>,
   pan_from: Rc<Signal<f64>>,
@@ -43,6 +51,7 @@ pub struct Tracks {
 }
 
 impl Tracks {
+  /// The whole timeline in view, the first copy picked.
   pub fn new() -> Self {
     Self {
       zoom_step: Rc::new(Signal::new(0)),
@@ -54,6 +63,9 @@ impl Tracks {
     }
   }
 
+  /// Starts the effects: each lane's clip at the tempo, the timeline held while
+  /// Shift turns a clip's edges, and the Synth view opening and keeping a
+  /// picked track's own sound.
   pub fn install(&'static self) {
     *self.clips.borrow_mut() = Some(fluid::create_memo(move || {
       let bpm = app().transport.bpm.value();
@@ -101,11 +113,14 @@ impl Tracks {
     });
   }
 
+  /// The track whose sound the Synth view shows: the focused lane, when it's a
+  /// track and the Synth view is open.
   fn synth_track(&self) -> Option<Track> {
     let a = app();
     (a.views.view() == ScreenView::Synth && !a.lanes.take_focused()).then(|| a.lanes.focused_lane())
   }
 
+  /// Puts that track's instrument and settings on the keys.
   fn open_track_sound(&self) {
     let Some(opened) = self.synth_track() else {
       return;
@@ -128,6 +143,7 @@ impl Tracks {
     }
   }
 
+  /// Keeps the keys' settings with that track as they change.
   fn keep_track_sound(&self) {
     let Some(kept) = self.synth_track() else {
       return;
@@ -184,6 +200,8 @@ impl Tracks {
     bar_beats * bars
   }
 
+  /// The timeline's length (beats): fitted to the tracks, or held while a clip
+  /// is trimmed.
   pub fn track_span(&self) -> f64 {
     self
       .fit_span()
@@ -191,6 +209,7 @@ impl Tracks {
       .max(self.knob_span.value().unwrap_or(0.))
   }
 
+  /// The zooms that still show at least a bar.
   pub fn track_zooms(&self) -> Vec<f64> {
     let span = self.track_span();
     let bar_beats = f64::from(app().transport.bar_beats());
@@ -201,15 +220,18 @@ impl Tracks {
       .collect()
   }
 
+  /// How many times the timeline is stretched across the lanes.
   pub fn track_zoom(&self) -> f64 {
     let zooms = self.track_zooms();
     zooms[self.zoom_step.value().min(zooms.len() - 1)]
   }
 
+  /// How many beats the lanes show at the zoom.
   pub fn track_window(&self) -> f64 {
     self.track_span() / self.track_zoom()
   }
 
+  /// The first beat the lanes show, kept within the timeline.
   pub fn track_from(&self) -> f64 {
     let span = self.track_span();
     self
@@ -224,12 +246,14 @@ impl Tracks {
     ((self.track_span() - self.track_window()).ceil() as usize + 1).max(2)
   }
 
+  /// Pans the lanes by `beats`.
   pub fn pan_tracks(&self, beats: f64) {
     let (from, span, window) =
       fluid::untrack(|| (self.track_from(), self.track_span(), self.track_window()));
     self.pan_from.set((from + beats).max(0.).min(span - window));
   }
 
+  /// Pans the lanes to start at the beat `step`.
   pub fn scroll_tracks(&self, step: f64) {
     let (span, window) = fluid::untrack(|| (self.track_span(), self.track_window()));
     self.pan_from.set(step.min(span - window));
@@ -252,6 +276,7 @@ impl Tracks {
     });
   }
 
+  /// Back to the whole timeline, unzoomed.
   pub fn reset_timeline(&self) {
     fluid::batch(|| {
       self.zoom_step.set(0);
@@ -259,15 +284,19 @@ impl Tracks {
     });
   }
 
+  /// Holds the timeline's length while a clip's edge is dragged, or fits it
+  /// again.
   pub fn set_dragging(&self, dragging: bool) {
     let span = fluid::untrack(|| self.track_span());
     self.drag_span.set(dragging.then_some(span));
   }
 
+  /// The tempo, tracked.
   fn bpm(&self) -> f64 {
     app().transport.bpm.value()
   }
 
+  /// The picked track (not the take).
   fn track(&self) -> Option<Track> {
     app().lanes.picked_track()
   }
@@ -294,10 +323,12 @@ impl Tracks {
     }
   }
 
+  /// The picked copy, as it plays.
   pub fn copy(&self) -> Option<TrackCopy> {
     self.copies().get(self.copy_index()).copied()
   }
 
+  /// A pass of `track` through its clip, in the tape's beats.
   fn pass_beats(&self, track: &Track) -> f64 {
     let bpm = self.bpm();
     pass_of(track, bpm).length / (60_000. / bpm)
@@ -474,6 +505,8 @@ impl Tracks {
     self.track().map_or(1., |track| loop_step(&track))
   }
 
+  /// How many steps the clip's edge knobs have: the take's reach in loop units,
+  /// both ends included.
   pub fn loop_steps(&self) -> usize {
     let reach = self.track().map_or(0., |track| take_beats(&track));
     ((reach / self.loop_unit()).ceil() as usize + 1).max(2)
@@ -506,6 +539,8 @@ impl Tracks {
       .update_track(&track.id, |track| track.loop_ = Some(next));
   }
 
+  /// A clip edge's place (beats) as `bar.beat.step`, on the picked track's
+  /// grid.
   pub fn loop_label(&self, beats: f64) -> String {
     let bar_beats = app().transport.bar_beats();
     match self.track() {

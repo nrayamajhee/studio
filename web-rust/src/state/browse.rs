@@ -7,6 +7,11 @@ use fluid::Signal;
 
 use crate::logic::presets::PresetPaging;
 
+/// Where each picker's highlight rests, kept while its view is closed so it
+/// opens where it was left, as web-react's `ModeProvider`: the save view's
+/// icon, the instrument (and whether instruments page by model or band), the
+/// chord, play style, progression and drum beat, and the revert option.
+/// `idle_seek` is where the green knob rests in views it moves nothing in.
 pub struct Browse {
   pub icon_index: Rc<Signal<usize>>,
   pub preset_index: Rc<Signal<usize>>,
@@ -21,6 +26,7 @@ pub struct Browse {
 }
 
 impl Browse {
+  /// Every highlight on the first tile, instruments paged by model.
   pub fn new() -> Self {
     let zero = || Rc::new(Signal::new(0));
     Self {

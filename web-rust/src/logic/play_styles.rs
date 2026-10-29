@@ -11,13 +11,18 @@ use super::timing::PlayedNote;
 /// as a guitarist would, or loop through its notes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PlayStyleGroup {
+  /// Held: the chord sustains, at once or spread.
   Held,
+  /// Repeated in a rhythm.
   Rhythm,
+  /// Strummed as a guitarist would.
   Strum,
+  /// Looping through its notes.
   Arpeggio,
 }
 
 impl PlayStyleGroup {
+  /// The group's name, as the picker's pages show it.
   pub fn name(self) -> &'static str {
     match self {
       Self::Held => "Held",
@@ -32,10 +37,14 @@ impl PlayStyleGroup {
 /// its strums, both or neither.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Setting {
+  /// The rate of its steps.
   Rate,
+  /// The gap of its strums.
   Strum,
 }
 
+/// A built-in play style: its id, name and description, the group it's listed
+/// in, and the settings it listens to.
 pub struct PlayStyleSpec {
   pub id: &'static str,
   pub name: &'static str,
@@ -46,6 +55,7 @@ pub struct PlayStyleSpec {
   pub settings: &'static [Setting],
 }
 
+/// A play style, for the table.
 const fn style(
   id: &'static str,
   name: &'static str,
@@ -62,10 +72,14 @@ const fn style(
   }
 }
 
+/// Listens to its rate.
 const RATE: &[Setting] = &[Setting::Rate];
+/// Listens to its strum's gap.
 const STRUM: &[Setting] = &[Setting::Strum];
+/// Listens to both.
 const BOTH: &[Setting] = &[Setting::Rate, Setting::Strum];
 
+/// Every built-in play style, by group.
 pub const PLAY_STYLES: [PlayStyleSpec; 21] = {
   use PlayStyleGroup::*;
   [
@@ -183,6 +197,7 @@ pub const PLAY_STYLES: [PlayStyleSpec; 21] = {
   ]
 };
 
+/// The play style `id` (block, if there's none).
 pub fn play_style_spec(id: &str) -> &'static PlayStyleSpec {
   PLAY_STYLES
     .iter()
@@ -193,13 +208,16 @@ pub fn play_style_spec(id: &str) -> &'static PlayStyleSpec {
 /// A pattern's steps a beat, 1/4 to 1/32 with triplets (the red knob), and
 /// a strum's gap between strings in ms (the blue knob).
 pub const CHORD_RATES: [u32; 6] = [1, 2, 3, 4, 6, 8];
+/// The gaps a strum's strings can be apart (ms).
 pub const STRUM_GAPS: [u32; 8] = [5, 10, 15, 20, 30, 40, 60, 80];
 
 /// Which way a strike sweeps the chord: rising (a down strum) or falling (an
 /// up strum).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Sweep {
+  /// Rising: a down strum.
   Rising,
+  /// Falling: an up strum.
   Falling,
 }
 
@@ -214,6 +232,7 @@ pub struct Strike {
   pub level: f64,
 }
 
+/// A rhythm: how many steps it runs before it repeats, and its strikes.
 pub struct Rhythm {
   pub cycle: u32,
   pub strikes: &'static [Strike],
@@ -223,10 +242,12 @@ pub struct Rhythm {
 /// a touch lighter (0.7), as a player leans into a beat or eases off an
 /// upstroke.
 const ACCENT: f64 = 0.9 / 0.8;
+/// A touch lighter, against the keys' velocity.
 const LIGHT: f64 = 0.7 / 0.8;
 /// A piano player's four to the bar: the third struck full and let ring.
 const FULL: f64 = 1. / 0.8;
 
+/// A strike, for the rhythms' tables.
 const fn strike(at: u32, hold: f64, sweep: Option<Sweep>, level: f64) -> Strike {
   Strike {
     at,
@@ -236,9 +257,12 @@ const fn strike(at: u32, hold: f64, sweep: Option<Sweep>, level: f64) -> Strike 
   }
 }
 
+/// A down strum: rising.
 const UP: Option<Sweep> = Some(Sweep::Rising);
+/// An up strum: falling.
 const DOWN: Option<Sweep> = Some(Sweep::Falling);
 
+/// The rhythm `id` plays, if it's a rhythm.
 pub fn rhythm(id: &str) -> Option<&'static Rhythm> {
   const PULSE: Rhythm = Rhythm {
     cycle: 1,
@@ -385,6 +409,7 @@ pub struct SavedPlayStyle {
 }
 
 impl SavedPlayStyle {
+  /// Whether it's a play style web-react would keep.
   pub fn is_valid(&self) -> bool {
     PlayStyle {
       id: self.pattern.clone(),

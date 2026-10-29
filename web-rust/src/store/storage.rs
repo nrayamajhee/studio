@@ -7,12 +7,15 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Number, Value};
 
+/// The browser's `localStorage`.
 #[cfg(target_arch = "wasm32")]
 mod backend {
+  /// The page's `localStorage`, if the browser gives it.
   fn storage() -> Option<web_sys::Storage> {
     web_sys::window()?.local_storage().ok().flatten()
   }
 
+  /// The text kept under `key`.
   pub fn get(key: &str) -> Option<String> {
     storage()?.get_item(key).ok().flatten()
   }
@@ -25,12 +28,14 @@ mod backend {
     }
   }
 
+  /// Drops `key`.
   pub fn remove(key: &str) {
     if let Some(storage) = storage() {
       let _ = storage.remove_item(key);
     }
   }
 
+  /// Every key kept.
   pub fn keys() -> Vec<String> {
     let Some(storage) = storage() else {
       return Vec::new();
@@ -42,6 +47,7 @@ mod backend {
   }
 }
 
+/// An in-memory map standing in for `localStorage`, for native tests.
 #[cfg(not(target_arch = "wasm32"))]
 mod backend {
   use std::cell::RefCell;
@@ -51,23 +57,28 @@ mod backend {
     static ITEMS: RefCell<HashMap<String, String>> = RefCell::default();
   }
 
+  /// The text kept under `key`.
   pub fn get(key: &str) -> Option<String> {
     ITEMS.with(|items| items.borrow().get(key).cloned())
   }
 
+  /// Keeps `value` under `key`.
   pub fn set(key: &str, value: &str) {
     ITEMS.with(|items| items.borrow_mut().insert(key.into(), value.into()));
   }
 
+  /// Drops `key`.
   pub fn remove(key: &str) {
     ITEMS.with(|items| items.borrow_mut().remove(key));
   }
 
+  /// Forgets everything kept, so a test starts clean.
   #[cfg(test)]
   pub fn clear() {
     ITEMS.with(|items| items.borrow_mut().clear());
   }
 
+  /// Every key kept.
   pub fn keys() -> Vec<String> {
     ITEMS.with(|items| items.borrow().keys().cloned().collect())
   }
@@ -92,12 +103,14 @@ pub fn raw(key: &str) -> Option<String> {
   backend::get(key)
 }
 
+/// Keeps `value` under `key`, as JSON written the way JavaScript writes it.
 pub fn save<T: Serialize + ?Sized>(key: &str, value: &T) {
   if let Ok(json) = to_json(value) {
     backend::set(key, &json);
   }
 }
 
+/// Drops `key`.
 pub fn remove(key: &str) {
   backend::remove(key);
 }

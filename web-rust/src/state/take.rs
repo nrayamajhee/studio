@@ -17,17 +17,21 @@ use crate::logic::timing::Take;
 /// C0 to C10, the range of the studio's piano roll, two octaves of it in
 /// view at a time, a lane a semitone.
 pub const ROLL_LOW: i32 = 12;
+/// The roll's top, C10.
 pub const ROLL_HIGH: i32 = 132;
+/// How many lanes (semitones) the roll shows at once: two octaves and one.
 pub const ROLL_LANES: i32 = 25;
 /// The highest the view's lowest note goes.
 pub const ROLL_TOP: i32 = ROLL_HIGH - ROLL_LANES + 1;
 /// The highest MIDI note.
 const MIDI_TOP: i32 = 127;
 
+/// The notes' names, from C.
 const NAMES: [&str; 12] = [
   "C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B",
 ];
 
+/// A MIDI note's name with its octave, as the roll labels it (60 is C4).
 pub fn roll_note(midi: i32) -> String {
   format!(
     "{}{}",
@@ -36,10 +40,20 @@ pub fn roll_note(midi: i32) -> String {
   )
 }
 
+/// Keeps the roll's lowest note in view within its range.
 fn clamp_roll_low(low: i32) -> i32 {
   low.clamp(ROLL_LOW, ROLL_TOP)
 }
 
+/// The piano roll's take, as web-react's `TakeProvider`: whether a take is
+/// armed, where the roll shows in pitch (following the keybed's octave until
+/// scrolled), and the stopped roll's place in time, scrubbed through an offline
+/// render of the take.
+///
+/// Its methods read the roll's pitch range and time (its octave, steps and
+/// bars), scroll and transpose it, scrub it by the scroll or the green knob,
+/// and run the transport from the roll: Record arms, Play plays, pauses or
+/// starts the armed take, and Stop holds, rewinds or ends it.
 pub struct TakeStore {
   /// The roll's lowest note in view, once scrolled; until then it follows
   /// the keys.
@@ -50,6 +64,7 @@ pub struct TakeStore {
 }
 
 impl TakeStore {
+  /// Nothing armed, the roll following the keys.
   pub fn new() -> Self {
     Self {
       scrolled_low: Rc::new(Signal::new(None)),
@@ -58,6 +73,8 @@ impl TakeStore {
     }
   }
 
+  /// Stops the scrub once the roll stops scrolling (it plays, records or
+  /// closes).
   pub fn install(&'static self) {
     // Stopped, the roll scrolls; otherwise the scrub stops.
     let scrolls = fluid::create_memo(move || self.roll_scrolls());
@@ -75,10 +92,13 @@ impl TakeStore {
     }
   }
 
+  /// Whether a take is armed: only while the roll shows.
   pub fn record_armed(&self) -> bool {
     self.armed.value() && app().views.view() == ScreenView::Roll
   }
 
+  /// The roll's lowest note in view: where it was scrolled, or an octave below
+  /// the keybed's F3, shifted with it.
   pub fn roll_low(&self) -> i32 {
     let octave = app().sound.octave.value();
     clamp_roll_low(
@@ -89,6 +109,7 @@ impl TakeStore {
     )
   }
 
+  /// The notes in view, as the status shows them (`E3–E5`).
   pub fn roll_range(&self) -> String {
     let low = self.roll_low();
     format!("{}–{}", roll_note(low), roll_note(low + ROLL_LANES - 1))
@@ -99,10 +120,12 @@ impl TakeStore {
     ((self.roll_low() - ROLL_LOW) / 12) as usize
   }
 
+  /// How many octaves the blue knob steps through.
   pub fn roll_octaves(&self) -> usize {
     ((ROLL_TOP - ROLL_LOW) / 12 + 1) as usize
   }
 
+  /// Moves the roll to the octave `step`, keeping its semitone.
   pub fn set_roll_octave(&self, step: usize) {
     let (low, octave) = fluid::untrack(|| (self.roll_low(), self.roll_octave()));
     self.scrolled_low.set(Some(clamp_roll_low(
@@ -110,15 +133,18 @@ impl TakeStore {
     )));
   }
 
+  /// Scrolls the roll by `semitones`.
   pub fn scroll_roll_pitch(&self, semitones: i32) {
     let low = fluid::untrack(|| self.roll_low());
     self.scrolled_low.set(Some(clamp_roll_low(low + semitones)));
   }
 
+  /// The take in the session.
   fn take(&self) -> Option<Take> {
     app().session.session.with(|session| session.take.clone())
   }
 
+  /// The take's lowest and highest notes, if it has any.
   fn pitches(&self) -> Option<(i32, i32)> {
     app().session.session.with(|session| {
       let take = session.take.as_ref()?;
@@ -135,12 +161,16 @@ impl TakeStore {
       .map(|(low, high)| format!("{}–{}", roll_note(low), roll_note(high)))
   }
 
+  /// The take's lowest note, in semitones above the roll's bottom: where the
+  /// transpose knob rests.
   pub fn transpose_step(&self) -> usize {
     self
       .pitches()
       .map_or(0, |(low, _)| (low - ROLL_LOW).max(0) as usize)
   }
 
+  /// How many steps the transpose knob has: as far as the take can move and
+  /// still fit under the top MIDI note.
   pub fn transpose_steps(&self) -> usize {
     let span = self.pitches().map_or(0, |(low, high)| high - low);
     ((MIDI_TOP - span - ROLL_LOW + 1).max(2)) as usize
@@ -194,24 +224,30 @@ impl TakeStore {
       && self.roll_end() > 0.
   }
 
+  /// The take's length (ms): where the stopped roll ends.
   pub fn roll_end(&self) -> f64 {
     app().transport.take_length()
   }
 
+  /// Where the stopped roll is scrolled to (ms), within the take.
   pub fn roll_at(&self) -> f64 {
     self
       .roll_end()
       .min(app().transport.roll_position.value().unwrap_or(0.))
   }
 
+  /// A beat's length at the tempo (ms).
   fn beat_length(&self) -> f64 {
     app().transport.timing().beat_ms()
   }
 
+  /// How many steps the green knob scrubs through: a beat each, both ends
+  /// included.
   pub fn roll_steps(&self) -> usize {
     ((self.roll_end() / self.beat_length()).ceil() as usize + 1).max(2)
   }
 
+  /// The beat the stopped roll is scrolled to.
   pub fn roll_step(&self) -> usize {
     crate::logic::js::round(self.roll_at() / self.beat_length()) as usize
   }
@@ -236,6 +272,7 @@ impl TakeStore {
     .unwrap_or_default()
   }
 
+  /// Renders the take as it sounds now, for the scrub.
   fn render(&self) -> Render {
     Box::new(
       |_, _| -> Pin<Box<dyn Future<Output = Option<AudioBuffer>>>> {
@@ -253,6 +290,7 @@ impl TakeStore {
     app().transport.set_roll_position(Some(to));
   }
 
+  /// Scrubs the stopped roll to the beat `step`, playing the way there.
   pub fn scrub_roll_to(&self, step: f64) {
     let (key, at, end, beat) = fluid::untrack(|| {
       (

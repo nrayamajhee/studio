@@ -31,6 +31,8 @@ pub struct DrumBeat {
   pub swing: Option<Swing>,
 }
 
+/// Every drum beat, from `data/beats.json` (exported from web-react's
+/// `drumBeats.ts`), read once.
 pub fn drum_beats() -> &'static [DrumBeat] {
   static BEATS: OnceLock<Vec<DrumBeat>> = OnceLock::new();
   BEATS.get_or_init(|| {
@@ -39,6 +41,7 @@ pub fn drum_beats() -> &'static [DrumBeat] {
   })
 }
 
+/// The beat `id` (the first, if there's none).
 pub fn drum_beat(id: &str) -> &'static DrumBeat {
   let all = drum_beats();
   all.iter().find(|beat| beat.id == id).unwrap_or(&all[0])
@@ -47,6 +50,8 @@ pub fn drum_beat(id: &str) -> &'static DrumBeat {
 /// A preview plays the beat round until it has run this many bars.
 const PREVIEW_BARS: u32 = 4;
 
+/// A pattern mark's velocity: `X` accented, `x` normal, `o` ghosted; any other
+/// mark is a rest.
 fn velocity(mark: char) -> Option<f64> {
   match mark {
     'X' => Some(1.),

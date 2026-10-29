@@ -20,6 +20,10 @@ use crate::state::App;
 use crate::state::keymap::Tool;
 use crate::state::lanes::is_take;
 
+/// Binds the tracks: the mix plays them, the blue knob picks one, the green
+/// seeks and the red sets its volume; the arrows slide, repeat and copy the
+/// picked copy, Mute, Clip and Delete act on it, and Shift turns the knobs over
+/// to the zoom, the scroll and a clip's edges.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let shift = a.shift.shift();
   let lanes = &a.lanes;

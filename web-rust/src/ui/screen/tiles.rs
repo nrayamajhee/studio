@@ -28,21 +28,28 @@ struct Tile {
   badge: Option<String>,
 }
 
+/// How the tiles' grid lays out: paged or not, and which knob's colour the
+/// highlight takes.
 #[derive(Clone, PartialEq)]
 struct Grid {
   paged: bool,
   selected_by: SelectedBy,
 }
 
+/// A tile.
 const TILE: &str = "group relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-[4px] rounded-[8px] border border-screen-ink/12 text-center text-[11px] font-medium text-screen-ink/75 select-none aria-pressed:text-white focus-visible:border-synth-blue focus-visible:shadow-[inset_0_0_0_1px_var(--color-synth-blue)] focus-visible:outline-none";
+/// The highlight in green, as the green knob moves it.
 const BY_GREEN: &str = "aria-pressed:border-synth-green aria-pressed:bg-synth-green aria-pressed:focus-visible:border-synth-blue";
+/// The highlight in blue, as the blue knob moves it.
 const BY_BLUE: &str = "aria-pressed:border-synth-blue aria-pressed:bg-synth-blue aria-pressed:focus-visible:border-screen-ink aria-pressed:focus-visible:shadow-[inset_0_0_0_1px_var(--color-screen-ink)]";
 // The icon and the name each keep two lines' room, their content centred in
 // it, so icons line up along a row whatever the names' lengths. A text icon
 // (a chord's symbol, a progression's numerals) wraps evenly, cut short with
 // an ellipsis past two lines.
+/// A tile's icon (or text icon), keeping two lines' room.
 const ICON: &str = "flex h-[26px] max-w-full items-center justify-center overflow-hidden font-screen text-[11px] leading-[13px] font-bold text-balance [&>span]:line-clamp-2";
 
+/// What a screen reader calls the tiles of `view`.
 fn group_label(view: ScreenView) -> &'static str {
   match view {
     ScreenView::Save => "Instrument icon",
@@ -56,6 +63,8 @@ fn group_label(view: ScreenView) -> &'static str {
   }
 }
 
+/// A tile: its icon and name, a badge, highlighted while picked; a click picks
+/// it and a double-click does what Save would.
 fn tile(tile: Tile, icons: bool, selected_by: SelectedBy) -> Element {
   let Tile {
     index,

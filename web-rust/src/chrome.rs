@@ -9,16 +9,22 @@ use gloo_utils::window;
 
 use crate::store::storage;
 
+/// Where the theme is kept, as web-react keeps it: a JSON string.
 const THEME_KEY: &str = "theme";
 
+/// The page's theme: following the system, or set light or dark.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Theme {
+  /// Following the system's preference.
   System,
+  /// Light, whatever the system prefers.
   Light,
+  /// Dark, whatever the system prefers.
   Dark,
 }
 
 impl Theme {
+  /// The theme kept, or the system's if none is.
   fn stored() -> Self {
     match storage::load(THEME_KEY)
       .as_ref()
@@ -30,6 +36,7 @@ impl Theme {
     }
   }
 
+  /// The theme's name, as it's kept and the `data-theme` attribute says it.
   pub fn name(self) -> &'static str {
     match self {
       Self::System => "system",
@@ -38,6 +45,7 @@ impl Theme {
     }
   }
 
+  /// Whether the page shows dark, given whether the system prefers dark.
   pub fn is_dark(self, system_dark: bool) -> bool {
     match self {
       Self::System => system_dark,
@@ -57,6 +65,9 @@ impl Theme {
   }
 }
 
+/// The page around the Device: its theme (and whether the system prefers dark,
+/// for the `System` theme), and which of the Debug and MIDI panels is open.
+/// Built once by [`Chrome::install`] and reached with [`chrome`].
 pub struct Chrome {
   pub theme: Rc<Signal<Theme>>,
   /// Whether the system prefers dark, followed by the `System` theme.
@@ -71,11 +82,13 @@ thread_local! {
   static CHROME: OnceCell<&'static Chrome> = const { OnceCell::new() };
 }
 
+/// The page's chrome, for its lifetime.
 pub fn chrome() -> &'static Chrome {
   CHROME.with(|chrome| *chrome.get().expect("the chrome is installed first"))
 }
 
 impl Chrome {
+  /// Builds the chrome from the theme kept and the system's preference.
   pub fn install() -> &'static Chrome {
     let chrome: &'static Chrome = Box::leak(Box::new(Chrome {
       theme: Rc::new(Signal::new(Theme::stored())),
@@ -91,16 +104,19 @@ impl Chrome {
     chrome
   }
 
+  /// Switches the theme as the corner toggle does, and keeps it.
   pub fn cycle_theme(&self) {
     let theme = self.theme.value().next(self.system_dark.value());
     storage::save(THEME_KEY, theme.name());
     self.theme.set(theme);
   }
 
+  /// Opens the Debug panel, or closes it.
   pub fn toggle_debug(&self) {
     self.set_debug(!self.debug.value());
   }
 
+  /// Opens or closes the Debug panel, closing the MIDI panel as it opens.
   pub fn set_debug(&self, open: bool) {
     fluid::batch(|| {
       if open {
@@ -110,6 +126,7 @@ impl Chrome {
     });
   }
 
+  /// Opens or closes the MIDI panel, closing the Debug panel as it opens.
   pub fn set_midi(&self, open: bool) {
     fluid::batch(|| {
       if open {
@@ -120,6 +137,7 @@ impl Chrome {
   }
 }
 
+/// The query for whether the system prefers dark.
 pub fn system_dark_query() -> Option<web_sys::MediaQueryList> {
   window()
     .match_media("(prefers-color-scheme: dark)")

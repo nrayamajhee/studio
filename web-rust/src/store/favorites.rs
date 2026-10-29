@@ -10,15 +10,23 @@ use serde_json::Value;
 
 use super::storage::{load, save};
 
+/// A picker that keeps favorites.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FavoriteKind {
+  /// The instruments.
   Instruments,
+  /// The chord palette.
   Chords,
+  /// The play styles.
   PlayStyles,
+  /// The progressions.
   Progressions,
+  /// The drum beats.
   Beats,
 }
 
+/// Each picker's starred items by id, in the order starred, as web-react keeps
+/// them under [`FAVORITES_KEY`].
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Favorites {
@@ -30,6 +38,7 @@ pub struct Favorites {
 }
 
 impl Favorites {
+  /// `kind`'s starred ids.
   pub fn get(&self, kind: FavoriteKind) -> &Vec<String> {
     match kind {
       FavoriteKind::Instruments => &self.instruments,
@@ -40,6 +49,7 @@ impl Favorites {
     }
   }
 
+  /// `kind`'s starred ids, to change.
   fn get_mut(&mut self, kind: FavoriteKind) -> &mut Vec<String> {
     match kind {
       FavoriteKind::Instruments => &mut self.instruments,
@@ -51,6 +61,7 @@ impl Favorites {
   }
 }
 
+/// Where the favorites are kept.
 pub const FAVORITES_KEY: &str = "studio.favorites";
 
 /// Nishan's Picks, a page of their own after the favorites that can't be
@@ -78,6 +89,7 @@ pub fn nishans_picks(kind: FavoriteKind) -> &'static [&'static str] {
   }
 }
 
+/// The ids in a stored list, anything else dropped.
 fn ids(value: Option<&Value>) -> Vec<String> {
   match value {
     Some(Value::Array(items)) => items
@@ -88,6 +100,7 @@ fn ids(value: Option<&Value>) -> Vec<String> {
   }
 }
 
+/// The favorites as kept, each picker's empty where nothing (valid) was.
 fn read() -> Favorites {
   let Some(stored) = load(FAVORITES_KEY).filter(|stored| !stored.is_null()) else {
     return Favorites::default();
@@ -101,11 +114,15 @@ fn read() -> Favorites {
   }
 }
 
+/// The favorites, as web-react's `favoritesStore.ts`: each picker's starred
+/// items, kept in `localStorage` whenever they change.
+/// [`FavoritesStore::toggle`] stars or unstars an item.
 pub struct FavoritesStore {
   pub favorites: Rc<Signal<Favorites>>,
 }
 
 impl FavoritesStore {
+  /// Reads the favorites kept.
   pub fn load() -> Self {
     Self {
       favorites: Rc::new(Signal::new(read())),

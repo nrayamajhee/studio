@@ -18,10 +18,14 @@ use crate::logic::timing::{
   DEFAULT_TIMING, MAX_TAKE_MS, METERS, NoteRecorder, PlayedNote, Take, Timing, timeline,
 };
 
+/// What the tape deck is doing with the take.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TransportState {
+  /// Nothing playing or recording.
   Stopped,
+  /// Playing the take.
   Playing,
+  /// Recording a take.
   Recording,
 }
 
@@ -38,22 +42,30 @@ pub struct RollFrame {
 /// playback, or (idle) the whole take. A playback holds its last and next
 /// loops too, shifted by a loop, so notes keep scrolling across the seam.
 enum Display {
+  /// Recording: the roll draws the recorder's notes.
   Recording,
+  /// Playing the take from `start` (`performance.now` ms), with its notes laid
+  /// out over the last, this and the next loop.
   Playing { start: f64, notes: Vec<PlayedNote> },
+  /// Neither: the roll draws the whole take.
   Idle,
 }
 
+/// The slowest tempo.
 pub const MIN_BPM: f64 = 1.;
+/// The fastest tempo.
 pub const MAX_BPM: f64 = 999.;
 /// Tap tempo is first set this long after the first tap, then follows each
 /// tap until the window closes and tap mode ends.
 const TAP_SET_MS: u32 = 1000;
+/// How long tap mode stays open after the first tap (ms).
 const TAP_WINDOW_MS: u32 = 4000;
 /// The tempo follows the latest gaps, so changing pace mid-window moves it.
 const TAPS_AVERAGED: usize = 4;
 /// Notes starting this close together (a chord) are one tap.
 const CHORD_MS: f64 = 40.;
 
+/// A tempo rounded to a whole BPM, within the range.
 pub fn clamp_bpm(bpm: f64) -> f64 {
   round(bpm).clamp(MIN_BPM, MAX_BPM)
 }
@@ -82,6 +94,15 @@ pub fn tempo_from_taps(taps: &[f64]) -> Option<f64> {
   Some(clamp_bpm(bpm))
 }
 
+/// The tape deck, as web-react's `useTransport` and `TransportProvider`: the
+/// tempo, time signature and swing (kept with the open tape), the metronome,
+/// tap tempo, and recording and playing the take.
+///
+/// It records takes with a [`NoteRecorder`], plays the take on timers, looping
+/// in whole bars, and clicks the metronome, each from effects that start and
+/// stop with its state. [`Transport::roll`] says what the piano roll draws each
+/// frame. The rest set the tempo, meter and swing, tap a tempo, and record,
+/// play, pause, stop or keep the take.
 pub struct Transport {
   pub state: Rc<Signal<TransportState>>,
   pub metronome: Rc<Signal<bool>>,
@@ -109,6 +130,7 @@ pub struct Transport {
 }
 
 impl Transport {
+  /// Stopped at the default tempo and meter, straight, the metronome off.
   pub fn new() -> Self {
     let meter = METERS
       .iter()
@@ -190,11 +212,14 @@ impl Transport {
   /// change takes effect on the next beat without restarting the bar. The
   /// first beat of each bar is accented.
   fn run_metronome(&'static self) {
+    /// The metronome as it runs: clicks so far, when the next is due, and the
+    /// timer for it.
     struct Ticker {
       count: Cell<usize>,
       next: Cell<f64>,
       timer: RefCell<Option<Timeout>>,
     }
+    /// Clicks a beat and schedules the next from the tempo now.
     fn tick(transport: &'static Transport, ticker: Rc<Ticker>) {
       let at = now();
       let timing = transport.timing_now();
@@ -226,6 +251,8 @@ impl Transport {
   /// Plays the take on timers, looping in whole bars at the tempo and meter
   /// set as each loop starts.
   fn run_playback(&'static self, take: Take) {
+    /// A playback as it runs: its timers by id, the notes sounding (so they can
+    /// be let go), the last loop's notes for the roll, and whether it stopped.
     struct Playback {
       timers: RefCell<HashMap<u64, Timeout>>,
       next_id: Cell<u64>,
@@ -238,6 +265,7 @@ impl Transport {
       stopped: Cell<bool>,
     }
     impl Playback {
+      /// Runs `callback` in `ms`, unless the playback has stopped by then.
       fn after(self: &Rc<Self>, ms: f64, callback: impl FnOnce(&Rc<Self>) + 'static) {
         let id = self.next_id.get();
         self.next_id.set(id + 1);
@@ -251,6 +279,8 @@ impl Transport {
         self.timers.borrow_mut().insert(id, timer);
       }
     }
+    /// Schedules a note on and its note off, counting the voices per note so a
+    /// let-go never cuts one started since.
     fn sound(playback: &Rc<Playback>, note: i32, velocity: f64, start: f64, duration: f64) {
       playback.after(start, move |playback| {
         app().engine.play_note(note, velocity);
@@ -267,6 +297,7 @@ impl Transport {
         app().engine.note_off(note);
       });
     }
+    /// Schedules one pass of the take at the timing now, and the next.
     fn run(transport: &'static Transport, playback: &Rc<Playback>) {
       let started = now();
       let line = timeline(Some(&playback.take), &transport.timing_now());
@@ -343,18 +374,22 @@ impl Transport {
     }
   }
 
+  /// What the tape deck is doing, tracked.
   pub fn state(&self) -> TransportState {
     self.state.value()
   }
 
+  /// Whether a take is recording, tracked.
   pub fn recording(&self) -> bool {
     self.state() == TransportState::Recording
   }
 
+  /// Whether the take is playing, tracked.
   pub fn playing(&self) -> bool {
     self.state() == TransportState::Playing
   }
 
+  /// How many beats a bar has.
   pub fn bar_beats(&self) -> u32 {
     METERS[self.meter_index.value()].beats
   }
@@ -369,10 +404,12 @@ impl Transport {
     self.metronome.value().then(|| self.beat.value())
   }
 
+  /// Whether the session has a take.
   pub fn has_take(&self) -> bool {
     app().session.session.with(|session| session.take.is_some())
   }
 
+  /// The take's length at the tempo now, in whole bars (ms).
   pub fn take_length(&self) -> f64 {
     let timing = self.timing();
     app()
@@ -381,22 +418,27 @@ impl Transport {
       .with(|session| timeline(session.take.as_ref(), &timing).length)
   }
 
+  /// Starts the metronome, or stops it.
   pub fn toggle_metronome(&self) {
     self.metronome.update(|on| *on = !*on);
   }
 
+  /// Sets the tempo, rounded and kept within range.
   pub fn set_bpm(&self, next: f64) {
     self.bpm.set(clamp_bpm(next));
   }
 
+  /// Sets the time signature, by its place in [`METERS`].
   pub fn set_meter(&self, index: usize) {
     self.meter_index.set(index);
   }
 
+  /// Sets the swing.
   pub fn set_swing(&self, next: Swing) {
     self.swing.set(next);
   }
 
+  /// Takes a tape's tempo, time signature and swing.
   pub fn apply_tape_timing(&self, tape: &Tape) {
     fluid::batch(|| {
       self.set_bpm(tape.bpm);
@@ -414,6 +456,7 @@ impl Transport {
     });
   }
 
+  /// Leaves tap mode, forgetting the taps.
   pub fn stop_tapping(&self) {
     self.tap_timer.borrow_mut().take();
     self.tap_window.borrow_mut().take();
@@ -424,6 +467,7 @@ impl Transport {
     });
   }
 
+  /// Sets the tempo from the latest taps, if there are enough.
   fn apply_taps(&self) {
     let taps = self.taps.borrow();
     let from = taps.len().saturating_sub(TAPS_AVERAGED + 1);
@@ -463,6 +507,8 @@ impl Transport {
     }
   }
 
+  /// Ends the recording, keeping what was played as the take (straightened from
+  /// the swing) and returning it; `None` if nothing was played.
   fn finish_recording(&self) -> Option<Take> {
     let recorder = self.session.borrow_mut().take()?;
     // A take ends at the hour, even if the timer that ends it fires late.
@@ -544,6 +590,7 @@ impl Transport {
     })
   }
 
+  /// Stops playing or recording, keeping a recorded take.
   pub fn stop(&self) {
     fluid::batch(|| {
       self.finish_recording();
@@ -613,6 +660,7 @@ impl Transport {
     }
   }
 
+  /// Scrolls the stopped roll to `position` (ms), or `None` for the start.
   pub fn set_roll_position(&self, position: Option<f64>) {
     self.roll_position.set_if_changed(position);
   }

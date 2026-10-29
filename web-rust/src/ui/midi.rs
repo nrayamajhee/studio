@@ -17,24 +17,36 @@ use crate::midi::{
 };
 use crate::modes::Knob;
 
+/// The panel: a dark glass card over the page.
 const BASE: &str = "fixed inset-x-3 top-20 z-60 mx-auto flex max-h-[calc(100dvh-12rem)] max-w-[76rem] flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/65 text-white/80 shadow-high backdrop-blur-xl [color-scheme:dark] sm:inset-x-8 sm:max-h-[calc(100dvh-10rem)]";
+/// The panel's header.
 const HEADER: &str =
   "flex min-w-0 items-center gap-3 border-b border-white/10 py-2 pr-2 pl-4 text-sm";
+/// The panel's body: the settings beside the mapping.
 const BODY: &str =
   "min-h-0 flex-1 overflow-y-auto md:grid md:grid-cols-[16rem_minmax(0,1fr)] md:overflow-hidden";
+/// The settings' column.
 const SETTINGS: &str =
   "flex flex-col gap-5 border-b border-white/10 p-4 md:overflow-y-auto md:border-r md:border-b-0";
+/// The mapping's column.
 const MAPPING: &str = "flex min-w-0 flex-col gap-3 p-4 md:overflow-y-auto";
+/// A section's heading.
 const HEADING: &str = "font-mono text-[11px] tracking-wider text-white/45 uppercase";
+/// A setting's row: its name and its control.
 const ROW: &str = "flex min-h-7 items-center justify-between gap-3 text-xs";
+/// A note in the panel.
 const NOTE: &str = "text-xs leading-relaxed text-white/55";
+/// A choice among the inputs.
 const CHOICE: &str =
   "flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs";
+/// A small text button.
 const SMALL: &str = "rounded-md px-2 py-1 text-xs text-white/60 hover:bg-white/10 hover:text-white";
+/// A knob's or pad's cell in the mapping grid.
 const CELL: &str = "flex min-h-12 flex-col items-start justify-between gap-1 rounded-lg border px-1.5 py-1 text-left hover:bg-white/10 disabled:pointer-events-none disabled:opacity-40";
 /// web-react's ghost Button at its small size, an icon alone.
 const CLOSE: &str = "relative inline-flex items-center font-medium border-2 transition-colors duration-150 ease-in-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none bg-transparent border-transparent focus-visible:ring-primary text-xs rounded-lg gap-2 w-auto justify-center text-center hover:bg-primary/10 active:bg-primary/20 p-2 aspect-square text-white/60 hover:text-white";
 
+/// What the panel says MIDI is doing.
 fn status_name(status: MidiStatus) -> &'static str {
   match status {
     MidiStatus::Unsupported => "Not in this browser",
@@ -45,6 +57,7 @@ fn status_name(status: MidiStatus) -> &'static str {
   }
 }
 
+/// What to do next, while MIDI isn't on.
 fn help(status: MidiStatus) -> Option<&'static str> {
   Some(match status {
     MidiStatus::Unsupported => {
@@ -101,6 +114,7 @@ fn toggle(
   }
 }
 
+/// A setting's row: `label` and its control.
 fn setting(label: &str, control: Element) -> Element {
   html! {
     div class={ ROW } {
@@ -110,6 +124,7 @@ fn setting(label: &str, control: Element) -> Element {
   }
 }
 
+/// A small text button labelled `label`.
 fn small(label: &str, disabled: bool, press: impl Fn() + 'static) -> Element {
   html! {
     button type="button" class={ SMALL } disabled={ disabled } @click={ move |_| press() } {
@@ -118,6 +133,8 @@ fn small(label: &str, disabled: bool, press: impl Fn() + 'static) -> Element {
   }
 }
 
+/// The input section: the inputs to listen to (every one, or one by name), or
+/// what to do first while MIDI isn't on.
 fn inputs((connection, settings): (MidiConnection, MidiSettings)) -> Element {
   if let Some(help) = help(connection.status) {
     return html! { p class={ NOTE } { { help } } };
@@ -182,6 +199,8 @@ fn inputs((connection, settings): (MidiConnection, MidiSettings)) -> Element {
   }
 }
 
+/// The keys section: the channel they play from, the octave, velocity as played
+/// or fixed, the sustain pedal and drums on channel 10.
 fn keys() -> Element {
   let settings = midi().settings.clone();
   let options: Vec<Element> = std::iter::once(("".to_owned(), "Any".to_owned()))
@@ -287,6 +306,7 @@ fn keys() -> Element {
   }
 }
 
+/// The monitor: the last messages and what the Device did with each.
 fn monitor() -> Element {
   let body = fluid::show(
     || midi().log.cloned(),
@@ -323,6 +343,8 @@ fn monitor() -> Element {
   }
 }
 
+/// The mapping grid: the four knobs and 36 pads, each showing what it's mapped
+/// to; a click waits for a control to be moved to map it.
 fn mapping((connection, settings): (MidiConnection, MidiSettings)) -> web_sys::DocumentFragment {
   let learning = connection.learning;
   let on = connection.status == MidiStatus::On;
@@ -446,6 +468,8 @@ fn mapping((connection, settings): (MidiConnection, MidiSettings)) -> web_sys::D
   fragment
 }
 
+/// The MIDI panel: MIDI on or off, the inputs, the keys' settings, the mapping
+/// and the monitor, as web-react's.
 pub fn panel() -> Element {
   let m = midi();
   // Closing stops waiting for a control to map.

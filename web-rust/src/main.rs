@@ -13,11 +13,17 @@
 //!   listeners that play it.
 //! - [`router`]: the two pages, the Device at `/` and the docs under
 //!   `/docs`; [`docs`]: the docs, rendered from the repo's markdown.
-//! - [`chrome`]: the theme and the Debug panel's toggle; [`icons`]: the
-//!   icons as web-react renders them.
+//! - [`midi`]: MIDI input, a controller playing the Device.
+//! - [`chrome`]: the theme and which panel is open; [`icons`]: the icons as
+//!   web-react renders them.
+//!
+//! The main structs are re-exported here, so they're listed below: the
+//! [`App`] and its stores, the saved stores, the bindings, and the logic's
+//! main types.
 
-// The stores hold what the views still to be ported read; this goes once
-// they are.
+// The stores are built once, by `App::install`; a `Default` beside each
+// `new` would only invite building another.
+#![allow(clippy::new_without_default)]
 
 mod chrome;
 mod docs;
@@ -34,9 +40,65 @@ mod ui;
 use fluid::Context;
 use gloo_utils::body;
 
-use crate::chrome::Chrome;
-use crate::router::{Page, Router};
-use crate::state::App;
+use crate::router::Page;
+
+// The main structs, re-exported here so the crate's page lists them all;
+// each is documented where it lives, in its part's module.
+#[doc(inline)]
+pub use crate::chrome::Chrome;
+#[doc(inline)]
+pub use crate::docs::Doc;
+#[doc(inline)]
+pub use crate::logic::{
+  beats::DrumBeat,
+  chords::Chord,
+  flac::FlacEncoder,
+  modules::{DeviceModule, ModuleSettings},
+  pattern::DrumPattern,
+  play_styles::PlayStyle,
+  presets::DevicePreset,
+  progressions::Progression,
+  starter::Tape,
+  swing::Swing,
+  synth_graphs::GraphScene,
+  synth_pages::SynthPage,
+  timing::{Meter, NoteRecorder, Take, Timeline, Timing},
+  tracks::{Track, TrackClip},
+};
+#[doc(inline)]
+pub use crate::midi::{Midi, MidiSettings};
+#[doc(inline)]
+pub use crate::modes::{Bindings, KnobBinding, PadBinding, Rich, ScreenBinding};
+#[doc(inline)]
+pub use crate::router::Router;
+#[doc(inline)]
+pub use crate::state::{
+  App,
+  browse::Browse,
+  drum_grid::DrumGrid,
+  engine::Engine,
+  feedback::Feedback,
+  hotkeys::Hotkeys,
+  lanes::Lanes,
+  mix::Mix,
+  output::Output,
+  performance::{ChordPlayer, Performance},
+  preview::Preview,
+  scrub::Scrub,
+  shift::Shift,
+  sound::SoundStore,
+  take::TakeStore,
+  tracks::Tracks,
+  transport::Transport,
+  view::ViewStore,
+};
+#[doc(inline)]
+pub use crate::store::{
+  chords::ChordStore,
+  favorites::FavoritesStore,
+  library::{LibraryStore, PresetLibrary},
+  session::{Session, SessionStore},
+};
 
 fn main() {
   // A panic says what went wrong in the console, rather than only trapping.

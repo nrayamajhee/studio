@@ -13,6 +13,8 @@ use crate::state::App;
 use crate::state::keymap::Tool;
 use crate::store::favorites::FavoriteKind;
 
+/// Binds the chord palette: the red and blue knobs (and ← →) pick a page and a
+/// chord, a chord pad pressed twice takes it, and Mute stars it.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let entries = palette()
     .map(|chord| Entry {

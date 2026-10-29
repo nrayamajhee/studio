@@ -16,13 +16,18 @@ use crate::logic::swing::{STRAIGHT, Swing};
 use crate::logic::timing::{DEFAULT_TIMING, Meter, Take};
 use crate::logic::tracks::{Track, base36};
 
+/// Where the take is kept (null without one).
 pub const TAKE_KEY: &str = "studio.take";
+/// Where the take's ADSR, LFO and FX are kept.
 pub const MODULES_KEY: &str = "studio.takeModules";
+/// Where the drum grid's pattern is kept.
 pub const PATTERN_KEY: &str = "studio.pattern";
 /// Where the take kept the tracks it was loaded from; dropped on first
 /// read.
 const SOURCE_KEYS: [&str; 2] = ["studio.takeSource", "studio.stepsSource"];
+/// Where the tapes are kept, with their tracks.
 pub const TAPES_KEY: &str = "studio.tapes";
+/// Where the open tape's id is kept.
 pub const TAPE_KEY: &str = "studio.tape";
 /// Where the tracks were kept before there were tapes; they become the
 /// first.
@@ -31,6 +36,8 @@ const TRACKS_KEY: &str = "studio.tracks";
 /// keys on first read.
 const LEGACY_KEY: &str = "studio.session";
 
+/// Everything recorded: the working take, its ADSR, LFO and FX, the drum grid's
+/// pattern, and the tapes with the tracks kept from them, one of them open.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Session {
   pub take: Option<Take>,
@@ -51,11 +58,13 @@ impl Session {
       .map_or(&[], |tape| &tape.tracks)
   }
 
+  /// The open tape.
   pub fn open_tape(&self) -> Option<&Tape> {
     self.tapes.iter().find(|tape| tape.id == self.tape)
   }
 }
 
+/// A stored take, if it parses and every number in it is finite.
 fn take_of(value: Option<Value>) -> Option<Take> {
   let take: Take = serde_json::from_value(value?).ok()?;
   let finite = take.length.is_finite()
@@ -67,6 +76,7 @@ fn take_of(value: Option<Value>) -> Option<Take> {
   finite.then_some(take)
 }
 
+/// A stored track, if it parses and its modules, swing and repeats are valid.
 fn track_of(value: Value) -> Option<Track> {
   let track: Track = serde_json::from_value(value).ok()?;
   let valid = track.modules.as_ref().is_none_or(ModuleSettings::is_valid)
@@ -84,6 +94,7 @@ fn tracks_of(value: Option<Value>) -> Vec<Track> {
   }
 }
 
+/// A stored tape, keeping only the tracks that read as tracks.
 fn tape_of(mut value: Value) -> Option<Tape> {
   let tracks = tracks_of(value.get_mut("tracks").map(Value::take));
   if let Some(fields) = value.as_object_mut() {
@@ -110,6 +121,7 @@ pub fn now() -> f64 {
   }
 }
 
+/// A new tape's id, from the time it's made.
 fn tape_id() -> String {
   format!("tape-{}", base36(now() as u64))
 }
@@ -126,6 +138,7 @@ fn next_name(tapes: &[Tape]) -> String {
   format!("Tape {}", highest + 1)
 }
 
+/// An empty tape at `bpm`, `meter` and `swing`, named after the others.
 fn empty_tape(tapes: &[Tape], bpm: f64, meter: Meter, swing: Swing) -> Tape {
   Tape {
     id: tape_id(),
@@ -167,6 +180,8 @@ fn read_tapes(legacy_tracks: Option<Value>) -> (Vec<Tape>, String) {
   (first, open)
 }
 
+/// The session as kept, migrating older layouts: the take and tracks once kept
+/// together, and tracks kept before there were tapes.
 fn read() -> Session {
   let modules = storage::load_as::<ModuleSettings>(MODULES_KEY)
     .filter(ModuleSettings::is_valid)
@@ -199,19 +214,27 @@ fn read() -> Session {
   }
 }
 
-/// The session as a signal, with web-react's setters, each kept as it
+/// The session, as web-react's `sessionStore.ts`: a signal of the
+/// [`Session`], each part kept under its own `localStorage` key as it
 /// changes.
+///
+/// Its methods are web-react's setters: the take, its modules and the drum
+/// pattern; the open tape's tracks; and the tapes themselves, opened, made,
+/// deleted, and keeping the tempo, time signature and swing they were last
+/// played at.
 pub struct SessionStore {
   pub session: Rc<Signal<Session>>,
 }
 
 impl SessionStore {
+  /// Reads the session kept, or opens the starter tapes on a first visit.
   pub fn load() -> Self {
     Self {
       session: Rc::new(Signal::new(read())),
     }
   }
 
+  /// Sets the take, or clears it.
   pub fn set_take(&self, take: Option<Take>) {
     match &take {
       Some(take) => save(TAKE_KEY, take),
@@ -220,11 +243,13 @@ impl SessionStore {
     self.session.update(|session| session.take = take);
   }
 
+  /// Sets the take's ADSR, LFO and FX.
   pub fn set_take_modules(&self, modules: ModuleSettings) {
     save(MODULES_KEY, &modules);
     self.session.update(|session| session.modules = modules);
   }
 
+  /// Changes the drum grid's pattern.
   pub fn set_pattern(&self, change: impl FnOnce(&DrumPattern) -> DrumPattern) {
     self.session.update(|session| {
       session.pattern = change(&session.pattern);
@@ -232,6 +257,7 @@ impl SessionStore {
     });
   }
 
+  /// Changes the tapes or which is open, keeping both.
   fn set_tapes(&self, change: impl FnOnce(&mut Session)) {
     self.session.update(|session| {
       change(session);
@@ -250,6 +276,7 @@ impl SessionStore {
     });
   }
 
+  /// Opens the tape `id`.
   pub fn open_tape(&self, id: &str) {
     self.set_tapes(|session| session.tape = id.into());
   }
@@ -328,6 +355,7 @@ impl SessionStore {
     });
   }
 
+  /// The open tape, untracked.
   pub fn opened_tape(&self) -> Option<Tape> {
     self
       .session

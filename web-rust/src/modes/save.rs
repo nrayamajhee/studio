@@ -16,6 +16,7 @@ use crate::state::view::ScreenView;
 /// The tiles a page of the icons holds.
 pub const PER_PAGE: usize = 48;
 
+/// The icons a saved preset can wear, in the order the picker shows them.
 fn icon_choices() -> Vec<&'static str> {
   preset_icon_keys().collect()
 }
@@ -69,6 +70,8 @@ fn save_to_pad(a: &'static App, pad: usize) {
   });
 }
 
+/// Binds the save view: the green knob picks an icon, Save keeps the sound as a
+/// new preset (or over the saved one), and a pad saves it there.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let choices = icon_choices();
   let count = choices.len();

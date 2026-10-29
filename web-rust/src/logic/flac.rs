@@ -4,14 +4,19 @@
 //! left/side, side/right or mid/side), and Rice-codes what the prediction
 //! leaves over in partitions. It writes the same bytes as web-react's.
 
+/// Samples a block, the same for every frame but the last.
 const BLOCK: usize = 4096;
+/// The highest fixed predictor order tried.
 const MAX_ORDER: usize = 4;
+/// The finest Rice partitioning tried: 2^6 partitions a block.
 const MAX_PARTITION_ORDER: usize = 6;
 /// Residuals use FLAC's five-bit Rice parameters (coding method 1), since a
 /// loud mix's residuals outgrow the four-bit ones; 31 is the escape code.
 const MAX_RICE: i64 = 30;
+/// How many bits a Rice parameter takes (coding method 1).
 const RICE_BITS: u32 = 5;
 
+/// Bits written into bytes, most significant first.
 #[derive(Default)]
 struct BitWriter {
   bytes: Vec<u8>,
@@ -45,6 +50,7 @@ impl BitWriter {
     self.write(1, q as u32 + 1);
   }
 
+  /// Pads with zeros to the next byte.
   fn align(&mut self) {
     if self.count > 0 {
       self.write(0, 8 - self.count);
@@ -52,6 +58,7 @@ impl BitWriter {
   }
 }
 
+/// FLAC's CRC-8 (polynomial 0x07), over a frame's header.
 fn crc8(bytes: &[u8]) -> u8 {
   let mut c = 0u8;
   for &byte in bytes {
@@ -67,6 +74,7 @@ fn crc8(bytes: &[u8]) -> u8 {
   c
 }
 
+/// FLAC's CRC-16 (polynomial 0x8005), over a whole frame.
 fn crc16(bytes: &[u8]) -> u16 {
   let mut c = 0u16;
   for &byte in bytes {
@@ -94,6 +102,8 @@ fn predicted(x: &[i64], i: usize, order: usize) -> i64 {
   }
 }
 
+/// The residuals of a block of `n` samples after the fixed predictor of
+/// `order`, into `out`.
 fn residual(x: &[i64], n: usize, order: usize, out: &mut [i64]) {
   for i in order..n {
     out[i - order] = predicted(x, i, order);
@@ -212,6 +222,8 @@ fn plan(x: &[i64], n: usize, bps: u32, scratch: &mut [i64]) -> Plan {
   best.expect("a partitioning")
 }
 
+/// Writes a channel's subframe as `plan` codes it: constant, or a fixed
+/// predictor's warm-up samples and its Rice-coded residuals.
 fn write_subframe(
   out: &mut BitWriter,
   x: &[i64],
@@ -296,6 +308,7 @@ pub struct FlacEncoder {
 }
 
 impl FlacEncoder {
+  /// An encoder for 24-bit stereo at `rate`.
   pub fn new(rate: u32) -> Self {
     Self {
       rate,
@@ -312,6 +325,7 @@ impl FlacEncoder {
     }
   }
 
+  /// Hands over samples, coding each block as it fills.
   pub fn push(&mut self, left: &[f32], right: &[f32]) {
     let scale = f64::from((1 << (self.bps - 1)) - 1);
     let quantize = |x: f32| super::js::round(f64::from(x).clamp(-1., 1.) * scale) as i64;
@@ -358,6 +372,8 @@ impl FlacEncoder {
     header.bytes
   }
 
+  /// Codes the samples gathered as a frame, in the cheapest of the stereo
+  /// codings.
   fn flush(&mut self) {
     let n = self.filled;
     let bps = self.bps;

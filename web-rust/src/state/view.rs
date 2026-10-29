@@ -6,24 +6,43 @@ use fluid::Signal;
 
 use crate::logic::modules::ModuleId;
 
+/// What the Device's screen can show: the main screen (the scope) and each view
+/// a pad opens.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ScreenView {
+  /// The main screen: the scope over the output.
   Scope,
+  /// The synth's parameters: the chain overview and a page per module.
   Synth,
+  /// Saving the sound: its name, icon and pad.
   Save,
+  /// The instruments, by model or band.
   Instruments,
+  /// The chord palette, for the chord pads.
   Chords,
+  /// How chords come out: block, strum, arpeggio, rhythms.
   PlayStyle,
+  /// The chord progressions, to load as the take.
   Progressions,
+  /// The drum beats, to load into the drum grid.
   Beats,
+  /// The tapes in the session.
   Tapes,
+  /// What to revert, from this sound to everything.
   Revert,
+  /// The ADSR, the volume envelope.
   Adsr,
+  /// The LFO, the modulator over the mix.
   Lfo,
+  /// The FX: drive, chorus, delay and reverb.
   Fx,
+  /// The tempo, tap tempo, swing and time signature.
   Tempo,
+  /// The take as a piano roll.
   Roll,
+  /// The drum grid, for the kits.
   DrumGrid,
+  /// The open tape's tracks.
   Tracks,
 }
 
@@ -38,6 +57,7 @@ impl ScreenView {
     }
   }
 
+  /// The module view that shows `id`.
   pub fn of_module(id: ModuleId) -> Self {
     match id {
       ModuleId::Adsr => Self::Adsr,
@@ -70,18 +90,32 @@ impl ScreenView {
 /// the piano roll and the drum grid.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MainView {
+  /// The tracks (and the tapes).
   Tracks,
+  /// The piano roll.
   Roll,
+  /// The drum grid.
   DrumGrid,
 }
 
 /// The screens the other views open over.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BaseView {
+  /// The main screen.
   Scope,
+  /// A main view.
   Main(MainView),
 }
 
+/// Which view the screen shows, as web-react's `ViewProvider`, with what it
+/// remembers about the views before it: the main view whose Play and Stop the
+/// main screen keeps, the screen the open view was opened over, and where
+/// closing a module view goes back to.
+///
+/// [`ViewStore::set_view`] shows a view and tells the rest of the Device;
+/// [`ViewStore::toggle_view`] and [`ViewStore::toggle_module`] open a view from
+/// its pad or close it again, and [`ViewStore::leave_revert`] closes Revert on
+/// any other press.
 pub struct ViewStore {
   pub view: Rc<Signal<ScreenView>>,
   /// Where closing a module view goes back to.
@@ -94,6 +128,7 @@ pub struct ViewStore {
 }
 
 impl ViewStore {
+  /// Showing `initial`.
   pub fn new(initial: ScreenView) -> Self {
     Self {
       view: Rc::new(Signal::new(initial)),
@@ -103,10 +138,12 @@ impl ViewStore {
     }
   }
 
+  /// The view showing, tracked.
   pub fn view(&self) -> ScreenView {
     self.view.value()
   }
 
+  /// The main view the main screen plays, tracked.
   pub fn main_view(&self) -> MainView {
     self.main_view.value()
   }

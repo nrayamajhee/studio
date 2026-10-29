@@ -13,10 +13,14 @@ use crate::logic::chords::{DEFAULT_PAD_CHORDS, is_chord};
 use crate::logic::play_styles::{PlayStyle, SavedPlayStyle, play_style_spec};
 use crate::logic::tracks::base36;
 
+/// Where the chord pads' chords are kept: six chord ids, in pad order.
 pub const PAD_CHORDS_KEY: &str = "studio.padChords";
+/// Where the play style is kept.
 pub const PLAY_STYLE_KEY: &str = "studio.playStyle";
+/// Where the play styles saved from the Device are kept.
 pub const PLAY_STYLES_KEY: &str = "studio.playStyles";
 
+/// The chord pads' built-in chords.
 fn default_chords() -> Vec<String> {
   DEFAULT_PAD_CHORDS
     .iter()
@@ -24,6 +28,8 @@ fn default_chords() -> Vec<String> {
     .collect()
 }
 
+/// The chord pads' chords as kept, each one that isn't a chord (or missing)
+/// back on its built-in one.
 fn read_chords() -> Vec<String> {
   let Some(Value::Array(stored)) = load(PAD_CHORDS_KEY) else {
     return default_chords();
@@ -53,6 +59,12 @@ fn read_chords() -> Vec<String> {
     .collect()
 }
 
+/// The chord pads, as web-react's `chordStore.ts`: which chord each pad plays,
+/// the play style they play in, and the play styles saved from the Device, each
+/// kept in `localStorage` whenever it changes.
+///
+/// Its methods set a pad's chord or put them all back, set the play style, and
+/// save, update or delete saved play styles.
 pub struct ChordStore {
   /// Which chord each chord pad plays, by chord id.
   pub pad_chords: Rc<Signal<Vec<String>>>,
@@ -61,6 +73,8 @@ pub struct ChordStore {
 }
 
 impl ChordStore {
+  /// Reads what was kept, falling back to the built-in chords and the block
+  /// style for anything missing or invalid.
   pub fn load() -> Self {
     let saved = match load(PLAY_STYLES_KEY) {
       Some(Value::Array(items)) => items
@@ -81,6 +95,7 @@ impl ChordStore {
     }
   }
 
+  /// Changes the pads' chords and keeps them.
   fn set_chords(&self, change: impl FnOnce(&mut Vec<String>)) {
     self.pad_chords.update(|chords| {
       change(chords);
@@ -96,6 +111,7 @@ impl ChordStore {
     });
   }
 
+  /// Puts chord `id` on pad `index`.
   pub fn set_pad_chord(&self, index: usize, id: &str) {
     self.set_chords(|chords| {
       if let Some(slot) = chords.get_mut(index) {
@@ -104,6 +120,7 @@ impl ChordStore {
     });
   }
 
+  /// Changes the play style and keeps it.
   pub fn set_play_style(&self, change: impl FnOnce(&mut PlayStyle)) {
     self.play_style.update(|style| {
       change(style);
@@ -111,6 +128,7 @@ impl ChordStore {
     });
   }
 
+  /// Changes the saved play styles and keeps them.
   fn write_saved(&self, change: impl FnOnce(&mut Vec<SavedPlayStyle>)) {
     self.saved_styles.update(|saved| {
       change(saved);

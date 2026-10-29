@@ -43,6 +43,7 @@ pub struct DevicePreset {
   pub shift_pad: Option<usize>,
 }
 
+/// A built-in preset as the table writes it.
 struct Builtin {
   id: &'static str,
   icon: &'static str,
@@ -54,6 +55,7 @@ struct Builtin {
   shift_pad: Option<usize>,
 }
 
+/// A built-in preset on `target` at `octave`, with no overrides or pads.
 const fn builtin(
   id: &'static str,
   icon: &'static str,
@@ -73,6 +75,7 @@ const fn builtin(
   }
 }
 
+/// The preset, on instrument pad `pad`.
 const fn on_pad(preset: Builtin, pad: usize) -> Builtin {
   Builtin {
     pad: Some(pad),
@@ -80,6 +83,7 @@ const fn on_pad(preset: Builtin, pad: usize) -> Builtin {
   }
 }
 
+/// The preset, on instrument pad `pad` with Shift.
 const fn on_shift_pad(preset: Builtin, pad: usize) -> Builtin {
   Builtin {
     shift_pad: Some(pad),
@@ -87,6 +91,7 @@ const fn on_shift_pad(preset: Builtin, pad: usize) -> Builtin {
   }
 }
 
+/// The preset, with `overrides` over its instrument's defaults.
 const fn with(preset: Builtin, overrides: &'static [(&'static str, f64)]) -> Builtin {
   Builtin {
     overrides,
@@ -246,6 +251,8 @@ pub const PRESET_CATEGORIES: [&str; 8] = [
   "Saved",
 ];
 
+/// The model a preset is listed under (or Saved, for one saved from the
+/// Device).
 pub fn preset_category(preset: &DevicePreset) -> &'static str {
   if preset.user {
     "Saved"
@@ -312,11 +319,14 @@ const PRESET_BANDS: [(&str, &[&str]); 7] = [
 /// the band they play in.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum PresetPaging {
+  /// By the model that plays them: Strings, Winds and so on.
   #[default]
   Model,
+  /// By the band they play in.
   Band,
 }
 
+/// The band a preset is listed under (or Saved, for one saved from the Device).
 pub fn preset_band(preset: &DevicePreset) -> &'static str {
   if preset.user {
     return "Saved";
@@ -408,6 +418,7 @@ pub fn preset_values(preset: &DevicePreset) -> Values {
 
 /// The keybed's lowest and highest notes, F3 and E5.
 const KEYBED_LOW: i32 = 53;
+/// The keybed's highest note, E5.
 const KEYBED_HIGH: i32 = 76;
 
 /// How far the octave buttons reach for a preset: the shifted keybed may
@@ -426,6 +437,7 @@ pub fn octave_limits(preset: &DevicePreset) -> (i32, i32) {
   )
 }
 
+/// `shift` kept within how far the octave buttons reach for `preset`.
 pub fn clamp_octave(shift: i32, preset: &DevicePreset) -> i32 {
   let (lowest, highest) = octave_limits(preset);
   shift.max(lowest).min(highest)

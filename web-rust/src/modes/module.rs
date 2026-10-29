@@ -12,6 +12,8 @@ use crate::state::App;
 use crate::state::keymap::Tool;
 use crate::state::lanes::is_take;
 
+/// Binds the module view for `id`: the four knobs set its params, switching it
+/// on, and Shift + Delete resets it.
 fn mode_of(a: &'static App, b: &mut Bindings, id: ModuleId) {
   let modules = a.lanes.modules();
   let owner_label = a.lanes.modules_owner();
@@ -88,14 +90,17 @@ fn mode_of(a: &'static App, b: &mut Bindings, id: ModuleId) {
   });
 }
 
+/// Binds the ADSR view.
 pub fn adsr(a: &'static App, b: &mut Bindings) {
   mode_of(a, b, ModuleId::Adsr);
 }
 
+/// Binds the LFO view.
 pub fn lfo(a: &'static App, b: &mut Bindings) {
   mode_of(a, b, ModuleId::Lfo);
 }
 
+/// Binds the FX view.
 pub fn fx(a: &'static App, b: &mut Bindings) {
   mode_of(a, b, ModuleId::Fx);
 }

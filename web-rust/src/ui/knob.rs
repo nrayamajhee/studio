@@ -14,16 +14,20 @@ use super::blur_active;
 use crate::modes::{self, Knob};
 use crate::state::app;
 
+/// Teeth around a knob's gear edge.
 const TEETH: usize = 36;
 /// [radius %, angle offset in degrees] of the four corners of each tooth.
 const TOOTH_PROFILE: [(f64, f64); 4] = [(46.5, 0.), (50., 1.5), (50., 5.), (46.5, 6.5)];
 /// Horizontal drag distance and trackpad scroll distance (px) per step.
 const DRAG_STEP: f64 = 24.;
+/// Trackpad scroll distance (px) per step.
 const WHEEL_STEP: f64 = 50.;
 /// A fine knob's whole travel by dragging (px), and its steps a notch.
 const FINE_TRAVEL: f64 = 600.;
+/// How many of a fine knob's steps one notch moves: its travel over this.
 const FINE_NOTCH: f64 = 120.;
 
+/// The gear edge's outline as a CSS polygon, made once.
 fn gear_edge() -> &'static str {
   static EDGE: OnceLock<String> = OnceLock::new();
   EDGE.get_or_init(|| {
@@ -43,6 +47,8 @@ fn gear_edge() -> &'static str {
   })
 }
 
+/// A drag in progress: its pointer, where it started (x and step), and whether
+/// it moved far enough to count as a drag.
 #[derive(Clone, Copy)]
 struct Drag {
   pointer: i32,
@@ -91,6 +97,7 @@ impl Control {
     }
   }
 
+  /// Starts a drag on the knob, capturing the pointer.
   fn pointer_down(&self, event: &PointerEvent) {
     if event.button() != 0 {
       return;
@@ -109,6 +116,7 @@ impl Control {
     }));
   }
 
+  /// Turns the knob as the drag moves sideways.
   fn pointer_move(&self, event: &PointerEvent) {
     let Some(mut start) = self
       .drag
@@ -130,12 +138,16 @@ impl Control {
     });
   }
 
+  /// Ends the drag, remembering whether it moved so the click it ends with does
+  /// nothing.
   fn pointer_up(&self) {
     self
       .dragged
       .set(self.drag.take().is_some_and(|start| start.moved));
   }
 
+  /// A click turns the knob a step on, round to the start (a fine knob a notch,
+  /// stopping at the end).
   fn click(&self) {
     if self.dragged.replace(false) {
       return;
@@ -153,6 +165,8 @@ impl Control {
     modes::current().knob(self.knob).on_change.call(next);
   }
 
+  /// Scrolling turns the knob: a mouse wheel a step a notch, a trackpad by its
+  /// travel.
   fn wheel(&self, event: &WheelEvent) {
     let notch =
       event.delta_mode() != WheelEvent::DOM_DELTA_PIXEL || event.delta_y().abs() >= WHEEL_STEP;

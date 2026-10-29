@@ -26,6 +26,7 @@ pub fn position_label(beats: f64, bar_beats: u32, per_beat: u32) -> String {
   )
 }
 
+/// `count` and `noun`, plural unless it's one: `1 track`, `3 tracks`.
 pub fn plural(count: usize, noun: &str) -> String {
   format!("{count} {noun}{}", if count == 1 { "" } else { "s" })
 }

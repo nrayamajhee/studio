@@ -16,10 +16,21 @@ use crate::logic::tracks::{Track, set_modules, track_modules, track_take};
 /// The take, shown on the tracks view as a potential track.
 pub const TAKE_ID: &str = "session-take";
 
+/// Whether `lane` is the take rather than one of the tape's tracks.
 pub fn is_take(lane: &Track) -> bool {
   lane.id == TAKE_ID
 }
 
+/// The session as lanes, as web-react's `LanesProvider`: the take first (with
+/// its drum pattern and modules), then the open tape's tracks, one of them
+/// focused.
+///
+/// The focused lane is the one the blue knob picked on the tracks view; its
+/// modules are what the live sound plays through and what the ADSR, LFO and FX
+/// views set. The methods read the session as lanes (the tapes, the open tape,
+/// its tracks, the take as a lane), move and read the focus, set the focused
+/// lane's modules, and add, change, delete or load tracks, writing each change
+/// back to the session store.
 pub struct Lanes {
   /// The lane the blue knob picked, kept across views so the roll edits the
   /// picked track; the piano roll and the drum grid start on the take.
@@ -27,6 +38,7 @@ pub struct Lanes {
 }
 
 impl Lanes {
+  /// Focused on the take.
   pub fn new() -> Self {
     Self {
       focus_index: Rc::new(Signal::new(0)),
@@ -43,16 +55,19 @@ impl Lanes {
     });
   }
 
+  /// The piano roll and the drum grid start on the take.
   pub fn view_changed(&self, view: ScreenView) {
     if matches!(view, ScreenView::Roll | ScreenView::DrumGrid) {
       self.focus_index.set_if_changed(0);
     }
   }
 
+  /// The take in the session, if there is one.
   pub fn take(&self) -> Option<Take> {
     app().session.session.with(|session| session.take.clone())
   }
 
+  /// Every tape in the session.
   pub fn tapes(&self) -> Vec<Tape> {
     app().session.session.with(|session| session.tapes.clone())
   }
@@ -68,6 +83,7 @@ impl Lanes {
     })
   }
 
+  /// The open tape.
   pub fn current_tape(&self) -> Option<Tape> {
     let index = self.tape_index();
     app()
@@ -76,6 +92,7 @@ impl Lanes {
       .with(|session| session.tapes.get(index).cloned())
   }
 
+  /// The open tape's tracks.
   pub fn tracks(&self) -> Vec<Track> {
     app()
       .session
@@ -83,6 +100,7 @@ impl Lanes {
       .with(|session| session.tracks().to_vec())
   }
 
+  /// How many tracks the open tape has.
   pub fn track_count(&self) -> usize {
     app().session.session.with(|session| session.tracks().len())
   }
@@ -114,20 +132,24 @@ impl Lanes {
     }
   }
 
+  /// Every lane: the take, then the open tape's tracks.
   pub fn lanes(&self) -> Vec<Track> {
     std::iter::once(self.take_lane())
       .chain(self.tracks())
       .collect()
   }
 
+  /// How many lanes there are, the take included.
   pub fn lane_count(&self) -> usize {
     self.track_count() + 1
   }
 
+  /// The focused lane's index, kept within the lanes there are.
   pub fn focus_index(&self) -> usize {
     self.focus_index.value().min(self.lane_count() - 1)
   }
 
+  /// Focuses the lane at `index` (0 is the take).
   pub fn set_focus_index(&self, index: usize) {
     self.focus_index.set(index);
   }
@@ -153,6 +175,7 @@ impl Lanes {
     (app().views.view() == ScreenView::Tracks).then(|| self.focused_lane())
   }
 
+  /// The tracks view's pick, when it's a track rather than the take.
   pub fn picked_track(&self) -> Option<Track> {
     self.picked_lane().filter(|lane| !is_take(lane))
   }
@@ -188,6 +211,7 @@ impl Lanes {
       .update(|index| *index = (*index as i32 + direction).clamp(0, last) as usize);
   }
 
+  /// Sets the focused lane's ADSR, LFO and FX: the take's, or a track's own.
   pub fn set_modules(&self, next: ModuleSettings) {
     let index = fluid::untrack(|| self.focus_index());
     if index == 0 {
@@ -208,6 +232,7 @@ impl Lanes {
     self.set_modules(modules);
   }
 
+  /// Switches a module of the focused lane on or off.
   pub fn toggle_module(&self, id: ModuleId) {
     let mut modules = fluid::untrack(|| self.modules());
     let on = modules.on.get_mut(id);
@@ -215,6 +240,7 @@ impl Lanes {
     self.set_modules(modules);
   }
 
+  /// Changes the open tape's track at `index`.
   fn update_track_at(&self, index: usize, change: impl FnOnce(&mut Track)) {
     app().session.set_tracks(|tracks| {
       if let Some(track) = tracks.get_mut(index) {
@@ -223,6 +249,7 @@ impl Lanes {
     });
   }
 
+  /// Changes the open tape's track `id`.
   pub fn update_track(&self, id: &str, change: impl FnOnce(&mut Track)) {
     app().session.set_tracks(|tracks| {
       if let Some(track) = tracks.iter_mut().find(|track| track.id == id) {
@@ -240,6 +267,7 @@ impl Lanes {
     });
   }
 
+  /// Deletes the track `id`, keeping the focus on a lane that's still there.
   pub fn delete_track(&self, id: &str) {
     let lanes = fluid::untrack(|| self.lane_count());
     fluid::batch(|| {
@@ -277,6 +305,7 @@ impl Lanes {
     });
   }
 
+  /// Clears the take and its drum pattern.
   pub fn discard_take(&self) {
     fluid::batch(|| {
       app().session.set_take(None);

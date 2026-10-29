@@ -28,10 +28,13 @@ pub struct Meter {
   pub unit: u32,
 }
 
+/// A time signature, for the table.
 const fn meter(beats: u32, unit: u32) -> Meter {
   Meter { beats, unit }
 }
 
+/// The time signatures the Device offers, in the order the knob steps through
+/// them.
 pub const METERS: [Meter; 7] = [
   meter(2, 4),
   meter(3, 4),
@@ -42,9 +45,11 @@ pub const METERS: [Meter; 7] = [
   meter(12, 8),
 ];
 
+/// 4/4, where a first visit starts.
 pub const FOUR_FOUR: Meter = METERS[2];
 
 impl Meter {
+  /// The time signature as written: `4/4`.
   pub fn label(&self) -> String {
     format!("{}/{}", self.beats, self.unit)
   }
@@ -68,6 +73,7 @@ pub struct Timing {
   pub swing: Option<Swing>,
 }
 
+/// A first visit's timing: 96 BPM in 4/4, off the grid, straight.
 pub const DEFAULT_TIMING: Timing = Timing {
   bpm: 96.,
   meter: FOUR_FOUR,
@@ -76,10 +82,12 @@ pub const DEFAULT_TIMING: Timing = Timing {
 };
 
 impl Timing {
+  /// A beat's length at the tempo (ms).
   pub fn beat_ms(&self) -> f64 {
     beat_ms(self.bpm)
   }
 
+  /// A bar's length at the tempo (ms).
   pub fn bar_ms(&self) -> f64 {
     f64::from(self.meter.beats) * self.beat_ms()
   }
@@ -99,6 +107,7 @@ impl Timing {
   }
 }
 
+/// A beat's length at `bpm` (ms).
 pub fn beat_ms(bpm: f64) -> f64 {
   60_000. / bpm
 }
@@ -117,6 +126,7 @@ pub struct Take {
 }
 
 impl Take {
+  /// A take with no notes, at `bpm`.
   pub fn empty(bpm: f64) -> Self {
     Self {
       notes: Vec::new(),
@@ -187,6 +197,7 @@ pub struct NoteRecorder {
 }
 
 impl NoteRecorder {
+  /// A recorder whose times count from `origin` (`performance.now()` ms).
   pub fn new(origin: f64) -> Self {
     Self {
       origin,
@@ -195,6 +206,7 @@ impl NoteRecorder {
     }
   }
 
+  /// `note` pressed at `at`, with `velocity`.
   pub fn note_on(&mut self, note: i32, velocity: f64, at: f64) {
     let press = (at - self.origin, velocity);
     match self.held.iter_mut().find(|(pitch, _)| *pitch == note) {
@@ -203,6 +215,7 @@ impl NoteRecorder {
     }
   }
 
+  /// `note` let go at `at`: ends its oldest press still down.
   pub fn note_off(&mut self, note: i32, at: f64) {
     let Some((_, presses)) = self.held.iter_mut().find(|(pitch, _)| *pitch == note) else {
       return;

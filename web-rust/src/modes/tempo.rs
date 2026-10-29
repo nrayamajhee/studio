@@ -24,6 +24,10 @@ use crate::state::App;
 use crate::state::lanes::is_take;
 use crate::state::transport::{MAX_BPM, MIN_BPM};
 
+/// Binds the tempo view: the green knob and the arrows set the tempo, ↓
+/// switches tap mode, ↑ links or unlinks a picked track's tempo (or gives every
+/// track the tape's), and the red and blue knobs set the swing and what it
+/// swings.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let bpm = a.transport.bpm.value();
   let tap_mode = a.transport.tap_mode();

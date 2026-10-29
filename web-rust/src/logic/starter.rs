@@ -30,6 +30,7 @@ pub struct Tape {
 
 /// The synth's level the Device starts at, in knob steps.
 pub const INITIAL_LEVEL_STEP: usize = 8;
+/// The system volume the Device starts at, in knob steps.
 pub const INITIAL_VOLUME_STEP: usize = 10;
 
 /// Starter 1, at 96 BPM: the Suspended progression with D as home in a
@@ -42,17 +43,25 @@ const TIMING: Timing = Timing {
   per_beat: 0,
   swing: None,
 };
+/// Starter 1's home note, D4.
 const HOME: i32 = 62;
+/// How many times Starter 1 goes round its progression.
 const ROUNDS: u32 = 3;
+/// The bars Starter 1's beat waits before it comes in.
 const DRUMS_IN: u32 = 2;
+/// The bars Starter 1's beat plays on past the last chord.
 const DRUMS_OUT: u32 = 1;
+/// The oscillator's second wave off: a plain sine.
 const PLAIN_SINE: &[(&str, f64)] = &[("exciter.wave2", 0.)];
 
 /// Starter 2, at 92 BPM: Homecoming with A as home, folk-strummed on the
 /// oscillator, the beat, the bass guitar's up-down from bar 9 and the
 /// fingerstyle electric's Alberti from bar 17 through its effects.
 const TIMING_2: Timing = Timing { bpm: 92., ..TIMING };
+/// Starter 2's home note, A3.
 const HOME_2: i32 = 57;
+/// The oscillator as Starter 2's lead plays it: a triangle and a quieter
+/// square, a little out of phase.
 const TRIANGLE_AND_SQUARE: &[(&str, f64)] = &[
   ("exciter.wave", 1.),
   ("exciter.wave2", 3.),
@@ -81,6 +90,8 @@ fn sound_of(preset: &DevicePreset, edits: &[(&str, f64)]) -> DeviceSound {
   }
 }
 
+/// A take kept as track number `count` on a starter tape, as the Device would
+/// keep it.
 fn kept(
   count: usize,
   preset: &DevicePreset,
@@ -117,6 +128,7 @@ fn played(id: &str, home: i32, timing: &Timing, style: &str) -> Take {
   )
 }
 
+/// The beat as a track, with the swing and length in bars it brings.
 struct BeatTrack {
   swing: Option<Swing>,
   bars: u32,
@@ -151,6 +163,7 @@ fn beat_track(count: usize, timing: &Timing) -> BeatTrack {
   }
 }
 
+/// Starter 1, the tape a first visit opens on.
 fn starter_one() -> Tape {
   let beats = f64::from(TIMING.meter.beats);
   let strum = played("suspended", HOME, &TIMING, "folkStrum");
@@ -207,6 +220,7 @@ fn starter_one() -> Tape {
   }
 }
 
+/// Starter 2, the second tape a first visit has.
 fn starter_two() -> Tape {
   let bar = |n: u32| f64::from((n - 1) * TIMING_2.meter.beats);
   let beat = beat_track(0, &TIMING_2);

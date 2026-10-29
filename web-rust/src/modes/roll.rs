@@ -50,6 +50,10 @@ fn save_take(a: &'static App) {
   });
 }
 
+/// Binds the piano roll: Record arms a take and Play plays it; stopped, the
+/// green knob scrolls it in time; the red knob sets the time signature (or
+/// transposes with Shift), the blue the roll's octave, and ↑ ↓ move it a
+/// semitone; Save keeps the take as a track.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let shift = a.shift.shift();
   let timing = a.transport.timing();

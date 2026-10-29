@@ -23,11 +23,14 @@ pub struct HeldKeys {
 }
 
 impl HeldKeys {
+  /// Whether `control`'s key is down (and not ignored).
   pub fn is_held(&self, control: Control) -> bool {
     self.controls.contains(&control)
   }
 }
 
+/// A key that's down: the control it presses, and whether it stopped counting
+/// as held (see [`HotkeyEvent::ignore`]).
 #[derive(Clone, Copy)]
 struct Down {
   control: Control,
@@ -55,11 +58,20 @@ impl HotkeyEvent<'_> {
   }
 }
 
+/// The keys down right now, as web-react's `HotkeyProvider`: each by its
+/// `KeyboardEvent.code` (or a MIDI pad's), in the order they went down.
+///
+/// [`Hotkeys::press`] and [`Hotkeys::release`] hand each change to the Device
+/// as it happens ([`crate::state::App::hotkey`]), with what's held at that
+/// moment, then publish what's held as [`Hotkeys::held`] for drawing.
+/// [`Hotkeys::release_all`] lets go of everything when the page loses focus.
 pub struct Hotkeys {
   keys: RefCell<IndexMap<String, Down>>,
   pub held: Rc<Signal<HeldKeys>>,
 }
 
+/// What's held, from the keys down: their controls (ignored keys left out), the
+/// latest chord key and whether Shift is down.
 fn summarize(keys: &IndexMap<String, Down>) -> HeldKeys {
   let controls: Vec<Control> = keys
     .values()
@@ -81,6 +93,7 @@ fn summarize(keys: &IndexMap<String, Down>) -> HeldKeys {
 }
 
 impl Hotkeys {
+  /// No keys down.
   pub fn new() -> Self {
     Self {
       keys: RefCell::default(),
@@ -88,6 +101,7 @@ impl Hotkeys {
     }
   }
 
+  /// Hands a press or release of `code` to the Device.
   fn emit(&self, code: &str, control: Control, down: bool) {
     let held = summarize(&self.keys.borrow());
     app().hotkey(&HotkeyEvent {
@@ -98,12 +112,13 @@ impl Hotkeys {
     });
   }
 
+  /// Publishes what's held, if it changed.
   fn publish(&self) {
     self.held.set_if_changed(summarize(&self.keys.borrow()));
   }
 
-  /// A key went down. Returns whether it was one of the Device's (already
-  /// down or not), so the page can keep it from the browser.
+  /// A key went down: the Device hears it, unless it was already down (a
+  /// key repeating).
   pub fn press(&self, code: &str, control: Control) {
     if self.keys.borrow().contains_key(code) {
       return;
@@ -121,6 +136,7 @@ impl Hotkeys {
     });
   }
 
+  /// A key came up: the Device hears it, if it was down.
   pub fn release(&self, code: &str) {
     let Some(down) = self.keys.borrow_mut().shift_remove(code) else {
       return;
@@ -131,6 +147,7 @@ impl Hotkeys {
     });
   }
 
+  /// Whether the key `code` is down.
   pub fn is_down(&self, code: &str) -> bool {
     self.keys.borrow().contains_key(code)
   }

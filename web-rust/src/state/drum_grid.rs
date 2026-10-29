@@ -28,7 +28,9 @@ use crate::logic::tracks::{
 /// `TICK_MS`, so a busy page never makes them late; the first step waits
 /// `LEAD` for its hits to arrive.
 const LOOKAHEAD: f64 = 0.12;
+/// How often the hits are topped up (ms).
 const TICK_MS: u32 = 25;
+/// How long the first step waits on the audio clock for its hits to arrive (s).
 const LEAD: f64 = 0.05;
 
 /// What the step player reads on every top-up.
@@ -50,6 +52,8 @@ fn late_by(source: &StepSource, step: u32) -> f64 {
   (swing_time(at, 60_000. / source.bpm, swung) - at) / 1000.
 }
 
+/// A step sent to the engine: which step, its count since the loop started, and
+/// when it plays on the audio clock (s).
 #[derive(Clone, Copy)]
 struct Scheduled {
   /// The pattern's step, and its count since the loop started.
@@ -58,6 +62,8 @@ struct Scheduled {
   time: f64,
 }
 
+/// The loop as it runs: the timer topping it up, the next step to send and
+/// when, the steps sent in the last second, and hits a tap already played.
 struct Run {
   _timer: Interval,
   next: u64,
@@ -67,6 +73,16 @@ struct Run {
   played: Vec<(String, u64)>,
 }
 
+/// The drum grid, as web-react's `DrumGridProvider` and `useStepPlayer`: the
+/// kit playing, a row a piece, a column a step of the pattern on the tempo's
+/// meter, and the head (the green knob) where the pattern rests or plays.
+///
+/// Stopped, keys and clicks set or clear hits at the head; Play loops the
+/// pattern on the audio clock, and Record loops it and lands each tap on the
+/// nearest step ([`DrumGrid::play_pattern`], [`DrumGrid::stop_pattern`],
+/// [`DrumGrid::notes_played`]). The rest read the pattern as the grid draws it,
+/// move the head, set the resolution and length, clear the pattern, and open
+/// the grid on a kit, loading a picked drum track as the take.
 pub struct DrumGrid {
   step_cursor: Rc<Signal<u32>>,
   /// The head, as the stopped grid keeps it, read outside redraws.
@@ -80,6 +96,7 @@ pub struct DrumGrid {
 }
 
 impl DrumGrid {
+  /// Stopped, the head at the start.
   pub fn new() -> Self {
     Self {
       step_cursor: Rc::new(Signal::new(0)),
@@ -91,6 +108,9 @@ impl DrumGrid {
     }
   }
 
+  /// Starts the effects: the pattern follows the kit picked, leaving the grid
+  /// stops the loop and puts the instrument back, and the head is kept for
+  /// reads outside redraws.
   pub fn install(&'static self) {
     // The pattern goes with the kit picked: written for another, its hits
     // move to the pieces or strokes that play them here.
@@ -124,6 +144,7 @@ impl DrumGrid {
     });
   }
 
+  /// Stops the loop and puts back the instrument the grid swapped for a kit.
   fn leave(&self) {
     self.stop_player();
     let before = self.before.borrow_mut().take();
@@ -139,6 +160,7 @@ impl DrumGrid {
     }
   }
 
+  /// The pattern in the session.
   fn pattern(&self) -> DrumPattern {
     app()
       .session
@@ -146,6 +168,7 @@ impl DrumGrid {
       .with(|session| session.pattern.clone())
   }
 
+  /// The tempo's time signature, which the pattern's bars follow.
   fn meter(&self) -> Meter {
     app().transport.timing().meter
   }
@@ -159,6 +182,7 @@ impl DrumGrid {
       .unwrap_or_default()
   }
 
+  /// How many steps the pattern has.
   pub fn step_count(&self) -> u32 {
     let meter = self.meter();
     app()
@@ -167,6 +191,7 @@ impl DrumGrid {
       .with(|session| pattern_steps(&session.pattern, meter))
   }
 
+  /// How many steps a bar has.
   pub fn steps_per_bar(&self) -> u32 {
     self.meter().beats
       * app()
@@ -175,6 +200,7 @@ impl DrumGrid {
         .with(|session| session.pattern.per_beat)
   }
 
+  /// How many steps a beat has.
   pub fn per_beat(&self) -> u32 {
     app()
       .session
@@ -182,6 +208,7 @@ impl DrumGrid {
       .with(|session| session.pattern.per_beat)
   }
 
+  /// Where the stopped head rests, within the pattern.
   pub fn step_head(&self) -> u32 {
     self
       .step_cursor
@@ -216,6 +243,7 @@ impl DrumGrid {
     app().views.main_view() == MainView::DrumGrid && self.running.value()
   }
 
+  /// Whether the loop is recording taps.
   pub fn recording_pattern(&self) -> bool {
     self.pattern_running() && self.step_recording.value()
   }
@@ -251,6 +279,7 @@ impl DrumGrid {
     })
   }
 
+  /// What a top-up reads, untracked.
   fn source(&self) -> StepSource {
     fluid::untrack(|| {
       let transport = &app().transport;
@@ -264,6 +293,8 @@ impl DrumGrid {
     })
   }
 
+  /// Sends the hits due within the lookahead, keeping the steps sent in the
+  /// last second for [`DrumGrid::position`].
   fn top_up(&self) {
     let mut run = self.run.borrow_mut();
     let Some(run) = run.as_mut() else {
@@ -303,6 +334,7 @@ impl DrumGrid {
     run.recent.retain(|scheduled| scheduled.time > now - 1.);
   }
 
+  /// Stops the loop.
   fn stop_player(&self) {
     self.run.borrow_mut().take();
     self.running.set_if_changed(false);
@@ -420,6 +452,7 @@ impl DrumGrid {
     }
   }
 
+  /// Moves the stopped head by `steps`.
   pub fn move_step_head_by(&self, steps: i64) {
     self.move_step_head(i64::from(self.head.get()) + steps);
   }
@@ -436,6 +469,8 @@ impl DrumGrid {
     });
   }
 
+  /// Plays the pattern from the head, recording taps if `recording`; already
+  /// looping, it only switches recording.
   pub fn play_pattern(&'static self, recording: bool) {
     self.step_recording.set(recording);
     if self.run.borrow().is_some() {
@@ -477,6 +512,7 @@ impl DrumGrid {
     });
   }
 
+  /// Sets the pattern's length in bars.
   pub fn set_step_bars(&self, bars: u32) {
     app().session.set_pattern(|pattern| DrumPattern {
       bars,
@@ -484,6 +520,7 @@ impl DrumGrid {
     });
   }
 
+  /// Clears every hit of the pattern.
   pub fn clear_pattern(&self) {
     app().session.set_pattern(|pattern| DrumPattern {
       hits: Vec::new(),

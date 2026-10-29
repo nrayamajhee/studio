@@ -40,6 +40,8 @@ fn pick_tape(a: &'static App, index: i64) {
   a.transport.apply_tape_timing(next);
 }
 
+/// Binds the tapes: the green knob and the arrows open a tape, Play plays its
+/// tracks, Save starts an empty tape and Delete removes the open one.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let tapes = a.lanes.tapes();
   let tape_index = a.lanes.tape_index();

@@ -11,27 +11,47 @@
 
 use crate::logic::modules::ModuleId;
 
+/// A pad that opens a view or acts, rather than playing a sound: each has its
+/// own key.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Tool {
+  /// Arms recording a take (or the drum grid's pattern).
   Record,
+  /// Plays or pauses what the view plays.
   Play,
+  /// Stops and rewinds.
   Stop,
+  /// The open tape's tracks.
   Tracks,
+  /// The tapes.
   Tapes,
+  /// The take as a piano roll (with Shift, the progressions).
   Roll,
+  /// The drum grid (with Shift, the drum beats).
   DrumGrid,
+  /// The tempo view (with Shift, the metronome on or off).
   Metronome,
+  /// The instruments.
   Instruments,
+  /// The synth's parameters.
   Synth,
+  /// What the chord pads play.
   Chords,
+  /// How chords come out.
   PlayStyle,
+  /// Keeps what the view holds.
   Save,
+  /// Deletes what the view has picked, on a second press.
   Delete,
+  /// Mutes the picked track (with Shift, solos it).
   Mute,
+  /// Loops the picked track's clip (with Shift, trims to it).
   Clip,
+  /// The ADSR, LFO or FX view (with Shift, the module on or off).
   Module(ModuleId),
 }
 
+/// Every tool, in the order their keys are listed.
 pub const TOOLS: [Tool; 19] = [
   Tool::Play,
   Tool::Stop,
@@ -57,14 +77,19 @@ pub const TOOLS: [Tool; 19] = [
 /// Everything the keyboard can press on the Device.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Control {
+  /// A keybed key, by semitone from F3.
   Note(usize),
+  /// A chord pad, by its place among the six.
   Chord(usize),
+  /// An instrument pad, by its place among the six.
   Instrument(usize),
+  /// A tool's pad.
   Tool(Tool),
   /// ← and →.
   Step(i32),
   /// ↑ and ↓: the previous or next row, as the blue knob picks a track.
   Pick(i32),
+  /// Shift.
   Shift,
 }
 
@@ -75,6 +100,7 @@ const NOTE_KEYS: [&str; 19] = [
 
 /// The notes Shift adds past the home row's last key.
 pub const SHIFT_NOTES: usize = 5;
+/// The first home-row note Shift moves up.
 const SHIFTED_FROM: usize = NOTE_KEYS.len() - SHIFT_NOTES;
 
 /// The note a piano key plays with Shift held: the last five move up past
@@ -87,9 +113,12 @@ pub fn shifted_note(semitone: usize) -> usize {
   }
 }
 
+/// The instrument pads' keys, in pad order.
 const INSTRUMENT_KEYS: [&str; 6] = ["1", "2", "3", "4", "5", "6"];
+/// The chord pads' keys, in pad order.
 const CHORD_KEYS: [&str; 6] = ["7", "8", "9", "0", "-", "="];
 
+/// A tool's key legend; Save has none of its own (⌘S or Ctrl S saves).
 fn tool_key(tool: Tool) -> &'static str {
   match tool {
     Tool::Play => "Space",
@@ -160,6 +189,7 @@ pub fn hotkey_label(control: Control) -> String {
   }
 }
 
+/// Every control the keyboard can press.
 fn controls() -> Vec<Control> {
   (0..NOTE_KEYS.len())
     .map(Control::Note)

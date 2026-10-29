@@ -17,23 +17,29 @@ use crate::ui::blur_active;
 /// Pixels of sideways drag per beat per minute.
 const BPM_DRAG: f64 = 4.;
 
+/// The tempo field: the number, big.
 const FIELD: &str = "-my-[8px] h-[88px] w-[calc(3ch_+_28px)] rounded-[18px] border-2 px-[12px] text-center text-synth-green tabular-nums outline-none [corner-shape:squircle]";
 
 /// What the field shows: the tempo, whether it can be set, and whether it
 /// is being typed in (then the tempo doesn't redraw it).
 #[derive(Clone, PartialEq)]
 enum Field {
+  /// The tempo, which can't be set here.
   Shown(f64),
+  /// The tempo, which can be dragged or clicked to type.
   Settable(f64),
+  /// Being typed in.
   Editing,
 }
 
+/// Sets the tempo, as the bindings do.
 fn set_bpm(bpm: f64) {
   if let Some(on_bpm) = &modes::current().screen.on_bpm {
     on_bpm.call(bpm);
   }
 }
 
+/// A drag on the tempo: its pointer, and where it started (x and tempo).
 struct Drag {
   pointer: i32,
   x: f64,
@@ -155,6 +161,8 @@ fn button(bpm: f64, editing: Rc<Signal<bool>>) -> Element {
   }
 }
 
+/// The tempo view: the tempo big in the middle, dragged or typed when it can be
+/// set, with the time signature's beats lit as the metronome clicks.
 pub fn tempo() -> Element {
   let editing = Rc::new(Signal::new(false));
   let field = {

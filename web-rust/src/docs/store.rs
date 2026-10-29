@@ -6,6 +6,7 @@ use std::rc::Rc;
 use fluid::Signal;
 use gloo_utils::window;
 
+/// Where the sidebar's folded folders are kept, as web-react keeps them.
 pub const DOCS_COLLAPSED_KEY: &str = "studio.docsCollapsed";
 
 thread_local! {
@@ -17,6 +18,7 @@ pub fn collapsed() -> Rc<Signal<Vec<String>>> {
   COLLAPSED.with(Rc::clone)
 }
 
+/// Folds exactly the folders in `next`, and keeps them.
 pub fn set_collapsed(next: Vec<String>) {
   // Storage can be unavailable (private mode); the change still applies.
   if let (Ok(Some(storage)), Ok(json)) = (window().local_storage(), serde_json::to_string(&next)) {
@@ -25,6 +27,7 @@ pub fn set_collapsed(next: Vec<String>) {
   collapsed().set(next);
 }
 
+/// The folded folders kept.
 fn read() -> Vec<String> {
   window()
     .local_storage()

@@ -41,10 +41,12 @@ use crate::state::view::ScreenView;
 pub struct Callback<A, R = ()>(pub Rc<dyn Fn(A) -> R>);
 
 impl<A, R> Callback<A, R> {
+  /// Wraps `f` as a handler.
   pub fn new(f: impl Fn(A) -> R + 'static) -> Self {
     Self(Rc::new(f))
   }
 
+  /// Runs the handler with `value`.
   pub fn call(&self, value: A) -> R {
     (self.0)(value)
   }
@@ -68,6 +70,7 @@ impl<A, R> fmt::Debug for Callback<A, R> {
   }
 }
 
+/// A handler that does nothing.
 pub fn noop<A>() -> Callback<A> {
   Callback::new(|_| {})
 }
@@ -76,16 +79,24 @@ pub fn noop<A>() -> Callback<A> {
 /// and blue on the right.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Knob {
+  /// The white knob, top left.
   Chalk,
+  /// The green knob, bottom left: seeks and picks.
   Green,
+  /// The red knob, top right: what to set.
   Red,
+  /// The blue knob, bottom right: what to set it to.
   Blue,
 }
 
 impl Knob {
+  /// Every knob, in the order they sit.
   pub const ALL: [Knob; 4] = [Knob::Chalk, Knob::Green, Knob::Red, Knob::Blue];
 }
 
+/// What a knob does in a view: its label (and the value it shows), where it
+/// rests among its steps, and what turning it does. `on_change` hears the step
+/// it was turned to.
 #[derive(Clone, Debug, PartialEq)]
 pub struct KnobBinding {
   pub label: String,
@@ -100,13 +111,21 @@ pub struct KnobBinding {
 /// The pads a mode can rebind: every tool, and the four arrows.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum PadSlot {
+  /// A tool's pad.
   Tool(Tool),
+  /// The ← pad.
   Left,
+  /// The → pad.
   Right,
+  /// The ↑ pad.
   Up,
+  /// The ↓ pad.
   Down,
 }
 
+/// What a pad does in a view: its label and icon, what pressing it does, and
+/// how it lights (lit while its view is open, an LED for a state, or pressed
+/// like a switch).
 #[derive(Clone, Debug, PartialEq)]
 pub struct PadBinding {
   pub label: String,
@@ -123,6 +142,7 @@ pub struct PadBinding {
 }
 
 impl PadBinding {
+  /// A pad labelled `label` with `icon`, doing `on_press`, unlit.
   pub fn new(
     label: impl Into<String>,
     icon: Icon,
@@ -139,10 +159,12 @@ impl PadBinding {
     }
   }
 
+  /// Lights the pad, as for an open view.
   pub fn lit(self, lit: bool) -> Self {
     Self { lit, ..self }
   }
 
+  /// Gives the pad an LED, on or off.
   pub fn indicator(self, on: bool) -> Self {
     Self {
       indicator: Some(on),
@@ -150,6 +172,7 @@ impl PadBinding {
     }
   }
 
+  /// Shows ⇧ on the pad's keycap, for a Shift job.
   pub fn shift_legend(self, shift_legend: bool) -> Self {
     Self {
       shift_legend,
@@ -162,6 +185,7 @@ impl PadBinding {
 /// or dimmed as a hint.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Tone {
+  /// The screen's ink.
   Plain,
   /// What the green knob moves through, in green.
   Seek,
@@ -173,15 +197,14 @@ pub enum Tone {
   Hint,
 }
 
+/// A run of a [`Rich`] line.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Piece {
+  /// Text in a tone.
   Text(Tone, String),
   /// A pad's icon in an outlined badge, for hints that point at the pad
   /// (dimmed with them).
-  Pad {
-    label: String,
-    icon: Icon,
-  },
+  Pad { label: String, icon: Icon },
 }
 
 /// A line of the screen's text, its runs in their colours.
@@ -189,14 +212,17 @@ pub enum Piece {
 pub struct Rich(pub Vec<Piece>);
 
 impl Rich {
+  /// An empty line.
   pub fn new() -> Self {
     Self::default()
   }
 
+  /// A line of plain text.
   pub fn text(text: impl Into<String>) -> Self {
     Self::new().plain(text)
   }
 
+  /// Adds `text` in `tone`, unless it's empty.
   fn push(mut self, tone: Tone, text: impl Into<String>) -> Self {
     let text = text.into();
     if !text.is_empty() {
@@ -205,22 +231,27 @@ impl Rich {
     self
   }
 
+  /// Adds plain text.
   pub fn plain(self, text: impl Into<String>) -> Self {
     self.push(Tone::Plain, text)
   }
 
+  /// Adds text in green, as the green knob moves it.
   pub fn seek(self, text: impl Into<String>) -> Self {
     self.push(Tone::Seek, text)
   }
 
+  /// Adds text in red, as the red knob sets it.
   pub fn level(self, text: impl Into<String>) -> Self {
     self.push(Tone::Level, text)
   }
 
+  /// Adds text in blue, as the blue knob sets it.
   pub fn value(self, text: impl Into<String>) -> Self {
     self.push(Tone::Value, text)
   }
 
+  /// Adds a dimmed hint.
   pub fn hint(self, text: impl Into<String>) -> Self {
     self.push(Tone::Hint, text)
   }
@@ -240,6 +271,7 @@ impl Rich {
     self
   }
 
+  /// Whether the line has nothing in it.
   pub fn is_empty(&self) -> bool {
     self.0.is_empty()
   }
@@ -256,9 +288,12 @@ pub struct ScreenBadge {
   pub on: Option<bool>,
 }
 
+/// The colour of a pager's current tab.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PagerColor {
+  /// Red, as the red knob turns the pages.
   Red,
+  /// The screen's ink, as the green knob turns them (the synth's).
   Ink,
 }
 
@@ -272,6 +307,7 @@ pub struct ScreenPager {
   pub on_pick: Callback<usize>,
 }
 
+/// A picker's tile: its id, label and icon, and an optional caption.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScreenTile {
   pub id: String,
@@ -320,14 +356,21 @@ pub struct StepRow {
   pub icon: Icon,
 }
 
+/// The knob that moves a picker's highlight, which takes its colour.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum SelectedBy {
+  /// The green knob.
   #[default]
   Green,
+  /// The blue knob.
   Blue,
 }
 
-/// What the screen shows in a view.
+/// What the screen shows in a view: its title and status line, footer or
+/// badge, and the parts each kind of view fills in: a picker's tiles and
+/// pager, a module's readouts, the tempo view's timing, the synth's graph,
+/// the tracks' lanes, the piano roll and the drum grid, each with the
+/// handlers for what's dragged or clicked on them.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ScreenBinding {
   /// Leads the top line, or the footer where a pager or `status_left`
@@ -384,7 +427,11 @@ pub struct ScreenBinding {
   pub on_move_step: Option<Callback<i64>>,
 }
 
-/// What every control does now.
+/// What every control does now: the four knobs, the tool and arrow pads,
+/// the instrument and chord pads, the screen, and what a key does before it
+/// plays. Built from the base bindings with the open view's mode over them
+/// (see [`install`]); controls read them with [`with`], and a press runs
+/// them as they are with [`current`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct Bindings {
   pub knobs: [KnobBinding; 4],
@@ -401,18 +448,22 @@ pub struct Bindings {
 }
 
 impl Bindings {
+  /// The binding of `knob`.
   pub fn knob(&self, knob: Knob) -> &KnobBinding {
     &self.knobs[knob as usize]
   }
 
+  /// Rebinds `knob`.
   pub fn set_knob(&mut self, knob: Knob, binding: KnobBinding) {
     self.knobs[knob as usize] = binding;
   }
 
+  /// The binding of the pad in `slot`.
   pub fn pad(&self, slot: PadSlot) -> &PadBinding {
     &self.pads[&slot]
   }
 
+  /// Rebinds the pad in `slot`.
   pub fn set_pad(&mut self, slot: PadSlot, binding: PadBinding) {
     self.pads.insert(slot, binding);
   }
@@ -432,6 +483,7 @@ impl PartialEq for Fresh {
 /// A view's mode: what it rebinds of the base bindings.
 type Mode = fn(&'static App, &mut Bindings);
 
+/// The mode for `view`.
 fn mode_of(view: ScreenView) -> Mode {
   match view {
     ScreenView::Scope => scope::mode,
@@ -490,6 +542,7 @@ pub fn install(app: &'static App) {
   });
 }
 
+/// The bindings' memo.
 fn memo() -> Memo<Fresh> {
   BINDINGS.with(|cell| cell.get().expect("the bindings are installed").clone())
 }

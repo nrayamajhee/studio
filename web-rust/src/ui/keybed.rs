@@ -19,14 +19,18 @@ use crate::state::hotkeys::HeldKeys;
 use crate::state::keymap::{Control, hotkey_label, shifted_note};
 use crate::state::performance::F3_MIDI;
 
+/// The white keys' semitones from F3.
 const WHITE_KEYS: [i32; 14] = [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23];
+/// The black keys' semitones from F3.
 const BLACK_KEYS: [i32; 10] = [1, 3, 5, 8, 10, 13, 15, 17, 20, 22];
+/// The notes' names, from C, as a screen reader spells them.
 const NAMES: [&str; 12] = [
   "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
 ];
 /// The keybed has no velocity; every press plays mezzo-forte.
 const KEY_VELOCITY: f64 = 0.8;
 
+/// A MIDI note's octave number (60 is in octave 4).
 fn octave_of(midi: i32) -> i32 {
   midi.div_euclid(12) - 1
 }
@@ -115,6 +119,8 @@ struct Look {
   face: String,
 }
 
+/// What a key shows for the preset playing: its note, or on a kit the piece it
+/// strikes.
 fn look(semitone: i32) -> Look {
   let midi = note_of(semitone);
   let target = app().sound.preset.with(|preset| preset.target.clone());
@@ -133,9 +139,13 @@ fn look(semitone: i32) -> Look {
 }
 
 // Each black key centres on the 4px gap before white key --slot.
+/// A white key, placed by its slot.
 const WHITE: &str = "absolute top-0 left-[calc(var(--slot)_*_var(--key-pitch))] inline-flex h-[var(--white-key-height,210px)] w-[var(--white-key-width,50px)] cursor-pointer touch-none items-center justify-center rounded-b-[8px] text-center text-[#5f5d57] select-none focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-[#2f7de1] focus-visible:outline-solid";
+/// A black key, centred on the gap before its slot's white key.
 const BLACK: &str = "absolute top-0 left-[calc(var(--slot)_*_var(--key-pitch)_-_2px_-_var(--black-key-width)_/_2)] z-2 inline-flex h-[var(--black-key-height,128px)] w-[var(--black-key-width,30px)] cursor-pointer touch-none items-center justify-center rounded-b-[6px] text-center text-white/72 select-none focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-[#2f7de1] focus-visible:outline-solid";
 
+/// A key of the keybed: lit while it sounds, with its legend and what it plays,
+/// pressed by the pointer (sliding from key to key) or its key.
 fn key(semitone: i32, slot: usize, black: bool) -> Element {
   let a = app();
   let legend = hotkey_label(Control::Note(semitone as usize));

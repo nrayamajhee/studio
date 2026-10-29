@@ -17,7 +17,9 @@ use crate::logic::timing::Take;
 /// Notes are sent this far ahead on the audio clock, topped up every
 /// `TICK_MS`; the first waits `LEAD` for its notes to arrive.
 const LOOKAHEAD: f64 = 0.12;
+/// How often the cues are topped up (ms).
 const TICK_MS: u32 = 25;
+/// How long the first cue waits on the audio clock for its notes to arrive (s).
 const LEAD: f64 = 0.05;
 
 /// The instrument a preview plays on.
@@ -35,6 +37,9 @@ struct Cue {
   velocity: Option<f64>,
 }
 
+/// A preview as it plays: the timer topping it up, the instrument, the take's
+/// cues and the next to send, where it started and where its top falls on the
+/// audio clock, and the notes sounding.
 struct Run {
   _timer: Interval,
   sound: PreviewSound,
@@ -83,6 +88,14 @@ fn cues_of(take: &Take, from: f64) -> Vec<Cue> {
   cues
 }
 
+/// The hidden player the pickers audition on, as web-react's `PreviewProvider`
+/// and `usePreviewTake`: a progression on the keys' instrument (following it as
+/// it changes) or a beat on its kit, played once through on the audio clock,
+/// never on the take or the tracks.
+///
+/// [`Preview::play`] plays one, from where it paused if it's the one held;
+/// [`Preview::pause`] holds it for Play to pick up; [`Preview::stop`] lets go
+/// of it, as leaving the view does.
 pub struct Preview {
   pub playing: Rc<Signal<bool>>,
   run: RefCell<Option<Run>>,
@@ -92,6 +105,7 @@ pub struct Preview {
 }
 
 impl Preview {
+  /// Nothing playing or held.
   pub fn new() -> Self {
     Self {
       playing: Rc::new(Signal::new(false)),
@@ -100,6 +114,7 @@ impl Preview {
     }
   }
 
+  /// Moves a preview playing on the keys' instrument along when it changes.
   pub fn install(&'static self) {
     // A preview of notes follows the keys' instrument as it changes.
     let keys = fluid::create_memo(move || self.keys_sound());
@@ -141,6 +156,8 @@ impl Preview {
       .with(|cued| cued.as_ref().map(|cued| cued.0.clone()))
   }
 
+  /// Sends the cues due within the lookahead, and ends the run when they're all
+  /// sent.
   fn top_up(&self) {
     let engine = &app().engine;
     let mut guard = self.run.borrow_mut();
@@ -266,6 +283,7 @@ impl Preview {
     self.top_up();
   }
 
+  /// Pauses the preview, holding where it got to for Play.
   pub fn pause(&self) {
     if let Some(at) = self.halt() {
       self.cued.update(|cued| {
@@ -276,6 +294,7 @@ impl Preview {
     }
   }
 
+  /// Stops the preview, forgetting it.
   pub fn stop(&self) {
     self.halt();
     self.cued.set_if_changed(None);

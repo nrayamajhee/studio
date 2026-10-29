@@ -73,6 +73,8 @@ pub fn pad_preset(a: &'static App, pad: usize) -> Option<DevicePreset> {
   a.sound.presets().into_iter().find(|preset| preset.id == id)
 }
 
+/// The red knob as the base binds it: it picks the param the blue knob sets, in
+/// module order.
 pub fn param_knob(a: &'static App) -> KnobBinding {
   let specs = a.sound.specs();
   let count = specs.len();
@@ -110,6 +112,7 @@ pub struct Shelf {
   pub count: usize,
 }
 
+/// The shelves of a list of categories, in the order they come.
 pub fn shelves_of<'a>(categories: impl IntoIterator<Item = &'a str>) -> Vec<Shelf> {
   let mut shelves: Vec<Shelf> = Vec::new();
   for (index, name) in categories.into_iter().enumerate() {
@@ -198,7 +201,9 @@ pub fn shelf_knobs(
   (red, blue)
 }
 
+/// The page a picker's favorites lead on.
 const FAVORITES: &str = "Favorites";
+/// The page of Nishan's Picks, after the favorites.
 const PICKS: &str = "Nishan's Picks";
 
 /// An item a picker lists: its id, its name and the category it is filed
@@ -254,6 +259,9 @@ pub struct Picker {
 }
 
 impl Picker {
+  /// A picker over `entries` for the favorites of `kind`, its highlight at
+  /// `index` (or on `picked`, where the pick is what plays); `set_index` moves
+  /// the highlight and `on_pick` hears the entry picked.
   pub fn new(
     a: &'static App,
     kind: FavoriteKind,
@@ -290,18 +298,22 @@ impl Picker {
     }
   }
 
+  /// The item the highlight is on, as listed.
   pub fn chosen(&self) -> &Listed {
     &self.listed[self.index]
   }
 
+  /// The entry `listed` lists.
   pub fn entry(&self, listed: &Listed) -> &Entry {
     &self.entries[listed.entry]
   }
 
+  /// The entry the highlight is on.
   pub fn chosen_entry(&self) -> &Entry {
     self.entry(self.chosen())
   }
 
+  /// Whether the highlighted entry is starred.
   pub fn favorite(&self) -> bool {
     self.favorites.contains(&self.chosen_entry().id)
   }
@@ -431,6 +443,7 @@ pub fn arrow_pad(
   .shift_legend(a.shift.shift())
 }
 
+/// Binds ← and → to step by -1 and 1, labelled `previous` and `next`.
 pub fn arrow_pads(
   b: &mut Bindings,
   a: &'static App,
@@ -485,6 +498,7 @@ pub struct DeleteJob {
 }
 
 impl DeleteJob {
+  /// A job labelled `label` that `key` arms, asking `prompt` before it runs.
   pub fn new(
     label: impl Into<String>,
     key: impl Into<String>,
@@ -564,6 +578,7 @@ pub fn delete_pad(
   .shift_legend(revert || resetting.is_some())
 }
 
+/// Play's icon: Pause while playing.
 fn play_icon(playing: bool) -> Icon {
   Icon::Filled(if playing { "Pause" } else { "Play" })
 }
@@ -841,6 +856,7 @@ fn metronome_pad(a: &'static App) -> PadBinding {
   .shift_legend(shift)
 }
 
+/// A pad that opens `opens`, lit and labelled to close it while it shows.
 fn view_pad(
   a: &'static App,
   opens: ScreenView,

@@ -20,8 +20,11 @@ use crate::modes::{self, PadBinding, PadSlot};
 use crate::state::app;
 use crate::state::keymap::{Control, Tool, hotkey_label};
 
+/// The red knob's colour, for a pad's accent.
 const RED: &str = "var(--color-synth-red)";
+/// The green knob's colour.
 const GREEN: &str = "var(--color-synth-green)";
+/// The blue knob's colour, the chord pads' accent.
 const BLUE: &str = "var(--color-synth-blue)";
 /// A pad's own green, where it has no accent.
 const PLAIN: &str = "#4ba078";
@@ -30,12 +33,18 @@ const PLAIN: &str = "#4ba078";
 /// Shift.
 #[derive(Clone, Copy, PartialEq)]
 enum Kind {
+  /// A pad a mode binds by slot.
   Slot(PadSlot),
+  /// An instrument pad.
   Instrument(usize),
+  /// A chord pad.
   Chord(usize),
+  /// Shift.
   Shift,
 }
 
+/// A pad as the grid lays it out: which it is, its key, its ⌘ shortcut and its
+/// accent colour.
 struct Spec {
   kind: Kind,
   /// The key that presses it, shown on its keycap and pressed in while
@@ -47,6 +56,7 @@ struct Spec {
   accent: &'static str,
 }
 
+/// A tool's pad, in `accent`.
 const fn tool(tool: Tool, accent: &'static str) -> Spec {
   Spec {
     kind: Kind::Slot(PadSlot::Tool(tool)),
@@ -56,6 +66,7 @@ const fn tool(tool: Tool, accent: &'static str) -> Spec {
   }
 }
 
+/// An arrow pad, pressed by `control`.
 const fn slot(slot: PadSlot, control: Control) -> Spec {
   Spec {
     kind: Kind::Slot(slot),
@@ -65,6 +76,7 @@ const fn slot(slot: PadSlot, control: Control) -> Spec {
   }
 }
 
+/// Instrument pad `index`.
 const fn instrument(index: usize) -> Spec {
   Spec {
     kind: Kind::Instrument(index),
@@ -74,6 +86,7 @@ const fn instrument(index: usize) -> Spec {
   }
 }
 
+/// Chord pad `index`.
 const fn chord(index: usize) -> Spec {
   Spec {
     kind: Kind::Chord(index),
@@ -83,6 +96,7 @@ const fn chord(index: usize) -> Spec {
   }
 }
 
+/// The 36 pads, three rows of twelve, as the Device lays them out.
 const PADS: [Spec; 36] = [
   tool(Tool::Play, PLAIN),
   tool(Tool::Stop, RED),
@@ -136,6 +150,7 @@ const PADS: [Spec; 36] = [
   chord(5),
 ];
 
+/// The pads' grid.
 pub fn pads() -> Element {
   let pads: Vec<Element> = PADS.iter().map(pad).collect();
   html! {
@@ -159,6 +174,7 @@ fn shift_binding() -> PadBinding {
   )
 }
 
+/// The pad's binding now, tracked.
 fn binding(kind: Kind) -> PadBinding {
   match kind {
     Kind::Slot(slot) => modes::with(|bindings| bindings.pad(slot).clone()),
@@ -195,6 +211,8 @@ struct Look {
   indicator: Option<bool>,
 }
 
+/// A pad: its face and label from its binding, its keycap, its LED, and lit or
+/// pressed in as its binding and its key say.
 fn pad(spec: &'static Spec) -> Element {
   let a = app();
   let look = fluid::create_memo(move || {

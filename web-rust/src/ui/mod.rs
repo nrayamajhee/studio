@@ -95,9 +95,11 @@ fn synth() -> Element {
   }
 }
 
+/// A footer link: plain, underlined.
 const LINK: &str =
   "font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current";
 
+/// The home page's footer: the credit, Docs, Rust docs and the Debug toggle.
 fn footer() -> Element {
   let chrome = chrome();
   html! {

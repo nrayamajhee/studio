@@ -8,7 +8,9 @@ use std::rc::Rc;
 use fluid::Signal;
 use gloo_timers::callback::Timeout;
 
+/// How long a footer notice, a prompt and an armed second press last (ms).
 const NOTICE_MS: u32 = 1800;
+/// How long the level overlay stays after the last change (ms).
 const OVERLAY_MS: u32 = 1200;
 
 /// A level shown over the current view, e.g. the volume while it changes.
@@ -30,6 +32,7 @@ pub struct Momentary<T: 'static> {
 }
 
 impl<T: Clone + 'static> Momentary<T> {
+  /// Hidden, showing each value for `ms` after it's shown.
   fn new(ms: u32) -> Self {
     Self {
       value: Rc::new(Signal::new(None)),
@@ -38,16 +41,19 @@ impl<T: Clone + 'static> Momentary<T> {
     }
   }
 
+  /// The value showing, if any, tracked.
   pub fn get(&self) -> Option<T> {
     self.value.cloned()
   }
 
+  /// Shows `next`, restarting the time it stays for.
   pub fn show(&self, next: T) {
     self.value.set(Some(next));
     let value = self.value.clone();
     *self.timer.borrow_mut() = Some(Timeout::new(self.ms, move || value.set(None)));
   }
 
+  /// Hides the value now, and stops its timer.
   pub fn hide(&self) {
     self.timer.borrow_mut().take();
     if self.value.with_untracked(Option::is_some) {
@@ -56,6 +62,16 @@ impl<T: Clone + 'static> Momentary<T> {
   }
 }
 
+/// What the screen says back, as web-react's `FeedbackProvider`: the level
+/// overlay while a knob turns, footer notices, prompts over the screen, second
+/// presses waiting to be confirmed, and the progress overlay that freezes the
+/// Device while the mix saves.
+///
+/// [`Feedback::show_notice`], [`Feedback::show_prompt`] and
+/// [`Feedback::show_overlay`] show a message for a while; [`Feedback::confirm`]
+/// arms a press that acts only when pressed again; [`Feedback::set_busy`] and
+/// [`Feedback::show_progress`] freeze the Device and say how far the save has
+/// got.
 pub struct Feedback {
   pub overlay: Momentary<ScreenOverlay>,
   pub notice: Momentary<String>,
@@ -73,6 +89,7 @@ pub struct Feedback {
 }
 
 impl Feedback {
+  /// Nothing showing, and not busy.
   pub fn new() -> Self {
     Self {
       overlay: Momentary::new(OVERLAY_MS),
@@ -84,6 +101,7 @@ impl Feedback {
     }
   }
 
+  /// Shows `message` in the footer for a while, clearing any prompt.
   pub fn show_notice(&self, message: impl Into<String>) {
     fluid::batch(|| {
       self.prompt.hide();
@@ -91,10 +109,12 @@ impl Feedback {
     });
   }
 
+  /// Shows `message` over the screen for a while.
   pub fn show_prompt(&self, message: impl Into<String>) {
     self.prompt.show(message.into());
   }
 
+  /// Shows a level over the screen while it changes.
   pub fn show_overlay(&self, overlay: ScreenOverlay) {
     self.overlay.show(overlay);
   }
@@ -125,10 +145,13 @@ impl Feedback {
     false
   }
 
+  /// Whether the mix is saving, when every press is ignored.
   pub fn is_busy(&self) -> bool {
     self.busy.get()
   }
 
+  /// Freezes the Device while the mix saves, or thaws it and clears the
+  /// progress.
   pub fn set_busy(&self, busy: bool) {
     self.busy.set(busy);
     if !busy {
@@ -136,6 +159,7 @@ impl Feedback {
     }
   }
 
+  /// Shows how far the save has got, `done` from 0 to 1.
   pub fn show_progress(&self, done: f64) {
     self.progress.set(Some(ScreenOverlay {
       label: "Saving".into(),

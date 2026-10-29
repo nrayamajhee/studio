@@ -7,6 +7,8 @@ use super::{Bindings, Callback, Knob, KnobBinding, Rich};
 use crate::logic::presets::KNOB_STEPS;
 use crate::state::App;
 
+/// Binds the main screen: the green knob picks a param and the blue sets it;
+/// the red knob is the synth's level.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let level = a.output.level_step.value();
   b.set_knob(Knob::Green, param_knob(a));

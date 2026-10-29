@@ -34,6 +34,7 @@ const LANE_INSET: f64 = 197.;
 /// labelled with the count. A repeat narrower than this share of the lane
 /// has no room for its own label.
 const MAX_DRAWN_PASSES: usize = 32;
+/// The share of the lane a pass needs for its own count label.
 const LABELLED_PASS: f64 = 0.06;
 
 /// Where the mix is, across every lane, in the green of the knob that
@@ -41,7 +42,9 @@ const LABELLED_PASS: f64 = 0.06;
 /// (past the 168px label and 5px volume strip) and spans the lane's width.
 const PLAYHEAD: &str = "absolute top-0 bottom-0 left-[calc(193px_+_var(--playhead,-1)_*_(100%_-_197px))] z-1 w-[2px] bg-synth-green opacity-[clamp(0,calc((var(--playhead,-1)_+_1)_*_1000),1)]";
 
+/// A pass of a copy, its right edge parting it from the next.
 const PASS: &str = "absolute top-0 bottom-0 rounded-[4px] border-r-2 border-r-screen";
+/// A repeat count laid over a pass.
 const COUNT: &str = "absolute top-1/2 -translate-1/2 rounded-[3px] bg-screen/70 px-[3px] text-[12px] leading-[15px] font-bold";
 
 /// The timeline the lanes show: its span (beats), bar length, zoom and
@@ -54,6 +57,7 @@ struct Window {
   from: f64,
 }
 
+/// The timeline the lanes show, from the bindings.
 fn window() -> Window {
   modes::with(|bindings| {
     let screen = &bindings.screen;
@@ -66,6 +70,7 @@ fn window() -> Window {
   })
 }
 
+/// `beats` as a percentage of `span`, for CSS.
 fn percent(beats: f64, span: f64) -> String {
   format!("{}%", number((beats / span) * 100.))
 }
@@ -100,16 +105,21 @@ struct Drawing {
   window: Window,
 }
 
+/// An empty span with `class` and `style`.
 fn span_of(class: &str, style: String) -> Element {
   html! { span class={ class } style={ style } {} }
 }
 
+/// Picks copy `copy` of the track on row `index`, as the bindings do.
 fn pick_copy(index: usize, copy: usize) {
   if let Some(pick) = &modes::current().screen.on_select_copy {
     pick.call((index, copy));
   }
 }
 
+/// A lane's drawing: each copy's passes, the notes in the track's colour, the
+/// drum pattern over the take's, the picked copy outlined and a clip's
+/// draggable edges.
 fn drawing(index: usize, drawing: Drawing) -> DocumentFragment {
   let Drawing {
     clip,
@@ -336,6 +346,8 @@ fn loop_edge(
   }
 }
 
+/// A row of the tracks: its name, what plays it, its volume, mute and solo, and
+/// its lane.
 fn row(index: usize) -> Element {
   let track = fluid::create_memo(move || {
     let window = window();
@@ -582,6 +594,8 @@ fn row(index: usize) -> Element {
   }
 }
 
+/// The tracks view: the rows in view around the picked one, the playhead across
+/// them, and the lanes' wheel and drag panning the timeline.
 pub fn tracks() -> Element {
   let top = Rc::new(Cell::new(0usize));
   let shown = fluid::create_memo(move || {

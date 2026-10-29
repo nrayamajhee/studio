@@ -19,6 +19,7 @@ use crate::state::App;
 use crate::state::keymap::Tool;
 use crate::store::favorites::FavoriteKind;
 
+/// The presets as a picker's entries, filed by model or band.
 fn entries(presets: &[DevicePreset], paging: PresetPaging) -> Vec<Entry> {
   presets
     .iter()
@@ -30,6 +31,9 @@ fn entries(presets: &[DevicePreset], paging: PresetPaging) -> Vec<Entry> {
     .collect()
 }
 
+/// Binds the instruments: the green knob pages by model or band, the red and
+/// blue (and ← →) pick a page and a preset, which plays without being picked; a
+/// pad pressed twice binds it, Mute stars it and Delete removes a saved one.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let paging = a.browse.preset_paging.value();
   let presets = Rc::new(preset_pages(&a.sound.presets(), paging));

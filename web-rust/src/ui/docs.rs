@@ -15,11 +15,14 @@ use crate::icons::{
 };
 use crate::router::router;
 
+/// The paper the docs' panels are drawn on.
 const PAPER: &str = "rounded-[3px] bg-paper paper-grain shadow-paper text-paper-ink";
 /// The home footer's links: plain, underlined.
 const FOOT_LINK: &str =
   "font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current";
 
+/// The docs page: the sidebar, the doc the path names (or Not found), and the
+/// page's title following it.
 pub fn page() -> Element {
   let router = router();
   // A doc's title names the page, as web-react's meta does.
@@ -62,6 +65,7 @@ pub fn page() -> Element {
   }
 }
 
+/// The doc the path names, with a menu of the docs above it on small screens.
 fn content(path: &str) -> Vec<Element> {
   let doc = find(path);
   let menu = html! {
@@ -123,6 +127,7 @@ fn sidebar(fold_all: bool, class: &str) -> Element {
   }
 }
 
+/// Folds every folder, or unfolds them all when they're all folded.
 fn fold_button(all_folded: impl Fn() -> bool + Clone + 'static) -> Element {
   let (folded, label) = (all_folded.clone(), all_folded.clone());
   html! {
@@ -150,6 +155,7 @@ fn tree(nodes: &'static [Node], depth: usize) -> Element {
   }
 }
 
+/// A sidebar row: a doc's link, or a folder that folds.
 fn row(node: &'static Node, depth: usize) -> Element {
   match node {
     Node::File(index) => {

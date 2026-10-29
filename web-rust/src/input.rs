@@ -32,6 +32,9 @@ fn typing(event: &KeyboardEvent) -> bool {
     .is_some()
 }
 
+/// A key went down or up on the page: Tab moves the focus, ⌘ shortcuts save or
+/// open the Debug panel, and the Device's keys go to the hotkeys (kept from the
+/// browser), unless the focus is in a text field.
 fn on_key(event: &KeyboardEvent, down: bool) {
   let hotkeys = &app().hotkeys;
   if typing(event) {
@@ -110,6 +113,9 @@ fn on_command(event: &KeyboardEvent) {
   crate::modes::press(Control::Tool(tool), Some(shift));
 }
 
+/// Listens to the page for what plays the Device: the first gesture that starts
+/// audio, keys, the window losing focus or the page hiding, and the system
+/// theme changing.
 pub fn listen_to_page(router: &'static Router) {
   let window = window();
   let home = move || fluid::untrack(|| router.page()) == Page::Home;

@@ -35,8 +35,11 @@ use crate::logic::tracks::{Track, audible, loop_on, pass_of, starts_of, track_bp
 /// How often (ms) the seek knob follows the playing mix, and how long after
 /// a turn it holds where it was turned to.
 const FOLLOW_MS: u32 = 100;
+/// How long after a turn the seek knob holds where it was turned to (ms).
 const TURN_MS: f64 = 250.;
 
+/// A track's pass rendering offline, shared so every play waiting on it gets
+/// the same buffer.
 type Pass = Shared<LocalBoxFuture<'static, Option<AudioBuffer>>>;
 
 /// What a track sounds like through the mix: its volume, or silent while
@@ -73,6 +76,16 @@ fn fold_note(note: i32, low: i32, high: i32) -> i32 {
   note
 }
 
+/// The tracks played together, as web-react's `MixProvider` and `useTrackMix`:
+/// each track's pass rendered offline once with the sound it was saved with
+/// (again only when its sound, tempo or clip changes), then played on the audio
+/// clock through sound-engine's [`TrackMixer`], looping over the timeline.
+///
+/// Volume, mute and solo just move a track's gain. The mix plays while the
+/// tracks are the main view, and once through under a take being recorded
+/// ([`Mix::follow`]). Its methods play, pause and rewind it, scrub it like a
+/// take, say where it is for the seek knob and the playhead, and save it as
+/// FLAC or MIDI ([`Mix::export_mix`]).
 pub struct Mix {
   pub playing: Rc<Signal<bool>>,
   renders: RefCell<HashMap<String, (String, Pass)>>,
@@ -93,6 +106,7 @@ pub struct Mix {
 }
 
 impl Mix {
+  /// Stopped at the top, nothing rendered yet.
   pub fn new() -> Self {
     Self {
       playing: Rc::new(Signal::new(false)),
@@ -109,6 +123,10 @@ impl Mix {
     }
   }
 
+  /// Starts the effects: restart from the same place when the arrangement
+  /// changes under the playing mix, move gains with volume, mute and solo,
+  /// pause when the tracks stop being the main view, and tick the knob while
+  /// the tracks play on screen.
   pub fn install(&'static self) {
     // Restarts from the same place when the arrangement changes under it.
     let arrangement = fluid::create_memo(move || self.arrangement());
@@ -161,6 +179,8 @@ impl Mix {
     });
   }
 
+  /// Everything that places the tracks' passes: the tempo, the timeline and
+  /// each track's start, sound, clip, repeats, copies and tempo.
   fn arrangement(&self) -> String {
     let a = app();
     let bpm = a.transport.bpm.value();
@@ -203,6 +223,8 @@ impl Mix {
     shared
   }
 
+  /// Renders what isn't rendered yet and plays the mix from `from`, looping or
+  /// once through; a newer start or a pause cancels it while it renders.
   fn start(&'static self, from: Start, looping: bool, playing: Option<Vec<Track>>) {
     self.run.set(self.run.get() + 1);
     let ticket = self.run.get();
@@ -252,6 +274,7 @@ impl Mix {
     });
   }
 
+  /// Plays `tracks` from where the mix was paused, looping.
   fn play(&'static self, tracks: Vec<Track>) {
     self.playing.set(true);
     self.start(Start::At(self.paused.get()), true, Some(tracks));
@@ -306,14 +329,18 @@ impl Mix {
     }
   }
 
+  /// Whether the tracks are the main view, where the mix plays.
   pub fn mix_view(&self) -> bool {
     app().views.main_view() == MainView::Tracks
   }
 
+  /// A beat's length at the tempo (ms).
   fn beat_ms(&self) -> f64 {
     app().transport.timing().beat_ms()
   }
 
+  /// Where the mix was scrubbed to (ms), while it holds: stopped, until Play;
+  /// playing, for a moment after the turn.
   fn held(&self) -> Option<f64> {
     let playing = self.playing.value();
     let now = self.now.value();
@@ -324,17 +351,20 @@ impl Mix {
       .map(|(to, _)| to)
   }
 
+  /// How many bars the timeline has.
   pub fn mix_bars(&self) -> usize {
     let timing = app().transport.timing();
     ((app().tracks.track_span() * timing.beat_ms() / timing.bar_ms()).ceil() as usize).max(1)
   }
 
+  /// Where the mix is (ms), or where the scrub holds it.
   fn mix_at(&self) -> f64 {
     self
       .held()
       .unwrap_or_else(|| fluid::untrack(|| self.position()) * self.beat_ms())
   }
 
+  /// The bar the mix is in, from 0.
   pub fn mix_bar(&self) -> usize {
     let bar = app().transport.timing().bar_ms();
     ((self.mix_at() / bar).floor() as usize).min(self.mix_bars() - 1)
@@ -346,6 +376,7 @@ impl Mix {
     (crate::logic::js::round(app().tracks.track_span() * self.beat_ms()) as usize).max(2)
   }
 
+  /// Where the seek knob rests (ms).
   pub fn mix_step(&self) -> f64 {
     self.mix_at().min(self.mix_steps() as f64 - 1.)
   }
@@ -417,6 +448,7 @@ impl Mix {
     )
   }
 
+  /// Everything that shapes the scrubbed mix's sound.
   fn scrub_key(&self) -> String {
     let a = app();
     let bpm = a.transport.bpm.value();
@@ -440,6 +472,7 @@ impl Mix {
     serde_json::to_string(&(bpm, a.tracks.track_span(), parts)).unwrap_or_default()
   }
 
+  /// Scrubs the mix to `to` (ms), moving where Play resumes too.
   pub fn scrub_mix(&'static self, to: f64) {
     let (key, at, beat_ms) = fluid::untrack(|| (self.scrub_key(), self.mix_at(), self.beat_ms()));
     self.scrub.scroll_to(&key, to, at, &self.render_mix());
@@ -637,7 +670,10 @@ impl Mix {
 /// recording at a `performance.now` time.
 #[derive(Clone, Copy)]
 enum Start {
+  /// From this beat.
   At(f64),
+  /// Lined up with a take that started recording at this `performance.now` time
+  /// (ms).
   Following(f64),
 }
 

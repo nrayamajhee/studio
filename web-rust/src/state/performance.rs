@@ -28,6 +28,15 @@ struct HeldKey {
   player: Rc<ChordPlayer>,
 }
 
+/// Playing the keybed, as web-react's `PerformanceProvider` and `playChord`:
+/// the keys held and the semitones they light, the chord pad latched, and a
+/// progression waiting for its home note.
+///
+/// [`Performance::press_key`] plays a key, as a note or, with a chord pad
+/// active, as that chord in the play style (each through a [`ChordPlayer`]);
+/// the next key after a progression's Save becomes its home note, writing the
+/// progression as the take. The rest let keys go, latch or drop chords, and
+/// read and pick the play style.
 pub struct Performance {
   /// A chord latches on a click; its hotkey holds it while down.
   pub chord: Rc<Signal<Option<usize>>>,
@@ -38,6 +47,7 @@ pub struct Performance {
 }
 
 impl Performance {
+  /// No keys held, no chord latched.
   pub fn new() -> Self {
     Self {
       chord: Rc::new(Signal::new(None)),
@@ -64,10 +74,12 @@ impl Performance {
       .or(self.chord.value())
   }
 
+  /// The play style the chord pads play in.
   pub fn play_style(&self) -> PlayStyle {
     app().chords.play_style.cloned()
   }
 
+  /// Every play style to pick from: the built-in patterns, then the saved ones.
   pub fn play_styles(&self) -> Vec<PlayStyleOption> {
     app()
       .chords
@@ -95,6 +107,7 @@ impl Performance {
     style_edited(&self.play_style(), &styles[self.play_style_index()])
   }
 
+  /// Publishes the semitones the held keys light.
   fn sync_lit_notes(&self) {
     let lit: BTreeSet<i32> = self
       .held
@@ -105,6 +118,8 @@ impl Performance {
     self.lit_notes.set_if_changed(lit);
   }
 
+  /// Writes `progression` from the home note `home` as the take, and shows it
+  /// on the roll.
   fn write_progression(&self, progression: &Progression, home: i32) {
     let a = app();
     let timing = a.transport.timing_now();
@@ -168,6 +183,7 @@ impl Performance {
     a.grid.notes_played(&midis);
   }
 
+  /// Lets go of the key `root`, and whatever its chord still sounds.
   pub fn release_key(&self, root: i32) {
     let Some(held) = self.held.borrow_mut().remove(&root) else {
       return;
@@ -195,6 +211,7 @@ impl Performance {
     self.lit_notes.set_if_changed(BTreeSet::new());
   }
 
+  /// Latches chord pad `index`, or drops it if it's the one latched.
   pub fn toggle_chord(&self, index: usize) {
     self.chord.update(|chord| {
       *chord = if *chord == Some(index) {
@@ -205,6 +222,7 @@ impl Performance {
     });
   }
 
+  /// Drops the latched chord.
   pub fn drop_chord(&self) {
     self.chord.set_if_changed(None);
   }
@@ -216,6 +234,8 @@ impl Performance {
     app().chords.set_play_style(|current| *current = style);
   }
 
+  /// Waits for a key to set `progression`'s home note, or with `None` stops
+  /// waiting.
   pub fn await_home(&self, progression: Option<Progression>) {
     self.home_for.set(progression);
   }
@@ -243,6 +263,7 @@ pub struct ChordPlayer {
 }
 
 impl ChordPlayer {
+  /// Starts `midis` in `style` at `velocity`, low to high.
   fn play(midis: &[i32], style: PlayStyle, velocity: f64) -> Rc<Self> {
     let mut notes = midis.to_vec();
     notes.sort_unstable();
@@ -262,6 +283,8 @@ impl ChordPlayer {
     player
   }
 
+  /// Sounds `midi` at the player's velocity times `level`, capturing it for a
+  /// take being recorded.
   fn on(&self, midi: i32, level: f64) {
     let a = app();
     let velocity = (self.velocity * level).min(1.);
@@ -271,6 +294,7 @@ impl ChordPlayer {
     self.sounding.borrow_mut().push(midi);
   }
 
+  /// Lets go of `midi`, if it's sounding.
   fn off(&self, midi: i32) {
     let mut sounding = self.sounding.borrow_mut();
     let Some(at) = sounding.iter().position(|note| *note == midi) else {
@@ -283,6 +307,7 @@ impl ChordPlayer {
     a.transport.capture(a.engine.take_note(midi), false, 0.);
   }
 
+  /// Lets go of every note sounding.
   fn let_go_all(&self) {
     let sounding = self.sounding.borrow().clone();
     for midi in sounding {
@@ -304,6 +329,7 @@ impl ChordPlayer {
     }
   }
 
+  /// A step's length, straight, at the tempo now (ms).
   fn step_ms(&self) -> f64 {
     app().transport.timing_now().beat_ms() / f64::from(self.style.per_beat)
   }
@@ -326,6 +352,8 @@ impl ChordPlayer {
     }
   }
 
+  /// Starts the chord the way its style plays: all at once, strummed, rolled,
+  /// or stepping through a rhythm or an arpeggio.
   fn start(self: &Rc<Self>) {
     let id = self.style.id.as_str();
     if id == "block" || self.notes.len() < 2 {
@@ -361,6 +389,7 @@ impl ChordPlayer {
     }
   }
 
+  /// Plays a rhythm's strikes for this step, and schedules the next.
   fn rhythm_tick(self: &Rc<Self>) {
     let Some(rhythm) = rhythm(&self.style.id) else {
       return;
@@ -426,6 +455,7 @@ impl ChordPlayer {
     self.again(step, Self::roll_tick);
   }
 
+  /// Plays the arpeggio's next step, and schedules the one after.
   fn arpeggio_tick(self: &Rc<Self>) {
     let steps = steps_of(&self.style.id, self.notes.len());
     let index = self.count.get();
@@ -441,6 +471,7 @@ impl ChordPlayer {
     self.again(step, Self::arpeggio_tick);
   }
 
+  /// Stops the chord: no more steps, and nothing left sounding.
   pub fn stop(&self) {
     self.stopped.set(true);
     self.timers.borrow_mut().clear();

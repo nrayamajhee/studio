@@ -11,17 +11,23 @@ use sound_engine::patches::ParamSpec;
 use super::params::{LFO_SHAPES, format_param, master_param, step_to_value, value_to_step};
 use super::presets::{KNOB_STEPS, Values};
 
+/// The Device's own modules over the master: the ADSR, LFO and FX.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ModuleId {
+  /// The ADSR: the volume envelope every voice gets.
   Adsr,
+  /// The LFO: a modulator over the mix.
   Lfo,
+  /// The FX: drive, chorus, delay and reverb.
   Fx,
 }
 
+/// Every module, in the order their pads and views go.
 pub const MODULE_IDS: [ModuleId; 3] = [ModuleId::Adsr, ModuleId::Lfo, ModuleId::Fx];
 
 impl ModuleId {
+  /// The module's key in stored JSON and web-react's code.
   pub fn key(self) -> &'static str {
     match self {
       Self::Adsr => "adsr",
@@ -30,10 +36,12 @@ impl ModuleId {
     }
   }
 
+  /// The module's place in [`MODULE_IDS`].
   pub fn index(self) -> usize {
     self as usize
   }
 
+  /// The module's knobs and label.
   pub fn module(self) -> &'static DeviceModule {
     &device_modules()[self.index()]
   }
@@ -54,6 +62,7 @@ pub struct ModuleKnob {
   pub options: Option<Vec<&'static str>>,
 }
 
+/// A module as its view shows it: its label, and its four knobs.
 #[derive(Clone, Debug)]
 pub struct DeviceModule {
   pub label: &'static str,
@@ -61,6 +70,8 @@ pub struct DeviceModule {
   pub knobs: Vec<ModuleKnob>,
 }
 
+/// How a knob differs from its master param: its steps or named options, its
+/// range, and a floor for its lowest step.
 #[derive(Default)]
 struct KnobOptions {
   steps: Option<usize>,
@@ -70,6 +81,7 @@ struct KnobOptions {
   floor: Option<f64>,
 }
 
+/// The knob for master param `id`, labelled `label`, starting at `start`.
 fn knob(id: &str, label: &str, start: f64, options: KnobOptions) -> ModuleKnob {
   let spec = master_param(id).unwrap_or_else(|| panic!("Missing master param {id}"));
   ModuleKnob {
@@ -179,6 +191,7 @@ pub struct PerModule<T> {
 }
 
 impl<T> PerModule<T> {
+  /// `id`'s value.
   pub fn get(&self, id: ModuleId) -> &T {
     match id {
       ModuleId::Adsr => &self.adsr,
@@ -187,6 +200,7 @@ impl<T> PerModule<T> {
     }
   }
 
+  /// `id`'s value, to change.
   pub fn get_mut(&mut self, id: ModuleId) -> &mut T {
     match id {
       ModuleId::Adsr => &mut self.adsr,
@@ -210,6 +224,7 @@ impl Default for ModuleSettings {
   }
 }
 
+/// The modules as a first visit has them: off, each knob where it starts.
 pub fn initial_modules() -> ModuleSettings {
   let steps = |id: ModuleId| {
     id.module()
@@ -237,6 +252,7 @@ impl ModuleSettings {
   }
 }
 
+/// A module knob's value at `step`.
 pub fn knob_value(knob: &ModuleKnob, step: usize) -> f64 {
   match knob.floor {
     Some(floor) if step == 0 => floor,
@@ -244,6 +260,7 @@ pub fn knob_value(knob: &ModuleKnob, step: usize) -> f64 {
   }
 }
 
+/// A module knob's reading at `step`: its option, or its value as text.
 pub fn knob_display(knob: &ModuleKnob, step: usize) -> String {
   match knob.options.as_ref().and_then(|options| options.get(step)) {
     Some(option) => (*option).to_owned(),

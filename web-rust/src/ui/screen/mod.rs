@@ -94,12 +94,17 @@ struct Foot {
   caption: bool,
 }
 
+/// The readout line along the screen's top.
 const READOUT: &str = "absolute top-[9px] right-[20px] left-[20px] flex items-baseline justify-between gap-[16px] font-screen text-[14px] leading-[18px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase";
+/// The pager along the screen's top, in the readout's place.
 const PAGER: &str = "absolute top-[9px] right-[20px] left-[20px] flex items-center gap-[6px] font-screen text-[14px] leading-[18px] font-medium tracking-[0.08em] whitespace-nowrap text-screen-ink/60 first-letter:uppercase";
+/// A pager's arrow.
 const PAGE_ARROW: &str = "-my-[6px] grid size-[27px] shrink-0 cursor-pointer place-items-center rounded-[11px] text-screen-ink/70 [corner-shape:squircle] hover:bg-screen-ink/15 hover:text-screen-ink active:bg-screen-ink/75 active:text-screen disabled:cursor-default disabled:bg-transparent disabled:text-screen-ink/60 disabled:opacity-25 [&_svg]:size-[18px]";
 // A tab's own classes, then those of a tab to step to; the current tab
 // takes its colours instead, as tailwind-merge leaves them in web-react.
+/// A pager tab's own classes.
 const PAGE_TAB: &str = "-my-[4px] max-w-full truncate rounded-[10px] px-[7px] py-[3px] font-screen text-[14px] leading-[18px] font-semibold tracking-[0.02em] first-letter:uppercase [corner-shape:squircle]";
+/// The classes of a tab to step to; the current tab takes its colour instead.
 const OTHER_TAB: &str = "cursor-pointer text-screen-ink/45 hover:bg-screen-ink/15 hover:text-screen-ink active:bg-screen-ink/75 active:text-screen";
 
 /// The title, with an asterisk after it while the preset has unsaved
@@ -120,12 +125,15 @@ fn titled(title: &str, unsaved: bool) -> DocumentFragment {
   fragment
 }
 
+/// Turns the view to `page`, as its pager says.
 fn pick_page(page: usize) {
   if let Some(pager) = modes::current().screen.pager.as_ref() {
     pager.on_pick.call(page);
   }
 }
 
+/// The pager: ← and →, and three tabs, the current one in the middle once it's
+/// past the first.
 fn pager((pages, at, color): (Vec<String>, usize, PagerColor)) -> Element {
   let last = pages.len().saturating_sub(1);
   let tabs: Vec<Element> = (0..3)
@@ -186,6 +194,8 @@ fn pager((pages, at, color): (Vec<String>, usize, PagerColor)) -> Element {
   }
 }
 
+/// The screen's top: the pager, or the readout line with the title (or the
+/// status's left) and the status.
 fn head(head: Head) -> Element {
   if let Some(tabs) = head.pager {
     return pager(tabs);
@@ -202,6 +212,7 @@ fn head(head: Head) -> Element {
   }
 }
 
+/// The screen's bottom: the footer's two sides, or badges in their place.
 fn foot(foot: Foot) -> DocumentFragment {
   // On the roll the footer's line tightens to fit under the keys.
   let (footer, badges) = if foot.caption {

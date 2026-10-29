@@ -25,14 +25,22 @@ use super::synth_pages::{CHAIN_STOPS, SynthPage};
 /// the knobs'.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Tone {
+  /// The screen's ink.
   Ink,
+  /// The ink, dimmer: captions and axes' labels.
   Dim,
+  /// The ink, fainter: grids and baselines.
   Faint,
+  /// The green knob's colour.
   Green,
+  /// The red knob's colour.
   Red,
+  /// The blue knob's colour.
   Blue,
 }
 
+/// How a path is drawn: its width (the default unless set), dashed or not, or
+/// filled.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Stroke {
   pub width: Option<f64>,
@@ -42,6 +50,7 @@ pub struct Stroke {
   pub solid: bool,
 }
 
+/// A line `width` pixels wide.
 fn width(width: f64) -> Stroke {
   Stroke {
     width: Some(width),
@@ -49,6 +58,7 @@ fn width(width: f64) -> Stroke {
   }
 }
 
+/// A dashed line.
 fn dashed() -> Stroke {
   Stroke {
     dashed: true,
@@ -56,6 +66,7 @@ fn dashed() -> Stroke {
   }
 }
 
+/// A dashed line `width` pixels wide.
 fn dashed_width(width: f64) -> Stroke {
   Stroke {
     width: Some(width),
@@ -64,6 +75,7 @@ fn dashed_width(width: f64) -> Stroke {
   }
 }
 
+/// A light wash filling the shape.
 fn fill() -> Stroke {
   Stroke {
     fill: true,
@@ -71,6 +83,7 @@ fn fill() -> Stroke {
   }
 }
 
+/// A path of a graph: its SVG path data, its colour and how it's drawn.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScenePath {
   pub d: String,
@@ -78,21 +91,29 @@ pub struct ScenePath {
   pub stroke: Stroke,
 }
 
+/// How a label lines up on its x: its start, its middle or its end there.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Align {
+  /// Its start at x.
   Start,
+  /// Its middle at x.
   Middle,
+  /// Its end at x.
   End,
 }
 
 /// Which edge sits at y: the text's top, its middle or its baseline.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Anchor {
+  /// Its top at y.
   Top,
+  /// Its middle at y.
   Middle,
+  /// Its baseline at y.
   Bottom,
 }
 
+/// A label laid over a graph, in screen type at the box's coordinates.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SceneLabel {
   pub x: f64,
@@ -103,6 +124,7 @@ pub struct SceneLabel {
   pub anchor: Anchor,
 }
 
+/// A graph: its paths, and the labels laid over them.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GraphScene {
   pub paths: Vec<ScenePath>,
@@ -112,6 +134,8 @@ pub struct GraphScene {
 /// The knobs' colours in knob order, as the readouts draw them.
 pub const KNOB_TONES: [Tone; 4] = [Tone::Ink, Tone::Green, Tone::Red, Tone::Blue];
 
+/// What a graph is drawn from: the patch, the param values, the note, and the
+/// colour of the knob that sets each param.
 pub struct GraphInput<'a> {
   pub patch: &'a Patch,
   pub values: &'a Values,
@@ -122,14 +146,17 @@ pub struct GraphInput<'a> {
   pub tone_of: &'a dyn Fn(&str) -> Tone,
 }
 
+/// The sample rate the graphs' models run at.
 const FS: f64 = 48000.;
 /// The velocity the graphs play at: mezzo-forte.
 const VELOCITY: f64 = 0.8;
 
+/// `v` with two decimals, as the paths write numbers.
 fn n2(v: f64) -> String {
   to_fixed(v, 2)
 }
 
+/// A path through `points`, in order.
 fn polyline(points: &[(f64, f64)]) -> String {
   if points.is_empty() {
     return String::new();
@@ -141,6 +168,7 @@ fn polyline(points: &[(f64, f64)]) -> String {
   format!("M{}", parts.join(" L"))
 }
 
+/// A path through `count + 1` points of `point(t)`, t from 0 to 1.
 fn sample(count: usize, point: impl Fn(f64) -> (f64, f64)) -> String {
   let points: Vec<(f64, f64)> = (0..=count)
     .map(|i| point(i as f64 / count as f64))
@@ -148,6 +176,7 @@ fn sample(count: usize, point: impl Fn(f64) -> (f64, f64)) -> String {
   polyline(&points)
 }
 
+/// A rectangle's path, from (x0, y0) to (x1, y1).
 fn rect(x0: f64, y0: f64, x1: f64, y1: f64) -> String {
   format!(
     "M{} {} H{} V{} H{} Z",
@@ -159,14 +188,17 @@ fn rect(x0: f64, y0: f64, x1: f64, y1: f64) -> String {
   )
 }
 
+/// A vertical line at `x`, from y0 to y1.
 fn vline(x: f64, y0: f64, y1: f64) -> String {
   format!("M{} {} V{}", n2(x), n2(y0), n2(y1))
 }
 
+/// A horizontal line at `y`, from x0 to x1.
 fn hline(y: f64, x0: f64, x1: f64) -> String {
   format!("M{} {} H{}", n2(x0), n2(y), n2(x1))
 }
 
+/// A graph being drawn.
 #[derive(Default)]
 struct Scene {
   paths: Vec<ScenePath>,
@@ -174,6 +206,7 @@ struct Scene {
 }
 
 impl Scene {
+  /// Adds a path, unless it's empty.
   fn path(&mut self, d: impl Into<String>, tone: Tone, stroke: Stroke) {
     let d = d.into();
     if !d.is_empty() {
@@ -181,10 +214,12 @@ impl Scene {
     }
   }
 
+  /// Adds a plain line.
   fn line(&mut self, d: impl Into<String>, tone: Tone) {
     self.path(d, tone, Stroke::default());
   }
 
+  /// Adds a label, unless it's empty.
   fn label_at(
     &mut self,
     x: f64,
@@ -207,14 +242,17 @@ impl Scene {
     }
   }
 
+  /// Adds a label hanging from `y`.
   fn label(&mut self, x: f64, y: f64, text: impl Into<String>, tone: Tone, align: Align) {
     self.label_at(x, y, text, tone, align, Anchor::Top);
   }
 
+  /// Adds a dim caption from (x, y).
   fn caption(&mut self, x: f64, y: f64, text: impl Into<String>) {
     self.label(x, y, text, Tone::Dim, Align::Start);
   }
 
+  /// The graph as drawn.
   fn done(self) -> GraphScene {
     GraphScene {
       paths: self.paths,
@@ -223,22 +261,27 @@ impl Scene {
   }
 }
 
+/// The value of `id`, or `fallback`.
 fn get(values: &Values, id: &str, fallback: f64) -> f64 {
   values.get(id).copied().unwrap_or(fallback)
 }
 
+/// Whether the values set `id`.
 fn has(values: &Values, id: &str) -> bool {
   values.contains_key(id)
 }
 
+/// A gain in dB (floored a little above silence).
 fn db(gain: f64) -> f64 {
   20. * gain.max(1e-9).log10()
 }
 
+/// A fraction as a whole percentage.
 fn percent(v: f64) -> String {
   format!("{}%", number(round(v * 100.)))
 }
 
+/// Seconds as ms (one decimal under 10 ms) or, from a second, s.
 fn ms(seconds: f64) -> String {
   if seconds < 0.01 {
     format!("{} ms", to_fixed(seconds * 1000., 1))
@@ -249,6 +292,7 @@ fn ms(seconds: f64) -> String {
   }
 }
 
+/// A frequency in Hz, or kHz from 1000.
 fn hz(f: f64) -> String {
   if f >= 1000. {
     format!(
@@ -336,13 +380,17 @@ fn harmonic_bars(scene: &mut Scene, amps: &[f64], title: &str, gaps: Option<(f64
 /// A string from nut (x 2) to bridge (x 42) at y 58, and where along it a
 /// position (fraction from the bridge) falls, named along the bottom.
 const NUT: f64 = 2.;
+/// Where the string's bridge is drawn.
 const BRIDGE: f64 = 42.;
+/// Where the string runs across the box.
 const STRING_Y: f64 = 58.;
 
+/// Where on the drawn string a position falls, as a fraction from the bridge.
 fn string_at(beta: f64) -> f64 {
   BRIDGE - beta * (BRIDGE - NUT)
 }
 
+/// The string diagram: nut, bridge and string, with `beta` marked on it.
 fn string_diagram(
   scene: &mut Scene,
   title: &str,
@@ -377,6 +425,8 @@ fn string_diagram(
   );
 }
 
+/// A string's exciter: the pluck or hammer as it leaves the finger or felt,
+/// where it strikes, and the harmonics that position leaves.
 fn string_exciter(scene: &mut Scene, input: &GraphInput) {
   let Patch::String(patch) = input.patch else {
     return;
@@ -553,6 +603,7 @@ fn strike_exciter(scene: &mut Scene, contact: Contact, modes: &[f64], f0: f64, i
   scene.caption(50., 2., "how high it reaches (dashed: the modes)");
 }
 
+/// A bar's exciter: the mallet's contact and the modes it reaches.
 fn bar_exciter(scene: &mut Scene, input: &GraphInput) {
   let Patch::Bar(patch) = input.patch else {
     return;
@@ -593,8 +644,10 @@ fn main_piece(patch: &Patch) -> Option<&DrumPieceSpec> {
     .or_else(|| kit.pieces.values().next())
 }
 
+/// A membrane's modes against its fundamental.
 const MEMBRANE_RATIOS: [f64; 8] = [1., 1.593, 2.136, 2.295, 2.653, 2.917, 3.155, 3.5];
 
+/// A drum's exciter: the stick's contact and the drum's modes it reaches.
 fn drum_exciter(scene: &mut Scene, input: &GraphInput) {
   let (values, tone_of) = (input.values, input.tone_of);
   let Some(piece) = main_piece(input.patch) else {
@@ -643,6 +696,8 @@ fn drum_exciter(scene: &mut Scene, input: &GraphInput) {
   );
 }
 
+/// A bowed string's exciter: the bow on the string, and the stick-slip its
+/// pressure and speed give.
 fn bow_exciter(scene: &mut Scene, input: &GraphInput) {
   let (values, tone_of) = (input.values, input.tone_of);
   let pressure = get(values, "exciter.pressure", 0.75);
@@ -731,6 +786,7 @@ fn bow_exciter(scene: &mut Scene, input: &GraphInput) {
   );
 }
 
+/// A blown pipe's exciter: the breath over time and the jet or reed's response.
 fn bore_exciter(scene: &mut Scene, input: &GraphInput) {
   let Patch::Bore(patch) = input.patch else {
     return;
@@ -913,6 +969,7 @@ fn free_reed_exciter(scene: &mut Scene, input: &GraphInput) {
   );
 }
 
+/// One cycle of an oscillator wave at `t` (0–1): sine, triangle, square or saw.
 fn wave_at(wave: usize, t: f64) -> f64 {
   match wave {
     0 => (2. * PI * t).sin(),
@@ -933,6 +990,7 @@ fn rem(a: f64, b: f64) -> f64 {
   a % b
 }
 
+/// The oscillator's exciter: each wave's cycle, and the two together.
 fn oscillator_exciter(scene: &mut Scene, input: &GraphInput) {
   let (values, tone_of) = (input.values, input.tone_of);
   let wave = round(get(values, "exciter.wave", 0.)) as usize;
@@ -988,6 +1046,7 @@ fn oscillator_exciter(scene: &mut Scene, input: &GraphInput) {
   scene.label(84., 2., "together", Tone::Dim, Align::Middle);
 }
 
+/// The exciter page's graph, for any instrument.
 pub fn exciter_scene(input: &GraphInput) -> GraphScene {
   let mut scene = Scene::default();
   match input.patch {
@@ -1002,6 +1061,8 @@ pub fn exciter_scene(input: &GraphInput) -> GraphScene {
   scene.done()
 }
 
+/// A partial for [`partial_bars`]: its ratio to the fundamental, its level (dB)
+/// and how long it rings (s).
 struct PartialBar {
   ratio: f64,
   level: f64,
@@ -1052,6 +1113,7 @@ fn partial_bars(
   x
 }
 
+/// A string's resonator: its partials as the loop rings them.
 fn string_resonator(scene: &mut Scene, input: &GraphInput) {
   let Patch::String(patch) = input.patch else {
     return;
@@ -1145,6 +1207,7 @@ fn string_resonator(scene: &mut Scene, input: &GraphInput) {
   }
 }
 
+/// A bar's resonator: its modes and how long each rings.
 fn bar_resonator(scene: &mut Scene, input: &GraphInput) {
   let Patch::Bar(patch) = input.patch else {
     return;
@@ -1332,6 +1395,7 @@ fn drum_resonator(scene: &mut Scene, input: &GraphInput) {
   );
 }
 
+/// The resonator page's graph, for any instrument.
 pub fn resonator_scene(input: &GraphInput) -> GraphScene {
   let mut scene = Scene::default();
   match input.patch {
@@ -1345,12 +1409,15 @@ pub fn resonator_scene(input: &GraphInput) -> GraphScene {
   scene.done()
 }
 
+/// A log axis from `lo` to `hi` across the box.
 fn log_axis(lo: f64, hi: f64) -> impl Fn(f64) -> f64 {
   let a = lo.log10();
   let b = hi.log10();
   move |f: f64| 2. + ((f.log10() - a) / (b - a)) * 96.
 }
 
+/// Faint vertical lines at `marks` on a frequency axis, labelled along the
+/// bottom.
 fn frequency_grid(scene: &mut Scene, x: &dyn Fn(f64) -> f64, marks: &[f64]) {
   let grid: String = marks.iter().map(|&f| vline(x(f), 12., 92.)).collect();
   scene.line(grid, Tone::Faint);
@@ -1637,6 +1704,7 @@ pub fn body_scene(input: &GraphInput) -> GraphScene {
   scene.done()
 }
 
+/// An envelope stage's curve, from 0 to 1 as `t` goes from 0 to 1.
 fn curve_ease(t: f64) -> f64 {
   1. - 0.01f64.powf(t)
 }
@@ -1783,6 +1851,7 @@ pub fn envelope_scene(input: &GraphInput) -> GraphScene {
   scene.done()
 }
 
+/// The random LFO's steps, as the graph draws them.
 const RANDOM_STEPS: [f64; 8] = [0.6, -0.35, 0.9, -0.8, 0.15, -0.55, 0.4, -0.1];
 
 /// Where the vibrato's pitch and level depths go on each family: the
@@ -2013,6 +2082,7 @@ pub fn output_scene(input: &GraphInput) -> GraphScene {
   scene.done()
 }
 
+/// A chain stop's name, as the overview writes it.
 fn stop_name(stop: &str) -> &'static str {
   match stop {
     "exciter" => "EXCITER",

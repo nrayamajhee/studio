@@ -27,6 +27,7 @@ use crate::state::lanes::is_take;
 use crate::state::sound::steps_of;
 use crate::state::view::{BaseView, MainView, ScreenView};
 
+/// A readout for a knob with nothing to set.
 const EMPTY: ScreenReadout = ScreenReadout {
   label: String::new(),
   display: String::new(),
@@ -41,6 +42,9 @@ pub fn resettable(a: &'static App) -> bool {
   )
 }
 
+/// Binds the synth view: ← → turn its pages, the four knobs set the page's
+/// params (or its extras, with Shift), Save picks an icon to save the sound and
+/// Shift + Delete resets it.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let shift = a.shift.shift();
   let focused = a.lanes.focused_lane();

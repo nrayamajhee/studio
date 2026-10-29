@@ -51,7 +51,9 @@ pub struct TrackCopy {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum TrackSource {
+  /// The piano roll: a take kept as a track.
   Roll,
+  /// The drum grid: a pattern kept as a track.
   DrumGrid,
 }
 
@@ -214,6 +216,8 @@ pub struct TrackClip {
   pub notes: Vec<ClipNote>,
 }
 
+/// A note of a clip, as the lanes draw it: its pitch, and its start and length
+/// in beats.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 pub struct ClipNote {
   pub note: i32,
@@ -328,6 +332,7 @@ fn section(notes: &[PlayedNote], from: f64, to: f64) -> Vec<PlayedNote> {
     .collect()
 }
 
+/// The track's loop, while it's switched on.
 pub fn loop_on(track: &Track) -> Option<TrackLoop> {
   track.loop_.filter(|loop_| loop_.on)
 }
@@ -348,6 +353,7 @@ pub fn pass_of(track: &Track, bpm: f64) -> Timeline {
   }
 }
 
+/// How many times the track plays back to back at its start (once, unless set).
 pub fn repeats_of(track: &Track) -> u32 {
   track.repeats.unwrap_or(1)
 }

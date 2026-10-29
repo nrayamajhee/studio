@@ -42,6 +42,7 @@ fn preview_of(a: &'static App, progression: &Progression, note: i32) -> Take {
   )
 }
 
+/// Plays the progression on the preview, from its own home note.
 fn audition(a: &'static App, progression: &Progression) {
   a.preview.play(
     &progression.id,
@@ -51,6 +52,9 @@ fn audition(a: &'static App, progression: &Progression) {
   );
 }
 
+/// Binds the progressions: the red and blue knobs (and ← →) pick a page and a
+/// progression, a tile, Play or a key auditions it, Save waits for the home
+/// note to load it as the take, and Mute stars it.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let waiting = a.performance.home_for.with(Option::is_some);
   let all = progressions();

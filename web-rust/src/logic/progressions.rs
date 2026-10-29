@@ -32,6 +32,8 @@ pub struct Progression {
   pub chords: Vec<Step>,
 }
 
+/// Every progression, from `data/progressions.json` (exported from web-react's
+/// `progressions.ts`), read once.
 pub fn progressions() -> &'static [Progression] {
   static PROGRESSIONS: OnceLock<Vec<Progression>> = OnceLock::new();
   PROGRESSIONS.get_or_init(|| {
@@ -40,6 +42,7 @@ pub fn progressions() -> &'static [Progression] {
   })
 }
 
+/// The progression `id` (the first, if there's none).
 pub fn progression(id: &str) -> &'static Progression {
   let all = progressions();
   all

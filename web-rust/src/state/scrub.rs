@@ -22,6 +22,9 @@ const GAP_MS: f64 = 250.;
 /// What renders the audio for a window from `start` to `end` ms.
 pub type Render = Box<dyn Fn(f64, f64) -> Pin<Box<dyn Future<Output = Option<AudioBuffer>>>>>;
 
+/// What's been rendered for scrubbing: the sound it was rendered for (`key`),
+/// the stretch of time it covers (ms) and the scrubber over it, filled in once
+/// the render lands.
 struct Window {
   key: String,
   start: f64,
@@ -29,6 +32,14 @@ struct Window {
   scrubber: Rc<RefCell<Option<Scrubber>>>,
 }
 
+/// A scrubber over a take or the mix, as web-react's `useScrub` and
+/// `useMixScrub`: each move plays the stretch it covers at the speed it was
+/// made, from a render made once the first time it's scrubbed after the sound
+/// changes. A take renders whole; the mix renders a window either side of the
+/// scrub, again when the scrub leaves it.
+///
+/// [`Scrub::scroll_to`] and [`Scrub::scroll_by`] move it; [`Scrub::stop`]
+/// silences it.
 pub struct Scrub {
   rendered: RefCell<Option<Window>>,
   last_move: Cell<f64>,
@@ -51,6 +62,7 @@ impl Scrub {
     Self::new(Some(30_000.))
   }
 
+  /// Nothing rendered yet, a window of `window` ms either side (or the whole).
   fn new(window: Option<f64>) -> Self {
     Self {
       rendered: RefCell::new(None),
@@ -106,6 +118,7 @@ impl Scrub {
     }
   }
 
+  /// Silences the scrub.
   pub fn stop(&self) {
     if let Some(window) = self.rendered.borrow().as_ref()
       && let Some(scrubber) = window.scrubber.borrow().as_ref()
@@ -114,6 +127,8 @@ impl Scrub {
     }
   }
 
+  /// Where a move starts: where the last scroll left it, while it's still
+  /// landing, or else `at`.
   fn from(&self, at: f64) -> f64 {
     if now() - self.last_move.get() < GAP_MS {
       self.cursor.get()

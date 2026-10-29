@@ -18,6 +18,7 @@ pub struct Rendered {
 }
 
 impl Rendered {
+  /// How many frames it has.
   pub fn len(&self) -> usize {
     self.left.len()
   }
@@ -68,6 +69,7 @@ pub fn mix_length(parts: &[MixPart]) -> f64 {
     .fold(0., f64::max)
 }
 
+/// How much of the mix each chunk builds (s).
 const CHUNK_SECONDS: usize = 10;
 /// The tracks are summed outside the engine, so the export gets its own
 /// limiter, a touch under full scale.
@@ -84,6 +86,7 @@ pub struct MixChunks<'a> {
 }
 
 impl<'a> MixChunks<'a> {
+  /// The mix of `parts` at `rate`, ready to build from the top.
   pub fn new(parts: &'a [MixPart], rate: f64) -> Self {
     let limiter = PeakLimiter::new(rate, CEILING);
     // Run on past the end by the limiter's delay, so the tail comes out.
@@ -206,9 +209,13 @@ pub struct MidiPart {
   pub notes: Vec<(PlayedNote, Option<&'static str>)>,
 }
 
+/// MIDI ticks a quarter note.
 const PPQ: u32 = 480;
+/// General MIDI's drum channel (10, counted from 0).
 const DRUM_CHANNEL: u8 = 9;
 
+/// A MIDI variable-length quantity: seven bits a byte, most significant first,
+/// every byte but the last with its top bit set.
 fn vlq(value: u32) -> Vec<u8> {
   let mut bytes = vec![(value & 0x7f) as u8];
   let mut v = value >> 7;
@@ -219,6 +226,7 @@ fn vlq(value: u32) -> Vec<u8> {
   bytes
 }
 
+/// A chunk of a MIDI file: its four-letter kind, its length and its body.
 fn chunk(kind: &[u8; 4], body: &[u8]) -> Vec<u8> {
   let mut bytes = kind.to_vec();
   bytes.extend((body.len() as u32).to_be_bytes());
@@ -239,6 +247,7 @@ fn track_bytes(events: &[(u32, Vec<u8>)]) -> Vec<u8> {
   chunk(b"MTrk", &body)
 }
 
+/// A meta event holding text (`kind` 3 names the track).
 fn text_event(kind: u8, text: &str) -> Vec<u8> {
   let mut bytes = vec![0xff, kind];
   bytes.extend(vlq(text.len() as u32));

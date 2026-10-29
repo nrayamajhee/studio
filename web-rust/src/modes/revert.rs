@@ -21,6 +21,8 @@ use crate::store::storage;
 /// The tiles a page of Revert holds.
 const PER_PAGE: usize = 12;
 
+/// Something Revert can put back: its tile's id, label, what it holds and icon,
+/// and what reverting it does.
 struct RevertOption {
   id: &'static str,
   label: &'static str,
@@ -136,6 +138,7 @@ fn keeps_revert(slot: PadSlot) -> bool {
   )
 }
 
+/// Makes `pad` close Revert before it does what it does.
 fn closing(a: &'static App, pad: &mut PadBinding) {
   let press = pad.on_press.clone();
   pad.on_press = Callback::new(move |shifted| {
@@ -144,6 +147,7 @@ fn closing(a: &'static App, pad: &mut PadBinding) {
   });
 }
 
+/// Reverts `option`, says so, and closes Revert.
 fn revert(a: &'static App, option: &RevertOption) {
   (option.run)();
   a.feedback
@@ -151,6 +155,8 @@ fn revert(a: &'static App, option: &RevertOption) {
   a.views.leave_revert();
 }
 
+/// Binds Revert: the green knob picks what to put back and Delete (or a
+/// double-click) reverts it on a second press; any other pad closes it.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let shift = a.shift.shift();
   let options = Rc::new(revert_options(a));

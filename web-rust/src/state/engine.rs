@@ -23,6 +23,18 @@ use crate::logic::tracks::DeviceSound;
 /// (s).
 const RENDER_TAIL: f64 = 2.5;
 
+/// The Device's side of the sound engine, as web-react's `deviceEngine.ts`: it
+/// owns sound-engine's [`Synth`] host and turns what the Device does into
+/// engine events.
+///
+/// It keeps the preset the keys play ([`Engine::load_preset`],
+/// [`Engine::set_value`]), which instrument each held key started so its
+/// note-off reaches it ([`Engine::note_on`], [`Engine::note_off`]), and the
+/// last value sent for every param, so only changes are sent and an offline
+/// render can be given the sound as it is now ([`Engine::sound`],
+/// [`Engine::render`]). It also schedules timed notes and hits for the drum
+/// grid, previews and playback, ticks the metronome, sets the master's level
+/// and modules, and hands out the scrubber and track mixer.
 pub struct Engine {
   synth: Synth,
   /// The preset the keys play.
@@ -36,6 +48,8 @@ pub struct Engine {
 }
 
 impl Engine {
+  /// The first preset loaded, nothing held or sent; the engine starts on the
+  /// first gesture.
   pub fn new() -> Self {
     Self {
       // The worklet's files sit next to the page.
@@ -70,6 +84,7 @@ impl Engine {
     self.synth.now()
   }
 
+  /// The node the scope draws the output from, once the engine runs.
   pub fn analyser(&self) -> Option<AnalyserNode> {
     self.synth.analyser()
   }
@@ -166,6 +181,7 @@ impl Engine {
     }
   }
 
+  /// Lets go of the keybed note `midi`, on the instrument and note it started.
   pub fn note_off(&self, midi: i32) {
     let entry = self.held.borrow_mut().get_mut(&midi).and_then(Vec::pop);
     if let Some((target, note)) = entry
@@ -202,10 +218,12 @@ impl Engine {
     self.set_param(&target, id, value);
   }
 
+  /// A metronome click now, accented on the bar's first beat.
   pub fn metronome_tick(&self, accent: bool) {
     self.synth.tick(accent, None);
   }
 
+  /// Silences every note on every instrument, and forgets the keys held.
   pub fn all_notes_off(&self) {
     self.held.borrow_mut().clear();
     self.synth.all_notes_off();
@@ -296,10 +314,12 @@ impl Engine {
       .await
   }
 
+  /// A scrubber over a rendered take, once the engine runs.
   pub fn scrubber(&self, buffer: &AudioBuffer) -> Option<Scrubber> {
     self.synth.scrubber(buffer)
   }
 
+  /// The track mixer, once the engine runs.
   pub fn mixer(&self) -> Option<TrackMixer> {
     self.synth.mixer()
   }

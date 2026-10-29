@@ -30,6 +30,8 @@ use crate::store::library::PRESETS_KEY;
 use crate::store::session::{MODULES_KEY, PATTERN_KEY, TAKE_KEY, TAPE_KEY, TAPES_KEY};
 use crate::store::storage::js_numbers;
 
+/// The parts the panel lists: every store web-react keeps, by its key, then the
+/// theme and the engine.
 const PARTS: [&str; 14] = [
   PRESETS_KEY,
   FAVORITES_KEY,
@@ -49,17 +51,25 @@ const PARTS: [&str; 14] = [
 /// How often the engine's part refreshes while the panel is open.
 const ENGINE_MS: u32 = 250;
 
+/// The panel: a dark glass card over the page.
 const BASE: &str = "fixed inset-x-3 top-20 bottom-28 z-60 flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/65 text-white/80 shadow-high backdrop-blur-xl sm:inset-x-8 sm:bottom-20 sm:grid sm:grid-cols-[16rem_minmax(0,1fr)] sm:grid-rows-[auto_minmax(0,1fr)]";
+/// The panel's header, over the JSON.
 const HEADER: &str = "flex min-w-0 items-center gap-3 border-b border-white/10 py-2 pr-2 pl-4 text-sm sm:col-start-2 sm:row-start-1";
+/// The panel's list of parts.
 const SIDEBAR: &str = "flex max-h-48 shrink-0 flex-col gap-0.5 overflow-y-auto border-b border-white/10 p-2 sm:col-start-1 sm:row-span-2 sm:row-start-1 sm:max-h-none sm:border-r sm:border-b-0";
+/// A part in the list.
 const ITEM: &str =
   "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left font-mono text-xs";
+/// The dot that flashes when a part changes.
 const WRITTEN: &str =
   "ml-auto size-1.5 shrink-0 animate-[fade-out_2s_ease-in_forwards] rounded-full bg-emerald-400";
+/// The JSON of the part picked.
 const CODE: &str = "min-h-0 min-w-0 flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed whitespace-pre text-white/80 sm:col-start-2 sm:row-start-2";
 /// web-react's ghost Button at its small size.
 const GHOST: &str = "relative inline-flex items-center font-medium border-2 transition-colors duration-150 ease-in-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none bg-transparent border-transparent focus-visible:ring-primary px-3.5 py-2 text-xs rounded-lg gap-2 w-auto justify-center text-center hover:bg-primary/10 active:bg-primary/20 text-white/60 hover:text-white";
+/// The ghost button's icon.
 const GHOST_ICON: &str = "flex-shrink-0 inline-flex items-center justify-center";
+/// The ghost button's label.
 const GHOST_LABEL: &str = "text-base transition-colors font-semibold leading-snug tracking-tight text-inherit dark:text-inherit truncate !text-xs";
 
 /// ⌘ on a Mac, Ctrl elsewhere.
@@ -95,6 +105,9 @@ fn part(key: &str) -> Value {
   }
 }
 
+/// web-react's Debug panel, with web-rust's state: every part web-react keeps
+/// (as it keeps it), the theme and the engine, with a dot that flashes on each
+/// change, and buttons to copy them all and to close.
 pub fn overlay() -> Element {
   let picked = Rc::new(Signal::new(PARTS[0]));
   // The engine isn't signals; while the panel is open it's read again.
@@ -208,6 +221,8 @@ fn item(key: &'static str, picked: Rc<Signal<&'static str>>, changes: Rc<Signal<
   }
 }
 
+/// The engine's part: whether it started (and if not, why), its voices, load
+/// and warnings.
 fn engine_state() -> Value {
   let status = app().engine.status();
   let (phase, error) = match &status.phase {
@@ -286,6 +301,7 @@ fn highlight(json: &str) -> String {
   out
 }
 
+/// `text` escaped for HTML.
 fn escape(text: &str) -> String {
   text
     .replace('&', "&amp;")

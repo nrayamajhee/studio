@@ -8,6 +8,9 @@ use serde::{Deserialize, Serialize};
 
 use super::timing::{PlayedNote, Take};
 
+/// How a beat's steps swing: `amount` is how far through each pair of steps the
+/// second one falls (50% straight, 67% a triplet feel), over `per_beat` steps a
+/// beat.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Swing {
@@ -16,12 +19,16 @@ pub struct Swing {
   pub per_beat: u32,
 }
 
+/// No swing.
 pub const STRAIGHT: Swing = Swing {
   amount: 50.,
   per_beat: 4,
 };
+/// The least swing: straight.
 pub const MIN_SWING: f64 = 50.;
+/// The most swing.
 pub const MAX_SWING: f64 = 75.;
+/// What swing can swing: eighths (2 a beat) or sixteenths (4).
 pub const SWING_UNITS: [u32; 2] = [2, 4];
 
 impl Swing {

@@ -3,9 +3,13 @@
 //! folders' tree.
 
 pub mod store;
+/// The classes the docs' HTML gets, as web-react's `DocsMarkdown` gives them:
+/// build.rs `include!`s the file to set them, and Tailwind finds them here.
 #[allow(dead_code)]
 pub mod style;
 
+/// A doc, as the build renders it: where it sits, its route, its name and
+/// title, and its HTML.
 pub struct Doc {
   /// Where the file sits in the repo.
   pub path: &'static str,
@@ -18,9 +22,11 @@ pub struct Doc {
   pub html: &'static str,
 }
 
+/// An entry in the docs' sidebar: a doc, or a folder of entries.
 pub enum Node {
   /// An index into [`DOCS`].
   File(usize),
+  /// A folder: its path, its title, and what it holds.
   Folder {
     path: &'static str,
     title: &'static str,

@@ -27,12 +27,19 @@ use crate::state::keymap::{Control, Tool};
 use crate::state::performance::F3_MIDI;
 use crate::store::storage;
 
+/// Where the MIDI settings and mappings are kept, as web-react keeps them.
 pub const MIDI_KEY: &str = "studio.midi";
+/// General MIDI's drum channel.
 pub const DRUM_CHANNEL: u8 = 10;
+/// How many octaves the panel can shift the keys either way.
 pub const OCTAVE_RANGE: i32 = 3;
+/// The sustain pedal's CC.
 const SUSTAIN_CC: u8 = 64;
+/// The CC that silences everything at once.
 const ALL_SOUND_OFF_CC: u8 = 120;
+/// The CC that lets go of every note.
 const ALL_NOTES_OFF_CC: u8 = 123;
+/// How many messages the panel's monitor shows.
 const LOG_LENGTH: usize = 8;
 
 /// A control on a MIDI device: a knob or button sending a CC, or a key or
@@ -45,6 +52,7 @@ pub struct MidiSource {
 }
 
 impl MidiSource {
+  /// The source as a key, `cc:1:20` or `note:10:36`, unique per control.
   fn id(&self) -> String {
     format!(
       "{}:{}:{}",
@@ -54,6 +62,7 @@ impl MidiSource {
     )
   }
 
+  /// The source as the panel names it: `CC 20`, or the note's name.
   pub fn name(&self) -> String {
     if self.cc {
       format!("CC {}", self.number)
@@ -66,16 +75,21 @@ impl MidiSource {
 /// A knob, or a pad by the control its key presses.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MidiTarget {
+  /// A knob, turned by a CC's value.
   Knob(Knob),
+  /// A pad, pressed by a note or a CC from 64.
   Pad(Control),
 }
 
+/// A control on the controller mapped to a knob or pad on the Device.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MidiMapping {
   pub source: MidiSource,
   pub target: MidiTarget,
 }
 
+/// How the Device listens to MIDI, as the panel sets it and web-react keeps it
+/// under [`MIDI_KEY`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct MidiSettings {
   /// Connect again on the next visit, if the browser still allows it.
@@ -114,15 +128,22 @@ impl Default for MidiSettings {
   }
 }
 
+/// Where MIDI is at.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MidiStatus {
+  /// The browser has no Web MIDI.
   Unsupported,
+  /// Off.
   Off,
+  /// Waiting for the browser to let it in.
   Asking,
+  /// The browser said no.
   Blocked,
+  /// Listening.
   On,
 }
 
+/// A MIDI input the browser offers: its id, name and maker.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MidiPort {
   pub id: String,
@@ -130,6 +151,8 @@ pub struct MidiPort {
   pub manufacturer: String,
 }
 
+/// What the panel shows of the connection: its status, the inputs connected,
+/// and the knob or pad waiting to be mapped.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MidiConnection {
   pub status: MidiStatus,
@@ -138,6 +161,8 @@ pub struct MidiConnection {
   pub learning: Option<MidiTarget>,
 }
 
+/// A message the panel's monitor shows: its port and channel, what it was, and
+/// what the Device did with it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MidiLogEntry {
   pub id: u32,
@@ -148,6 +173,7 @@ pub struct MidiLogEntry {
   pub use_: String,
 }
 
+/// The knobs a control can be mapped to, by name, in panel order.
 pub const MIDI_KNOBS: [(Knob, &str); 4] = [
   (Knob::Chalk, "White knob"),
   (Knob::Green, "Green knob"),
@@ -155,6 +181,7 @@ pub const MIDI_KNOBS: [(Knob, &str); 4] = [
   (Knob::Blue, "Blue knob"),
 ];
 
+/// A tool's control, for the pads' table.
 const fn tool(tool: Tool) -> Control {
   Control::Tool(tool)
 }
@@ -205,6 +232,7 @@ pub const MIDI_PADS: [[(Control, &str); 12]; 3] = [
   ],
 ];
 
+/// A pad's name in the panel.
 fn pad_name(control: Control) -> Option<&'static str> {
   MIDI_PADS
     .iter()
@@ -213,6 +241,7 @@ fn pad_name(control: Control) -> Option<&'static str> {
     .map(|(_, name)| *name)
 }
 
+/// A knob's or pad's name in the panel.
 pub fn target_name(target: MidiTarget) -> &'static str {
   match target {
     MidiTarget::Knob(knob) => MIDI_KNOBS
@@ -223,10 +252,12 @@ pub fn target_name(target: MidiTarget) -> &'static str {
   }
 }
 
+/// The notes' names, from C.
 const NOTE_NAMES: [&str; 12] = [
   "C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B",
 ];
 
+/// A MIDI note's name with its octave: `C4` for 60.
 pub fn note_name(note: u8) -> String {
   format!(
     "{}{}",
@@ -242,6 +273,7 @@ struct MidiPreset {
   mappings: Vec<MidiMapping>,
 }
 
+/// The controllers the Device maps on its own: the OP-1.
 fn presets() -> Vec<MidiPreset> {
   let cc = |number: u8, target: MidiTarget| MidiMapping {
     source: MidiSource {
@@ -305,6 +337,7 @@ fn presets() -> Vec<MidiPreset> {
 
 // Settings in web-react's JSON, key for key.
 
+/// A tool's key in web-react's stored JSON.
 fn tool_key(tool: Tool) -> &'static str {
   match tool {
     Tool::Record => "record",
@@ -327,6 +360,7 @@ fn tool_key(tool: Tool) -> &'static str {
   }
 }
 
+/// A knob's key in web-react's stored JSON.
 fn knob_key(knob: Knob) -> &'static str {
   match knob {
     Knob::Chalk => "chalk",
@@ -336,6 +370,7 @@ fn knob_key(knob: Knob) -> &'static str {
   }
 }
 
+/// A control as web-react stores it.
 fn control_json(control: Control) -> Value {
   match control {
     Control::Tool(tool) => json!({ "kind": "tool", "tool": tool_key(tool) }),
@@ -348,6 +383,7 @@ fn control_json(control: Control) -> Value {
   }
 }
 
+/// The settings as web-react stores them.
 fn settings_json(settings: &MidiSettings) -> Value {
   let mappings: Vec<Value> = settings
     .mappings
@@ -378,6 +414,7 @@ fn settings_json(settings: &MidiSettings) -> Value {
   })
 }
 
+/// A stored number, if it's a whole number from `low` to `high`.
 fn midi_number(value: &Value, low: i64, high: i64) -> Option<i64> {
   value.as_i64().filter(|n| (low..=high).contains(n))
 }
@@ -398,6 +435,7 @@ fn read_control(stored: &Value) -> Option<Control> {
     })
 }
 
+/// A stored mapping, if it reads as one the Device can play.
 fn read_mapping(stored: &Value) -> Option<MidiMapping> {
   let source = stored.get("source")?;
   let cc = match source.get("type")?.as_str()? {
@@ -428,6 +466,7 @@ fn read_mapping(stored: &Value) -> Option<MidiMapping> {
   })
 }
 
+/// The settings kept, each part that doesn't read falling back to its default.
 fn read_settings() -> MidiSettings {
   let Some(stored) = storage::load(MIDI_KEY).filter(Value::is_object) else {
     return MidiSettings::default();
@@ -471,12 +510,21 @@ fn read_settings() -> MidiSettings {
 /// A handler an input or the access calls.
 type Listener = Closure<dyn FnMut(JsValue)>;
 
+/// A note a MIDI key is sounding: its pitch, and whether it strikes a kit.
 #[derive(Clone, Copy)]
 struct HeldNote {
   note: i32,
   drums: bool,
 }
 
+/// MIDI input, as web-react's `input/midi.ts`: the settings and mappings (kept
+/// in `localStorage`), the connection the panel shows, and the monitor's log.
+///
+/// Its handlers turn what a controller sends into what the Device does: keys
+/// play the keybed (the sustain pedal holding them), channel 10 strikes a kit
+/// by its General MIDI keys, and mapped knobs and pads turn and press the
+/// Device's own. The panel's methods switch MIDI on and off, change the
+/// settings, and map controls by moving them ([`Midi::learn`]) or forget them.
 pub struct Midi {
   pub settings: Rc<Signal<MidiSettings>>,
   pub connection: Rc<Signal<MidiConnection>>,
@@ -498,10 +546,12 @@ thread_local! {
   static MIDI: std::cell::OnceCell<&'static Midi> = const { std::cell::OnceCell::new() };
 }
 
+/// MIDI, for the page's lifetime.
 pub fn midi() -> &'static Midi {
   MIDI.with(|cell| *cell.get().expect("MIDI is installed"))
 }
 
+/// Whether the browser has Web MIDI.
 fn supported() -> bool {
   js_sys::Reflect::has(
     &gloo_utils::window().navigator(),
@@ -548,21 +598,26 @@ impl Midi {
     midi
   }
 
+  /// The settings as they are, untracked.
   fn current(&self) -> MidiSettings {
     self.settings.get_untracked().clone()
   }
 
+  /// Sets the settings and keeps them.
   fn save(&self, next: MidiSettings) {
     storage::save(MIDI_KEY, &settings_json(&next));
     self.settings.set(next);
   }
 
+  /// Sets the connection's status.
   fn set_status(&self, status: MidiStatus) {
     self
       .connection
       .update(|connection| connection.status = status);
   }
 
+  /// Asks the browser for MIDI and listens to its inputs; if it won't, MIDI
+  /// goes off and shows as blocked.
   async fn connect(&'static self) {
     if self.access.borrow().is_some()
       || self.connection.get_untracked().status == MidiStatus::Asking
@@ -607,11 +662,13 @@ impl Midi {
     self.set_status(MidiStatus::On);
   }
 
+  /// The browser's MIDI inputs.
   fn inputs(&self) -> Vec<MidiInput> {
     let access = self.access.borrow().clone();
     access.as_ref().map_or_else(Vec::new, inputs_of)
   }
 
+  /// Stops listening, letting go of everything held.
   fn disconnect(&self) {
     self.release_all();
     let access = self.access.borrow_mut().take();
@@ -630,6 +687,8 @@ impl Midi {
     });
   }
 
+  /// Listens to every connected input, replacing the handlers of the last, and
+  /// maps a newly plugged-in known controller.
   fn refresh_ports(&'static self) {
     let mut ports = Vec::new();
     let mut listeners = Vec::new();
@@ -698,10 +757,12 @@ impl Midi {
     });
   }
 
+  /// Lets go of a held MIDI key.
   fn note_off(&self, id: &str, held: HeldNote) {
     device_note(id, held.note, false, 0., held.drums);
   }
 
+  /// Presses or lets go of a mapped pad, as its key does.
   fn press_pad(&self, id: &str, control: Control, down: bool) {
     if self.held_pads.borrow().contains_key(id) == down {
       return;
@@ -715,6 +776,7 @@ impl Midi {
     }
   }
 
+  /// The sustain pedal down or up: up lets go of every key it held.
   fn set_pedal(&self, down: bool) {
     if self.pedal.get() == down {
       return;
@@ -729,6 +791,7 @@ impl Midi {
     }
   }
 
+  /// Lets go of every key, held or sustained, and every pad.
   fn release_all(&self) {
     self.pedal.set(false);
     let held: Vec<(String, HeldNote)> = self
@@ -751,6 +814,7 @@ impl Midi {
     }
   }
 
+  /// The mapping for `source`, if it has one.
   fn mapping_for(&self, source: MidiSource) -> Option<MidiMapping> {
     self
       .settings
@@ -786,6 +850,8 @@ impl Midi {
     Some(target)
   }
 
+  /// A note on or off: maps it if a knob or pad is waiting, presses a mapped
+  /// pad, or plays the keys or drums. Returns what it did, for the monitor.
   fn receive_note(&self, channel: u8, number: u8, velocity: u8) -> String {
     let source = MidiSource {
       cc: false,
@@ -854,6 +920,9 @@ impl Midi {
     if drums { "Drums" } else { "Keys" }.into()
   }
 
+  /// A CC: maps it if a knob or pad is waiting, turns or presses what it's
+  /// mapped to, or works the sustain pedal or all-notes-off. Returns what it
+  /// did, for the monitor.
   fn receive_control(&self, channel: u8, number: u8, value: u8) -> String {
     let source = MidiSource {
       cc: true,
@@ -885,6 +954,8 @@ impl Midi {
     "Not mapped".into()
   }
 
+  /// A message from `port`: played if it's the input listened to, and logged
+  /// for the monitor.
   fn receive(&self, port: &str, data: &[u8]) {
     if self
       .settings
@@ -951,6 +1022,8 @@ impl Midi {
     }
   }
 
+  /// Changes the settings, letting go of keys held on an input or channel it
+  /// stops listening to.
   pub fn set_settings(&self, change: impl FnOnce(&mut MidiSettings)) {
     let current = self.current();
     let mut next = current.clone();
@@ -978,6 +1051,7 @@ impl Midi {
       .update(|connection| connection.learning = next);
   }
 
+  /// Forgets `target`'s mapping, or with `None` every mapping.
   pub fn forget(&self, target: Option<MidiTarget>) {
     let current = self.current();
     self.release_all();

@@ -5,8 +5,11 @@
 use fluid_macro::html;
 use web_sys::Element;
 
+/// Holes across a speaker grille.
 const COLUMNS: usize = 10;
+/// Holes down a speaker grille.
 const ROWS: usize = 52;
+/// How many holes the field's corners are rounded by.
 const RADIUS: usize = 1;
 
 /// A hole is drilled if it lies within a one-hole radius of the field's

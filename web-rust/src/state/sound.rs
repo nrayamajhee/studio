@@ -17,6 +17,7 @@ use crate::logic::presets::{
 use crate::logic::synth_pages::{SynthPage, synth_pages};
 use crate::store::library::all_presets;
 
+/// The preset a first visit plays.
 const INITIAL_PRESET: &str = "piano";
 
 /// A param with named choices (the oscillator's wave) steps through them.
@@ -41,6 +42,15 @@ pub fn param_name(patch: &Patch, specs: &[&ParamSpec], spec: &ParamSpec) -> Stri
   }
 }
 
+/// The instrument playing, as web-react's `SoundProvider`: its preset, the
+/// param the red knob has picked, the keybed's octave shift, and the Synth
+/// screen's page and the block its overview has picked.
+///
+/// Its methods read the preset as the views need it (its patch, params in
+/// module order, values with edits, the picked param's name and display, the
+/// synth pages) and change it: pick, preview, step or adopt a preset, turn a
+/// param (kept as an edit in the library), shift the octave, and revert one
+/// sound's edits or every sound's.
 pub struct SoundStore {
   pub preset: Rc<Signal<DevicePreset>>,
   pub param_index: Rc<Signal<usize>>,
@@ -52,6 +62,8 @@ pub struct SoundStore {
 }
 
 impl SoundStore {
+  /// The piano, its first param picked, no octave shift, the synth on its
+  /// overview.
   pub fn new() -> Self {
     Self {
       preset: Rc::new(Signal::new(find_preset(INITIAL_PRESET).clone())),
@@ -62,6 +74,7 @@ impl SoundStore {
     }
   }
 
+  /// Loads the first preset, with its kept edits, into the engine.
   pub fn install(&self) {
     let initial = find_preset(INITIAL_PRESET);
     app()
@@ -74,10 +87,12 @@ impl SoundStore {
     app().library.library.with(all_presets)
   }
 
+  /// The preset playing, tracked.
   pub fn preset(&self) -> DevicePreset {
     self.preset.cloned()
   }
 
+  /// The id of the preset playing, tracked.
   pub fn preset_id(&self) -> String {
     self.preset.with(|preset| preset.id.clone())
   }
@@ -100,6 +115,7 @@ impl SoundStore {
     values
   }
 
+  /// The patch the preset plays.
   pub fn patch(&self) -> &'static Patch {
     self.preset.with(|preset| patch(&preset.target))
   }
@@ -109,11 +125,13 @@ impl SoundStore {
     module_ordered(self.patch())
   }
 
+  /// The param the red knob has picked.
   pub fn selected(&self) -> &'static ParamSpec {
     let specs = self.specs();
     specs[self.param_index.value().min(specs.len() - 1)]
   }
 
+  /// The picked param's value, edited or the preset's own.
   pub fn selected_value(&self) -> f64 {
     let selected = self.selected();
     self
@@ -123,14 +141,17 @@ impl SoundStore {
       .unwrap_or(selected.default)
   }
 
+  /// The picked param's name, as the screen shows it.
   pub fn selected_name(&self) -> String {
     param_name(self.patch(), &self.specs(), self.selected())
   }
 
+  /// The picked param's value as text, in its units.
   pub fn selected_display(&self) -> String {
     format_param(self.selected(), self.selected_value())
   }
 
+  /// How many steps the picked param's knob has.
   pub fn value_steps(&self) -> usize {
     steps_of(self.selected())
   }
@@ -141,6 +162,8 @@ impl SoundStore {
     synth_pages(&patch.base().params, family(patch))
   }
 
+  /// The Synth screen's page index, by the page kept (the overview if the
+  /// instrument hasn't it).
   pub fn page_index(&self) -> usize {
     let page = self.page_id.value();
     self
@@ -150,6 +173,7 @@ impl SoundStore {
       .unwrap_or(0)
   }
 
+  /// The Synth screen's page showing.
   pub fn page(&self) -> SynthPage {
     let pages = self.pages();
     pages[self.page_index().min(pages.len() - 1)].clone()
@@ -166,11 +190,13 @@ impl SoundStore {
     }
   }
 
+  /// Shows the Synth screen's page at `index`.
   pub fn show_page(&self, index: usize) {
     let pages = self.pages();
     self.page_id.set(pages[index.min(pages.len() - 1)].id);
   }
 
+  /// Picks the overview's block `id`.
   pub fn pick_block(&self, id: &'static str) {
     self.chain_pick.set(id);
   }
@@ -233,6 +259,7 @@ impl SoundStore {
     self.select_preset_with(next, edits.as_ref());
   }
 
+  /// Picks `next` and loads it with `edits` into the engine.
   fn select_preset_with(&self, next: &DevicePreset, edits: Option<&Values>) {
     let engine = &app().engine;
     engine.unlock();
@@ -299,6 +326,7 @@ impl SoundStore {
     self.select_preset(next);
   }
 
+  /// Shifts the keybed an octave up or down, as far as the preset reaches.
   pub fn shift_octave(&self, direction: i32) {
     let preset = self.preset.get_untracked().clone();
     self
@@ -306,21 +334,25 @@ impl SoundStore {
       .update(|octave| *octave = clamp_octave(*octave + direction, &preset));
   }
 
+  /// Picks the param at `index`, in module order.
   pub fn select_param(&self, index: usize) {
     self.param_index.set(index);
   }
 
+  /// Turns the picked param to `step`.
   pub fn set_selected_value(&self, step: usize) {
     let selected = fluid::untrack(|| self.selected());
     self.set_param_step(selected, step);
   }
 
+  /// Drops the preset's edits, back to its own values.
   pub fn revert_sound(&self) {
     let preset = self.preset.get_untracked().clone();
     app().library.clear_edits(&preset.id);
     app().engine.load_preset(&preset, None);
   }
 
+  /// Drops every preset's edits.
   pub fn revert_all_sounds(&self) {
     let preset = self.preset.get_untracked().clone();
     app().library.clear_all_edits();

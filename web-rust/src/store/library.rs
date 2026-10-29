@@ -17,12 +17,17 @@ use crate::logic::presets::{
 };
 use crate::logic::tracks::base36;
 
+/// Where the preset library is kept.
 pub const PRESETS_KEY: &str = "studio.instruments";
 /// Pad bindings stored under an older layout are dropped once, so every pad
 /// starts on its built-in pair.
 const PADS_VERSION: u32 = 3;
+/// How many instrument pads there are.
 pub const INSTRUMENT_PADS: usize = 6;
 
+/// The preset library as it's kept: the presets saved from the Device, the
+/// preset each instrument pad plays (`buttons`) and plays with Shift
+/// (`shift_buttons`), by id, and the edits made to each preset.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PresetLibrary {
@@ -121,6 +126,8 @@ fn numbers(value: &Value) -> Values {
     .unwrap_or_default()
 }
 
+/// A saved preset as kept, if its instrument still exists, with its values
+/// brought up to date.
 fn preset_of(value: &Value) -> Option<DevicePreset> {
   let mut preset: DevicePreset = serde_json::from_value(value.clone()).ok()?;
   sound_engine::patches::bus_index(&preset.target)?;
@@ -136,6 +143,9 @@ fn preset_of(value: &Value) -> Option<DevicePreset> {
   Some(preset)
 }
 
+/// The library as kept: saved presets that still load, pads on presets that
+/// exist (all back on their built-ins if they were bound under an older
+/// layout), and only valid edits.
 fn read() -> PresetLibrary {
   let defaults = PresetLibrary::default();
   let Some(stored) = load(PRESETS_KEY) else {
@@ -212,6 +222,7 @@ struct Stored<'a> {
   pads_version: u32,
 }
 
+/// Keeps the library, with pads still on their built-in preset as null.
 fn write(library: &PresetLibrary) {
   let defaults = PresetLibrary::default();
   let stored = |ids: &'_ [String], fallback: &[String]| -> Vec<Option<String>> {
@@ -252,17 +263,25 @@ pub fn all_presets(library: &PresetLibrary) -> Vec<DevicePreset> {
     .collect()
 }
 
+/// The preset library, as web-react's `presetStore.ts`, kept in `localStorage`
+/// whenever it changes.
+///
+/// Its methods save, update and delete presets (with free names), record,
+/// replace and clear the edits made to presets, and bind, swap and reset the
+/// instrument pads.
 pub struct LibraryStore {
   pub library: Rc<Signal<PresetLibrary>>,
 }
 
 impl LibraryStore {
+  /// Reads the library kept.
   pub fn load() -> Self {
     Self {
       library: Rc::new(Signal::new(read())),
     }
   }
 
+  /// Changes the library and keeps it.
   fn update<R>(&self, change: impl FnOnce(&mut PresetLibrary) -> R) -> R {
     self.library.update(|library| {
       let result = change(library);
@@ -312,6 +331,7 @@ impl LibraryStore {
     preset
   }
 
+  /// Saves new values, icon and name over a saved preset.
   pub fn update_preset(
     &self,
     preset: &DevicePreset,
@@ -335,6 +355,7 @@ impl LibraryStore {
     next
   }
 
+  /// The edits made to `preset_id` since it was picked, untracked.
   pub fn edits(&self, preset_id: &str) -> Option<Values> {
     self
       .library
@@ -368,6 +389,7 @@ impl LibraryStore {
     });
   }
 
+  /// Drops `preset_id`'s edits, back to its own values.
   pub fn clear_edits(&self, preset_id: &str) {
     self.update(|library| {
       library.edits.shift_remove(preset_id);

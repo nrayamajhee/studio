@@ -11,6 +11,7 @@ use web_sys::{AnalyserNode, CanvasRenderingContext2d, Element, HtmlCanvasElement
 
 use crate::state::app;
 
+/// How strongly the centre line shows.
 const GRID_ALPHA: f64 = 0.16;
 
 /// The live output's waveform, as web-react's Oscilloscope draws it:
@@ -67,6 +68,8 @@ pub fn animate(mut frame: impl FnMut(&mut Vec<f32>) + 'static) {
   });
 }
 
+/// Draws a frame of the scope: the centre line, and the output's waveform from
+/// a rising zero crossing (flat until audio starts).
 fn draw(
   element: &HtmlCanvasElement,
   context: &CanvasRenderingContext2d,

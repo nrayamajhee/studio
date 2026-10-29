@@ -6,9 +6,11 @@ use gloo_utils::document;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, FocusOptions, HtmlElement};
 
+/// What Tab can move the focus to.
 const FOCUSABLE: &str =
   "a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]";
 
+/// The focus group an element is in, if any.
 fn group_of(element: &Element) -> Option<HtmlElement> {
   element
     .closest("[data-focus-group]")
@@ -17,6 +19,7 @@ fn group_of(element: &Element) -> Option<HtmlElement> {
     .and_then(|group| group.dyn_into::<HtmlElement>().ok())
 }
 
+/// The name of the focus group an element is in.
 fn group_name(element: &Element) -> Option<String> {
   group_of(element).and_then(|group| group.get_attribute("data-focus-group"))
 }
@@ -65,6 +68,8 @@ fn reading_order(controls: Vec<HtmlElement>) -> Vec<HtmlElement> {
   order
 }
 
+/// Moves the focus to the next control in reading order (or the one before,
+/// with -1), round and round.
 pub fn move_focus(direction: i32) {
   let Ok(all) = document().query_selector_all(FOCUSABLE) else {
     return;

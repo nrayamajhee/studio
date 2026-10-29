@@ -23,11 +23,14 @@ use crate::state::transport::TransportState;
 
 /// Two bars of history beside the keys.
 const ROLL_BARS: f64 = 2.;
+/// How wide the keys down the roll's left are (px).
 const KEYS_WIDTH: f64 = 30.;
 /// The black keys' share of the keys' width, at the side facing the notes.
 const BLACK_DEPTH: f64 = 0.55;
+/// The font the roll's note names are drawn in.
 const LABEL_FONT: &str = "ui-monospace, SFMono-Regular, Menlo, monospace";
 
+/// Whether a MIDI note is a black key.
 fn is_black(midi: i32) -> bool {
   matches!(midi.rem_euclid(12), 1 | 3 | 6 | 8 | 10)
 }
@@ -79,6 +82,8 @@ fn wheel(event: &WheelEvent, element: &HtmlCanvasElement, travel: &Cell<f64>) {
   pitch.call(-(semitones as i32));
 }
 
+/// Draws a frame of the roll: the keys, the beats and bars, the notes, and the
+/// keys line where the playhead is.
 fn draw(element: &HtmlCanvasElement, context: &CanvasRenderingContext2d) {
   let ratio = match window().device_pixel_ratio() {
     0. => 1.,

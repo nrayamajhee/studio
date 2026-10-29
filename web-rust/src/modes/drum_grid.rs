@@ -64,6 +64,9 @@ fn keep_pattern(a: &'static App) {
   });
 }
 
+/// Binds the drum grid: the green knob moves the head, the red sets the length
+/// and the blue the resolution; keys set hits, Play and Record loop the
+/// pattern, Save keeps it as a track and Delete clears it.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let pattern = a.session.session.with(|session| session.pattern.clone());
   let grid = &a.grid;

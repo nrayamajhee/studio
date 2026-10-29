@@ -24,6 +24,8 @@ const STEPS_PER_PAGE: u32 = 32;
 /// Wheel travel (px) that moves the head one step.
 const WHEEL_PER_STEP: f64 = 40.;
 
+/// What the drum grid draws, from the bindings: the kit's rows, the steps,
+/// their beats and bars, the hits and whether it records.
 #[derive(Clone, PartialEq)]
 struct Look {
   rows: Vec<StepRow>,
@@ -34,6 +36,8 @@ struct Look {
   recording: bool,
 }
 
+/// How many steps a page shows: whole bars, or whole beats where a bar alone
+/// has more than fit.
 fn page_steps(per_beat: u32, bar_steps: u32) -> u32 {
   if bar_steps <= STEPS_PER_PAGE {
     bar_steps * (STEPS_PER_PAGE / bar_steps)
@@ -51,12 +55,15 @@ pub fn wheel_pixels(event: &WheelEvent, delta: f64, page: f64) -> f64 {
   }
 }
 
+/// Sets or clears the hit at `row` and `step`, as the bindings do.
 fn toggle(row: usize, step: u32) {
   if let Some(on_toggle) = &modes::current().screen.on_toggle_step {
     on_toggle.call((row, step));
   }
 }
 
+/// The rows of the page `shown`, `page` steps wide: each piece's icon, then its
+/// cells, each beat's first a little brighter and each bar's set off by a line.
 fn rows(look: &Look, shown: u32, page: u32) -> Vec<Element> {
   let columns = page.min(look.steps - shown * page);
   look
@@ -100,6 +107,9 @@ fn rows(look: &Look, shown: u32, page: u32) -> Vec<Element> {
     .collect()
 }
 
+/// The drum grid: rows of steps, the head a column over them that follows the
+/// loop every frame (red while recording), the page following it; the wheel
+/// moves the head.
 pub fn step_grid() -> Element {
   let look = fluid::create_memo(|| {
     modes::with(|bindings| {

@@ -37,6 +37,7 @@ pub struct DrumPattern {
 
 /// Steps a beat the blue knob picks from: eighths to 32nds, and triplets.
 pub const STEP_RESOLUTIONS: [u32; 5] = [2, 3, 4, 6, 8];
+/// The most bars a pattern runs for.
 pub const MAX_STEP_BARS: u32 = 8;
 
 impl Default for DrumPattern {
@@ -50,6 +51,7 @@ impl Default for DrumPattern {
   }
 }
 
+/// The pieces a kit plays on each keybed key, from its lowest.
 fn kit_keys(kit: &str) -> &'static [String] {
   match patch(kit) {
     Patch::Drums(kit) => &kit.keys,
@@ -105,6 +107,7 @@ pub const PIECE_NOTES: [(&str, i32); 26] = [
   ("ka", 70),
 ];
 
+/// The note a take keeps for `piece` (0 if it isn't one).
 pub fn piece_note(piece: &str) -> i32 {
   PIECE_NOTES
     .iter()
@@ -125,11 +128,17 @@ pub fn note_piece(note: i32) -> Option<&'static str> {
 /// and treble at once.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Stroke {
+  /// The open bass.
   OpenBass,
+  /// A slap on the bass.
   BassSlap,
+  /// The open treble.
   OpenTreble,
+  /// The treble's rim, the fundamental damped.
   TrebleRim,
+  /// A slap on the treble.
   TrebleSlap,
+  /// Bass and treble at once.
   Both,
 }
 
@@ -284,14 +293,17 @@ pub fn carry_note(note: i32, from: &str, to: &str) -> Option<i32> {
   Some(F3_MIDI + (key - F3_MIDI).rem_euclid(12))
 }
 
+/// How many steps the pattern has in `meter`.
 pub fn pattern_steps(pattern: &DrumPattern, meter: Meter) -> u32 {
   pattern.bars * meter.beats * pattern.per_beat
 }
 
+/// The step a hit lands on at `per_beat` steps a beat.
 pub fn hit_step(hit: &DrumHit, per_beat: u32) -> i64 {
   round(hit.beat * f64::from(per_beat)) as i64
 }
 
+/// The hits landing on `step`.
 pub fn hits_at(pattern: &DrumPattern, step: i64) -> Vec<&DrumHit> {
   pattern
     .hits
@@ -300,6 +312,7 @@ pub fn hits_at(pattern: &DrumPattern, step: i64) -> Vec<&DrumHit> {
     .collect()
 }
 
+/// Whether `hit` is `piece` landing on `step`.
 fn lands(pattern: &DrumPattern, piece: &str, step: i64, hit: &DrumHit) -> bool {
   hit.piece == piece && hit_step(hit, pattern.per_beat) == step
 }

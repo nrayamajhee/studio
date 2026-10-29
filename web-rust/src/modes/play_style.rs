@@ -20,6 +20,9 @@ use crate::state::App;
 use crate::state::keymap::Tool;
 use crate::store::favorites::FavoriteKind;
 
+/// Binds the play styles: the red and blue knobs (and ← →) pick a page and a
+/// style, the green sets its rate or strum, Save keeps the changes, Delete
+/// removes a saved one and Mute stars it.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let shift = a.shift.shift();
   let style = a.performance.play_style();

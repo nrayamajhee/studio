@@ -48,6 +48,19 @@ use crate::store::favorites::FavoritesStore;
 use crate::store::library::LibraryStore;
 use crate::store::session::SessionStore;
 
+/// The whole Device's state: every store, one per web-react provider, and the
+/// sound engine they play through, built once by [`App::install`] and reached
+/// from anywhere with [`app`].
+///
+/// Each field is a store named after its provider: the saved stores (`session`,
+/// `library`, `favorites`, `chords`), the keys held (`hotkeys`), what the
+/// screen says (`feedback`), Shift, the open view (`views`), the transport and
+/// tempo, the output level, the sound being played, the keybed and chords
+/// (`performance`), the piano roll's lanes, the drum grid, the tracks and their
+/// mix, the take, the pickers' preview and the instruments browser. The methods
+/// route what touches more than one of them: [`App::view_changed`] tells each
+/// store a new view opened, and [`App::hotkey`] hands a key to whichever store
+/// hears it.
 pub struct App {
   pub engine: Engine,
   pub session: SessionStore,

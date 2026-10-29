@@ -26,6 +26,7 @@ use crate::state::preview::PreviewSound;
 use crate::state::view::ScreenView;
 use crate::store::favorites::FavoriteKind;
 
+/// The built-in preset that plays `kit` (the first preset, if none does).
 fn kit_preset(kit: &str) -> &'static DevicePreset {
   device_presets()
     .iter()
@@ -33,6 +34,7 @@ fn kit_preset(kit: &str) -> &'static DevicePreset {
     .unwrap_or(&device_presets()[0])
 }
 
+/// Puts the beat's kit on the keys, unless it's already playing.
 fn put_kit(a: &'static App, beat: &DrumBeat) {
   let kit = kit_preset(&beat.kit);
   if a.sound.preset_id() != kit.id {
@@ -40,6 +42,7 @@ fn put_kit(a: &'static App, beat: &DrumBeat) {
   }
 }
 
+/// Plays the beat on the preview, on its kit at the tempo, swung as it swings.
 fn audition(a: &'static App, beat: &DrumBeat) {
   let (bpm, swing) = fluid::untrack(|| (a.transport.bpm.value(), a.transport.swing.value()));
   let swung = swung_take(
@@ -57,6 +60,8 @@ fn audition(a: &'static App, beat: &DrumBeat) {
   );
 }
 
+/// Loads the beat into the drum grid on its kit, with its time signature and
+/// swing, and opens the grid.
 fn load(a: &'static App, index: usize, beat: &DrumBeat) {
   a.browse.beat_index.set(index);
   put_kit(a, beat);
@@ -74,6 +79,9 @@ fn load(a: &'static App, index: usize, beat: &DrumBeat) {
   });
 }
 
+/// Binds the drum beats picker: the red and blue knobs (and ← →) pick a page
+/// and a beat, a tile or Play auditions it, Save or a double-click loads it
+/// into the drum grid, and Mute stars it.
 pub fn mode(a: &'static App, b: &mut Bindings) {
   let all = drum_beats();
   let entries = all

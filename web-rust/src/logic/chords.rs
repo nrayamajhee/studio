@@ -2,6 +2,8 @@
 //! Intervals are semitones from the root, so a chord transposes to whatever
 //! key is played.
 
+/// A chord: its id, its name in the palette, its label on a pad, and its
+/// intervals in semitones from the root.
 pub struct Chord {
   pub id: &'static str,
   /// The full name, shown in the palette.
@@ -11,6 +13,7 @@ pub struct Chord {
   pub intervals: &'static [i32],
 }
 
+/// A chord, for the palette's table.
 const fn chord(
   id: &'static str,
   name: &'static str,
@@ -25,6 +28,7 @@ const fn chord(
   }
 }
 
+/// A kind of chord in the palette, with its chords most used first.
 pub struct ChordGroup {
   pub name: &'static str,
   pub chords: &'static [Chord],
@@ -121,12 +125,14 @@ pub fn chord_group(id: &str) -> &'static str {
     .map_or("", |group| group.name)
 }
 
+/// The chord `id` (major, if there's none).
 pub fn chord_by_id(id: &str) -> &'static Chord {
   palette()
     .find(|chord| chord.id == id)
     .unwrap_or(&CHORD_GROUPS[0].chords[0])
 }
 
+/// Whether `id` is a chord in the palette.
 pub fn is_chord(id: &str) -> bool {
   palette().any(|chord| chord.id == id)
 }

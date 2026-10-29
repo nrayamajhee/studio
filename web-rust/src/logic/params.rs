@@ -15,6 +15,8 @@ pub fn from_unit(spec: &ParamSpec, t: f64) -> f64 {
   }
 }
 
+/// Where `value` sits on its param's range, from 0 to 1, on a log scale for a
+/// log param.
 pub fn to_unit(spec: &ParamSpec, value: f64) -> f64 {
   let position = if is_log(spec) {
     (value / spec.min).ln() / (spec.max / spec.min).ln()
@@ -24,14 +26,17 @@ pub fn to_unit(spec: &ParamSpec, value: f64) -> f64 {
   position.clamp(0., 1.)
 }
 
+/// Whether a param's knob turns on a log scale.
 fn is_log(spec: &ParamSpec) -> bool {
   spec.scale.as_deref() == Some("log") && spec.min > 0.
 }
 
+/// The value at knob `step` of `steps`.
 pub fn step_to_value(spec: &ParamSpec, step: usize, steps: usize) -> f64 {
   from_unit(spec, step as f64 / (steps as f64 - 1.))
 }
 
+/// The knob step of `steps` nearest `value`.
 pub fn value_to_step(spec: &ParamSpec, value: f64, steps: usize) -> usize {
   round(to_unit(spec, value) * (steps as f64 - 1.)) as usize
 }
@@ -76,15 +81,23 @@ pub fn format_param(spec: &ParamSpec, value: f64) -> String {
 /// The engine's models, as web-react's patches name their family.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Family {
+  /// Plucked and struck strings, on a waveguide.
   String,
+  /// Blown pipes: flutes, clarinets and brass.
   Bore,
+  /// Bowed strings.
   Bowed,
+  /// Drum kits and hand drums.
   Drums,
+  /// The oscillator.
   Oscillator,
+  /// Free reeds: harmonium, accordion, harmonica.
   Reed,
+  /// Tuned percussion: struck bars.
   Bar,
 }
 
+/// The model a patch plays on.
 pub fn family(patch: &Patch) -> Family {
   match patch {
     Patch::String(_) => Family::String,
@@ -112,6 +125,7 @@ pub fn master_param(id: &str) -> Option<&'static ParamSpec> {
   patches::data().master.iter().find(|spec| spec.id == id)
 }
 
+/// The modules' names on screen, by section id.
 const MODULE_LABELS: [(&str, &str); 8] = [
   ("exciter", "Exciter"),
   ("resonator", "Resonator"),
@@ -136,6 +150,8 @@ fn envelope_label(family: Family) -> &'static str {
   }
 }
 
+/// A module's name on screen for `family` (the envelope is named for how the
+/// family sounds a note).
 pub fn module_label(family: Family, id: &str) -> &'static str {
   if id == "envelope" {
     return envelope_label(family);

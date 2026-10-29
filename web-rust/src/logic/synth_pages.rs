@@ -10,6 +10,8 @@ use super::params::{Family, param_modules};
 /// the page has nothing for that knob.
 pub type KnobSlots = [Option<&'static ParamSpec>; 4];
 
+/// A page of the Synth screen: the overview (`chain`) or a module, with the
+/// param each knob sets on it, and with Shift held.
 #[derive(Clone, Debug)]
 pub struct SynthPage {
   /// "chain", or the module's section id.
@@ -54,10 +56,14 @@ fn slots(module: &str) -> Option<&'static [&'static [&'static str]]> {
   })
 }
 
+/// The first four of `specs` in knob order, the rest of the knobs empty.
 fn fill(specs: &[&'static ParamSpec]) -> KnobSlots {
   std::array::from_fn(|i| specs.get(i).copied())
 }
 
+/// A module's params on the four knobs and, with Shift, its extras: the shared
+/// modules' params keep their knob on every instrument; anything else fills the
+/// knobs in order.
 pub fn knob_slots(module: &str, specs: &[&'static ParamSpec]) -> (KnobSlots, KnobSlots) {
   let Some(slots) = slots(module) else {
     return (fill(specs), fill(specs.get(4..).unwrap_or_default()));
@@ -98,6 +104,7 @@ pub fn synth_pages(params: &'static [ParamSpec], family: Family) -> Vec<SynthPag
 /// The chain's stages in signal order; the envelope and vibrato move them.
 pub const CHAIN_STOPS: [&str; 5] = ["exciter", "resonator", "filter", "body", "output"];
 
+/// The notes' names, from C.
 const NOTE_NAMES: [&str; 12] = [
   "C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B",
 ];

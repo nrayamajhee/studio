@@ -23,6 +23,7 @@ const KNOB_COLORS: [&str; 4] = [
   "var(--color-synth-blue)",
 ];
 
+/// A graph tone's colour, as CSS.
 fn tone_color(tone: Tone) -> &'static str {
   match tone {
     Tone::Ink => "var(--color-screen-ink)",
@@ -143,9 +144,12 @@ fn envelope_graph(stages: &[ScreenReadout]) -> Element {
   fragment.first_element_child().expect("the envelope's svg")
 }
 
+/// How wide (px) an LFO cycle draws.
 const LFO_CYCLE: f64 = 50.;
+/// The random LFO's steps, as the scrolling wave draws them.
 const RANDOM_STEPS: [f64; 6] = [0.6, -0.35, 0.9, -0.8, 0.15, -0.55];
 
+/// The LFO's wave at `x` for `shape`: sine, triangle, square, saw or random.
 fn lfo_value(shape: usize, x: f64) -> f64 {
   let phase = (x / LFO_CYCLE) % 1.;
   match shape {
@@ -215,6 +219,7 @@ fn fx_meters(stages: &[ScreenReadout]) -> Element {
   }
 }
 
+/// The four readouts under a module's graph, each knob's in its colour.
 fn stages(readouts: &[ScreenReadout]) -> Element {
   let columns: Vec<Element> = readouts
     .iter()
@@ -242,6 +247,8 @@ fn stages(readouts: &[ScreenReadout]) -> Element {
   }
 }
 
+/// What a module view draws: the synth's graph, or the ADSR's envelope, the
+/// LFO's scrolling wave or the FX chain, over the readouts.
 fn draw(view: ScreenView, look: Look) -> Option<Element> {
   let graph = match view {
     ScreenView::Synth => {
