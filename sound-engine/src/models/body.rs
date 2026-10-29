@@ -1,9 +1,13 @@
+//! The instrument body every voice of an instrument shares, on its bus: a
+//! soundboard, a radiating bell, or none, with a tone tilt after.
+
 use crate::dsp::filters::{OnePoleHighpass, OnePoleLowpass};
 use crate::dsp::math::LN_1000;
 use crate::dsp::modal::ModalBank;
 use crate::dsp::svf::{Svf, SvfMode};
 use crate::patches::BodySpec;
 
+/// Where the tone tilt splits lows from highs, in hertz.
 const TILT_SPLIT_HZ: f64 = 800.;
 
 /// Per-channel ±6 dB tilt around 800 Hz.
@@ -14,6 +18,7 @@ struct Tilt {
 }
 
 impl Tilt {
+  /// A flat tilt at `fs`.
   fn new(fs: f64) -> Self {
     let mut lp = OnePoleLowpass::default();
     lp.set_cutoff(TILT_SPLIT_HZ, fs);
@@ -24,6 +29,7 @@ impl Tilt {
     }
   }
 
+  /// Tilts one sample: the lows and highs each scaled by their gain.
   fn process(&mut self, x: f64) -> f64 {
     let low = self.lp.process(x);
     low * self.low + (x - low) * self.high
@@ -48,6 +54,8 @@ pub struct Body {
 }
 
 impl Body {
+  /// The body `spec` describes at `fs`, at its default size, resonance and mix,
+  /// and no tilt.
   pub fn new(spec: &'static BodySpec, fs: f64) -> Self {
     let bank = match spec {
       BodySpec::Modal { modes } => {
@@ -112,6 +120,8 @@ impl Body {
     self.tilted = tone != 0.;
   }
 
+  /// Runs `n` frames of the bus through the body, blended in by its mix, then
+  /// the tilt, in place.
   pub fn process(&mut self, left: &mut [f32], right: &mut [f32], n: usize) {
     let mix = self.mix;
     match self.spec {

@@ -19,6 +19,7 @@ const MAX_RATE: f64 = 4.;
 /// How quickly the speed follows the drag, and how long it spins down for
 /// (s).
 const GLIDE: f64 = 0.03;
+/// How long (s) a let-go take takes to spin down.
 const SPIN_DOWN: f64 = 0.15;
 /// No move for this long (ms) lets it spin down.
 const IDLE_MS: f64 = 90.;
@@ -27,12 +28,15 @@ const FADE: f64 = 0.008;
 /// How far (s) the playhead may drift from the drag before it jumps.
 const DRIFT: f64 = 0.12;
 
+/// The playing source: the take forwards or reversed, through its own fade.
 struct Head {
   source: AudioBufferSourceNode,
   gain: GainNode,
   direction: f64,
 }
 
+/// What every clone of a [`Scrubber`] shares: the take both ways round, the
+/// head playing it, and where the playhead is estimated to be.
 struct State {
   context: AudioContext,
   output: AudioNode,
@@ -47,10 +51,16 @@ struct State {
 }
 
 /// The scrubber: cheap to clone, every clone the same one.
+///
+/// Each drag calls [`move_to`](Self::move_to), which plays the stretch
+/// dragged across at the drag's speed and direction; left alone it spins
+/// down. [`stop`](Self::stop) silences it at once.
 #[derive(Clone)]
 pub struct Scrubber(Rc<RefCell<State>>);
 
 impl Scrubber {
+  /// A scrubber for `buffer` playing into `output`, with the take reversed for
+  /// dragging back; `None` if the context can't make the buffer.
   pub fn new(context: &AudioContext, output: &AudioNode, buffer: &AudioBuffer) -> Option<Self> {
     let channels = buffer.number_of_channels();
     let options = AudioBufferOptions::new(buffer.length(), buffer.sample_rate());
@@ -111,6 +121,7 @@ impl Scrubber {
     }));
   }
 
+  /// Fades the head out at once, with no spin-down.
   pub fn stop(&self) {
     let mut state = self.0.borrow_mut();
     state.idle = None;
@@ -121,6 +132,8 @@ impl Scrubber {
   }
 }
 
+/// Starts a new head at `position` on the take in `direction` (1 forwards, −1
+/// backwards), fading in and fading out the old one; none past either end.
 fn start(state: &mut State, shared: &Rc<RefCell<State>>, position: f64, direction: f64, now: f64) {
   if let Some(head) = state.head.take() {
     fade_out(&state.context, &head);
@@ -199,6 +212,7 @@ fn release(state: &mut State) {
   state.rate = 0.;
 }
 
+/// Fades `head` out over a few ms and stops it, so it doesn't click.
 fn fade_out(context: &AudioContext, head: &Head) {
   let now = context.current_time();
   let gain = head.gain.gain();

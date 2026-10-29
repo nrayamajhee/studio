@@ -1,10 +1,18 @@
+//! The engine's state-variable filter, as lowpass, bandpass, highpass or a
+//! peaking bell.
+
 use std::f64::consts::{PI, SQRT_2};
 
+/// What the filter passes.
 #[derive(Clone, Copy, PartialEq)]
 pub enum SvfMode {
+  /// Below the cutoff.
   Lowpass,
+  /// Around the cutoff.
   Bandpass,
+  /// Above the cutoff.
   Highpass,
+  /// Everything, with a bell boosting or cutting around the cutoff.
   Peak,
 }
 
@@ -22,6 +30,7 @@ pub struct Svf {
 }
 
 impl Svf {
+  /// A filter in `mode`, at a Butterworth Q until set.
   pub fn new(mode: SvfMode) -> Self {
     Self {
       mode,
@@ -35,6 +44,7 @@ impl Svf {
     }
   }
 
+  /// Sets the cutoff (Hz) and Q at sample rate `fs`.
   pub fn set(&mut self, cutoff: f64, q: f64, fs: f64) {
     self.k = 1. / q;
     self.coefficients(cutoff, fs);
@@ -48,6 +58,7 @@ impl Svf {
     self.coefficients(cutoff, fs);
   }
 
+  /// Filters a sample.
   #[inline]
   pub fn process(&mut self, x: f64) -> f64 {
     let v3 = x - self.ic2;
@@ -63,11 +74,13 @@ impl Svf {
     }
   }
 
+  /// Clears its state.
   pub fn clear(&mut self) {
     self.ic1 = 0.;
     self.ic2 = 0.;
   }
 
+  /// Sets the coefficients for `cutoff`, kept from 20 Hz to 0.45 fs.
   fn coefficients(&mut self, cutoff: f64, fs: f64) {
     let fc = cutoff.max(20.).min(0.45 * fs);
     let g = ((PI * fc) / fs).tan();

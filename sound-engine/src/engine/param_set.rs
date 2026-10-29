@@ -1,3 +1,6 @@
+//! Param values by spec: an instrument's (or the master's) params, kept in
+//! range.
+
 use crate::dsp::adsr::AdsrStages;
 use crate::patches::ParamSpec;
 
@@ -12,6 +15,7 @@ pub struct ParamSet {
 pub type Values = std::collections::HashMap<String, f64>;
 
 impl ParamSet {
+  /// The specs' defaults.
   pub fn new(specs: &'static [ParamSpec]) -> Self {
     Self::with(specs, None)
   }
@@ -28,14 +32,17 @@ impl ParamSet {
     set
   }
 
+  /// The position of the param `id` among the specs, if the patch has it.
   pub fn index(&self, id: &str) -> Option<usize> {
     self.specs.iter().position(|spec| spec.id == id)
   }
 
+  /// Whether the patch has the param `id`.
   pub fn has(&self, id: &str) -> bool {
     self.index(id).is_some()
   }
 
+  /// The value of the param `id`, or 0 if the patch doesn't have it.
   pub fn get(&self, id: &str) -> f64 {
     self.index(id).map_or(0., |i| self.values[i])
   }
@@ -45,6 +52,8 @@ impl ParamSet {
     self.index(id).map_or(fallback, |i| self.values[i])
   }
 
+  /// Sets the param `id`, clamped to its range. False if the patch doesn't have
+  /// it or the value isn't finite.
   pub fn set(&mut self, id: &str, value: f64) -> bool {
     match self.index(id) {
       Some(i) => self.set_index(i, value),
@@ -52,6 +61,8 @@ impl ParamSet {
     }
   }
 
+  /// Sets the param at position `i`, clamped to its range. False if there is no
+  /// such param or the value isn't finite.
   pub fn set_index(&mut self, i: usize, value: f64) -> bool {
     let Some(spec) = self.specs.get(i) else {
       return false;

@@ -1,3 +1,6 @@
+//! The string model: piano, guitar and basses, each note one to three
+//! single-delay-loop strings, struck by a hammer or plucked.
+
 use super::exciters::{HammerOptions, PluckOptions, hammer, pluck};
 use super::string_loop::StringLoop;
 use crate::dsp::adsr::Adsr;
@@ -9,10 +12,18 @@ use crate::engine::modules::ModuleSettings;
 use crate::engine::voice::{ACTIVE, IDLE, RELEASED, STOLEN, Voice, VoiceCore, pick_victim};
 use crate::patches::StringPatch;
 
+/// How long (s) a guitar string is damped before it's re-fretted and plucked
+/// again.
 const REFRET_SECONDS: f64 = 0.008;
+/// Notes starting within 15 ms of each other are a chord's, spread out by the
+/// Strum param.
 const STRUM_WINDOW: f64 = 0.015;
+/// The most unison strings a piano key has.
 const MAX_UNISON: usize = 3;
 
+/// One string (a guitar's) or one key's strings (a piano's): its loops, the
+/// pulse that excites them, the pickup's comb, the damper's deferral under the
+/// pedal, and a note waiting for a re-fret or strum delay to run out.
 pub struct StringVoice {
   core: VoiceCore,
   loops: Vec<StringLoop>,
@@ -54,6 +65,9 @@ impl Voice for StringVoice {
 }
 
 impl StringVoice {
+  /// An idle voice of `loops` strings that fit the lowest note, `lowest_hz`,
+  /// with room for an excitation of `excitation_size` samples, its pick noise
+  /// seeded by `seed`.
   fn new(
     fs: f64,
     mods: &ModuleSettings,
@@ -144,6 +158,9 @@ pub struct StringModel {
 }
 
 impl StringModel {
+  /// The model for `patch` at `fs`: a voice per open string for a guitar or
+  /// bass that allocates by string, else four voices to spare over the
+  /// polyphony, one per key.
   pub fn new(patch: &'static StringPatch, fs: f64, mods: &ModuleSettings) -> Self {
     let loops = if patch.allocation == "key" {
       MAX_UNISON
@@ -206,10 +223,14 @@ impl StringModel {
     }
   }
 
+  /// Every voice's shared core, for the instrument to retarget.
   pub fn voices_mut(&mut self) -> impl Iterator<Item = &mut VoiceCore> {
     self.voices.iter_mut().map(|voice| &mut voice.core)
   }
 
+  /// Reads the strings' decay, brightness, inharmonicity and detune, the
+  /// exciter's hardness, position, strength and kind, the attack and damper
+  /// release, the strum and the jawari from the params.
   pub fn read_params(&mut self, bus: &Bus) {
     let p = &bus.params;
     self.decay = p.get("resonator.decay");
@@ -230,10 +251,13 @@ impl StringModel {
     self.jawari = p.get_or("resonator.jawari", 0.);
   }
 
+  /// How many voices are sounding.
   pub fn active_voices(&self) -> usize {
     self.voices.iter().filter(|voice| voice.core.busy()).count()
   }
 
+  /// Plays `note` (folded into the patch's range) on a key or a string, as the
+  /// patch allocates, delayed by the strum when it's a chord's later note.
   pub fn note_on(&mut self, bus: &Bus, note: i32, velocity: f64) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     // Chord macros arrive as a burst; spread a burst like a strum if asked.
@@ -251,6 +275,8 @@ impl StringModel {
     }
   }
 
+  /// Lets go of `note`: the damper falls once every press is let go, unless the
+  /// pedal holds it up; a note still waiting to start is dropped.
   pub fn note_off(&mut self, bus: &Bus, note: i32) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     let Some(index) = self.find_held(n) else {
@@ -274,6 +300,8 @@ impl StringModel {
     self.damp(bus, index);
   }
 
+  /// Presses (`down`) the pedal, or lets it up, damping every note let go while
+  /// it was down.
   pub fn sustain(&mut self, bus: &Bus, down: bool) {
     self.sustain_down = down;
     if down {
@@ -287,6 +315,7 @@ impl StringModel {
     }
   }
 
+  /// Lets the pedal up and damps every note.
   pub fn all_notes_off(&mut self, bus: &Bus) {
     self.sustain_down = false;
     for i in 0..self.voices.len() {
@@ -299,6 +328,7 @@ impl StringModel {
     }
   }
 
+  /// Lets the pedal up and frees every voice at once.
   pub fn panic(&mut self) {
     self.sustain_down = false;
     for voice in &mut self.voices {
@@ -307,6 +337,8 @@ impl StringModel {
     self.by_note = [-1; 128];
   }
 
+  /// Renders the sounding voices into the bus for the frames `start..end`,
+  /// starting each waiting note at the very sample its delay runs out.
   pub fn render(&mut self, bus: &mut Bus, start: usize, end: usize) {
     for v in 0..self.voices.len() {
       if !self.voices[v].core.busy() {
@@ -324,6 +356,8 @@ impl StringModel {
     }
   }
 
+  /// Frees the voices that fell silent and have no note waiting, forgetting
+  /// their keys.
   pub fn free_finished(&mut self) {
     for i in 0..self.voices.len() {
       let voice = &mut self.voices[i];
@@ -348,6 +382,8 @@ impl StringModel {
     self.voices[index].pending_note = -1;
   }
 
+  /// Plays `n` on its key's voice: again if it's still sounding, else on a free
+  /// voice, stealing one past the polyphony.
   fn note_on_key(&mut self, bus: &Bus, n: i32, velocity: f64, delay: i64) {
     let existing = self.by_note[n as usize];
     if existing >= 0 && self.voices[existing as usize].core.busy() {
@@ -386,6 +422,9 @@ impl StringModel {
     self.schedule(bus, idle, n, velocity, delay);
   }
 
+  /// Plays `n` on a string: again if one is sounding it, else on the free
+  /// string that frets it lowest (or the held one, re-fretted after a short
+  /// damp).
   fn note_on_string(&mut self, bus: &Bus, n: i32, velocity: f64, delay: i64) {
     let open = self.patch.open_strings.clone().unwrap_or_default();
     let max_fret = self.patch.max_fret.unwrap_or(20);
@@ -439,6 +478,7 @@ impl StringModel {
     self.schedule(bus, s, n, velocity, delay);
   }
 
+  /// Starts `n` on the voice now, or holds it for `delay` samples.
   fn schedule(&mut self, bus: &Bus, index: usize, n: i32, velocity: f64, delay: i64) {
     if delay > 0 {
       let voice = &mut self.voices[index];
@@ -454,6 +494,9 @@ impl StringModel {
     self.start(bus, index, n, velocity);
   }
 
+  /// Starts `n` on the voice: tunes its loops (unison detune or polarizations,
+  /// the patch's decay, brightness and dispersion for the key, and the jawari),
+  /// excites them, sets the pickup and the pan, and opens the gate.
   fn start(&mut self, bus: &Bus, index: usize, note: i32, velocity: f64) {
     let patch = self.patch;
     let fnote = note as f64;
@@ -557,6 +600,8 @@ impl StringModel {
     voice.core.quiet_samples = 0.;
   }
 
+  /// Strikes the sounding voice again: its loops' decay restored, a new pulse,
+  /// the filter envelope restarted.
   fn restrike(&mut self, bus: &Bus, index: usize, velocity: f64) {
     let patch = self.patch;
     let voice = &mut self.voices[index];
@@ -585,6 +630,8 @@ impl StringModel {
     voice.core.chain.shape.note_on();
   }
 
+  /// Writes the voice's excitation: a felt hammer's pulse or a pick's or
+  /// finger's pluck, at the patch's period and the exciter params.
   fn excite(&mut self, bus: &Bus, index: usize, note: i32, velocity: f64) {
     let patch = self.patch;
     let voice = &mut self.voices[index];
@@ -617,6 +664,8 @@ impl StringModel {
     voice.excitation_pos = 0;
   }
 
+  /// Drops the damper on the voice, shortening its loops' decay, except on the
+  /// undamped top keys; the master ADSR releases either way.
   fn damp(&mut self, bus: &Bus, index: usize) {
     let patch = self.patch;
     let _ = bus;
@@ -635,6 +684,8 @@ impl StringModel {
     }
   }
 
+  /// The voice holding `n`, its key's for a piano, else the string sounding (or
+  /// about to sound) it.
   fn find_held(&self, n: i32) -> Option<usize> {
     if self.patch.allocation == "key" {
       let index = self.by_note[n as usize];

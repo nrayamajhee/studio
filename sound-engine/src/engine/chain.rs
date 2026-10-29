@@ -1,3 +1,6 @@
+//! The voice chain: the filter, vibrato, master ADSR, steal fade and pan every
+//! model's voice runs its signal through on the way to the bus.
+
 use std::f64::consts::PI;
 
 use super::modules::ModuleSettings;
@@ -6,6 +9,7 @@ use crate::dsp::delay_line::DelayLine;
 use crate::dsp::generators::{Lfo, Smoother};
 use crate::dsp::svf::{Svf, SvfMode};
 
+/// The filter's cutoff is recomputed every 16 samples.
 const FILTER_UPDATE: u64 = 16;
 /// The vibrato is computed every 16 samples and drawn straight between.
 const LFO_UPDATE: f64 = 16.;
@@ -13,6 +17,7 @@ const LFO_UPDATE: f64 = 16.;
 const CUTOFF_GLIDE: f64 = 0.3;
 /// The output's pitch vibrato is a delay swept by up to 8 ms around 1 ms.
 const MAX_SWEEP: f64 = 0.008;
+/// The swept delay rests 1 ms long, so it can sweep shorter as well as longer.
 const SWEEP_CENTRE: f64 = 0.001;
 
 /// Adds `y` into a bus sample as the TypeScript engine's `Float32Array` does.
@@ -25,6 +30,11 @@ pub fn mix(sample: &mut f32, y: f64) {
 /// vibrato's output destinations, the master ADSR, the steal fade and the
 /// pan. A model starts each segment with begin(), reads the vibrato through
 /// modulate() where it takes it itself, and hands each sample to emit().
+///
+/// Around that, [`onset`](Self::onset) starts the filter envelope and the
+/// vibrato over for a new note, [`retrigger`](Self::retrigger) restarts the
+/// envelope when the note is struck again, and [`retarget`](Self::retarget)
+/// glides the cutoff to changed settings.
 pub struct VoiceChain {
   /// The vibrato's value this sample, from modulate().
   pub modulation: f64,
@@ -57,6 +67,9 @@ pub struct VoiceChain {
 }
 
 impl VoiceChain {
+  /// A chain at `fs` for an instrument's `mods`: the filter open, the vibrato
+  /// still, and the swept delay allocated only when the output takes the
+  /// vibrato's pitch.
   pub fn new(fs: f64, mods: &ModuleSettings) -> Self {
     let output = mods.routing.pitch_output;
     Self {
@@ -214,6 +227,8 @@ impl VoiceChain {
     std::mem::take(&mut self.peak)
   }
 
+  /// Glides the cutoff toward its target, decays the filter envelope, adds the
+  /// vibrato's cutoff swing and sets the filter, unless nothing changed.
   fn update_filter(&mut self, mods: &ModuleSettings) {
     self.cutoff += (self.cutoff_target - self.cutoff) * CUTOFF_GLIDE;
     self.filter_env *= mods.env_decay;

@@ -1,5 +1,10 @@
+//! The engine's simple filters: one-pole lowpass and highpass, a DC blocker, a
+//! direct-form biquad, and rescaling a pole pair to another sample rate.
+
 use super::math::TWO_PI;
 
+/// y = (1 − p)·x + p·y₁: a one-pole lowpass, its pole `p` set directly or from
+/// a cutoff.
 pub struct OnePoleLowpass {
   pub p: f64,
   y1: f64,
@@ -12,19 +17,23 @@ impl Default for OnePoleLowpass {
 }
 
 impl OnePoleLowpass {
+  /// Sets the pole directly (0 passes everything, near 1 smooths heavily).
   pub fn set_pole(&mut self, p: f64) {
     self.p = p;
   }
 
+  /// Sets the pole for a cutoff of `hz` at sample rate `fs`.
   pub fn set_cutoff(&mut self, hz: f64, fs: f64) {
     self.p = ((-TWO_PI * hz) / fs).exp();
   }
 
+  /// Filters a sample.
   pub fn process(&mut self, x: f64) -> f64 {
     self.y1 = (1. - self.p) * x + self.p * self.y1;
     self.y1
   }
 
+  /// Clears its state.
   pub fn clear(&mut self) {
     self.y1 = 0.;
   }
@@ -38,15 +47,18 @@ pub struct OnePoleHighpass {
 }
 
 impl OnePoleHighpass {
+  /// Sets the cutoff to `hz` at sample rate `fs`.
   pub fn set_cutoff(&mut self, hz: f64, fs: f64) {
     self.p = ((-TWO_PI * hz) / fs).exp();
   }
 
+  /// Filters a sample.
   pub fn process(&mut self, x: f64) -> f64 {
     self.lp = (1. - self.p) * x + self.p * self.lp;
     x - self.lp
   }
 
+  /// Clears its state.
   pub fn clear(&mut self) {
     self.lp = 0.;
   }
@@ -60,6 +72,7 @@ pub struct DcBlocker {
 }
 
 impl DcBlocker {
+  /// A blocker at sample rate `fs`.
   pub fn new(fs: f64) -> Self {
     Self {
       r: 1. - (TWO_PI * 20.) / fs,
@@ -68,6 +81,7 @@ impl DcBlocker {
     }
   }
 
+  /// Filters a sample.
   pub fn process(&mut self, x: f64) -> f64 {
     let y = x - self.x1 + self.r * self.y1;
     self.x1 = x;
@@ -75,6 +89,7 @@ impl DcBlocker {
     y
   }
 
+  /// Clears its state.
   pub fn clear(&mut self) {
     self.x1 = 0.;
     self.y1 = 0.;
@@ -96,6 +111,7 @@ pub struct Biquad {
 }
 
 impl Biquad {
+  /// Sets the coefficients (a0 normalized to 1).
   pub fn set(&mut self, b0: f64, b1: f64, b2: f64, a1: f64, a2: f64) {
     self.b0 = b0;
     self.b1 = b1;
@@ -104,6 +120,7 @@ impl Biquad {
     self.a2 = a2;
   }
 
+  /// Filters a sample.
   pub fn process(&mut self, x: f64) -> f64 {
     let y =
       self.b0 * x + self.b1 * self.x1 + self.b2 * self.x2 - self.a1 * self.y1 - self.a2 * self.y2;
@@ -114,6 +131,7 @@ impl Biquad {
     y
   }
 
+  /// Clears its state.
   pub fn clear(&mut self) {
     self.x1 = 0.;
     self.x2 = 0.;

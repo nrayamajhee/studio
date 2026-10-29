@@ -1,10 +1,16 @@
+//! The single-delay-loop string the string model's voices are made of, tuned
+//! exactly and damped by T60.
+
 use crate::dsp::delay_line::DelayLine;
 use crate::dsp::math::{TWO_PI, js_round};
 use crate::dsp::phase_delay::{
   allpass1_for_delay, allpass1_phase_delay, one_pole_magnitude, one_pole_phase_delay,
 };
 
+/// The most dispersion allpasses a loop runs, for a stiff string's stretched
+/// partials.
 const MAX_STAGES: usize = 8;
+/// The highest loop gain, so no string rings forever.
 const MAX_LOOP_GAIN: f64 = 0.99999;
 
 /// The largest loss pole that still lets the loop gain stay below
@@ -64,6 +70,7 @@ pub struct StringLoop {
 }
 
 impl StringLoop {
+  /// A silent loop at `fs` with room for the lowest note, `lowest_hz`.
   pub fn new(fs: f64, lowest_hz: f64) -> Self {
     Self {
       delay: DelayLine::new(fs / lowest_hz + 8.),
@@ -174,6 +181,8 @@ impl StringLoop {
     };
   }
 
+  /// Runs one sample round the loop, adding `excitation` on its way back into
+  /// the delay; returns what goes in.
   #[inline]
   pub fn tick(&mut self, excitation: f64) -> f64 {
     let mut y = self.delay.read_int(self.n_int);
@@ -207,6 +216,7 @@ impl StringLoop {
     out
   }
 
+  /// Silences the loop, keeping its tuning.
   pub fn clear(&mut self) {
     self.delay.clear();
     self.ap_x1 = [0.; MAX_STAGES];

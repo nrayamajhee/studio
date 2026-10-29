@@ -1,3 +1,6 @@
+//! The settings of the built-in modules every voice of an instrument shares:
+//! the filter and the vibrato, and how a model takes the vibrato.
+
 use std::f64::consts::FRAC_1_SQRT_2;
 
 use super::param_set::ParamSet;
@@ -15,6 +18,8 @@ pub struct LfoRouting {
   pub fade_in: Option<f64>,
 }
 
+/// For models with no vibrato of their own (strings, bars): the voice's output
+/// takes it, as tremolo and a swept delay.
 pub const OUTPUT_ROUTING: LfoRouting = LfoRouting {
   pitch_output: true,
   level_output: true,
@@ -22,6 +27,8 @@ pub const OUTPUT_ROUTING: LfoRouting = LfoRouting {
   fade_in: None,
 };
 
+/// For models that take the vibrato themselves, on their breath and their
+/// bore's length (bores), or have none (drums).
 pub const MODEL_ROUTING: LfoRouting = LfoRouting {
   pitch_output: false,
   level_output: false,
@@ -53,6 +60,7 @@ pub struct ModuleSettings {
 }
 
 impl ModuleSettings {
+  /// The filter open and the vibrato off, until `read` reads a patch's params.
   pub fn new(routing: LfoRouting) -> Self {
     Self {
       routing,
@@ -71,10 +79,13 @@ impl ModuleSettings {
     }
   }
 
+  /// Whether the vibrato moves anything: pitch, level or cutoff.
   pub fn lfo_on(&self) -> bool {
     self.pitch > 0. || self.level > 0. || self.filter > 0.
   }
 
+  /// Reads the filter's and the vibrato's settings from the instrument's
+  /// params, keeping the defaults for any the patch doesn't have.
   pub fn read(&mut self, p: &ParamSet, fs: f64) {
     if p.has("filter.cutoff") {
       self.cutoff = p.get("filter.cutoff");

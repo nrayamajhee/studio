@@ -1,3 +1,5 @@
+//! The engine's queue of scheduled events, sorted by the frame they're due.
+
 use super::Event;
 
 /// Preallocated queue sorted by frame; equal frames keep arrival order.
@@ -9,6 +11,7 @@ pub struct EventQueue {
 }
 
 impl EventQueue {
+  /// An empty queue with room for `capacity` events; it never allocates after.
   pub fn new(capacity: usize) -> Self {
     Self {
       frames: vec![0.; capacity],
@@ -18,6 +21,9 @@ impl EventQueue {
     }
   }
 
+  /// Queues `event` at `frame`, after any already due at the same frame. Shifts
+  /// what's waiting to the front when the end is reached; false (and the event
+  /// dropped) when the queue is full.
   pub fn push(&mut self, event: Event, frame: f64) -> bool {
     let capacity = self.frames.len();
     if self.tail == capacity {
@@ -41,6 +47,7 @@ impl EventQueue {
     true
   }
 
+  /// The frame the next event is due, or infinity when none waits.
   pub fn peek_frame(&self) -> f64 {
     if self.head < self.tail {
       self.frames[self.head]
@@ -49,6 +56,7 @@ impl EventQueue {
     }
   }
 
+  /// Takes the next event. Call only after `peek_frame` said one is waiting.
   pub fn pop(&mut self) -> Option<Event> {
     let event = self.events[self.head].take();
     self.head += 1;

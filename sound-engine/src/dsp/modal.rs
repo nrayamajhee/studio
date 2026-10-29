@@ -1,3 +1,6 @@
+//! A bank of two-pole resonators, one per mode, for struck bars, drums and
+//! bodies: each rings at its frequency for its T60, and the bank sums them.
+
 use super::math::{LN_1000, TWO_PI};
 
 /// A bank of two-pole modes y = g·x + c·y₁ − r²·y₂ in structure-of-arrays
@@ -19,6 +22,7 @@ pub struct ModalBank {
 }
 
 impl ModalBank {
+  /// A silent bank with room for `size` modes, at sample rate `fs`.
   pub fn new(size: usize, fs: f64) -> Self {
     Self {
       count: 0,
@@ -37,6 +41,8 @@ impl ModalBank {
     }
   }
 
+  /// Sets mode `i`: its frequency (Hz), how long it rings (T60, s) and its
+  /// level.
   pub fn set_mode(&mut self, i: usize, freq: f64, t60: f64, amp: f64) {
     self.freq[i] = freq;
     self.t60[i] = t60;
@@ -45,6 +51,8 @@ impl ModalBank {
     self.update_frequency(i);
   }
 
+  /// Scales every mode's frequency by `k` (the note, against the patch's
+  /// table).
   pub fn scale_frequencies(&mut self, k: f64) {
     self.freq_scale = k;
     for i in 0..self.count {
@@ -52,6 +60,7 @@ impl ModalBank {
     }
   }
 
+  /// Scales every mode's ring time by `k`.
   pub fn scale_decay(&mut self, k: f64) {
     self.decay_scale = k;
     for i in 0..self.count {
@@ -60,6 +69,7 @@ impl ModalBank {
     }
   }
 
+  /// Rings every mode with a sample, returning their sum.
   #[inline]
   pub fn process(&mut self, x: f64) -> f64 {
     let mut sum = 0.;
@@ -72,17 +82,21 @@ impl ModalBank {
     sum
   }
 
+  /// Silences every mode.
   pub fn clear(&mut self) {
     self.y1.fill(0.);
     self.y2.fill(0.);
   }
 
+  /// Sets mode `i`'s pole radius from its ring time.
   fn update_decay(&mut self, i: usize) {
     let r = (-LN_1000 / (self.t60[i] * self.decay_scale * self.fs)).exp();
     self.r[i] = r;
     self.r2[i] = r * r;
   }
 
+  /// Sets mode `i`'s coefficients from its frequency; one at or above 0.45 fs
+  /// is muted rather than aliased.
   fn update_frequency(&mut self, i: usize) {
     let f = self.freq[i] * self.freq_scale;
     if f >= 0.45 * self.fs {

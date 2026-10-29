@@ -5,6 +5,7 @@ pub fn one_pole_phase_delay(p: f64, w: f64) -> f64 {
   (p * w.sin()).atan2(1. - p * w.cos()) / w
 }
 
+/// A one-pole lowpass's gain at `w` radians a sample.
 pub fn one_pole_magnitude(p: f64, w: f64) -> f64 {
   (1. - p) / (1. - 2. * p * w.cos() + p * p).sqrt()
 }

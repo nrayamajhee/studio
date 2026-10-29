@@ -20,8 +20,11 @@ pub const MIX_LEAD: f64 = 0.05;
 /// How far ahead (s) passes are scheduled, and how often (s) the schedule
 /// is topped up, so an hour of repeats costs no more than a bar of them.
 const AHEAD: f64 = 1.;
+/// How often (s) the schedule is topped up.
 const TOP_UP: f64 = 0.25;
+/// How long (s) stopping fades out.
 const FADE: f64 = 0.01;
+/// How long (s) a track's gain glides to a new level.
 const GLIDE: f64 = 0.02;
 
 /// A rendered track in the arrangement.
@@ -34,6 +37,8 @@ pub struct MixTrack {
   pub gain: f64,
 }
 
+/// One pass of a track: which track, and where in the arrangement it starts
+/// (s).
 struct Pass {
   track: usize,
   start: f64,
@@ -51,6 +56,9 @@ struct Plan {
   first: bool,
 }
 
+/// What every clone of a [`TrackMixer`] shares: the graph, each track's gain,
+/// the sources scheduled, the plan they come from and where the arrangement
+/// started.
 struct State {
   context: AudioContext,
   output: GainNode,
@@ -66,6 +74,8 @@ struct State {
 }
 
 impl State {
+  /// The gain node of the track `id`, made and wired to the output the first
+  /// time it's asked for.
   fn gain_of(&mut self, id: &str) -> GainNode {
     if let Some(gain) = self.gains.get(id) {
       return gain.clone();
@@ -78,10 +88,17 @@ impl State {
 }
 
 /// The mixer: cheap to clone, every clone the same one.
+///
+/// [`play`](Self::play) schedules an arrangement of rendered tracks a little
+/// ahead at a time, [`stop`](Self::stop) fades it out and says where it was,
+/// [`position`](Self::position) says where it is, and
+/// [`set_gain`](Self::set_gain) turns a track up or down as it plays.
 #[derive(Clone)]
 pub struct TrackMixer(Rc<RefCell<State>>);
 
 impl TrackMixer {
+  /// A stopped mixer playing into `destination` through its own gain, or `None`
+  /// if the context can't make one.
   pub fn new(context: &AudioContext, destination: &AudioNode) -> Option<Self> {
     let output = context.create_gain().ok()?;
     output.connect_with_audio_node(destination).ok()?;
@@ -172,6 +189,7 @@ impl TrackMixer {
     })
   }
 
+  /// Glides the track `id`'s gain to `gain`, while playing or not.
   pub fn set_gain(&self, id: &str, gain: f64) {
     let mut state = self.0.borrow_mut();
     let now = state.context.current_time();

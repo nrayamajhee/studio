@@ -39,7 +39,9 @@ pub enum Phase {
   /// Waiting for the first gesture.
   #[default]
   Off,
+  /// Loading the worklet and its engine.
   Starting,
+  /// Running: events go straight to the worklet.
   Ready,
   /// It couldn't start, or it stopped; the next gesture tries again.
   Failed(String),
@@ -60,6 +62,9 @@ pub struct Status {
   pub warnings: Vec<String>,
 }
 
+/// What every clone of a [`Synth`] shares: the audio graph once it's built,
+/// where it is in starting, the events waiting for it and what the worklet last
+/// reported.
 #[derive(Default)]
 struct State {
   /// Where `sound-worklet.js` and `sound-worklet.wasm` are served, ending in
@@ -87,6 +92,9 @@ struct State {
 }
 
 impl State {
+  /// Marks the engine failed for `reason`, logging it, dropping the waiting
+  /// notes (but not params) and unplugging the worklet, so the next gesture
+  /// starts it afresh.
   fn fail(&mut self, reason: String) {
     console::error_1(&format!("Audio engine failed: {reason}").into());
     self.phase = Phase::Failed(reason);
@@ -99,6 +107,8 @@ impl State {
     }
   }
 
+  /// Logs a warning and keeps it for the status, dropping the oldest past
+  /// [`WARNINGS`].
   fn warn(&mut self, warning: String) {
     console::warn_1(&warning.as_str().into());
     if self.warnings.len() == WARNINGS {
@@ -109,6 +119,17 @@ impl State {
 }
 
 /// The synth: cheap to clone, every clone the same engine.
+///
+/// [`start`](Self::start) builds the engine from the first gesture; events
+/// sent before it's ready wait for it. The Device then plays it with
+/// [`note_on`](Self::note_on), [`note_off`](Self::note_off),
+/// [`hit`](Self::hit) and [`tick`](Self::tick), each now or at a time on the
+/// audio clock ([`now`](Self::now)), and turns it with
+/// [`set_param`](Self::set_param) and [`set_volume`](Self::set_volume).
+/// [`render`](Self::render) renders events offline through the same worklet,
+/// and [`scrubber`](Self::scrubber) and [`mixer`](Self::mixer) play those
+/// renders into the live output. [`status`](Self::status) tells the Debug
+/// panel how it's doing.
 #[derive(Clone)]
 pub struct Synth(Rc<RefCell<State>>);
 
@@ -123,10 +144,12 @@ impl Synth {
     })))
   }
 
+  /// Whether the worklet is running.
   pub fn ready(&self) -> bool {
     self.0.borrow().phase == Phase::Ready
   }
 
+  /// What the engine is doing, for the Debug panel.
   pub fn status(&self) -> Status {
     let state = self.0.borrow();
     Status {
@@ -179,6 +202,7 @@ impl Synth {
     });
   }
 
+  /// Resumes the audio clock if the browser suspended it.
   pub fn resume(&self) {
     if let Some(context) = &self.0.borrow().context
       && context.state() == AudioContextState::Suspended
@@ -241,6 +265,7 @@ impl Synth {
     });
   }
 
+  /// Releases a note, now or at `time` on the audio clock.
   pub fn note_off(&self, instrument: &str, note: i32, time: Option<f64>) {
     self.send(EngineEvent::NoteOff {
       instrument: instrument.into(),
@@ -249,6 +274,7 @@ impl Synth {
     });
   }
 
+  /// Hits a kit's piece, now or at `time` on the audio clock.
   pub fn hit(&self, kit: &str, piece: &str, velocity: f64, time: Option<f64>) {
     self.send(EngineEvent::Hit {
       kit: kit.into(),
@@ -263,6 +289,8 @@ impl Synth {
     self.send(EngineEvent::Tick { accent, time });
   }
 
+  /// Sets a param of an instrument (`target` its id) or of the master (`target`
+  /// "master"), now.
   pub fn set_param(&self, target: &str, id: &str, value: f64) {
     self.send(EngineEvent::Param {
       target: target.into(),
@@ -272,10 +300,12 @@ impl Synth {
     });
   }
 
+  /// Releases every instrument's notes.
   pub fn all_notes_off(&self) {
     self.send(EngineEvent::AllNotesOff);
   }
 
+  /// Silences every voice and the reverb at once.
   pub fn panic(&self) {
     self.send(EngineEvent::Panic);
   }
@@ -359,6 +389,8 @@ impl Synth {
     TrackMixer::new(state.context.as_ref()?, state.output.as_ref()?)
   }
 
+  /// Sends an event to the worklet, or holds it until the worklet is ready:
+  /// notes as soon as it starts, and only each param's latest value.
   pub fn send(&self, event: EngineEvent) {
     let mut state = self.0.borrow_mut();
     if state.phase == Phase::Ready {
@@ -383,6 +415,10 @@ impl Synth {
     }
   }
 
+  /// Builds the live graph: loads the worklet module and the engine's wasm,
+  /// wires the node through the limiter, analyser and volume, waits for the
+  /// processor's "ready", then sends what waited and listens for its stats and
+  /// warnings.
   async fn boot(&self, context: &AudioContext) -> Result<(), JsValue> {
     let base = self.0.borrow().base.clone();
     JsFuture::from(
@@ -518,6 +554,7 @@ fn reason(error: &JsValue) -> String {
     .unwrap_or_else(|| format!("{error:?}"))
 }
 
+/// Posts events to the worklet as one JSON array.
 fn post(node: &AudioWorkletNode, events: &[EngineEvent]) {
   let (Ok(port), Ok(json)) = (node.port(), serde_json::to_string(events)) else {
     return;

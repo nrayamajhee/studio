@@ -7,7 +7,9 @@ use std::path::Path;
 
 use sound_engine::engine::Engine;
 
+/// The sample rate the cases were rendered at.
 const SAMPLE_RATE: f64 = 48000.;
+/// The engine renders the cases in blocks of 128, an AudioWorklet's quantum.
 const BLOCK: usize = 128;
 
 fn main() {

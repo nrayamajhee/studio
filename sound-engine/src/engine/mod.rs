@@ -33,9 +33,13 @@ pub type Overrides = std::collections::HashMap<String, Values>;
 /// fast for the browser's compressor) down to −3 dBFS. The tanh knee above
 /// it is a last resort, unity below −3 dBFS.
 const CLIP_KNEE: f64 = 0.7;
+/// The master ADSR's shortest attack, which counts as none.
 const MIN_ATTACK: f64 = 0.001;
+/// The most warnings kept between drains; later ones are dropped.
 const MAX_WARNINGS: usize = 32;
 
+/// The last-resort clip: unity up to the knee, then a tanh curve that never
+/// passes full scale.
 fn safety_clip(x: f64) -> f64 {
   let level = x.abs();
   if level <= CLIP_KNEE {
@@ -49,40 +53,48 @@ fn safety_clip(x: f64) -> f64 {
 /// its frame needs no lookups.
 #[derive(Clone, Copy, Debug)]
 pub enum Event {
+  /// Plays a note on the instrument at `bus`.
   NoteOn {
     bus: usize,
     note: i32,
     velocity: f64,
   },
-  NoteOff {
-    bus: usize,
-    note: i32,
-  },
-  Sustain {
-    bus: usize,
-    down: bool,
-  },
+  /// Releases a note on the instrument at `bus`.
+  NoteOff { bus: usize, note: i32 },
+  /// Presses or lets go of the sustain pedal of the instrument at `bus`.
+  Sustain { bus: usize, down: bool },
+  /// Hits the piece at index `piece` of the kit at `bus`.
   Hit {
     bus: usize,
     piece: usize,
     velocity: f64,
   },
-  Tick {
-    accent: bool,
-  },
+  /// A metronome tick, louder on the bar's first beat.
+  Tick { accent: bool },
   /// `bus` None is the master.
   Param {
     bus: Option<usize>,
     index: usize,
     value: f64,
   },
+  /// Releases every instrument's notes.
   AllNotesOff,
+  /// Silences every voice and the reverb at once.
   Panic,
 }
 
 /// Owns every instrument, the shared reverb and the master stage. render()
 /// allocates nothing; events apply at their exact frame by splitting the
 /// block into segments.
+///
+/// The host builds one with [`new`](Self::new) (or
+/// [`with_overrides`](Self::with_overrides) for an offline render), queues
+/// what the Device plays with [`schedule`](Self::schedule) or
+/// [`schedule_json`](Self::schedule_json) (notes, hits, ticks, params, each at
+/// a time on the engine's clock or as soon as possible), and calls
+/// [`render`](Self::render) for every block the audio thread asks for.
+/// [`stats`](Self::stats) and [`drain_warnings`](Self::drain_warnings) say
+/// how it's doing.
 pub struct Engine {
   pub fs: f64,
   pub instruments: Vec<Instrument>,
@@ -108,6 +120,7 @@ pub struct Engine {
 }
 
 impl Engine {
+  /// An engine at `fs` with every instrument and the master at their defaults.
   pub fn new(fs: f64) -> Self {
     Self::with_overrides(fs, &Overrides::new())
   }
@@ -174,10 +187,14 @@ impl Engine {
     }
   }
 
+  /// The warnings since the last drain (bad events, unknown params, a full
+  /// queue, a model's own), clearing them.
   pub fn drain_warnings(&mut self) -> Vec<String> {
     std::mem::take(&mut self.warnings)
   }
 
+  /// What the Debug panel shows of the engine: the sounding voices and whether
+  /// the reverb is awake.
   pub fn stats(&self) -> EngineStats {
     EngineStats {
       active_voices: self.active_voices(),
@@ -185,6 +202,7 @@ impl Engine {
     }
   }
 
+  /// How many voices are sounding, the metronome's included.
   pub fn active_voices(&self) -> usize {
     let voices: usize = self.instruments.iter().map(Instrument::active_voices).sum();
     voices + usize::from(self.woodblock.active())
@@ -204,6 +222,10 @@ impl Engine {
     }
   }
 
+  /// Renders one block of at most [`MAX_BLOCK`] frames: the instruments in
+  /// segments between the events due in it, then the buses into the master
+  /// and the reverb, the master LFO and FX, the metronome, the volume, the
+  /// limiter and the clip.
   fn render_block(&mut self, left: &mut [f32], right: &mut [f32]) {
     let n = left.len();
     let start = self.frame;
@@ -263,6 +285,8 @@ impl Engine {
     self.frame = end;
   }
 
+  /// Renders the instruments and the metronome for the frames `from..to` of the
+  /// block.
   fn render_segment(&mut self, from: usize, to: usize) {
     if to <= from {
       return;
@@ -275,6 +299,9 @@ impl Engine {
       .render(&mut self.click_l, &mut self.click_r, from, to);
   }
 
+  /// Resolves an event's names to indices (the instrument's bus, the kit's
+  /// piece, the param), warning about and dropping one that names something
+  /// unknown.
   fn resolve(&mut self, event: &EngineEvent) -> Option<Event> {
     Some(match event {
       EngineEvent::NoteOn {
@@ -343,6 +370,7 @@ impl Engine {
     })
   }
 
+  /// Applies an event at `frame`, which every bus takes as its clock.
   fn apply(&mut self, event: Event, frame: f64) {
     for instrument in &mut self.instruments {
       instrument.bus.clock = frame;
@@ -391,6 +419,8 @@ impl Engine {
     }
   }
 
+  /// Hands the master's params to the reverb, LFO, FX, volume and every
+  /// instrument's master ADSR.
   fn apply_master(&mut self) {
     let m = &self.master;
     self.volume.set(m.get("master.volume"));
@@ -418,6 +448,7 @@ impl Engine {
     }
   }
 
+  /// Keeps a warning for the next drain, unless the list is full.
   fn warn(&mut self, message: String) {
     if self.warnings.len() < MAX_WARNINGS {
       self.warnings.push(message);
@@ -425,10 +456,13 @@ impl Engine {
   }
 }
 
+/// What `schedule_json` reads: an array of events, or one.
 #[derive(serde::Deserialize)]
 #[serde(untagged)]
 enum Events {
+  /// An array of events.
   Many(Vec<EngineEvent>),
+  /// A single event.
   One(EngineEvent),
 }
 

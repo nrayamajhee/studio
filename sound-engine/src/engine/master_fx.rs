@@ -1,3 +1,6 @@
+//! The master FX: the drive, chorus and delay the FX view sets, over the whole
+//! mix.
+
 use crate::dsp::delay_line::DelayLine;
 use crate::dsp::filters::{DcBlocker, OnePoleLowpass};
 use crate::dsp::generators::Smoother;
@@ -6,12 +9,17 @@ use crate::dsp::nonlinear::drive;
 
 /// Chorus: two taps swept in quadrature around 15 ms.
 const CHORUS_CENTRE: f64 = 0.015;
+/// How far, in seconds, each chorus tap sweeps either side of the centre.
 const CHORUS_SWEEP: f64 = 0.004;
+/// The chorus's sweep rate in hertz.
 const CHORUS_RATE: f64 = 0.8;
 /// Delay: a ping-pong echo on an eighth note at 120 BPM, each repeat darker.
 const ECHO_SECONDS: f64 = 0.25;
+/// How much of each repeat comes back.
 const ECHO_FEEDBACK: f64 = 0.45;
+/// The cutoff that darkens each repeat.
 const ECHO_DAMPING_HZ: f64 = 3500.;
+/// Below this amount, a settled stage counts as off and is skipped.
 const IDLE: f64 = 1e-4;
 
 /// The FX chain over the mix: drive, chorus, then delay. Each stage is
@@ -35,6 +43,7 @@ pub struct MasterFx {
 }
 
 impl MasterFx {
+  /// The chain at `fs`, every stage off and its lines silent.
   pub fn new(fs: f64) -> Self {
     let chorus_max = (CHORUS_CENTRE + CHORUS_SWEEP) * fs + 8.;
     let mut fx = Self {
@@ -59,18 +68,21 @@ impl MasterFx {
     fx
   }
 
+  /// Sets the drive, chorus and delay amounts (0–1); each glides there.
   pub fn set(&mut self, drive_amount: f64, chorus: f64, delay: f64) {
     self.drive_amount.set(drive_amount);
     self.chorus_amount.set(chorus);
     self.echo_amount.set(delay);
   }
 
+  /// Runs `n` frames of the mix through the drive, chorus and delay, in place.
   pub fn process(&mut self, left: &mut [f32], right: &mut [f32], n: usize) {
     self.process_drive(left, right, n);
     self.process_chorus(left, right, n);
     self.process_echo(left, right, n);
   }
 
+  /// Saturates the mix by the drive amount, blocking the DC it adds.
   fn process_drive(&mut self, left: &mut [f32], right: &mut [f32], n: usize) {
     if self.drive_amount.settled() && self.drive_amount.value < IDLE {
       return;
@@ -82,6 +94,8 @@ impl MasterFx {
     }
   }
 
+  /// Mixes in the two swept taps, one per side, by the chorus amount; clears
+  /// its lines once it's off.
   fn process_chorus(&mut self, left: &mut [f32], right: &mut [f32], n: usize) {
     if self.chorus_amount.settled() && self.chorus_amount.value < IDLE {
       if !self.chorus_idle {
@@ -110,6 +124,8 @@ impl MasterFx {
     }
   }
 
+  /// Adds the ping-pong echo by the delay amount; clears its lines once it's
+  /// off.
   fn process_echo(&mut self, left: &mut [f32], right: &mut [f32], n: usize) {
     if self.echo_amount.settled() && self.echo_amount.value < IDLE {
       if !self.echo_idle {

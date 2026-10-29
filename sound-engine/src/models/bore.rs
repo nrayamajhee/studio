@@ -14,14 +14,21 @@ use crate::engine::modules::ModuleSettings;
 use crate::engine::voice::{ACTIVE, IDLE, RELEASED, Voice, VoiceCore};
 use crate::patches::{BorePatch, pick_tuning};
 
+/// Notes starting within 15 ms of the one playing are a chord's: the bore keeps
+/// playing the first and only holds the rest.
 const BURST_WINDOW: f64 = 0.015;
+/// The most keys held at once that the bore remembers, for last-note priority.
 const MAX_HELD: usize = 16;
 /// STK Flute: the bore is tuned to 2/3 of the note and overblown.
 const FLUTE_OVERBLOW: f64 = 0.66666;
+/// The flute's jet reflection: how much of the bore's return feeds the jet.
 const FLUTE_JET_REFLECTION: f64 = 0.5;
+/// The flute's end reflection: how much of the bore's return joins the jet's
+/// output.
 const FLUTE_END_REFLECTION: f64 = 0.5;
 /// STK Saxofony: reed table offset/slope and bell reflection.
 const SAX_REED_OFFSET: f64 = 0.7;
+/// The saxophone's bell reflection, inverting.
 const SAX_BELL_REFLECTION: f64 = -0.95;
 /// STK fixes the bell lowpass at pole 0.9 (~740 Hz at 44.1 kHz): too bright
 /// for low notes (they overblow) and too dark for high ones (they stop
@@ -29,16 +36,20 @@ const SAX_BELL_REFLECTION: f64 = -0.95;
 /// note, so the cutoff follows f0 instead, which also makes it sample-rate
 /// independent.
 const SAX_REFLECTION_RATIO: f64 = 14.;
+/// The lowest the saxophone's bell lowpass goes, in hertz.
 const SAX_REFLECTION_MIN: f64 = 500.;
 /// STK Clarinet: the reed table and the cylinder's inverting end
 /// reflection, whose loss is a two-point average (half a sample of delay).
 const CLARINET_REED_OFFSET: f64 = 0.7;
+/// The clarinet's end reflection, before the inversion.
 const CLARINET_REFLECTION: f64 = 0.95;
+/// The delay, in samples, of the clarinet's two-point average.
 const CLARINET_FILTER_DELAY: f64 = 0.5;
 /// STK Brass: the bore holds two periods, so its modes sit at f0/2 multiples
 /// and the lips, a resonance at f0, lock onto the second; +3 samples is
 /// STK's.
 const BRASS_BORE_PERIODS: f64 = 2.;
+/// Samples added to the brass bore's length, as STK has.
 const BRASS_BORE_OFFSET: f64 = 3.;
 /// STK's lip resonance (radius 0.997, input gain 0.03) has a DC gain of
 /// ~0.03/ω², so low notes hold the lips wide open and never oscillate.
@@ -46,21 +57,31 @@ const BRASS_BORE_OFFSET: f64 = 3.;
 /// lips behave the same at every pitch; k and G reproduce STK's values at
 /// 880 Hz, where it speaks well.
 const BRASS_LIP_K: f64 = 0.026;
+/// The brass lips' input gain per ω² (see [`BRASS_LIP_K`]).
 const BRASS_LIP_G: f64 = 2.26;
+/// The share of the breath's pressure in the brass player's mouth.
 const BRASS_MOUTH: f64 = 0.3;
+/// How much of the brass bore's return reaches the lips.
 const BRASS_BORE_REFLECTION: f64 = 0.85;
 /// Lip tension 0–1 moves the lip resonance ±0.05 octave around the note,
 /// brightening and bending the pitch as tightening real lips does.
 const BRASS_LIP_RANGE: f64 = 0.1;
 
+/// Which of STK's bore instruments a voice is.
 #[derive(Clone, Copy, PartialEq)]
 enum Kind {
+  /// A jet blown across the bore's end, overblown.
   Flute,
+  /// A conical bore driven by a reed, split at the reed.
   Saxophone,
+  /// Lips buzzing into a bore two periods long.
   Brass,
+  /// A cylindrical bore driven by a reed, inverting at its end.
   Clarinet,
 }
 
+/// The bore's one voice: its waveguides, filters, breath and gate envelopes,
+/// the delay lengths it glides between, and the brass lips' resonance.
 struct BoreVoice {
   core: VoiceCore,
   kind: Kind,
@@ -112,6 +133,7 @@ impl Voice for BoreVoice {
 }
 
 impl BoreVoice {
+  /// An idle voice of `kind` whose waveguides fit the lowest note, `lowest_hz`.
   fn new(fs: f64, mods: &ModuleSettings, lowest_hz: f64, kind: Kind) -> Self {
     let longest = if kind == Kind::Brass {
       (BRASS_BORE_PERIODS * fs) / lowest_hz + BRASS_BORE_OFFSET + 8.
@@ -147,6 +169,8 @@ impl BoreVoice {
     }
   }
 
+  /// Tunes the brass lips' resonance to `freq`, keeping its Q and its gain at
+  /// the note the same at every pitch.
   fn set_lip(&mut self, freq: f64) {
     let w = (TWO_PI * freq) / self.core.fs;
     let r = 1. - BRASS_LIP_K * w;
@@ -155,6 +179,7 @@ impl BoreVoice {
     self.lip_a1 = -2. * r * w.cos();
   }
 
+  /// Runs one sample through the lips' resonance.
   fn lip(&mut self, x: f64) -> f64 {
     let y = self.lip_gain * x - self.lip_a1 * self.lip_y1 - self.lip_a2 * self.lip_y2;
     self.lip_y2 = self.lip_y1;
@@ -162,6 +187,10 @@ impl BoreVoice {
     y
   }
 
+  /// Renders the frames `start..end`: the breath, with its noise and the
+  /// vibrato, drives the kind's loop, its delays bent by the vibrato. A loop
+  /// that blows up is cleared and flagged. The note counts as released once its
+  /// breath ends.
   fn render(
     &mut self,
     start: usize,
@@ -273,6 +302,8 @@ pub struct BoreModel {
 }
 
 impl BoreModel {
+  /// The model for `patch` at `fs`, its kind from the patch's model, the
+  /// reflection filter set for it, and its tuning table picked for `fs`.
   pub fn new(patch: &'static BorePatch, fs: f64, mods: &ModuleSettings) -> Self {
     let kind = match patch.model.as_str() {
       "saxophone" => Kind::Saxophone,
@@ -310,10 +341,13 @@ impl BoreModel {
     }
   }
 
+  /// The one voice's shared core, for the instrument to retarget.
   pub fn voices_mut(&mut self) -> impl Iterator<Item = &mut VoiceCore> {
     std::iter::once(&mut self.voice.core)
   }
 
+  /// Reads the pressure, breath noise, portamento, breath envelope, reed
+  /// stiffness and lip tension from the params, retuning sounding brass lips.
   pub fn read_params(&mut self, bus: &Bus) {
     let p = &bus.params;
     self.pressure = p.get("exciter.pressure");
@@ -339,10 +373,13 @@ impl BoreModel {
     voice.glide = 1. - (-3. / (self.portamento.max(0.001) * bus.fs)).exp();
   }
 
+  /// 1 while the voice sounds, else 0.
   pub fn active_voices(&self) -> usize {
     usize::from(self.voice.core.busy())
   }
 
+  /// Holds `note` (folded into the patch's range) and plays it, unless it's a
+  /// chord's later note: then it waits its turn among the held keys.
   pub fn note_on(&mut self, bus: &Bus, note: i32, velocity: f64) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     if self.held_count < MAX_HELD {
@@ -357,6 +394,8 @@ impl BoreModel {
     self.play(bus, n, velocity);
   }
 
+  /// Lets go of `note`: if it was playing, the bore glides back to the latest
+  /// key still held, or breathes out when none is.
   pub fn note_off(&mut self, bus: &Bus, note: i32) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     if let Some(i) = self.held[..self.held_count]
@@ -377,18 +416,22 @@ impl BoreModel {
     }
   }
 
+  /// Lets go of every key and breathes out.
   pub fn all_notes_off(&mut self) {
     self.held_count = 0;
     self.current = -1;
     self.release();
   }
 
+  /// Lets go of every key and silences the voice at once.
   pub fn panic(&mut self) {
     self.held_count = 0;
     self.current = -1;
     self.voice.free();
   }
 
+  /// Renders the voice into the bus for the frames `start..end`, warning once
+  /// if its loop blew up.
   pub fn render(&mut self, bus: &mut Bus, start: usize, end: usize) {
     self
       .voice
@@ -402,6 +445,7 @@ impl BoreModel {
     }
   }
 
+  /// Frees the voice once it's released and silent.
   pub fn free_finished(&mut self) {
     let voice = &mut self.voice;
     if voice.core.busy() && voice.core.state != ACTIVE && voice.core.finished() {
@@ -409,12 +453,16 @@ impl BoreModel {
     }
   }
 
+  /// Breathes out: the breath, the gate and the master ADSR release.
   fn release(&mut self) {
     self.voice.breath.note_off();
     self.voice.gate.note_off();
     self.voice.core.chain.shape.note_off();
   }
 
+  /// Plays `n` at `velocity`: legato, the bore just glides to it; else the
+  /// breath and gate start over at the velocity's pressure. Either way the loop
+  /// retunes.
   fn play(&mut self, bus: &Bus, n: i32, velocity: f64) {
     let voice = &mut self.voice;
     let legato = voice.core.state == ACTIVE && voice.breath.active() && !voice.breath.releasing();

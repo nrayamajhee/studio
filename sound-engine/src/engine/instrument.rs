@@ -1,3 +1,6 @@
+//! An instrument: one patch's bus and its physical model's voices, behind one
+//! interface for the engine whichever model it is.
+
 use super::bus::Bus;
 use super::modules::{MODEL_ROUTING, OUTPUT_ROUTING};
 use super::param_set::Values;
@@ -13,12 +16,20 @@ use crate::patches::Patch;
 
 /// One of the seven physical models, with its voices.
 pub enum Model {
+  /// Struck and plucked strings (piano, guitar, basses), with a sustain
+  /// pedal.
   String(StringModel),
+  /// Blown bores: flutes, saxophone, brass and clarinet.
   Bore(BoreModel),
+  /// A bowed string: the violin.
   Bowed(BowedModel),
+  /// A drum kit, hit by piece rather than played by note.
   Drums(DrumModel),
+  /// Plain oscillators, for the modules to shape.
   Oscillator(OscillatorModel),
+  /// Free reeds: harmonium and harmonica.
   Reed(ReedModel),
+  /// Struck bars and tines: xylophone, steel pan and kalimba.
   Bar(BarModel),
 }
 
@@ -38,12 +49,20 @@ macro_rules! each {
 }
 
 /// One instrument (or kit): its bus and its model.
+///
+/// The engine plays it with [`note_on`](Self::note_on),
+/// [`note_off`](Self::note_off), [`sustain`](Self::sustain) and, for a kit,
+/// [`hit`](Self::hit); changes it with [`set_param`](Self::set_param) and
+/// [`set_shape`](Self::set_shape); and renders it with
+/// [`render`](Self::render) for each segment between events, then
+/// [`finish`](Self::finish) once per block.
 pub struct Instrument {
   pub bus: Bus,
   pub model: Model,
 }
 
 impl Instrument {
+  /// An instrument for `patch` at `fs`, its params at the patch's defaults.
   pub fn new(patch: &'static Patch, fs: f64) -> Self {
     Self::with(patch, fs, None)
   }
@@ -76,6 +95,8 @@ impl Instrument {
     instrument
   }
 
+  /// Sets the param at position `index` (clamped to its range) and applies the
+  /// params again. False if there is no such param or the value isn't finite.
   pub fn set_param(&mut self, index: usize, value: f64) -> bool {
     if !self.bus.params.set_index(index, value) {
       return false;
@@ -109,10 +130,12 @@ impl Instrument {
     });
   }
 
+  /// How many voices are sounding.
   pub fn active_voices(&self) -> usize {
     each!(&self.model, m => m.active_voices())
   }
 
+  /// Plays `note` (a MIDI note) at `velocity` (0–1). A kit ignores it.
   pub fn note_on(&mut self, note: i32, velocity: f64) {
     let bus = &self.bus;
     match &mut self.model {
@@ -126,6 +149,7 @@ impl Instrument {
     }
   }
 
+  /// Releases `note`. A kit ignores it.
   pub fn note_off(&mut self, note: i32) {
     let bus = &self.bus;
     match &mut self.model {
@@ -139,18 +163,22 @@ impl Instrument {
     }
   }
 
+  /// Holds (`down`) or lets go of the sustain pedal; only strings have one.
   pub fn sustain(&mut self, down: bool) {
     if let Model::String(m) = &mut self.model {
       m.sustain(&self.bus, down);
     }
   }
 
+  /// Hits the kit's `piece` (kick, snare…) at `velocity`; only a kit has
+  /// pieces.
   pub fn hit(&mut self, piece: &str, velocity: f64) {
     if let Model::Drums(m) = &mut self.model {
       m.hit(&self.bus, piece, velocity);
     }
   }
 
+  /// Releases every note, letting each ring out as a note-off would.
   pub fn all_notes_off(&mut self) {
     let bus = &self.bus;
     match &mut self.model {
@@ -164,10 +192,13 @@ impl Instrument {
     }
   }
 
+  /// Silences every voice at once, with no release.
   pub fn panic(&mut self) {
     each!(&mut self.model, m => m.panic());
   }
 
+  /// Renders the sounding voices into the bus for the frames `start..end` of
+  /// the block.
   pub fn render(&mut self, start: usize, end: usize) {
     if self.active_voices() > 0 {
       let bus = &mut self.bus;
@@ -175,6 +206,8 @@ impl Instrument {
     }
   }
 
+  /// Finishes the block of `n` frames: a kit's filter, then the bus into the
+  /// master and the reverb send, then frees the voices that ended.
   pub fn finish(
     &mut self,
     n: usize,

@@ -1,3 +1,6 @@
+//! An instrument's bus: where its voices mix before the body, drive and output
+//! level, and the master and reverb send after them.
+
 use super::modules::{LfoRouting, ModuleSettings};
 use super::param_set::{ParamSet, Values};
 use crate::dsp::filters::DcBlocker;
@@ -6,6 +9,8 @@ use crate::dsp::nonlinear::drive as saturate;
 use crate::models::body::Body;
 use crate::patches::BasePatch;
 
+/// The most frames rendered in one go; the engine splits longer renders into
+/// blocks of this size, and every buffer is this long.
 pub const MAX_BLOCK: usize = 2048;
 
 /// How long a bus keeps processing after its last voice ends, so the body
@@ -15,6 +20,11 @@ const TAIL_SECONDS: f64 = 0.5;
 /// One instrument's bus: voices add their panned output into left/right;
 /// finish() then runs the body, drive and output gain, sums into the master
 /// and sends to the reverb.
+///
+/// It also holds what the instrument's voices share: its params, the
+/// filter's and vibrato's settings, and the clock of the event being
+/// applied. [`apply_params`](Self::apply_params) reads its part of the
+/// params after each change.
 pub struct Bus {
   pub fs: f64,
   pub name: String,
@@ -36,6 +46,9 @@ pub struct Bus {
 }
 
 impl Bus {
+  /// A bus for `patch` at `fs`, its params at the patch's defaults with
+  /// `overrides` over them, its modules routed as `routing` says. It starts
+  /// silent, past its tail, until a voice plays.
   pub fn new(
     patch: &'static BasePatch,
     fs: f64,

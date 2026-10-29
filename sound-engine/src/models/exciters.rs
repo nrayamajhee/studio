@@ -1,3 +1,7 @@
+//! Exciters: the pulses that set a model ringing (a pick or finger's pluck, a
+//! piano's felt hammer, a mallet or stick), written into a buffer the voice
+//! then plays into its resonator.
+
 use std::f64::consts::PI;
 
 use crate::dsp::generators::Noise;
@@ -9,6 +13,8 @@ pub fn velocity_gain(velocity: f64, strength: f64, curve: f64) -> f64 {
   lerp(1., velocity.powf(curve), strength)
 }
 
+/// Scales the first `length` samples so their peak is `gain` (silence stays
+/// silent).
 fn normalize_peak(buffer: &mut [f32], length: usize, gain: f64) {
   let peak = buffer[..length]
     .iter()
@@ -30,12 +36,21 @@ fn position_comb(buffer: &mut [f32], length: usize, b: usize) {
   }
 }
 
+/// How to pluck a string, for [`pluck`].
 pub struct PluckOptions {
+  /// The string's period in samples: the burst is one period long.
   pub period: f64,
+  /// How hard (0–1).
   pub velocity: f64,
+  /// How hard the pick is (0–1): a harder one is brighter, a finger's pad
+  /// narrower.
   pub hardness: f64,
+  /// Where along the string (0–0.5 of its length), which notches the harmonics
+  /// with a node there.
   pub position: f64,
+  /// How much velocity matters (0 not at all, 1 fully).
   pub strength: f64,
+  /// A finger's soft pad instead of a pick.
   pub finger: bool,
 }
 
@@ -91,24 +106,38 @@ pub fn pluck(buffer: &mut [f32], noise: &mut Noise, o: &PluckOptions) -> usize {
   length
 }
 
+/// How to strike a string with a felt hammer, for [`hammer`].
 pub struct HammerOptions {
+  /// The string's period in samples, for the strike position's comb.
   pub period: f64,
+  /// How hard (0–1).
   pub velocity: f64,
+  /// How hard the felt is (0–1): a harder one bounces off sooner, brighter.
   pub hardness: f64,
+  /// Where along the string (0–0.5 of its length).
   pub position: f64,
+  /// How much velocity matters (0 not at all, 1 fully).
   pub strength: f64,
+  /// The hammer's mass in kilograms.
   pub mass: f64,
+  /// The sample rate.
   pub fs: f64,
 }
 
 /// Felt stiffness K and string admittance for a C4 contact of ~1 ms at full
 /// velocity with a p = 2.5 felt law.
 const FELT_EXPONENT: f64 = 2.5;
+/// The felt's stiffness K at middle hardness.
 const FELT_STIFFNESS: f64 = 1.775e12;
+/// Twice the string's impedance, which the felt pushes against.
 const STRING_IMPEDANCE_2Z: f64 = 20000.;
+/// The hammer's speed (m/s) at the softest hit.
 const V_MIN: f64 = 0.008;
+/// The hammer's speed (m/s) at the hardest hit.
 const V_MAX: f64 = 1.;
+/// The hammer is simulated at four times the sample rate.
 const OVERSAMPLE: usize = 4;
+/// The longest (s) the felt may stay on the string.
 const MAX_CONTACT: f64 = 0.012;
 
 /// Explicit-Euler felt hammer against a string modelled as two semi-infinite
