@@ -1,7 +1,8 @@
 // Screenshots web-react and web-rust after the same steps, in both themes,
 // and counts the pixels that differ (by more than 24 across the channels),
 // comparing them on canvases in the browser. Each pair and a diff
-// (differences in red) go to web-rust/target/parity-shots, or `--out`.
+// (differences in red) go to target/parity-shots at the repo's root, or
+// `--out`.
 //   node web-rust/scripts/parity/shots.cjs <cases.json> [case...] [--out=<folder>]
 // A cases file names lists of steps (see common.cjs); a case may set
 // `target` (what to shoot, the Device unless set), `viewport`, `fakeMidi`
@@ -71,7 +72,7 @@ async function compare(browser, a, b) {
   const [file, ...names] = args.filter((arg) => !arg.startsWith("--"));
   const out =
     args.find((arg) => arg.startsWith("--out="))?.slice(6) ??
-    path.join(__dirname, "../../target/parity-shots");
+    path.join(__dirname, "../../../target/parity-shots");
   const cases = Object.entries(JSON.parse(readFileSync(file, "utf8"))).filter(
     ([name]) => names.length === 0 || names.includes(name),
   );

@@ -2,6 +2,9 @@
 .env
 node_modules/
 
+# The Cargo workspace's builds.
+/target
+
 # React Router
 /web-react/.react-router/
 /web-react/build/

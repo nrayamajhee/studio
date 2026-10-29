@@ -13,10 +13,3 @@ crate-type = ["cdylib"]
 [dependencies]
 sound-engine = { path = ".." }
 serde_json = "1"
-
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
-panic = "abort"
-strip = true

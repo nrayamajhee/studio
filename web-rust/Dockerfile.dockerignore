@@ -1,5 +1,7 @@
 # The build's context is the repo's root; it only needs these.
 *
+!Cargo.toml
+!Cargo.lock
 !README.md
 !docs
 !web-react/public/docs

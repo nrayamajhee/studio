@@ -15,7 +15,7 @@ rustup target add wasm32-unknown-unknown
 cargo install trunk --locked
 ```
 
-Trunk downloads the Tailwind CLI itself, at the version `Trunk.toml` pins; there is no npm step. Two hooks in `Trunk.toml` add to the output beside the app: the AudioWorklet's engine (`../sound-engine/worklet/build.sh`) and the Rust docs (`scripts/rust-doc.sh`). `trunk serve` rebuilds when either crate or the docs change.
+Trunk downloads the Tailwind CLI itself, at the version `Trunk.toml` pins; there is no npm step. The crate is in the repo's Cargo workspace with sound-engine and its worklet (`Cargo.toml` at the root), so they share one lockfile and one `target/` folder there. Two hooks in `Trunk.toml` add to the output beside the app. Before every build, `trunk serve`'s included, `../sound-engine/worklet/build.sh` builds the AudioWorklet's engine, so the page never runs a stale engine and one that doesn't compile stops the build. After it, `scripts/rust-doc.sh` builds the Rust docs. `trunk serve` rebuilds when either crate, the workspace's manifest or lockfile, or the docs change.
 
 ## Development
 
@@ -36,14 +36,14 @@ Writes the app to `web-rust/dist`, with the worklet's `sound-worklet.js` and `so
 
 ## Docker
 
-The image builds the app with Trunk and serves it with nginx on `$PORT`, 8080 unless the host sets it. Build it from the repo's root, which holds everything it reads (the crates, `docs/`, the README and the docs' images):
+The image builds the app with Trunk and serves it with nginx on `$PORT`, 8080 unless the host sets it. Build it from the repo's root, which holds everything it reads (the crates and their workspace, `docs/`, the README and the docs' images):
 
 ```bash
 docker build -f web-rust/Dockerfile -t studio-web-rust .
 docker run --rm -p 8080:8080 studio-web-rust
 ```
 
-`Dockerfile.dockerignore` keeps the context to those folders. On Railway, leave the service's root directory unset (the repo's root), set the Dockerfile Path to `/web-rust/Dockerfile`, and watch every path the image is built from, so a change to any of them deploys: `/web-rust/**`, `/sound-engine/**`, `/docs/**`, `/README.md`, `/web-react/public/docs/**` and `/web-react/public/screenshot.png`. Railway sets `PORT` itself. The Dockerfile has no cache mounts, since Railway's builder refuses any whose id isn't tied to the service.
+`Dockerfile.dockerignore` keeps the context to those folders. On Railway, leave the service's root directory unset (the repo's root), set the Dockerfile Path to `/web-rust/Dockerfile`, and watch every path the image is built from, so a change to any of them deploys: `/web-rust/**`, `/sound-engine/**`, `/Cargo.toml`, `/Cargo.lock`, `/docs/**`, `/README.md`, `/web-react/public/docs/**` and `/web-react/public/screenshot.png`. Railway sets `PORT` itself. The Dockerfile has no cache mounts, since Railway's builder refuses any whose id isn't tied to the service.
 
 ## Checks
 
@@ -52,7 +52,7 @@ docker run --rm -p 8080:8080 studio-web-rust
 - **Format**: `cargo fmt` (check with `cargo fmt --check`)
 - **Parity with web-react**: with both apps running (web-react's `npm run dev` on `3000` and `trunk serve` on `8080`; set `REACT_URL` and `RUST_URL` to use others), run these from the repo's root. They use Playwright as web-react installs it, or a global one.
   - `node web-rust/scripts/parity/parity.cjs web-rust/scripts/parity/steps/basics.json` plays the same steps in both apps at once and, after every step, compares what each shows: the pads, knobs and keys (labels, state, colours), the screen's text, tiles, graph, drum grid and track rows (laid out, to the pixel), the MIDI panel and `localStorage`. A step that differs is compared again twice, 250 ms apart, so a notice timing out a moment sooner in one app doesn't count. The steps files cover the basics, the pickers, the synth and its modules, the drum grid, the piano roll, the tracks, and MIDI: `midi.json` with `--fake-midi` (a stand-in controller) and `op1.json` with `--fake-midi=OP-1`.
-  - `node web-rust/scripts/parity/shots.cjs web-rust/scripts/parity/shots.json` screenshots both after the same steps in both themes and counts the pixels that differ. The cases cover every picker, the synth's pages, the ADSR, LFO and FX, tempo, save, the drum grid, the piano roll, the tracks, the MIDI panel, and the page at phone width (390×844). A case passes with up to 64 pixels apart, what anti-aliasing alone moves (see the [port's record](../docs/development/web-rust-port.md#how-parity-was-checked)). Name cases after the file to shoot only those. The shots and their diffs go to `target/parity-shots/`.
+  - `node web-rust/scripts/parity/shots.cjs web-rust/scripts/parity/shots.json` screenshots both after the same steps in both themes and counts the pixels that differ. The cases cover every picker, the synth's pages, the ADSR, LFO and FX, tempo, save, the drum grid, the piano roll, the tracks, the MIDI panel, and the page at phone width (390×844). A case passes with up to 64 pixels apart, what anti-aliasing alone moves (see the [port's record](../docs/development/web-rust-port.md#how-parity-was-checked)). Name cases after the file to shoot only those. The shots and their diffs go to `target/parity-shots/` at the repo's root.
 
 ## Layout
 

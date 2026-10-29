@@ -4,11 +4,12 @@ order = 5
 
 # Monorepo plan
 
-Studio becomes a monorepo of four sibling folders. There is no monorepo tool: no npm workspaces, no Cargo workspace at the root, no Nx or Turbo. Each folder is a self-contained project with its own manifest, lockfile, build and checks, and the root only holds what they share.
+Studio becomes a monorepo of four sibling folders. There is no monorepo tool: no npm workspaces, no Nx or Turbo. Each folder is a self-contained project with its own manifest, build and checks, and the root only holds what they share. That includes one Cargo workspace for the Rust crates (`Cargo.toml` at the root): web-rust, sound-engine and its worklet share a lockfile, a target folder, the release profiles and `rustfmt.toml`, and `cargo` run in any crate's folder works on that crate as before.
 
 ```text
 studio/
 ├── README.md, AGENTS.md   the whole repo: what each folder is, how to run it
+├── Cargo.toml             the Cargo workspace of the Rust crates, one Cargo.lock
 ├── docs/                  the docs, shared; web-react serves them at /docs
 ├── web-react/             the current React Router app, moved as is
 ├── web-rust/              the Device in Rust: a Trunk-built wasm app, UI in fluid
