@@ -64,29 +64,6 @@ impl ScreenView {
       _ => self.main().map(BaseView::Main),
     }
   }
-
-  /// The name web-react gives it, as its Debug panel shows.
-  pub fn name(self) -> &'static str {
-    match self {
-      Self::Scope => "scope",
-      Self::Synth => "synth",
-      Self::Save => "save",
-      Self::Instruments => "instruments",
-      Self::Chords => "chords",
-      Self::PlayStyle => "playStyle",
-      Self::Progressions => "progressions",
-      Self::Beats => "beats",
-      Self::Tapes => "tapes",
-      Self::Revert => "revert",
-      Self::Adsr => "adsr",
-      Self::Lfo => "lfo",
-      Self::Fx => "fx",
-      Self::Tempo => "tempo",
-      Self::Roll => "roll",
-      Self::DrumGrid => "drumGrid",
-      Self::Tracks => "tracks",
-    }
-  }
 }
 
 /// The views that play something of their own: the tracks (and the tapes),
@@ -132,10 +109,6 @@ impl ViewStore {
 
   pub fn main_view(&self) -> MainView {
     self.main_view.value()
-  }
-
-  pub fn active_module(&self) -> Option<ModuleId> {
-    self.view().module()
   }
 
   /// Shows `view`, keeping the main view and the screen it opened over in

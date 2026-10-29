@@ -322,13 +322,6 @@ impl Picker {
     })
   }
 
-  /// Lets an item about to be deleted go from the favorites.
-  pub fn forget(&self, a: &'static App, id: &str) {
-    if self.favorites.iter().any(|favorite| favorite == id) {
-      a.favorites.toggle(self.kind, id);
-    }
-  }
-
   /// The pick stays on its item, on the page it was on (its category's,
   /// from the favorites'), or, let go from the favorites' page, moves to
   /// the next favorite while any are left (unless it plays).

@@ -22,7 +22,6 @@ pub struct DrumBeat {
   pub name: String,
   pub style: String,
   pub kit: String,
-  pub bpm: f64,
   pub meter: Meter,
   pub per_beat: u32,
   pub rows: IndexMap<String, String>,

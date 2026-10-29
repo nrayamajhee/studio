@@ -63,6 +63,7 @@ mod backend {
     ITEMS.with(|items| items.borrow_mut().remove(key));
   }
 
+  #[cfg(test)]
   pub fn clear() {
     ITEMS.with(|items| items.borrow_mut().clear());
   }
@@ -72,7 +73,7 @@ mod backend {
   }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
 pub use backend::clear;
 
 /// The JSON kept under `key`, if it parses.
@@ -85,7 +86,8 @@ pub fn load_as<T: DeserializeOwned>(key: &str) -> Option<T> {
   serde_json::from_value(load(key)?).ok()
 }
 
-/// The raw text kept under `key`.
+/// The raw text kept under `key`, as the tests read it back.
+#[cfg(test)]
 pub fn raw(key: &str) -> Option<String> {
   backend::get(key)
 }

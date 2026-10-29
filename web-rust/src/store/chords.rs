@@ -16,7 +16,6 @@ use crate::logic::tracks::base36;
 pub const PAD_CHORDS_KEY: &str = "studio.padChords";
 pub const PLAY_STYLE_KEY: &str = "studio.playStyle";
 pub const PLAY_STYLES_KEY: &str = "studio.playStyles";
-pub const CHORD_PADS: usize = DEFAULT_PAD_CHORDS.len();
 
 fn default_chords() -> Vec<String> {
   DEFAULT_PAD_CHORDS

@@ -108,38 +108,6 @@ impl Icon {
       Self::Label(text) => format!("<span>{}</span>", escape(text)),
     }
   }
-
-  /// Whether it draws nothing.
-  pub fn is_none(&self) -> bool {
-    matches!(self, Self::None)
-  }
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn icons_render_as_react_renders_them() {
-    assert!(Icon::Lucide("Play").markup().contains("lucide-play"));
-    assert!(
-      Icon::Filled("Play")
-        .markup()
-        .contains(r#"fill="currentColor""#)
-    );
-    assert!(Icon::Preset("piano".into()).markup().starts_with("<svg"));
-    assert_eq!(Icon::Preset("A&B".into()).markup(), "A&amp;B");
-    assert_eq!(Icon::Piece("na".into()).markup(), "Na");
-    assert!(Icon::Piece("kick".into()).markup().starts_with("<svg"));
-    assert!(
-      Icon::PlayStyle("alberti".into())
-        .markup()
-        .starts_with("<svg")
-    );
-    assert!(Icon::Device("Tracks").markup().starts_with("<svg"));
-    assert_eq!(preset_icon_keys().next(), Some("piano"));
-    assert_eq!(piece_name("closedHat"), "Closed hat");
-  }
 }
 
 pub const KEYBOARD_MUSIC: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="M6 8h4"></path><path d="M14 8h.01"></path><path d="M18 8h.01"></path><path d="M2 12h20"></path><path d="M6 12v4"></path><path d="M10 12v4"></path><path d="M14 12v4"></path><path d="M18 12v4"></path></svg>"#;
@@ -178,3 +146,30 @@ pub const X: (&str, &str) = (
   "x",
   r#"<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>"#,
 );
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn icons_render_as_react_renders_them() {
+    assert!(Icon::Lucide("Play").markup().contains("lucide-play"));
+    assert!(
+      Icon::Filled("Play")
+        .markup()
+        .contains(r#"fill="currentColor""#)
+    );
+    assert!(Icon::Preset("piano".into()).markup().starts_with("<svg"));
+    assert_eq!(Icon::Preset("A&B".into()).markup(), "A&amp;B");
+    assert_eq!(Icon::Piece("na".into()).markup(), "Na");
+    assert!(Icon::Piece("kick".into()).markup().starts_with("<svg"));
+    assert!(
+      Icon::PlayStyle("alberti".into())
+        .markup()
+        .starts_with("<svg")
+    );
+    assert!(Icon::Device("Tracks").markup().starts_with("<svg"));
+    assert_eq!(preset_icon_keys().next(), Some("piano"));
+    assert_eq!(piece_name("closedHat"), "Closed hat");
+  }
+}

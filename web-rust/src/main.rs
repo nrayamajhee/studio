@@ -18,7 +18,6 @@
 
 // The stores hold what the views still to be ported read; this goes once
 // they are.
-#![allow(dead_code)]
 
 mod chrome;
 mod docs;

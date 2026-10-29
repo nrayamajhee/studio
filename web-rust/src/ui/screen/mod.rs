@@ -141,7 +141,6 @@ fn pager((pages, at, color): (Vec<String>, usize, PagerColor)) -> Element {
         (Some(page), Some(name)) if page == at => {
           let current = match color {
             PagerColor::Red => "cursor-default bg-synth-red text-white hover:bg-synth-red hover:text-white active:bg-synth-red active:text-white",
-            PagerColor::Green => "cursor-default bg-synth-green text-white hover:bg-synth-green hover:text-white active:bg-synth-green active:text-white",
             PagerColor::Ink => "cursor-default bg-screen-ink text-screen hover:bg-screen-ink hover:text-screen active:bg-screen-ink active:text-screen",
           };
           html! { span class={ format!("{PAGE_TAB} {place} {current}") } aria-live="polite" { { name } } }

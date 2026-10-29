@@ -33,19 +33,6 @@ pub enum Tone {
   Blue,
 }
 
-impl Tone {
-  pub fn name(self) -> &'static str {
-    match self {
-      Tone::Ink => "ink",
-      Tone::Dim => "dim",
-      Tone::Faint => "faint",
-      Tone::Green => "green",
-      Tone::Red => "red",
-      Tone::Blue => "blue",
-    }
-  }
-}
-
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Stroke {
   pub width: Option<f64>,
@@ -2356,7 +2343,14 @@ mod tests {
   use crate::logic::synth_pages::synth_pages;
 
   fn tone_name(tone: Tone) -> &'static str {
-    tone.name()
+    match tone {
+      Tone::Ink => "ink",
+      Tone::Dim => "dim",
+      Tone::Faint => "faint",
+      Tone::Green => "green",
+      Tone::Red => "red",
+      Tone::Blue => "blue",
+    }
   }
 
   fn align_name(align: Align) -> &'static str {

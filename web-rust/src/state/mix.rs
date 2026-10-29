@@ -147,7 +147,7 @@ impl Mix {
     // The mix plays while the tracks (or the tapes) are the main view,
     // whatever shows over them, and under a take while it records.
     fluid::create_effect(move || {
-      let mix_view = app().views.main_view.value() == MainView::Tracks;
+      let mix_view = self.mix_view();
       let recording = app().transport.recording();
       if !mix_view && !recording {
         fluid::untrack(|| self.pause_mix());

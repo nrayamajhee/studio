@@ -45,9 +45,6 @@ struct Spec {
   /// own.
   command: Option<&'static str>,
   accent: &'static str,
-  /// Its key presses it, as a click does; off where the key does something
-  /// else (a chord key holds its chord).
-  press_on_key: bool,
 }
 
 const fn tool(tool: Tool, accent: &'static str) -> Spec {
@@ -56,7 +53,6 @@ const fn tool(tool: Tool, accent: &'static str) -> Spec {
     control: Control::Tool(tool),
     command: None,
     accent,
-    press_on_key: true,
   }
 }
 
@@ -66,7 +62,6 @@ const fn slot(slot: PadSlot, control: Control) -> Spec {
     control,
     command: None,
     accent: RED,
-    press_on_key: true,
   }
 }
 
@@ -76,7 +71,6 @@ const fn instrument(index: usize) -> Spec {
     control: Control::Instrument(index),
     command: None,
     accent: RED,
-    press_on_key: true,
   }
 }
 
@@ -86,7 +80,6 @@ const fn chord(index: usize) -> Spec {
     control: Control::Chord(index),
     command: None,
     accent: BLUE,
-    press_on_key: false,
   }
 }
 
@@ -129,7 +122,6 @@ const PADS: [Spec; 36] = [
     control: Control::Shift,
     command: None,
     accent: PLAIN,
-    press_on_key: false,
   },
   slot(PadSlot::Left, Control::Step(-1)),
   slot(PadSlot::Down, Control::Pick(1)),
@@ -143,13 +135,6 @@ const PADS: [Spec; 36] = [
   chord(4),
   chord(5),
 ];
-
-/// Whether a pad's key presses it, as a click does.
-pub fn presses_on_key(control: Control) -> bool {
-  PADS
-    .iter()
-    .any(|spec| spec.control == control && spec.press_on_key)
-}
 
 pub fn pads() -> Element {
   let pads: Vec<Element> = PADS.iter().map(pad).collect();

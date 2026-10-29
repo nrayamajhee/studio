@@ -240,11 +240,6 @@ impl Rich {
     self
   }
 
-  pub fn then(mut self, other: Rich) -> Self {
-    self.0.extend(other.0);
-    self
-  }
-
   pub fn is_empty(&self) -> bool {
     self.0.is_empty()
   }
@@ -264,7 +259,6 @@ pub struct ScreenBadge {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PagerColor {
   Red,
-  Green,
   Ink,
 }
 

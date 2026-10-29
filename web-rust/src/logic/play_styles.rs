@@ -39,6 +39,8 @@ pub enum Setting {
 pub struct PlayStyleSpec {
   pub id: &'static str,
   pub name: &'static str,
+  /// What it does, in web-react's words; nothing shows it yet.
+  #[allow(dead_code)]
   pub detail: &'static str,
   pub group: PlayStyleGroup,
   pub settings: &'static [Setting],

@@ -56,9 +56,7 @@ pub struct ModuleKnob {
 
 #[derive(Clone, Debug)]
 pub struct DeviceModule {
-  pub id: ModuleId,
   pub label: &'static str,
-  pub title: &'static str,
   /// White, green, red and blue knob, in that order.
   pub knobs: Vec<ModuleKnob>,
 }
@@ -95,9 +93,7 @@ pub fn device_modules() -> &'static [DeviceModule; 3] {
   MODULES.get_or_init(|| {
     [
       DeviceModule {
-        id: ModuleId::Adsr,
         label: "ADSR",
-        title: "ADSR envelope",
         knobs: vec![
           knob(
             "adsr.attack",
@@ -126,9 +122,7 @@ pub fn device_modules() -> &'static [DeviceModule; 3] {
         ],
       },
       DeviceModule {
-        id: ModuleId::Lfo,
         label: "LFO",
-        title: "LFO",
         knobs: vec![
           knob("lfo.rate", "Rate", 5., KnobOptions::default()),
           knob("lfo.depth", "Depth", 0.5, KnobOptions::default()),
@@ -155,9 +149,7 @@ pub fn device_modules() -> &'static [DeviceModule; 3] {
         ],
       },
       DeviceModule {
-        id: ModuleId::Fx,
         label: "FX",
-        title: "Effects",
         knobs: vec![
           knob("fx.drive", "Drive", 0., KnobOptions::default()),
           knob("fx.chorus", "Chorus", 0., KnobOptions::default()),
