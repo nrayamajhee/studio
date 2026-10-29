@@ -1,0 +1,19 @@
+# The Rust crates, built together with one lockfile and one target folder:
+# web-rust (the Device's app, which Trunk builds from web-rust/), the sound
+# engine it plays through, and the engine's AudioWorklet module.
+[workspace]
+resolver = "3"
+members = ["web-rust", "sound-engine", "sound-engine/worklet"]
+
+# Release builds optimize across crates: the app's, and the engine's
+# examples that measure it.
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+
+# The worklet's module, as the audio thread runs it, stripped to its code;
+# sound-engine/worklet/build.sh builds with this profile.
+[profile.worklet]
+inherits = "release"
+strip = true

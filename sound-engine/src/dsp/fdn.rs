@@ -1,14 +1,26 @@
+//! The engine's reverb: an eight-line feedback delay network with a Householder
+//! matrix, damped lines, and a predelay and diffusers in front. It sleeps
+//! through silence, so it costs nothing until something plays.
+
 use super::delay_line::DelayLine;
 use super::math::{js_round, next_prime};
 
+/// How many delay lines the network has.
 const LINES: usize = 8;
+/// The largest room size, scaling every line's length.
 const MAX_SIZE: f64 = 1.5;
+/// The longest predelay (s).
 const MAX_PREDELAY: f64 = 0.06;
+/// The diffusers' lengths (ms).
 const DIFFUSER_MS: [f64; 4] = [3.1, 5.3, 8.9, 12.7];
+/// The diffusers' allpass gain.
 const DIFFUSER_GAIN: f64 = 0.6;
+/// Below this level for half a second, the reverb sleeps.
 const SLEEP_LEVEL: f64 = 1e-5;
+/// Input above this level wakes it.
 const WAKE_LEVEL: f64 = 1e-7;
 
+/// Each line's share of the input: 1/√N keeps the sum's power.
 fn input_gain() -> f64 {
   1. / (LINES as f64).sqrt()
 }
@@ -20,6 +32,7 @@ struct SchroederAllpass {
 }
 
 impl SchroederAllpass {
+  /// A diffuser `length` samples long.
   fn new(length: usize) -> Self {
     Self {
       line: DelayLine::new(length as f64),
@@ -27,6 +40,7 @@ impl SchroederAllpass {
     }
   }
 
+  /// Diffuses a sample.
   fn process(&mut self, x: f64) -> f64 {
     let delayed = self.line.read_int(self.length);
     let v = x + DIFFUSER_GAIN * delayed;
@@ -34,6 +48,7 @@ impl SchroederAllpass {
     delayed - DIFFUSER_GAIN * v
   }
 
+  /// Clears its line.
   fn clear(&mut self) {
     self.line.clear();
   }
@@ -59,6 +74,8 @@ pub struct Fdn {
 }
 
 impl Fdn {
+  /// A sleeping reverb at sample rate `fs`, its lines as long as the largest
+  /// room needs.
   pub fn new(fs: f64) -> Self {
     let mut fdn = Self {
       fs,
@@ -93,6 +110,7 @@ impl Fdn {
     fdn
   }
 
+  /// Sets the room size (0.5–1.5), scaling every line.
   pub fn set_size(&mut self, size: f64) {
     self.size = size.max(0.5).min(MAX_SIZE);
     for i in 0..LINES {
@@ -101,15 +119,18 @@ impl Fdn {
     self.update_gains();
   }
 
+  /// Sets the decay: how long the tail takes to fall 60 dB (s).
   pub fn set_decay(&mut self, t60: f64) {
     self.t60 = t60.max(0.1);
     self.update_gains();
   }
 
+  /// Sets the lines' damping pole (0–0.95): more darkens the tail.
   pub fn set_damping(&mut self, p: f64) {
     self.damping = p.max(0.).min(0.95);
   }
 
+  /// Sets the predelay (s).
   pub fn set_predelay(&mut self, seconds: f64) {
     self.predelay_samples = js_round(seconds.max(0.).min(MAX_PREDELAY) * self.fs) as usize;
   }
@@ -176,10 +197,12 @@ impl Fdn {
     }
   }
 
+  /// Silences the tail.
   pub fn clear(&mut self) {
     self.sleep();
   }
 
+  /// Silences every line and goes to sleep.
   fn sleep(&mut self) {
     for line in &mut self.lines {
       line.clear();

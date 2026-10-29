@@ -1,5 +1,10 @@
+//! The engine's maths: notes to frequencies, clamping and interpolating,
+//! JavaScript's rounding, primes and powers of two for delay lengths, key
+//! tables, and the pan law.
+
 use std::f64::consts::PI;
 
+/// A full turn, in radians.
 pub const TWO_PI: f64 = 2. * PI;
 
 /// ln(1000): an exponential decays by 60 dB after T60 when
@@ -9,10 +14,13 @@ pub const LN_1000: f64 = 6.907755278982137;
 /// Piecewise-linear table over MIDI note number, clamped at both ends.
 pub type KeyTable = Vec<(f64, f64)>;
 
+/// A MIDI note's frequency in Hz, A4 (69) at 440.
 pub fn midi_to_hz(note: f64) -> f64 {
   440. * 2f64.powf((note - 69.) / 12.)
 }
 
+/// `x` within `[lo, hi]`, as the TypeScript's `Math.max(lo, Math.min(hi, x))`
+/// does it.
 pub fn clamp(x: f64, lo: f64, hi: f64) -> f64 {
   if x < lo {
     lo
@@ -23,6 +31,7 @@ pub fn clamp(x: f64, lo: f64, hi: f64) -> f64 {
   }
 }
 
+/// The point `t` of the way from `a` to `b`.
 pub fn lerp(a: f64, b: f64, t: f64) -> f64 {
   a + (b - a) * t
 }
@@ -32,6 +41,7 @@ pub fn js_round(x: f64) -> f64 {
   (x + 0.5).floor()
 }
 
+/// The smallest power of two at least `n`.
 pub fn next_pow2(n: usize) -> usize {
   let mut p = 1;
   while p < n {
@@ -40,6 +50,7 @@ pub fn next_pow2(n: usize) -> usize {
   p
 }
 
+/// Whether `n` is prime.
 pub fn is_prime(n: u64) -> bool {
   if n < 2 {
     return false;
@@ -57,6 +68,7 @@ pub fn is_prime(n: u64) -> bool {
   true
 }
 
+/// The smallest prime at least `n` (and at least 2).
 pub fn next_prime(n: f64) -> u64 {
   let mut candidate = n.ceil().max(2.) as u64;
   while !is_prime(candidate) {
@@ -65,6 +77,8 @@ pub fn next_prime(n: f64) -> u64 {
   candidate
 }
 
+/// A [`KeyTable`]'s value at `note`: linear between its points, held at its
+/// ends.
 pub fn key_table(table: &[(f64, f64)], note: f64) -> f64 {
   if note <= table[0].0 {
     return table[0].1;

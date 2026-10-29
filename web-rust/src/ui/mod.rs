@@ -1,7 +1,7 @@
 //! The page, built with fluid's `html!` as web-react's home route lays it
 //! out. Each part is a function returning its element, placed in its
-//! parent's `html!` as a child (`{ pads() }`). The [`Device`] is shared
-//! through fluid's context as a `&'static` reference, so closures capture it
+//! parent's `html!` as a child (`{ pads() }`). They reach the Device's
+//! state through [`app`], a `&'static` reference, so closures capture it
 //! without cloning.
 //!
 //! Styling is Tailwind only, built by Trunk from `src/tailwind.css`, which
@@ -11,10 +11,12 @@
 mod corner;
 pub mod debug;
 pub mod docs;
+pub mod focus;
 mod grille;
-mod keybed;
+pub mod keybed;
 mod knob;
-mod pads;
+mod midi;
+pub mod pads;
 mod screen;
 mod sky;
 
@@ -22,22 +24,29 @@ use fluid_macro::html;
 use wasm_bindgen::JsCast;
 use web_sys::{DocumentFragment, Element, HtmlElement, HtmlTemplateElement};
 
-use crate::device::{Device, KNOB_STEPS, device};
-use knob::{Knob, knob};
+use crate::chrome::{Chrome, chrome};
+use crate::modes::Knob;
+use crate::state::app;
+use knob::knob;
 
 /// The home page: the Device on the sky, the footer, the corner buttons and
 /// the Debug panel.
 pub fn page() -> Element {
-  let device = device();
+  let chrome = chrome();
   // Leaving the page lets go of every key, as web-react's unmount does.
-  fluid::on_cleanup(move || device.release_all());
+  fluid::on_cleanup(move || {
+    let a = app();
+    a.hotkeys.release_all();
+    a.performance.release_all();
+  });
   html! {
     div class="relative h-dvh w-full overflow-hidden select-none" {
       { sky::sky() }
       main class="absolute inset-0 z-10 py-20" { { synth() } }
       { footer() }
       { corner::corner() }
-      if |device| device.debug.value() { { debug::overlay() } }
+      if |chrome| chrome.debug.value() { { debug::overlay() } }
+      if |chrome| chrome.midi.value() { { midi::panel() } }
     }
   }
 }
@@ -49,29 +58,33 @@ pub fn page() -> Element {
 /// The screen sits over the middle eight pad columns, a grille either side
 /// of it and the knob pairs out past them, lined up with the pads' edges.
 fn synth() -> Element {
-  let device = device();
-  let [chalk, green, red, blue] = knobs(device);
+  let a = app();
+  // It freezes, inert, while the mix saves.
+  let busy = fluid::create_memo(move || a.feedback.progress.with(Option::is_some));
+  let (busy_aria, busy_inert) = (busy.clone(), busy);
   html! {
     div class="grid size-full place-items-center px-[clamp(calc(var(--spacing-bezel)_/_2),4.5vw,calc(2_*_var(--spacing-bezel)))] [--screen-aspect:2.39] [container-type:size]" {
       div class="relative h-[calc(var(--device-height)_*_var(--scale))] w-[calc(1001px_*_var(--scale))] [--device-height:calc(621px_/_var(--screen-aspect)_+_517px)] [--scale:min(1,tan(atan2(100cqw,1001px)),tan(atan2(100cqh,var(--device-height))))]" {
         div
         role="group"
         aria-label="Synthesizer"
+        aria-busy={ move || if busy_aria.value() { "true" } else { "false" } }
+        inert={ move || busy_inert.value() }
         class="absolute top-0 left-0 flex h-(--device-height) w-[1001px] origin-top-left scale-(--scale) flex-col gap-inset overflow-clip rounded-[88px] bg-device p-bezel shadow-device select-none [corner-shape:squircle]"
         // Browsers keep audio off until a gesture; any on the Device starts it.
-        @pointerup={ move |_| device.sound.unlock() }
+        @pointerup={ move |_| a.engine.unlock() }
         {
           div class="grid h-[calc(621px_/_var(--screen-aspect)_-_var(--spacing-bezel)_+_var(--spacing-inset))] grid-cols-[91px_45px_621px_45px_91px] gap-x-inset" {
             div class="-mt-bezel -mb-inset flex flex-col items-start justify-evenly [--knob-size:81.6px]" {
-              { knob(chalk) }
-              { knob(green) }
+              { knob(Knob::Chalk) }
+              { knob(Knob::Green) }
             }
             { grille::grille() }
             { screen::screen() }
             { grille::grille() }
             div class="-mt-bezel -mb-inset flex flex-col items-end justify-evenly [--knob-size:81.6px]" {
-              { knob(red) }
-              { knob(blue) }
+              { knob(Knob::Red) }
+              { knob(Knob::Blue) }
             }
           }
           { pads::pads() }
@@ -82,52 +95,13 @@ fn synth() -> Element {
   }
 }
 
-/// The main view's knobs: white sets the volume, green picks a parameter,
-/// red sets the level and blue the parameter's value.
-fn knobs(device: &'static Device) -> [Knob; 4] {
-  [
-    Knob {
-      colour: "var(--color-synth-chalk)",
-      mark: "#141413",
-      label: Box::new(move || format!("Volume: {}%", device.volume.value() * 10)),
-      step: Box::new(move || (device.volume.value(), KNOB_STEPS)),
-      set: Box::new(move |step| device.set_volume(step)),
-    },
-    Knob {
-      colour: "var(--color-synth-green)",
-      mark: "#ffffff",
-      label: Box::new(move || format!("Parameter: {}", device.param().0.name)),
-      step: Box::new(move || (device.selected.value(), device.current().params.len())),
-      set: Box::new(move |step| device.selected.set(step)),
-    },
-    Knob {
-      colour: "var(--color-synth-red)",
-      mark: "#ffffff",
-      label: Box::new(move || format!("Level: {}%", device.level.value() * 10)),
-      step: Box::new(move || (device.level.value(), KNOB_STEPS)),
-      set: Box::new(move |step| device.set_level(step)),
-    },
-    Knob {
-      colour: "var(--color-synth-blue)",
-      mark: "#ffffff",
-      label: Box::new(move || {
-        let (param, step) = device.param();
-        format!("Value: {} {}", param.name, param.values[step])
-      }),
-      step: Box::new(move || {
-        let (param, step) = device.param();
-        (step, param.values.len())
-      }),
-      set: Box::new(move |step| device.set_value(step)),
-    },
-  ]
-}
-
+/// A footer link: plain, underlined.
 const LINK: &str =
   "font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current";
 
+/// The home page's footer: the credit, Docs, Rust docs and the Debug toggle.
 fn footer() -> Element {
-  let device = device();
+  let chrome = chrome();
   html! {
     footer class="absolute inset-x-0 bottom-6 z-10 flex items-end justify-between gap-4 px-6 text-sm text-sky-ink select-text sm:px-8" {
       span {
@@ -142,8 +116,8 @@ fn footer() -> Element {
         " | "
         button
         class="cursor-pointer font-medium underline decoration-current/40 underline-offset-4 hover:decoration-current"
-        aria-expanded={ move || device.debug.value().to_string() }
-        @click={ move |_| device.debug.update(|open| *open = !*open) }
+        aria-expanded={ move || chrome.debug.value().to_string() }
+        @click={ move |_| chrome.toggle_debug() }
         {
           span { "Debug" }
         }
@@ -159,9 +133,9 @@ fn footer() -> Element {
 
 /// Puts `.dark` on the root element while the theme is dark; the theme
 /// tokens cross-fade the Device's colours from it.
-pub fn apply_theme(device: &'static Device) {
+pub fn apply_theme(chrome: &'static Chrome) {
   fluid::create_effect(move || {
-    let dark = device.theme.value().is_dark(device.system_dark.value());
+    let dark = chrome.theme.value().is_dark(chrome.system_dark.value());
     if let Some(root) = gloo_utils::document().document_element() {
       let _ = root.class_list().toggle_with_force("dark", dark);
     }

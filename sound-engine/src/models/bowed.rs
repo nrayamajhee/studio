@@ -13,6 +13,8 @@ use crate::engine::modules::{LfoRouting, ModuleSettings};
 use crate::engine::voice::{ACTIVE, RELEASED, STOLEN, Voice, VoiceCore, allocate, legato_note};
 use crate::patches::{BowedPatch, pick_tuning};
 
+/// The sample rate STK's body filter was designed at; the sections are rescaled
+/// from it to the engine's.
 pub const STK_RATE: f64 = 44100.;
 /// Body sections as (b0, b1, b2, a1, a2), designed at 44.1 kHz.
 pub const BODY_SECTIONS: [[f64; 5]; 6] = [
@@ -23,10 +25,15 @@ pub const BODY_SECTIONS: [[f64; 5]; 6] = [
   [1.0, -1.9299, 0.9621, -1.9354, 0.959],
   [1.0, -1.98, 0.9888, -1.9867, 0.9923],
 ];
+/// The body filter's output gain, as STK has.
 const BODY_GAIN: f64 = 0.1248;
+/// The bow table's offset, as STK has.
 const BOW_OFFSET: f64 = 0.001;
+/// The loss of the string's reflection at the bridge.
 const STRING_FILTER_GAIN: f64 = 0.95;
 
+/// The violin takes the vibrato itself, on the string's length and the bow's
+/// speed, ramping it in over 0.4 s.
 pub const ROUTING: LfoRouting = LfoRouting {
   pitch_output: false,
   level_output: false,
@@ -34,6 +41,8 @@ pub const ROUTING: LfoRouting = LfoRouting {
   fade_in: Some(0.4),
 };
 
+/// One bowed string: the neck and bridge waveguides either side of the bow, the
+/// string's loss filter, the violin body, and the bow's envelope.
 struct BowedVoice {
   core: VoiceCore,
   neck: Waveguide,
@@ -71,6 +80,8 @@ impl Voice for BowedVoice {
 }
 
 impl BowedVoice {
+  /// An idle voice whose waveguides fit the lowest note, `lowest_hz`, with the
+  /// body's sections rescaled to `fs`.
   fn new(fs: f64, mods: &ModuleSettings, lowest_hz: f64) -> Self {
     let longest = fs / lowest_hz + 8.;
     let mut string_filter = OnePoleLowpass::default();
@@ -102,6 +113,9 @@ impl BowedVoice {
     }
   }
 
+  /// Renders the frames `start..end`: the loop length glides toward its target,
+  /// the bow (swayed by the vibrato) meets the two waves through the bow table,
+  /// and the bridge's wave runs through the body and the chain.
   fn render(
     &mut self,
     start: usize,
@@ -161,6 +175,8 @@ pub struct BowedModel {
 }
 
 impl BowedModel {
+  /// The model for `patch` at `fs`, with two voices to spare over its polyphony
+  /// for steals to fade, and its tuning table picked for `fs`.
   pub fn new(patch: &'static BowedPatch, fs: f64, mods: &ModuleSettings) -> Self {
     let lowest_hz = midi_to_hz(patch.base.range.0 as f64);
     Self {
@@ -184,10 +200,13 @@ impl BowedModel {
     }
   }
 
+  /// Every voice's shared core, for the instrument to retarget.
   pub fn voices_mut(&mut self) -> impl Iterator<Item = &mut VoiceCore> {
     self.voices.iter_mut().map(|voice| &mut voice.core)
   }
 
+  /// Reads the bow's pressure, position and speed, the portamento, the bow
+  /// envelope and the body's mix from the params, into every voice.
   pub fn read_params(&mut self, bus: &Bus) {
     let p = &bus.params;
     self.pressure = p.get("exciter.pressure");
@@ -206,10 +225,13 @@ impl BowedModel {
     }
   }
 
+  /// How many voices are sounding.
   pub fn active_voices(&self) -> usize {
     self.voices.iter().filter(|voice| voice.core.busy()).count()
   }
 
+  /// Bows `note` (folded into the patch's range): again if it's still sounding,
+  /// else on a free voice, gliding from the note it follows when played legato.
   pub fn note_on(&mut self, bus: &Bus, note: i32, velocity: f64) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     let existing = self.by_note[n as usize];
@@ -242,6 +264,7 @@ impl BowedModel {
     self.voices[idle].core.chain.onset(n, bus.clock, &bus.mods);
   }
 
+  /// Lifts the bow from `note` once every press of it is let go.
   pub fn note_off(&mut self, note: i32) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     let index = self.by_note[n as usize];
@@ -261,6 +284,7 @@ impl BowedModel {
     voice.core.chain.shape.note_off();
   }
 
+  /// Lifts the bow from every string.
   pub fn all_notes_off(&mut self) {
     for voice in &mut self.voices {
       if voice.core.busy() && voice.core.state != STOLEN {
@@ -272,6 +296,7 @@ impl BowedModel {
     }
   }
 
+  /// Frees every voice at once.
   pub fn panic(&mut self) {
     for voice in &mut self.voices {
       voice.free();
@@ -279,6 +304,7 @@ impl BowedModel {
     self.by_note = [-1; 128];
   }
 
+  /// Renders the sounding voices into the bus for the frames `start..end`.
   pub fn render(&mut self, bus: &mut Bus, start: usize, end: usize) {
     for voice in &mut self.voices {
       if voice.core.busy() {
@@ -287,6 +313,7 @@ impl BowedModel {
     }
   }
 
+  /// Frees the voices that fell silent, forgetting their notes.
   pub fn free_finished(&mut self) {
     for (i, voice) in self.voices.iter_mut().enumerate() {
       if voice.core.busy() && voice.core.finished() {
@@ -299,6 +326,8 @@ impl BowedModel {
     }
   }
 
+  /// Starts the bow on the voice at a speed set by the velocity and the speed
+  /// param.
   fn bow_on(&mut self, index: usize, velocity: f64) {
     let voice = &mut self.voices[index];
     // STK: maxVelocity = 0.03 + 0.2·amplitude.

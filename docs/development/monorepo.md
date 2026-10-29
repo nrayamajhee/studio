@@ -4,11 +4,12 @@ order = 5
 
 # Monorepo plan
 
-Studio becomes a monorepo of four sibling folders. There is no monorepo tool: no npm workspaces, no Cargo workspace at the root, no Nx or Turbo. Each folder is a self-contained project with its own manifest, lockfile, build and checks, and the root only holds what they share.
+Studio becomes a monorepo of four sibling folders. There is no monorepo tool: no npm workspaces, no Nx or Turbo. Each folder is a self-contained project with its own manifest, build and checks, and the root only holds what they share. That includes one Cargo workspace for the Rust crates (`Cargo.toml` at the root): web-rust, sound-engine and its worklet share a lockfile, a target folder, the release profiles and `rustfmt.toml`, and `cargo` run in any crate's folder works on that crate as before.
 
 ```text
 studio/
 ├── README.md, AGENTS.md   the whole repo: what each folder is, how to run it
+├── Cargo.toml             the Cargo workspace of the Rust crates, one Cargo.lock
 ├── docs/                  the docs, shared; web-react serves them at /docs
 ├── web-react/             the current React Router app, moved as is
 ├── web-rust/              the Device in Rust: a Trunk-built wasm app, UI in fluid
@@ -34,14 +35,14 @@ web-rust ──┤
 
 A Trunk app (`trunk serve` on port `8080`), built to `web-rust/dist`. Its UI uses [fluid](https://github.com/nrayamajhee/fluid), the library [wgpu-test](https://github.com/nrayamajhee/wgpu-test) uses. fluid works like Solid: signals, effects that track the signals they read, and an `html!` macro that builds real DOM elements once and updates only the attributes and text bound to signals.
 
-- **State** is a `Device` of `Rc<Signal<_>>`s: theme, preset, octave, held keys and pads, chords, knob values. The UI and the keyboard listeners write to it, and fluid effects redraw the parts that read it.
-- **Pure logic** (keymap, note names, octave range) has no web-sys types, so `cargo test` runs it natively.
-- **Port order**, following the React app's parts: the home page and the Device's main view (this first step: the knobs, grilles, scope screen, all 36 pads with their keys, the presets, chords and keybed), then the screen's other views (instruments, synth, ADSR, LFO, FX, tempo), play styles and progressions, drum grid, piano roll, tracks and tapes, and MIDI last.
+- **State** is a store per web-react provider, each a struct of fluid signals, in one `App` that lives as long as the page. A mode per view binds the knobs, pads and screen, as web-react's modes do. The UI and the keyboard and MIDI listeners write to the stores, and fluid effects redraw the parts that read them.
+- **Pure logic** (`src/logic/`, the keymap) has no web-sys types, so `cargo test` runs it natively, against fixtures exported from web-react's own code.
+- **Port order** ([the record](./web-rust-port.md)), following the React app's parts: the home page and the Device's main view first (the knobs, grilles, scope screen, all 36 pads with their keys, the presets, chords and keybed), then the screen's other views (instruments, synth, ADSR, LFO, FX, tempo), play styles and progressions, drum grid, piano roll, tracks and tapes, and MIDI last. The port is complete.
 - **Look**: Tailwind, built by Trunk's own `tailwind-css` pipeline (no npm), from web-react's theme tokens copied into `web-rust/src/tailwind.css`, with the same class strings as web-react's components. The [design rules](./design-rules.md) hold for both apps.
 
 ## sound-engine
 
-A Rust library crate: web-react's physical-modeling engine (`app/lib/physical`), ported line for line, and the Web Audio host that runs it. See its [README](../../sound-engine/README.md).
+A Rust library crate: web-react's physical-modeling engine (`web-react/app/lib/physical`), ported line for line, and the Web Audio host that runs it. See its [README](../../sound-engine/README.md).
 
 - **An AudioWorklet for the models.** The physical models (strings, blown, bowed, drums, free reeds, tuned percussion; see [Physical modeling](../synth/physical-modeling/overview.md)), voice allocation, the reverb and the master stage run in an `AudioWorkletProcessor`, rendering 128-frame blocks with no allocation, locks or JS calls in `process`. The worklet's module is a separate crate (`sound-engine/worklet`), a bare wasm module with C-ABI exports that the hand-written `processor.js` instantiates, since a worklet has no `fetch`, `importScripts` or `TextDecoder` for wasm-bindgen's glue. web-rust's Trunk build runs its `build.sh` from a `post_build` hook.
 - **Web Audio nodes after it**, as web-react has them: a `DynamicsCompressorNode` limiter, the `AnalyserNode` the scope draws, and a `GainNode` for the system volume, which the browser runs in native code. The host (the `web` feature) builds this graph, starts it on the first gesture and sends events.
@@ -65,7 +66,7 @@ The backend: a Rust binary on axum and tokio, with PostgreSQL through sqlx.
    - `docs/` and `README.md` stay at the root. `docs.server.ts` globs them relatively (`"../../../../docs/**/*.md"`) and keys them by their repo paths, and `vite.config.ts` sets `server.fs.allow: [".."]` so Vite may read them.
    - `public/docs/` (the screenshots and diagrams) and `public/screenshot.png` stay in `web-react/public`, and the docs' images point there; web-rust's build copies them from there too.
    - The docs' links to the code (`app/...`) became `web-react/app/...`, and their commands run from `web-react`.
-   - web-rust's `export-presets.tsx` moved to `web-react/scripts/`, since it imports React; sound-engine's scripts stay put and run from `web-react` (`npx tsx ../sound-engine/scripts/parity.ts`).
+   - web-rust's `export-presets.tsx` moved to `web-react/scripts/`, since it imports React (the port later dropped it with the presets table); sound-engine's scripts stay put and run from `web-react` (`npx tsx ../sound-engine/scripts/parity.ts`), as web-rust's export scripts do.
    - The Dockerfile builds from the repo's root, with `web-react/Dockerfile.dockerignore` keeping the context to `web-react/`, `docs/` and `README.md`.
    - The `.agents/skills` and `.claude/skills` link stay at the root.
 3. **sound-engine** (done): the engine ported whole, its worklet and host, and web-rust playing through it: notes, chords, presets, knobs and the scope.

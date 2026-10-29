@@ -11,13 +11,18 @@ use std::path::{Path, PathBuf};
 
 use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 
+/// The classes the docs' HTML gets, shared with the app's `src/docs/style.rs`,
+/// where Tailwind finds them.
 #[allow(dead_code)]
 mod style {
   include!("src/docs/style.rs");
 }
 
+/// The repo on GitHub, where links to its files outside the docs go.
 const REPO: &str = "https://github.com/nrayamajhee/studio";
 
+/// A markdown file as read: its repo path, its route, its file name, its first
+/// heading, its order in its folder (from its TOML config), and its markdown.
 struct Doc {
   path: String,
   href: String,
@@ -27,8 +32,12 @@ struct Doc {
   markdown: String,
 }
 
+/// An entry in the docs' sidebar.
 enum Node {
+  /// A doc, by its index.
   File(usize),
+  /// A folder: its path, name and title (from its `_meta.toml`), its order, and
+  /// what it holds.
   Folder {
     path: String,
     name: String,
@@ -55,7 +64,9 @@ fn main() {
     .collect();
   let tree = build_tree(&root, &docs);
 
-  let mut out = String::from("pub static DOCS: &[Doc] = &[\n");
+  let mut out = String::from(
+    "/// Every doc, by path: the README, then `docs/`.\npub static DOCS: &[Doc] = &[\n",
+  );
   for doc in &docs {
     let html = render(&root, &doc.markdown, &doc.path, &hrefs);
     writeln!(
@@ -65,7 +76,7 @@ fn main() {
     )
     .unwrap();
   }
-  out.push_str("];\n\npub static TREE: &[Node] = ");
+  out.push_str("];\n\n/// The docs' sidebar: the README, then each folder in order.\npub static TREE: &[Node] = ");
   write_nodes(&mut out, &tree);
   out.push_str(";\n");
   let target = PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("docs.rs");
@@ -108,6 +119,8 @@ fn front_matter(source: &str) -> (Option<&str>, &str) {
   }
 }
 
+/// The `order` a doc's or folder's TOML config gives it; `source` names it if
+/// it's missing.
 fn order_of(config: &toml::Table, source: &str) -> i64 {
   config
     .get("order")
@@ -119,6 +132,8 @@ fn order_of(config: &toml::Table, source: &str) -> i64 {
     .unwrap_or_else(|| panic!("{source}: its TOML config needs an `order` number"))
 }
 
+/// Reads a doc: its config, its route (`/docs` for the README, `/docs/...`
+/// without `.md`), its title and its markdown.
 fn read_doc(root: &Path, path: &Path) -> Doc {
   let path = path.to_string_lossy().replace('\\', "/");
   let source = fs::read_to_string(root.join(&path)).unwrap();
@@ -161,6 +176,8 @@ fn title_of(markdown: &str, name: &str) -> String {
   name.to_owned()
 }
 
+/// The docs as the sidebar's tree: each doc in its folders, each folder in
+/// order.
 fn build_tree(root: &Path, docs: &[Doc]) -> Vec<Node> {
   let mut top: Vec<Node> = Vec::new();
   for (index, doc) in docs.iter().enumerate() {
@@ -189,6 +206,7 @@ fn build_tree(root: &Path, docs: &[Doc]) -> Vec<Node> {
   top
 }
 
+/// A folder as its `_meta.toml` describes it, empty.
 fn folder_at(root: &Path, path: &str) -> Node {
   let source = fs::read_to_string(root.join(path).join("_meta.toml"))
     .unwrap_or_else(|_| panic!("{path}/ needs a _meta.toml with its `order`"));
@@ -226,6 +244,7 @@ fn sort(nodes: &mut [Node], docs: &[Doc]) {
   }
 }
 
+/// Writes the tree as Rust, for `docs.rs`.
 fn write_nodes(out: &mut String, nodes: &[Node]) {
   out.push_str("&[");
   for node in nodes {
@@ -250,6 +269,7 @@ fn write_nodes(out: &mut String, nodes: &[Node]) {
   out.push(']');
 }
 
+/// Whether a link is absolute (a scheme, or `//`), so it leaves the docs.
 fn is_absolute(url: &str) -> bool {
   url.starts_with("//")
     || url.split_once(':').is_some_and(|(scheme, _)| {
@@ -389,6 +409,7 @@ fn raw_html(root: &Path, html: &str, from: &str) -> String {
   }
 }
 
+/// `text` escaped for HTML.
 fn escape(text: &str) -> String {
   text
     .replace('&', "&amp;")
@@ -396,6 +417,7 @@ fn escape(text: &str) -> String {
     .replace('>', "&gt;")
 }
 
+/// `text` escaped for an HTML attribute.
 fn attr(text: &str) -> String {
   escape(text).replace('"', "&quot;")
 }
@@ -422,6 +444,7 @@ fn slug(text: &str, seen: &mut HashMap<String, usize>) -> String {
   slug
 }
 
+/// The classes of a heading at `level`.
 fn heading_class(level: HeadingLevel) -> &'static str {
   match level {
     HeadingLevel::H1 => style::H1,

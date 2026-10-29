@@ -1,0 +1,284 @@
+[
+  {
+    "press": "KeyZ",
+    "note": "open synth"
+  },
+  {
+    "knob": 1,
+    "turns": 2,
+    "note": "pick block"
+  },
+  {
+    "press": "ArrowRight",
+    "note": "open block"
+  },
+  {
+    "knob": 0,
+    "turns": 1
+  },
+  {
+    "knob": 2,
+    "turns": 3
+  },
+  {
+    "knob": 3,
+    "turns": 2
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "knob": 1,
+    "turns": 1,
+    "note": "shift knob"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "knob": 1,
+    "turns": 4
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowLeft"
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "press": "Backspace",
+    "note": "reset prompt"
+  },
+  {
+    "press": "Backspace",
+    "note": "reset sound"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "press": "Control+KeyS",
+    "note": "open save"
+  },
+  {
+    "knob": 1,
+    "turns": 3
+  },
+  {
+    "press": "ArrowRight",
+    "note": "icons next page"
+  },
+  {
+    "press": "ArrowLeft"
+  },
+  {
+    "tile": 4
+  },
+  {
+    "press": "Digit3",
+    "note": "save to pad 3"
+  },
+  {
+    "press": "KeyZ"
+  },
+  {
+    "press": "KeyZ",
+    "note": "synth again"
+  },
+  {
+    "press": "KeyZ",
+    "note": "close synth"
+  },
+  {
+    "press": "Digit2"
+  },
+  {
+    "press": "KeyZ",
+    "note": "guitar synth"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "KeyZ"
+  },
+  {
+    "press": "Digit4"
+  },
+  {
+    "press": "KeyZ",
+    "note": "drums synth"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "KeyZ"
+  },
+  {
+    "press": "KeyN",
+    "note": "adsr"
+  },
+  {
+    "knob": 0,
+    "turns": 2
+  },
+  {
+    "knob": 1,
+    "turns": 3
+  },
+  {
+    "knob": 2,
+    "turns": 1
+  },
+  {
+    "knob": 3,
+    "turns": 4
+  },
+  {
+    "press": "BracketRight",
+    "note": "lfo"
+  },
+  {
+    "knob": 1,
+    "turns": 3
+  },
+  {
+    "knob": 2,
+    "turns": 2
+  },
+  {
+    "press": "Backslash",
+    "note": "fx"
+  },
+  {
+    "knob": 0,
+    "turns": 2
+  },
+  {
+    "knob": 3,
+    "turns": 1
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "press": "Backspace",
+    "note": "fx reset prompt"
+  },
+  {
+    "press": "Backspace",
+    "note": "fx reset"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "press": "Backslash"
+  },
+  {
+    "press": "KeyM",
+    "note": "tempo"
+  },
+  {
+    "knob": 1,
+    "turns": 3,
+    "note": "bpm"
+  },
+  {
+    "knob": 2,
+    "turns": 4,
+    "note": "swing"
+  },
+  {
+    "knob": 3,
+    "turns": 1,
+    "note": "swing on"
+  },
+  {
+    "press": "ArrowRight",
+    "note": "faster"
+  },
+  {
+    "press": "ArrowUp",
+    "note": "every track"
+  },
+  {
+    "press": "ArrowDown",
+    "note": "tap mode"
+  },
+  {
+    "press": "ArrowDown",
+    "note": "tap off"
+  },
+  {
+    "clickStarts": "Tempo: ",
+    "note": "click bpm"
+  },
+  {
+    "type": "7",
+    "note": "typed 7"
+  },
+  {
+    "press": "Backspace"
+  },
+  {
+    "type": "120",
+    "note": "typed 120"
+  },
+  {
+    "press": "Enter",
+    "note": "enter sets"
+  },
+  {
+    "clickStarts": "Tempo: ",
+    "note": "click again"
+  },
+  {
+    "press": "Escape",
+    "note": "cancel typing"
+  },
+  {
+    "press": "KeyM",
+    "note": "close tempo"
+  }
+]

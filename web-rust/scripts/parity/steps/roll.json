@@ -1,0 +1,73 @@
+[
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "press": "KeyV",
+    "note": "progressions"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "knob": 3,
+    "turns": 2
+  },
+  {
+    "press": "Control+KeyS",
+    "note": "await home"
+  },
+  {
+    "press": "KeyG",
+    "note": "home note: loads take"
+  },
+  {
+    "knob": 1,
+    "turns": 3,
+    "note": "scrub"
+  },
+  {
+    "knob": 1,
+    "turns": 9,
+    "note": "scrub to end"
+  },
+  {
+    "knob": 3,
+    "turns": 2,
+    "note": "octave"
+  },
+  {
+    "press": "ArrowUp"
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "knob": 2,
+    "turns": 3,
+    "note": "transpose"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "knob": 2,
+    "turns": 1,
+    "note": "meter"
+  },
+  {
+    "press": "Backquote",
+    "note": "stop: back to start"
+  },
+  {
+    "press": "Control+KeyS",
+    "note": "save take as track"
+  },
+  {
+    "press": "KeyV",
+    "note": "roll again: empty take"
+  }
+]

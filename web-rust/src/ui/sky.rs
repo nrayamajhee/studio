@@ -4,6 +4,8 @@
 use fluid_macro::html;
 use web_sys::Element;
 
+/// The sky behind the Device: a setting sun in the light theme, blue hour in
+/// the dark.
 pub fn sky() -> Element {
   html! {
     div aria-hidden="true" class="home-background pointer-events-none fixed inset-0 overflow-hidden" {

@@ -1,6 +1,7 @@
-//! A gear-edged knob, as web-react's `Knob`: drag it sideways or scroll to
-//! step it, click to step it on (wrapping round). Its mark points from −135°
-//! at the first step to +135° at the last.
+//! A gear-edged knob, as web-react's `Knob` and `DeviceKnob`: it does what
+//! the view binds it to. Drag it sideways or scroll to step it, click to
+//! step it on (wrapping round); a fine knob moves continuously. Its mark
+//! points from −135° at the first step to +135° at the last.
 
 use std::cell::Cell;
 use std::sync::OnceLock;
@@ -10,24 +11,23 @@ use wasm_bindgen::JsCast;
 use web_sys::{Element, PointerEvent, WheelEvent};
 
 use super::blur_active;
+use crate::modes::{self, Knob};
+use crate::state::app;
 
-pub struct Knob {
-  pub colour: &'static str,
-  pub mark: &'static str,
-  /// The accessible name, with its value.
-  pub label: Box<dyn Fn() -> String>,
-  /// The step it's on and how many it has.
-  pub step: Box<dyn Fn() -> (usize, usize)>,
-  pub set: Box<dyn Fn(usize)>,
-}
-
+/// Teeth around a knob's gear edge.
 const TEETH: usize = 36;
 /// [radius %, angle offset in degrees] of the four corners of each tooth.
 const TOOTH_PROFILE: [(f64, f64); 4] = [(46.5, 0.), (50., 1.5), (50., 5.), (46.5, 6.5)];
 /// Horizontal drag distance and trackpad scroll distance (px) per step.
 const DRAG_STEP: f64 = 24.;
+/// Trackpad scroll distance (px) per step.
 const WHEEL_STEP: f64 = 50.;
+/// A fine knob's whole travel by dragging (px), and its steps a notch.
+const FINE_TRAVEL: f64 = 600.;
+/// How many of a fine knob's steps one notch moves: its travel over this.
+const FINE_NOTCH: f64 = 120.;
 
+/// The gear edge's outline as a CSS polygon, made once.
 fn gear_edge() -> &'static str {
   static EDGE: OnceLock<String> = OnceLock::new();
   EDGE.get_or_init(|| {
@@ -47,16 +47,18 @@ fn gear_edge() -> &'static str {
   })
 }
 
+/// A drag in progress: its pointer, where it started (x and step), and whether
+/// it moved far enough to count as a drag.
 #[derive(Clone, Copy)]
 struct Drag {
   pointer: i32,
   x: f64,
-  step: usize,
+  step: f64,
   moved: bool,
 }
 
-/// A knob's binding and its gesture state. Knobs live as long as the page,
-/// so each is leaked once and its handlers capture a `&'static` to it.
+/// A knob's slot and its gesture state. Knobs live as long as the page, so
+/// each is leaked once and its handlers capture a `&'static` to it.
 struct Control {
   knob: Knob,
   drag: Cell<Option<Drag>>,
@@ -64,20 +66,38 @@ struct Control {
   travel: Cell<f64>,
 }
 
+/// What a knob shows: its accessible name, step, steps and fineness.
+#[derive(Clone, PartialEq)]
+struct Look {
+  label: String,
+  step: f64,
+  steps: usize,
+  fine: bool,
+}
+
 impl Control {
-  fn angle(&self) -> f64 {
-    let (step, steps) = (self.knob.step)();
-    -135. + 270. / (steps.max(2) - 1) as f64 * step as f64
+  /// The knob's step and steps as bound now, and whether it's fine.
+  fn bound(&self) -> (f64, usize, bool) {
+    let bindings = modes::current();
+    let knob = bindings.knob(self.knob);
+    (knob.step, knob.steps, knob.fine)
   }
 
+  /// Sets the knob to `next`, clamped to its range, unless it's there; not
+  /// while the mix saves.
   fn set(&self, next: f64) {
-    let (step, steps) = (self.knob.step)();
-    let next = next.clamp(0., (steps - 1) as f64) as usize;
-    if next != step {
-      (self.knob.set)(next);
+    if app().feedback.is_busy() {
+      return;
+    }
+    let bindings = modes::current();
+    let knob = bindings.knob(self.knob);
+    let next = next.clamp(0., (knob.steps - 1) as f64);
+    if next != knob.step {
+      knob.on_change.call(next);
     }
   }
 
+  /// Starts a drag on the knob, capturing the pointer.
   fn pointer_down(&self, event: &PointerEvent) {
     if event.button() != 0 {
       return;
@@ -91,11 +111,12 @@ impl Control {
     self.drag.set(Some(Drag {
       pointer: event.pointer_id(),
       x: event.client_x() as f64,
-      step: (self.knob.step)().0,
+      step: self.bound().0,
       moved: false,
     }));
   }
 
+  /// Turns the knob as the drag moves sideways.
   fn pointer_move(&self, event: &PointerEvent) {
     let Some(mut start) = self
       .drag
@@ -109,23 +130,43 @@ impl Control {
       start.moved = true;
       self.drag.set(Some(start));
     }
-    self.set(start.step as f64 + (distance / DRAG_STEP).trunc());
+    let (_, steps, fine) = self.bound();
+    self.set(if fine {
+      start.step + distance / FINE_TRAVEL * (steps - 1) as f64
+    } else {
+      start.step + (distance / DRAG_STEP).trunc()
+    });
   }
 
+  /// Ends the drag, remembering whether it moved so the click it ends with does
+  /// nothing.
   fn pointer_up(&self) {
     self
       .dragged
       .set(self.drag.take().is_some_and(|start| start.moved));
   }
 
+  /// A click turns the knob a step on, round to the start (a fine knob a notch,
+  /// stopping at the end).
   fn click(&self) {
     if self.dragged.replace(false) {
       return;
     }
-    let (step, steps) = (self.knob.step)();
-    (self.knob.set)((step + 1) % steps);
+    let (step, steps, fine) = self.bound();
+    let last = (steps - 1) as f64;
+    let next = if fine {
+      last.min(step + last / FINE_NOTCH)
+    } else {
+      (step + 1.) % steps as f64
+    };
+    if app().feedback.is_busy() {
+      return;
+    }
+    modes::current().knob(self.knob).on_change.call(next);
   }
 
+  /// Scrolling turns the knob: a mouse wheel a step a notch, a trackpad by its
+  /// travel.
   fn wheel(&self, event: &WheelEvent) {
     let notch =
       event.delta_mode() != WheelEvent::DOM_DELTA_PIXEL || event.delta_y().abs() >= WHEEL_STEP;
@@ -137,24 +178,57 @@ impl Control {
     let detents = (travel / WHEEL_STEP).trunc();
     self.travel.set(travel - detents * WHEEL_STEP);
     if detents != 0. {
-      self.set((self.knob.step)().0 as f64 + detents);
+      let (step, steps, fine) = self.bound();
+      self.set(
+        step
+          + if fine {
+            detents * (steps - 1) as f64 / FINE_NOTCH
+          } else {
+            detents
+          },
+      );
     }
   }
 }
 
+/// One of the Device's knobs, doing what the current mode binds it to.
 pub fn knob(knob: Knob) -> Element {
-  let style = format!("--knob-color:{};--knob-mark:{}", knob.colour, knob.mark);
+  let (colour, mark) = match knob {
+    Knob::Chalk => ("var(--color-synth-chalk)", "#141413"),
+    Knob::Green => ("var(--color-synth-green)", "#ffffff"),
+    Knob::Red => ("var(--color-synth-red)", "#ffffff"),
+    Knob::Blue => ("var(--color-synth-blue)", "#ffffff"),
+  };
+  let style = format!("--knob-color:{colour};--knob-mark:{mark}");
   let control: &'static Control = Box::leak(Box::new(Control {
     knob,
     drag: Cell::new(None),
     dragged: Cell::new(false),
     travel: Cell::new(0.),
   }));
+  let look = fluid::create_memo(move || {
+    modes::with(|bindings| {
+      let bound = bindings.knob(knob);
+      Look {
+        label: match &bound.value_label {
+          Some(value) => format!("{}: {value}", bound.label),
+          None => bound.label.clone(),
+        },
+        step: bound.step,
+        steps: bound.steps,
+        fine: bound.fine,
+      }
+    })
+  });
+  let angle = {
+    let look = look.clone();
+    move || look.with(|look| -135. + 270. / (look.steps.max(2) - 1) as f64 * look.step)
+  };
   html! {
     button
     class="group relative inline-flex size-(--size) cursor-ew-resize touch-none items-center justify-center rounded-[50%] drop-shadow-knob select-none [--size:var(--knob-size,68px)] focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-[#2f7de1] focus-visible:outline-solid"
     style={ style }
-    aria-label={ move || (control.knob.label)() }
+    aria-label={ move || look.with(|look| look.label.clone()) }
     @pointerdown={ move |event: PointerEvent| control.pointer_down(&event) }
     @pointermove={ move |event: PointerEvent| control.pointer_move(&event) }
     @pointerup={ move |_| control.pointer_up() }
@@ -165,7 +239,7 @@ pub fn knob(knob: Knob) -> Element {
     {
       span
       class="flex size-full items-center justify-center bg-(--knob-color) bg-[radial-gradient(circle,rgb(0_0_0/0)_72%,rgb(0_0_0/0.22)_88%,rgb(0_0_0/0.34)_100%)] transition-transform duration-200 ease-[ease] motion-reduce:transition-none"
-      style={ move || format!("clip-path:{};transform:rotate({}deg)", gear_edge(), control.angle()) }
+      style={ move || format!("clip-path:{};transform:rotate({}deg)", gear_edge(), angle()) }
       {
         span class="flex size-[calc(var(--size)*52/68)] justify-center rounded-[50%] bg-(--knob-color) bg-[radial-gradient(circle_at_38%_30%,rgb(255_255_255/0.42),rgb(255_255_255/0)_55%),radial-gradient(circle,rgb(0_0_0/0)_70%,rgb(0_0_0/0.12))] shadow-[0_0_0_1.5px_rgb(0_0_0/0.14),0_1px_2px_rgb(0_0_0/0.25)] group-active:brightness-95" {
           span class="mt-[calc(var(--size)*5/68)] h-[calc(var(--size)*14/68)] w-[calc(var(--size)*4/68)] rounded-[2px] bg-(--knob-mark)" {}

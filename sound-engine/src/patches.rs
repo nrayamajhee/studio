@@ -4,6 +4,7 @@
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
+use indexmap::IndexMap;
 use serde::Deserialize;
 
 use crate::dsp::math::KeyTable;
@@ -25,19 +26,33 @@ pub fn pick_tuning(tables: &TuningTables, fs: f64) -> KeyTable {
   best
 }
 
+/// One param of a patch (or of the master): what the synth view shows and the
+/// engine clamps it to.
 #[derive(Deserialize, Clone, Debug)]
 pub struct ParamSpec {
+  /// Its id, as `section.name` (`exciter.hardness`), which events name it by.
   pub id: String,
+  /// Its label on the synth view.
   pub label: String,
+  /// The synth view's page it's on: exciter, resonator, body, envelope, filter,
+  /// vibrato, output or master.
   pub section: String,
+  /// The lowest value.
   pub min: f64,
+  /// The highest value.
   pub max: f64,
+  /// Its value until something sets it.
   pub default: f64,
+  /// The unit its value is shown in (ms, Hz, cents…), if any.
   pub unit: Option<String>,
+  /// "log" when its knob moves through the range logarithmically.
   pub scale: Option<String>,
+  /// The names of its steps, for a param that picks one of several (a wave, a
+  /// shape).
   pub options: Option<Vec<String>>,
 }
 
+/// A radiation body's presence peak: its frequency, Q and gain in dB.
 #[derive(Deserialize, Clone, Copy, Debug)]
 pub struct Presence {
   pub freq: f64,
@@ -46,22 +61,28 @@ pub struct Presence {
   pub gain_db: f64,
 }
 
+/// How an instrument's body colours its bus.
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum BodySpec {
+  /// No body.
   None,
-  Modal {
-    modes: Vec<(f64, f64, f64)>,
-  },
+  /// A soundboard or top plate: modes as (frequency, T60, level).
+  Modal { modes: Vec<(f64, f64, f64)> },
+  /// The radiation of an open end or bell: a highpass at `highpass` hertz, with
+  /// an optional presence peak.
   Radiation {
     highpass: f64,
     presence: Option<Presence>,
   },
 }
 
+/// Where a patch sits in the stereo field.
 #[derive(Deserialize, Clone, Copy, Debug)]
 pub struct Pan {
+  /// Its centre, −1 (left) to 1 (right).
   pub center: f64,
+  /// How far its notes spread either side of the centre, low notes to the left.
   pub spread: f64,
 }
 
@@ -69,15 +90,25 @@ pub struct Pan {
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct BasePatch {
+  /// The id events name the instrument by.
   pub id: String,
+  /// The name the instrument picker shows.
   pub name: String,
+  /// The lowest and highest MIDI notes it plays; notes outside fold in by
+  /// octaves.
   pub range: (i32, i32),
+  /// The bus's output gain, which levels the instruments against each other.
   pub output_gain: f64,
+  /// Where it sits in the stereo field.
   pub pan: Pan,
+  /// Its body.
   pub body: BodySpec,
+  /// Its params, in the synth view's order.
   pub params: Vec<ParamSpec>,
 }
 
+/// A guitar string's two polarizations: the second detuned by `detune_cents`,
+/// decaying `decay` times as long, and the pluck's `split` between them.
 #[derive(Deserialize, Clone, Copy, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Polarization {
@@ -86,12 +117,17 @@ pub struct Polarization {
   pub split: f64,
 }
 
+/// A sitar's jawari bridge: the allpass coefficient while the string touches it
+/// (`contact`), and how far it swings before it does (`gap`).
 #[derive(Deserialize, Clone, Copy, Debug)]
 pub struct Jawari {
   pub contact: f64,
   pub gap: f64,
 }
 
+/// A piano, guitar or bass: the exciter (hammer, pick or finger), whether notes
+/// take a key or a string, the open strings and frets, and per-key tables of
+/// unison strings, decay, brightness, dispersion and dampers.
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StringPatch {
@@ -117,6 +153,9 @@ pub struct StringPatch {
   pub jawari: Option<Jawari>,
 }
 
+/// A flute, saxophone, brass or clarinet: which STK model, the breath pressure
+/// from the softest note to the hardest, and the tuning tables measured at each
+/// sample rate.
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct BorePatch {
@@ -127,6 +166,7 @@ pub struct BorePatch {
   pub tuning_cents: TuningTables,
 }
 
+/// A violin: its polyphony and the tuning tables measured at each sample rate.
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct BowedPatch {
@@ -136,6 +176,8 @@ pub struct BowedPatch {
   pub tuning_cents: TuningTables,
 }
 
+/// A brush on a drum: how long its bristles land for (ms), the hiss's highpass
+/// (Hz) and level.
 #[derive(Deserialize, Clone, Copy, Debug)]
 pub struct DrumBrush {
   pub length: f64,
@@ -143,6 +185,8 @@ pub struct DrumBrush {
   pub level: f64,
 }
 
+/// The click of a stick on a drum: a highpassed noise burst, its cutoff (Hz),
+/// length (ms) and level.
 #[derive(Deserialize, Clone, Copy, Debug)]
 pub struct DrumClick {
   pub highpass: f64,
@@ -150,6 +194,8 @@ pub struct DrumClick {
   pub level: f64,
 }
 
+/// A snare's wires buzzing under the head: their level, highpass (Hz) and
+/// release (s).
 #[derive(Deserialize, Clone, Copy, Debug)]
 pub struct DrumWires {
   pub level: f64,
@@ -157,6 +203,7 @@ pub struct DrumWires {
   pub release: f64,
 }
 
+/// A cymbal's wash: highpassed noise, its cutoff (Hz), decay (s) and level.
 #[derive(Deserialize, Clone, Copy, Debug)]
 pub struct DrumNoise {
   pub highpass: f64,
@@ -164,24 +211,29 @@ pub struct DrumNoise {
   pub level: f64,
 }
 
+/// How a cymbal's modes are laid out.
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum MetalModes {
+  /// `count` modes spread log-uniformly from `low` to `high` hertz, from a
+  /// fixed `seed`.
   Seeded {
     seed: u32,
     count: usize,
     low: f64,
     high: f64,
   },
-  Table {
-    freqs: Vec<f64>,
-    amps: Vec<f64>,
-  },
+  /// Modes listed by frequency and level.
+  Table { freqs: Vec<f64>, amps: Vec<f64> },
 }
 
+/// One piece of a kit, by the model that plays it.
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "model", rename_all = "camelCase")]
 pub enum DrumPieceSpec {
+  /// A drum head: the ideal membrane's modes over `f0`, a pitch that drops as
+  /// it settles, a stick (contact times soft to hard, ms), and optionally a
+  /// click, snare wires, a shell mode and a brush.
   #[serde(rename_all = "camelCase")]
   Membrane {
     f0: f64,
@@ -197,6 +249,8 @@ pub enum DrumPieceSpec {
     level: f64,
     pan: f64,
   },
+  /// A cymbal or bell: metal modes, their T60, a wash of noise, and the pieces
+  /// striking it chokes.
   #[serde(rename_all = "camelCase")]
   Metal {
     modes: MetalModes,
@@ -208,6 +262,8 @@ pub enum DrumPieceSpec {
     level: f64,
     pan: f64,
   },
+  /// A tuned drum (a tabla's): partials as (ratio, T60, level) over `f0`, with
+  /// an optional pitch drop and click.
   #[serde(rename_all = "camelCase")]
   Loaded {
     f0: f64,
@@ -219,10 +275,10 @@ pub enum DrumPieceSpec {
     level: f64,
     pan: f64,
   },
-  Combo {
-    pieces: Vec<String>,
-    level: f64,
-  },
+  /// Several pieces struck at once, at `level`.
+  Combo { pieces: Vec<String>, level: f64 },
+  /// A clap: noise bursts at the listed times (ms), then a decaying tail (or
+  /// one swelling in to its start), through a bandpass.
   #[serde(rename_all = "camelCase")]
   Noise {
     bursts: Vec<f64>,
@@ -236,15 +292,19 @@ pub enum DrumPieceSpec {
   },
 }
 
+/// A drum kit: its pieces, and the piece each pitch class plays.
 #[derive(Deserialize, Clone, Debug)]
 pub struct DrumKitPatch {
   #[serde(flatten)]
   pub base: BasePatch,
-  pub pieces: BTreeMap<String, DrumPieceSpec>,
+  /// In the order web-react lists them, which the synth view's graphs
+  /// follow.
+  pub pieces: IndexMap<String, DrumPieceSpec>,
   /// The piece each keybed pitch class plays, from C.
   pub keys: Vec<String>,
 }
 
+/// An oscillator synth: its polyphony.
 #[derive(Deserialize, Clone, Debug)]
 pub struct OscillatorPatch {
   #[serde(flatten)]
@@ -252,6 +312,9 @@ pub struct OscillatorPatch {
   pub polyphony: usize,
 }
 
+/// A harmonium or harmonica: its reeds as (cents, level), the breath pressure
+/// from the softest note to the hardest, how long each key's reeds take to
+/// settle, their asymmetry, and the tuning tables measured at each sample rate.
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ReedPatch {
@@ -265,6 +328,9 @@ pub struct ReedPatch {
   pub tuning_cents: TuningTables,
 }
 
+/// A xylophone, steel pan or kalimba: how it's struck (mallet or thumb), its
+/// modes as (ratio, level, T60), their decay per key, and the strike's contact
+/// time from soft to hard (ms).
 #[derive(Deserialize, Clone, Debug)]
 pub struct BarPatch {
   #[serde(flatten)]
@@ -276,19 +342,28 @@ pub struct BarPatch {
   pub contact: (f64, f64),
 }
 
+/// A patch, by its family, which picks the model that plays it.
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "family", rename_all = "camelCase")]
 pub enum Patch {
+  /// Strings: piano, guitar, basses.
   String(StringPatch),
+  /// Bores: flutes, saxophone, brass, clarinet.
   Bore(BorePatch),
+  /// A bowed string: the violin.
   Bowed(BowedPatch),
+  /// A drum kit.
   Drums(DrumKitPatch),
+  /// Oscillators.
   Oscillator(OscillatorPatch),
+  /// Free reeds: harmonium, harmonica.
   Reed(ReedPatch),
+  /// Struck bars: xylophone, steel pan, kalimba.
   Bar(BarPatch),
 }
 
 impl Patch {
+  /// The part every patch has: its id, name, range, pan, body and params.
   pub fn base(&self) -> &BasePatch {
     match self {
       Self::String(p) => &p.base,
@@ -301,11 +376,14 @@ impl Patch {
     }
   }
 
+  /// The patch's id, which events name its instrument by.
   pub fn id(&self) -> &str {
     &self.base().id
   }
 }
 
+/// Everything in `data/patches.json`: every instrument's patch, in the Device's
+/// order, and the master's params.
 #[derive(Deserialize, Debug)]
 pub struct PatchData {
   pub patches: Vec<Patch>,
@@ -357,6 +435,7 @@ pub const PIECE_ORDER: [&str; 26] = [
   "tambourine",
 ];
 
+/// A drum piece's place in [`PIECE_ORDER`], by its name.
 pub fn piece_index(id: &str) -> Option<usize> {
   PIECE_ORDER.iter().position(|piece| *piece == id)
 }

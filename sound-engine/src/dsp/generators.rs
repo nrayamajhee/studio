@@ -1,3 +1,6 @@
+//! Signal sources: deterministic noise, the LFO, a band-limited audio
+//! oscillator, the parameter smoother, and an envelope follower.
+
 use super::math::TWO_PI;
 
 /// xorshift32 with a per-voice seed so offline renders are deterministic.
@@ -8,12 +11,14 @@ pub struct Noise {
 }
 
 impl Noise {
+  /// Noise from `seed` (0 counts as 1, since xorshift can't leave 0).
   pub fn new(seed: u32) -> Self {
     Self {
       state: if seed == 0 { 1 } else { seed },
     }
   }
 
+  /// The next value, in [−1, 1).
   #[allow(clippy::should_implement_trait)]
   pub fn next(&mut self) -> f64 {
     let mut x = self.state;
@@ -44,6 +49,7 @@ pub struct Lfo {
 }
 
 impl Lfo {
+  /// A sine LFO at sample rate `fs`, stopped, with no delay.
   pub fn new(fs: f64) -> Self {
     Self {
       shape: 0,
@@ -61,6 +67,7 @@ impl Lfo {
     }
   }
 
+  /// Sets the rate in Hz.
   pub fn set_rate(&mut self, hz: f64) {
     self.increment = hz / self.fs;
   }
@@ -77,6 +84,7 @@ impl Lfo {
     self.elapsed = 0.;
   }
 
+  /// The value one sample on.
   pub fn process(&mut self) -> f64 {
     self.advance(1.)
   }
@@ -175,6 +183,7 @@ pub struct Oscillator {
 }
 
 impl Oscillator {
+  /// A sine oscillator at sample rate `fs`, silent until a frequency is set.
   pub fn new(fs: f64) -> Self {
     Self {
       wave: 0,
@@ -193,6 +202,7 @@ impl Oscillator {
     self.target = hz / self.fs;
   }
 
+  /// Restarts the cycle.
   pub fn reset(&mut self) {
     self.phase = 0.;
   }
@@ -234,10 +244,12 @@ pub struct Smoother {
 }
 
 impl Smoother {
+  /// A smoother at `initial` with the usual ~10 ms time constant.
   pub fn new(initial: f64, fs: f64) -> Self {
     Self::with_tau(initial, fs, 0.01)
   }
 
+  /// A smoother at `initial` with time constant `tau` (s).
   pub fn with_tau(initial: f64, fs: f64, tau: f64) -> Self {
     Self {
       value: initial,
@@ -246,14 +258,17 @@ impl Smoother {
     }
   }
 
+  /// Whether it's reached its target.
   pub fn settled(&self) -> bool {
     self.value == self.target
   }
 
+  /// Sets the target it approaches.
   pub fn set(&mut self, target: f64) {
     self.target = target;
   }
 
+  /// Steps a sample toward the target, returning the value.
   pub fn process(&mut self) -> f64 {
     let delta = self.target - self.value;
     if delta.abs() < 1e-7 * (self.target.abs() + 1e-3) {
@@ -273,6 +288,7 @@ pub struct Follower {
 }
 
 impl Follower {
+  /// A follower with `attack` and `release` times in seconds.
   pub fn new(attack: f64, release: f64, fs: f64) -> Self {
     Self {
       value: 0.,
@@ -281,6 +297,7 @@ impl Follower {
     }
   }
 
+  /// Follows a sample's level, returning the envelope.
   pub fn process(&mut self, x: f64) -> f64 {
     let level = x.abs();
     let rate = if level > self.value {
@@ -292,6 +309,7 @@ impl Follower {
     self.value
   }
 
+  /// Lets the envelope fall to nothing.
   pub fn clear(&mut self) {
     self.value = 0.;
   }

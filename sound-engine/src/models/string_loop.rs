@@ -1,10 +1,16 @@
+//! The single-delay-loop string the string model's voices are made of, tuned
+//! exactly and damped by T60.
+
 use crate::dsp::delay_line::DelayLine;
 use crate::dsp::math::{TWO_PI, js_round};
 use crate::dsp::phase_delay::{
   allpass1_for_delay, allpass1_phase_delay, one_pole_magnitude, one_pole_phase_delay,
 };
 
+/// The most dispersion allpasses a loop runs, for a stiff string's stretched
+/// partials.
 const MAX_STAGES: usize = 8;
+/// The highest loop gain, so no string rings forever.
 const MAX_LOOP_GAIN: f64 = 0.99999;
 
 /// The largest loss pole that still lets the loop gain stay below
@@ -24,6 +30,13 @@ fn lightest_loss(p: f64, w0: f64, per_period: f64) -> f64 {
     }
   }
   lo
+}
+
+/// A partial of the loop: its frequency and how long it rings.
+#[derive(Clone, Copy, Debug)]
+pub struct Partial {
+  pub hz: f64,
+  pub t60: f64,
 }
 
 /// Single-delay-loop string (extended Karplus-Strong): delay → dispersion
@@ -57,6 +70,7 @@ pub struct StringLoop {
 }
 
 impl StringLoop {
+  /// A silent loop at `fs` with room for the lowest note, `lowest_hz`.
   pub fn new(fs: f64, lowest_hz: f64) -> Self {
     Self {
       delay: DelayLine::new(fs / lowest_hz + 8.),
@@ -123,6 +137,40 @@ impl StringLoop {
     self.g_coef = 1.;
   }
 
+  /// The first `count` partials of the tuned loop: each where the round
+  /// trip holds a whole number of cycles (so stiffness stretches them
+  /// sharp), and how long it rings (T60, s) through the loss filter at its
+  /// frequency.
+  pub fn partials(&self, count: usize) -> Vec<Partial> {
+    let fs = self.fs;
+    let round_trip = |w: f64| {
+      self.n_int as f64
+        + self.stages as f64 * allpass1_phase_delay(self.ap_a, w)
+        + one_pole_phase_delay(self.p, w)
+        + allpass1_phase_delay(self.t_a, w)
+        + if self.jawari { 1. } else { 0. }
+    };
+    let mut result = Vec::new();
+    for n in 1..=count {
+      let mut w = n as f64 * self.w0;
+      let mut i = 0;
+      while i < 30 && w < std::f64::consts::PI {
+        w = (TWO_PI * n as f64) / round_trip(w);
+        i += 1;
+      }
+      if w >= std::f64::consts::PI {
+        break;
+      }
+      let per_trip = self.g_target * one_pole_magnitude(self.p, w);
+      let t60 = (-3. / per_trip.log10()) * (round_trip(w) / fs);
+      result.push(Partial {
+        hz: (w * fs) / TWO_PI,
+        t60,
+      });
+    }
+    result
+  }
+
   /// Ramps the loop gain toward the value for a new T60 over `ramp` seconds.
   pub fn set_decay(&mut self, t60: f64, ramp: f64) {
     self.g_target = self.loop_gain(t60);
@@ -133,6 +181,8 @@ impl StringLoop {
     };
   }
 
+  /// Runs one sample round the loop, adding `excitation` on its way back into
+  /// the delay; returns what goes in.
   #[inline]
   pub fn tick(&mut self, excitation: f64) -> f64 {
     let mut y = self.delay.read_int(self.n_int);
@@ -166,6 +216,7 @@ impl StringLoop {
     out
   }
 
+  /// Silences the loop, keeping its tuning.
   pub fn clear(&mut self) {
     self.delay.clear();
     self.ap_x1 = [0.; MAX_STAGES];

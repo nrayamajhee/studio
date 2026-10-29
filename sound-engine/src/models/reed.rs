@@ -1,3 +1,6 @@
+//! The free-reed model: harmonium and harmonica, each key one or two
+//! self-oscillating reeds swinging through their slots.
+
 use crate::dsp::adsr::{Adsr, AdsrStages};
 use crate::dsp::filters::{DcBlocker, OnePoleHighpass};
 use crate::dsp::generators::Noise;
@@ -7,17 +10,21 @@ use crate::engine::modules::{LfoRouting, ModuleSettings};
 use crate::engine::voice::{ACTIVE, RELEASED, STOLEN, Voice, VoiceCore, allocate};
 use crate::patches::{ReedPatch, pick_tuning};
 
+/// The most reeds a key sounds.
 const MAX_REEDS: usize = 2;
 /// The reed swings through its slot freely while it is within this much of
 /// rest; past it the air rushes round the tip. The Brightness param moves it.
 const SLOT: f64 = 0.25;
+/// How far the Brightness param moves the slot's edge.
 const SLOT_RANGE: f64 = 0.15;
 /// The gap around the tongue inside the slot, and how rounded the slot's
 /// edges are (sharp edges alias on high notes).
 const CLEARANCE: f64 = 0.02;
+/// How rounded the slot's edges are.
 const EDGE: f64 = 0.05;
 /// The pressure step bends the reed before it starts to swing.
 const PUSH: f64 = 0.15;
+/// The note the level tilt leaves as it is, in hertz.
 const C4_HZ: f64 = 261.63;
 /// Radiated sound is the flow's slope, which rises 6 dB an octave; most of
 /// that is taken back so the range sits level.
@@ -25,12 +32,15 @@ const LEVEL_TILT: f64 = 0.85;
 /// That slope is small next to the other models' outputs; this brings a
 /// reed near them so patch gains sit around 1.
 const RADIATION_GAIN: f64 = 15.;
+/// The cutoff, in hertz, of the highpass that leaves the turbulence its hiss.
 const NOISE_HIGHPASS: f64 = 1500.;
 /// Turbulence rides on the flow itself, not on its much smaller slope, so it
 /// is scaled down to sit under the tone (the Air noise param scales it
 /// again).
 const NOISE_LEVEL: f64 = 0.4;
 
+/// The reeds take the vibrato themselves as a swell, one free-running cycle for
+/// every voice; its pitch goes to the voice's output.
 pub const ROUTING: LfoRouting = LfoRouting {
   pitch_output: true,
   level_output: false,
@@ -43,6 +53,7 @@ fn opening(z: f64) -> f64 {
   0.5 * (z + (z * z + EDGE * EDGE).sqrt())
 }
 
+/// One key: its reeds' resonators and states, the breath, and the turbulence.
 struct ReedVoice {
   core: VoiceCore,
   /// Each reed: resonator coefficients, swing feedback, level and state.
@@ -83,6 +94,7 @@ impl Voice for ReedVoice {
 }
 
 impl ReedVoice {
+  /// An idle voice at `fs`, its turbulence seeded by `seed`.
   fn new(fs: f64, mods: &ModuleSettings, seed: u32) -> Self {
     let mut noise_filter = OnePoleHighpass::default();
     noise_filter.set_cutoff(NOISE_HIGHPASS, fs);
@@ -120,6 +132,7 @@ impl ReedVoice {
     self.feed[r] = 2. / (settle * fs);
   }
 
+  /// Bends every reed off rest, so it starts to swing under the pressure.
   fn push(&mut self) {
     for r in 0..self.reeds {
       self.y1[r] = PUSH;
@@ -127,6 +140,9 @@ impl ReedVoice {
     }
   }
 
+  /// Renders the frames `start..end`: the breath, swelled by the vibrato,
+  /// drives each reed; the air the reeds let past makes the flow, whose slope
+  /// (plus turbulence) goes through the chain.
   fn render(
     &mut self,
     start: usize,
@@ -187,6 +203,8 @@ pub struct ReedModel {
 }
 
 impl ReedModel {
+  /// The model for `patch` at `fs`, with two voices to spare over its polyphony
+  /// for steals to fade, and its tuning table picked for `fs`.
   pub fn new(patch: &'static ReedPatch, fs: f64, mods: &ModuleSettings) -> Self {
     Self {
       patch,
@@ -208,10 +226,14 @@ impl ReedModel {
     }
   }
 
+  /// Every voice's shared core, for the instrument to retarget.
   pub fn voices_mut(&mut self) -> impl Iterator<Item = &mut VoiceCore> {
     self.voices.iter_mut().map(|voice| &mut voice.core)
   }
 
+  /// Reads the pressure, air noise, the second reed's detune, the slot's
+  /// brightness and the breath envelope from the params, retuning the sounding
+  /// keys.
   pub fn read_params(&mut self, bus: &Bus) {
     let p = &bus.params;
     self.pressure = p.get("exciter.pressure");
@@ -231,10 +253,13 @@ impl ReedModel {
     }
   }
 
+  /// How many voices are sounding.
   pub fn active_voices(&self) -> usize {
     self.voices.iter().filter(|voice| voice.core.busy()).count()
   }
 
+  /// Blows `note` (folded into the patch's range): again if it's still
+  /// sounding, else on a free voice, tuned, panned by key and pushed off rest.
   pub fn note_on(&mut self, bus: &Bus, note: i32, velocity: f64) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     let existing = self.by_note[n as usize];
@@ -272,6 +297,7 @@ impl ReedModel {
     self.blow(idle, velocity);
   }
 
+  /// Stops blowing `note` once every press of it is let go.
   pub fn note_off(&mut self, note: i32) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     let index = self.by_note[n as usize];
@@ -289,6 +315,7 @@ impl ReedModel {
     Self::stop_blowing(voice);
   }
 
+  /// Stops blowing every key.
   pub fn all_notes_off(&mut self) {
     for voice in &mut self.voices {
       if voice.core.busy() && voice.core.state != STOLEN {
@@ -298,6 +325,7 @@ impl ReedModel {
     }
   }
 
+  /// Frees every voice at once.
   pub fn panic(&mut self) {
     for voice in &mut self.voices {
       voice.free();
@@ -305,6 +333,7 @@ impl ReedModel {
     self.by_note = [-1; 128];
   }
 
+  /// Renders the sounding voices into the bus for the frames `start..end`.
   pub fn render(&mut self, bus: &mut Bus, start: usize, end: usize) {
     for voice in &mut self.voices {
       if voice.core.busy() {
@@ -313,6 +342,7 @@ impl ReedModel {
     }
   }
 
+  /// Frees the voices that fell silent, forgetting their notes.
   pub fn free_finished(&mut self) {
     for (i, voice) in self.voices.iter_mut().enumerate() {
       if voice.core.busy() && voice.core.finished() {
@@ -325,6 +355,8 @@ impl ReedModel {
     }
   }
 
+  /// Tunes the voice's reeds to note `n` with the patch's tuning table, the
+  /// second reed detuned by the celeste, and tilts its level by pitch.
   fn tune(&mut self, index: usize, n: i32) {
     let patch = self.patch;
     let f0 = midi_to_hz(n as f64) * 2f64.powf(key_table(&self.tuning, n as f64) / 1200.);
@@ -341,6 +373,7 @@ impl ReedModel {
     voice.output_scale = (C4_HZ / f0).powf(LEVEL_TILT);
   }
 
+  /// Starts the breath at the velocity's pressure.
   fn blow(&mut self, index: usize, velocity: f64) {
     let (low, high) = self.patch.pressure;
     let voice = &mut self.voices[index];
@@ -350,6 +383,7 @@ impl ReedModel {
     voice.core.chain.shape.note_on();
   }
 
+  /// Lets the breath (and the master ADSR) go, releasing the voice.
   fn stop_blowing(voice: &mut ReedVoice) {
     voice.core.state = RELEASED;
     voice.breath.note_off();

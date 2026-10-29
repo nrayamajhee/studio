@@ -1,6 +1,11 @@
+//! A stereo look-ahead peak limiter: the master's last stage, and the mix's
+//! when it's saved.
+
 use super::math::js_round;
 
+/// How far ahead it looks (s): the delay it adds.
 const LOOKAHEAD: f64 = 0.0015;
+/// How long the gain takes to recover after a peak (s).
 const RELEASE: f64 = 0.1;
 
 /// A stereo look-ahead peak limiter. The signal is delayed by the look-ahead
@@ -24,6 +29,7 @@ pub struct PeakLimiter {
 }
 
 impl PeakLimiter {
+  /// A limiter at sample rate `fs` holding peaks to `ceiling`.
   pub fn new(fs: f64, ceiling: f64) -> Self {
     let size = (js_round(LOOKAHEAD * fs) as usize).max(1) + 1;
     Self {
@@ -44,6 +50,12 @@ impl PeakLimiter {
     }
   }
 
+  /// How many frames late what comes out is: the look-ahead.
+  pub fn latency(&self) -> usize {
+    self.delay_l.len() - 1
+  }
+
+  /// Limits a frame, leaving it in `left` and `right` a look-ahead later.
   pub fn process(&mut self, in_l: f64, in_r: f64) {
     let size = self.delay_l.len();
     let slot = (self.frame % size as f64) as usize;

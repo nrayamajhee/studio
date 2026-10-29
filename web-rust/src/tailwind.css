@@ -1,7 +1,8 @@
 /* Built by Trunk's Tailwind pipeline. Utilities are written as class strings
    in the Rust sources, so each class must appear there whole. The tokens and
-   page styles are web-react's (app/app.css), so the two Devices look the
-   same: colours mixed with --theme-mix fade with the 400ms theme cross-fade. */
+   page styles are web-react's (web-react/app/app.css), so the two Devices
+   look the same: colours mixed with --theme-mix fade with the 400ms theme
+   cross-fade. */
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -302,10 +303,17 @@ body {
   }
 }
 
-/* The screen's overlay fades in. */
+/* The screen's overlay fades in; the LFO's wave scrolls a cycle (50 of its
+   100-wide box) per period. */
 @keyframes overlay-in {
   from {
     opacity: 0;
+  }
+}
+
+@keyframes lfo-scroll {
+  to {
+    transform: translateX(-50px);
   }
 }
 

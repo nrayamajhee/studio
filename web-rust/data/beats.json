@@ -1,0 +1,1511 @@
+[
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "boomTss",
+  "name": "Boom tss",
+  "bpm": 90,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... .... x... ....",
+   "closedHat": ".... x... .... x..."
+  },
+  "style": "Simple"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "kickKickHat",
+  "name": "Kick kick hat",
+  "bpm": 90,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... .... x.x. ....",
+   "closedHat": ".... x... .... x..."
+  },
+  "style": "Simple"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "madalKickKickHat",
+  "name": "Madal kick kick hat",
+  "bpm": 90,
+  "kit": "madal",
+  "rows": {
+   "tin": ".... x... .... x...",
+   "ka": ".... x... .... x...",
+   "dhin": "x... .... x.x. ...."
+  },
+  "style": "Simple"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "tablaKickKickHat",
+  "name": "Tabla kick kick hat",
+  "bpm": 90,
+  "kit": "tabla",
+  "rows": {
+   "na": ".... x... .... x...",
+   "ke": ".... x... .... x...",
+   "ge": "x... .... x.x. ...."
+  },
+  "style": "Simple"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "offbeatHat",
+  "name": "Offbeat hat",
+  "bpm": 120,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... x... x... x...",
+   "closedHat": "..x. ..x. ..x. ..x."
+  },
+  "style": "Simple"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "eighthHats",
+  "name": "Eighth hats",
+  "bpm": 100,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... .... x... ....",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Simple"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "kickSnare",
+  "name": "Kick and snare",
+  "bpm": 96,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... .... x... ....",
+   "snare": ".... x... .... x..."
+  },
+  "style": "Simple"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "basicBeat",
+  "name": "Basic beat",
+  "bpm": 100,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... .... x... ....",
+   "snare": ".... x... .... x...",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Simple"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "sixteenthHats",
+  "name": "Sixteenth hats",
+  "bpm": 92,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... .... x... ....",
+   "snare": ".... x... .... x...",
+   "closedHat": "xxxx xxxx xxxx xxxx"
+  },
+  "style": "Simple"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "rock",
+  "name": "Rock",
+  "bpm": 116,
+  "kit": "rockDrums",
+  "rows": {
+   "crash": "X... .... .... ....",
+   "kick": "x... .... x.x. ....",
+   "snare": ".... X... .... X...",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Rock"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "hardRock",
+  "name": "Hard rock",
+  "bpm": 110,
+  "kit": "rockDrums",
+  "rows": {
+   "kick": "x.x. .... x.x. ....",
+   "snare": ".... X... .... X...",
+   "bell": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Rock"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "punk",
+  "name": "Punk",
+  "bpm": 180,
+  "kit": "rockDrums",
+  "rows": {
+   "crash": "X... .... .... ....",
+   "kick": "x... x... x... x...",
+   "snare": "..X. ..X. ..X. ..X.",
+   "closedHat": "x... x... x... x..."
+  },
+  "style": "Rock"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "halfTime",
+  "name": "Half-time",
+  "bpm": 130,
+  "kit": "rockDrums",
+  "rows": {
+   "kick": "x... .... ..x. ....",
+   "snare": ".... .... X... ....",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Rock"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "tomGroove",
+  "name": "Tom groove",
+  "bpm": 108,
+  "kit": "rockDrums",
+  "rows": {
+   "kick": "x... ..x. ..x. ....",
+   "snare": ".... X... .... X...",
+   "lowTom": "..x. .... x.x. ..x.",
+   "highTom": "...x ...x .... ...."
+  },
+  "style": "Rock"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "cowbell",
+  "name": "More cowbell",
+  "bpm": 112,
+  "kit": "rockDrums",
+  "rows": {
+   "kick": "x... .... x.x. ....",
+   "snare": ".... x... .... x...",
+   "cowbell": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Rock"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "motorik",
+  "name": "Motorik",
+  "bpm": 150,
+  "kit": "rockDrums",
+  "rows": {
+   "kick": "x... ..x. x... ....",
+   "snare": ".... X... .... X...",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Rock"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "boDiddley",
+  "name": "Bo Diddley",
+  "bpm": 112,
+  "kit": "drums",
+  "rows": {
+   "lowTom": "X..x ..x. ..X. x...",
+   "kick": "x... .... x... ....",
+   "tambourine": "xxxx xxxx xxxx xxxx"
+  },
+  "style": "Rock"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "stompClap",
+  "name": "Stomp clap",
+  "bpm": 81,
+  "kit": "drums",
+  "rows": {
+   "kick": "x.x. .... x.x. ....",
+   "clap": ".... X... .... X..."
+  },
+  "style": "Rock"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 3,
+  "id": "halfTimeShuffle",
+  "name": "Half-time shuffle",
+  "bpm": 86,
+  "kit": "drums",
+  "rows": {
+   "kick": "x.. ..x ... ..x",
+   "snare": ".o. .o. Xo. .o.",
+   "closedHat": "x.x x.x x.x x.x"
+  },
+  "style": "Rock"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "trainBeat",
+  "name": "Train beat",
+  "bpm": 140,
+  "kit": "jazzDrums",
+  "rows": {
+   "snare": "oooo Xooo oooo Xooo",
+   "kick": "x... .... x... ...."
+  },
+  "style": "Rock"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "pop",
+  "name": "Pop",
+  "bpm": 110,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... .... x.x. ....",
+   "snare": ".... x... .... x...",
+   "closedHat": "x.x. x.x. x.x. x.x.",
+   "tambourine": "..x. ..x. ..x. ..x."
+  },
+  "style": "Pop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "disco",
+  "name": "Disco",
+  "bpm": 120,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... x... x... x...",
+   "snare": ".... x... .... x...",
+   "closedHat": "x... x... x... x...",
+   "openHat": "..x. ..x. ..x. ..x."
+  },
+  "style": "Pop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "motown",
+  "name": "Motown",
+  "bpm": 128,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... .... x.x. ....",
+   "snare": "x... X... x... X...",
+   "tambourine": "x... x... x... x...",
+   "closedHat": "..x. ..x. ..x. ..x."
+  },
+  "style": "Pop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "popBallad",
+  "name": "Pop ballad",
+  "bpm": 72,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... .... ..x. ....",
+   "stick": ".... x... .... x...",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Pop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "shuffle",
+  "name": "Shuffle",
+  "bpm": 104,
+  "kit": "drums",
+  "swing": {
+   "amount": 66,
+   "perBeat": 2
+  },
+  "rows": {
+   "kick": "x. .. x. ..",
+   "snare": ".. x. .. x.",
+   "closedHat": "xx xx xx xx"
+  },
+  "style": "Pop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "beMyBaby",
+  "name": "Be My Baby",
+  "bpm": 130,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... ..x. x... ....",
+   "snare": ".... .... .... X...",
+   "tambourine": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Pop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "billieJean",
+  "name": "Billie Jean",
+  "bpm": 117,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... .... x... ....",
+   "snare": ".... x... .... x...",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Pop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "tresillo",
+  "name": "Tresillo",
+  "bpm": 96,
+  "kit": "drums",
+  "rows": {
+   "kick": "x..x ..x. x..x ..x.",
+   "clap": ".... x... .... x...",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Pop"
+ },
+ {
+  "meter": {
+   "beats": 12,
+   "unit": 8
+  },
+  "perBeat": 2,
+  "id": "ballad128",
+  "name": "12/8 ballad",
+  "bpm": 192,
+  "kit": "drums",
+  "rows": {
+   "kick": "x..... ...... x...x. ......",
+   "snare": "...... X..... ...... X.....",
+   "closedHat": "x.x.x. x.x.x. x.x.x. x.x.x."
+  },
+  "style": "Pop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "funk",
+  "name": "Funk",
+  "bpm": 100,
+  "kit": "drums",
+  "rows": {
+   "kick": "x..x ..x. ..x. .x..",
+   "snare": ".... x..o .o.. x..o",
+   "closedHat": "Xxxx Xxxx Xxxx Xxxx"
+  },
+  "style": "Funk and soul"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "linearFunk",
+  "name": "Linear funk",
+  "bpm": 96,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... ..x. .x.. ....",
+   "snare": ".... X... ...o X...",
+   "closedHat": ".oxo .x.o x.o. .oxo"
+  },
+  "style": "Funk and soul"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 3,
+  "id": "purdie",
+  "name": "Purdie shuffle",
+  "bpm": 96,
+  "kit": "drums",
+  "rows": {
+   "kick": "x.. ..x x.. ...",
+   "snare": ".o. Xo. .o. Xo.",
+   "closedHat": "x.x x.x x.x x.x"
+  },
+  "style": "Funk and soul"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "neoSoul",
+  "name": "Neo soul",
+  "bpm": 84,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... ...x ..x. ....",
+   "stick": ".... x... .... x...",
+   "snare": ".... .... .... ...o",
+   "closedHat": "x.xx x.x. x.xx x.x."
+  },
+  "style": "Funk and soul"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "newJackSwing",
+  "name": "New jack swing",
+  "bpm": 108,
+  "kit": "drums808",
+  "swing": {
+   "amount": 66,
+   "perBeat": 4
+  },
+  "rows": {
+   "kick": "x..x .... .x.. ..x.",
+   "snare": ".... X... .... X...",
+   "clap": ".... x... .... x...",
+   "closedHat": "xxxx xxxx xxxx xxxx"
+  },
+  "style": "Funk and soul"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "madalNewJackSwing",
+  "name": "Madal new jack swing",
+  "bpm": 108,
+  "kit": "madal",
+  "swing": {
+   "amount": 66,
+   "perBeat": 4
+  },
+  "rows": {
+   "dhin": "x..x .... .x.. ..x.",
+   "ka": ".xx. xxxx x.xx xx.x",
+   "ta": ".... X... .... X..."
+  },
+  "style": "Funk and soul"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "afrobeat",
+  "name": "Afrobeat",
+  "bpm": 112,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... ..x. ..x. ....",
+   "snare": "..o. x..o .o.. x.o.",
+   "closedHat": "xxXx xxXx xxXx xxX.",
+   "openHat": ".... .... .... ...x"
+  },
+  "style": "Funk and soul"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "swing",
+  "name": "Swing",
+  "bpm": 150,
+  "kit": "jazzDrums",
+  "swing": {
+   "amount": 66,
+   "perBeat": 2
+  },
+  "rows": {
+   "ride": "x. xx x. xx",
+   "closedHat": ".. x. .. x.",
+   "kick": "o. o. o. o."
+  },
+  "style": "Jazz"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "twoFeel",
+  "name": "Two-feel",
+  "bpm": 120,
+  "kit": "jazzDrums",
+  "swing": {
+   "amount": 66,
+   "perBeat": 2
+  },
+  "rows": {
+   "ride": "x. xx x. xx",
+   "closedHat": ".. x. .. x.",
+   "kick": "o. .. o. ..",
+   "stick": ".. .. .. x."
+  },
+  "style": "Jazz"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "bebop",
+  "name": "Bebop",
+  "bpm": 220,
+  "kit": "jazzDrums",
+  "swing": {
+   "amount": 60,
+   "perBeat": 2
+  },
+  "rows": {
+   "ride": "x. xx x. xx x. xx x. xx",
+   "closedHat": ".. x. .. x. .. x. .. x.",
+   "snare": ".o .. .o .. .. .o .. ..",
+   "kick": ".. .. .. .. .. .. .. .X"
+  },
+  "style": "Jazz"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "brushSwing",
+  "name": "Brush swing",
+  "bpm": 120,
+  "kit": "jazzDrums",
+  "swing": {
+   "amount": 66,
+   "perBeat": 2
+  },
+  "rows": {
+   "sweep": "x. .. x. ..",
+   "snare": ".. xo .. xo",
+   "closedHat": ".. x. .. x.",
+   "kick": "o. .. o. .."
+  },
+  "style": "Jazz"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "brushBallad",
+  "name": "Brush ballad",
+  "bpm": 64,
+  "kit": "jazzDrums",
+  "swing": {
+   "amount": 66,
+   "perBeat": 2
+  },
+  "rows": {
+   "sweep": "x. x. x. x.",
+   "snare": ".. o. .. o.",
+   "closedHat": ".. x. .. x.",
+   "kick": "o. .. .. .."
+  },
+  "style": "Jazz"
+ },
+ {
+  "meter": {
+   "beats": 3,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "waltz",
+  "name": "Jazz waltz",
+  "bpm": 160,
+  "kit": "jazzDrums",
+  "swing": {
+   "amount": 66,
+   "perBeat": 2
+  },
+  "rows": {
+   "ride": "x. xx x.",
+   "closedHat": ".. x. x.",
+   "kick": "o. .. .."
+  },
+  "style": "Jazz"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "jazzShuffle",
+  "name": "Jazz shuffle",
+  "bpm": 120,
+  "kit": "jazzDrums",
+  "swing": {
+   "amount": 66,
+   "perBeat": 2
+  },
+  "rows": {
+   "ride": "xx xx xx xx",
+   "snare": ".o x. .o x.",
+   "closedHat": ".. x. .. x.",
+   "kick": "x. .. x. .."
+  },
+  "style": "Jazz"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "secondLine",
+  "name": "Second line",
+  "bpm": 104,
+  "kit": "jazzDrums",
+  "rows": {
+   "kick": "x... ..x. ..x. ....",
+   "snare": "o.oo X.o. o.oo X.o.",
+   "closedHat": ".... x... .... x..."
+  },
+  "style": "Jazz"
+ },
+ {
+  "meter": {
+   "beats": 5,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "fiveFour",
+  "name": "Five-four",
+  "bpm": 172,
+  "kit": "jazzDrums",
+  "swing": {
+   "amount": 66,
+   "perBeat": 2
+  },
+  "rows": {
+   "ride": "x. xx x. x. xx",
+   "closedHat": ".. x. .. x. ..",
+   "stick": ".. .. .. x. ..",
+   "kick": "o. .. .. o. .."
+  },
+  "style": "Jazz"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "bossa",
+  "name": "Bossa nova",
+  "bpm": 132,
+  "kit": "jazzDrums",
+  "rows": {
+   "kick": "x..x x... x..x x... x..x x... x..x x...",
+   "stick": "x... ..x. .... x... .... x... ..x. ....",
+   "ride": "x.x. x.x. x.x. x.x. x.x. x.x. x.x. x.x."
+  },
+  "style": "Latin and reggae"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "samba",
+  "name": "Samba",
+  "bpm": 100,
+  "kit": "drums",
+  "rows": {
+   "kick": "x..x X..x x..x X..x",
+   "stick": "..x. .x.x ..x. .x.x",
+   "tambourine": "xxxX xxxX xxxX xxxX"
+  },
+  "style": "Latin and reggae"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "chaCha",
+  "name": "Cha-cha",
+  "bpm": 120,
+  "kit": "drums",
+  "rows": {
+   "cowbell": "x... x... x... x...",
+   "kick": "x... .... x... ....",
+   "stick": ".... x... .... x...",
+   "lowTom": ".... .... .... x.x."
+  },
+  "style": "Latin and reggae"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "mambo",
+  "name": "Mambo",
+  "bpm": 108,
+  "kit": "drums",
+  "rows": {
+   "cowbell": "x... x... x... x...",
+   "stick": "x..x ..x. ..x. x...",
+   "kick": ".... ..x. .... x..."
+  },
+  "style": "Latin and reggae"
+ },
+ {
+  "meter": {
+   "beats": 12,
+   "unit": 8
+  },
+  "perBeat": 2,
+  "id": "afroCuban",
+  "name": "Afro-Cuban 6/8",
+  "bpm": 300,
+  "kit": "jazzDrums",
+  "rows": {
+   "bell": "x...x. ..x.x. ..x... x...x.",
+   "kick": "o..... o..... o..... o.....",
+   "closedHat": "...... x..... ...... x....."
+  },
+  "style": "Latin and reggae"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "reggaeton",
+  "name": "Reggaeton",
+  "bpm": 95,
+  "kit": "drums808",
+  "rows": {
+   "kick": "x... x... x... x...",
+   "snare": "...x ..x. ...x ..x.",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Latin and reggae"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "oneDrop",
+  "name": "One drop",
+  "bpm": 76,
+  "kit": "drums",
+  "swing": {
+   "amount": 66,
+   "perBeat": 2
+  },
+  "rows": {
+   "kick": ".. .. x. ..",
+   "stick": ".. .. x. ..",
+   "closedHat": "xx xx xx xx"
+  },
+  "style": "Latin and reggae"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "steppers",
+  "name": "Steppers",
+  "bpm": 80,
+  "kit": "drums",
+  "swing": {
+   "amount": 66,
+   "perBeat": 2
+  },
+  "rows": {
+   "kick": "x. x. x. x.",
+   "stick": ".. .. x. ..",
+   "closedHat": "xx xx xx xx"
+  },
+  "style": "Latin and reggae"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "oldSchool",
+  "name": "Old school",
+  "bpm": 102,
+  "kit": "drums808",
+  "rows": {
+   "kick": "x... ..x. ..x. x...",
+   "snare": ".... X... .... X...",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Hip hop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "boomBap",
+  "name": "Boom bap",
+  "bpm": 90,
+  "kit": "drums",
+  "rows": {
+   "kick": "x..x .... ..x. ....",
+   "snare": ".... x... .... x...",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Hip hop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "goldenEra",
+  "name": "Golden era",
+  "bpm": 94,
+  "kit": "drums",
+  "swing": {
+   "amount": 62,
+   "perBeat": 4
+  },
+  "rows": {
+   "kick": "x... ..x. .x.. ....",
+   "snare": ".... X... .... X...",
+   "closedHat": "xoxo xoxo xoxo xoxo"
+  },
+  "style": "Hip hop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "gFunk",
+  "name": "G-funk",
+  "bpm": 94,
+  "kit": "drums808",
+  "rows": {
+   "kick": "x... ..x. .x.. ..x.",
+   "snare": ".... X... .... X...",
+   "clap": ".... x... .... x...",
+   "closedHat": "x.xx x.xx x.xx x.xx"
+  },
+  "style": "Hip hop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "crunk",
+  "name": "Crunk",
+  "bpm": 100,
+  "kit": "drums808",
+  "rows": {
+   "kick": "x... .... x.x. ....",
+   "clap": ".... X... .... X...",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Hip hop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "trap",
+  "name": "Trap",
+  "bpm": 140,
+  "kit": "drums808",
+  "rows": {
+   "kick": "x... ...x ..x. ....",
+   "clap": ".... .... x... ....",
+   "closedHat": "xxxx xxxx xxxx xxxx",
+   "openHat": ".... .... .... ..x."
+  },
+  "style": "Hip hop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 8,
+  "id": "trapRolls",
+  "name": "Trap rolls",
+  "bpm": 140,
+  "kit": "drums808",
+  "rows": {
+   "kick": "x....... ......x. ....x... ........",
+   "clap": "........ ........ x....... ........",
+   "closedHat": "x.x.x.x. x.x.x.x. x.x.x.x. xxxxxxxx"
+  },
+  "style": "Hip hop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "loFi",
+  "name": "Lo-fi",
+  "bpm": 80,
+  "kit": "drums",
+  "swing": {
+   "amount": 60,
+   "perBeat": 4
+  },
+  "rows": {
+   "kick": "x... .... ..x. ....",
+   "snare": ".... x... .... x...",
+   "closedHat": "xoxo xoxo xoxo xoxo"
+  },
+  "style": "Hip hop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 6,
+  "id": "drill",
+  "name": "Drill",
+  "bpm": 142,
+  "kit": "drums808",
+  "rows": {
+   "kick": "x..... ....x. ...... ..x...",
+   "snare": "...... ...... x..... ....x.",
+   "closedHat": "x.x.x. x...x. x.x.x. x.x.x."
+  },
+  "style": "Hip hop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "miami",
+  "name": "Miami bass",
+  "bpm": 128,
+  "kit": "drums808",
+  "rows": {
+   "kick": "x... ..x. ..x. ..x.",
+   "clap": ".... x... .... x...",
+   "closedHat": "x.x. x.x. x.x. x.x.",
+   "lowTom": ".... .... ..x. ...."
+  },
+  "style": "Hip hop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "phonk",
+  "name": "Phonk",
+  "bpm": 130,
+  "kit": "drums808",
+  "rows": {
+   "kick": "x... .... ..x. ....",
+   "clap": ".... X... .... X...",
+   "cowbell": "x..x ..x. x..x ..x.",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Hip hop"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "house",
+  "name": "House",
+  "bpm": 124,
+  "kit": "drums909",
+  "rows": {
+   "kick": "x... x... x... x...",
+   "clap": ".... x... .... x...",
+   "openHat": "..x. ..x. ..x. ..x."
+  },
+  "style": "Electronic"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "techno",
+  "name": "Techno",
+  "bpm": 132,
+  "kit": "drums909",
+  "rows": {
+   "kick": "x... x... x... x...",
+   "clap": ".... x... .... x...",
+   "closedHat": "xxXx xxXx xxXx xxXx",
+   "ride": "..x. ..x. ..x. ..x."
+  },
+  "style": "Electronic"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "garage",
+  "name": "UK garage",
+  "bpm": 132,
+  "kit": "drums909",
+  "rows": {
+   "kick": "x... .... ..x. ....",
+   "clap": ".... x... .... x...",
+   "closedHat": "x.xx .x.x x.x. x.xx"
+  },
+  "style": "Electronic"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "amen",
+  "name": "Amen break",
+  "bpm": 136,
+  "kit": "rockDrums",
+  "rows": {
+   "kick": "x.x. .... ..xx ....",
+   "snare": ".... x..x .x.. x..x",
+   "ride": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Electronic"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "electro",
+  "name": "Electro",
+  "bpm": 125,
+  "kit": "drums808",
+  "rows": {
+   "kick": "x... ..x. ..x. ....",
+   "clap": ".... x... .... x...",
+   "closedHat": "xxxx xxxx xxxx xxxx",
+   "cowbell": "...x .... ..x. ...."
+  },
+  "style": "Electronic"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "drumAndBass",
+  "name": "Drum and bass",
+  "bpm": 174,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... .... ..x. ....",
+   "snare": ".... X... .... X...",
+   "closedHat": "x.x. x.x. x.x. x.x."
+  },
+  "style": "Electronic"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "dubstep",
+  "name": "Dubstep",
+  "bpm": 140,
+  "kit": "drums909",
+  "rows": {
+   "kick": "x... .... .... ..x.",
+   "snare": ".... .... X... ....",
+   "closedHat": "..x. ..x. ..x. ..x."
+  },
+  "style": "Electronic"
+ },
+ {
+  "meter": {
+   "beats": 3,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "viennaWaltz",
+  "name": "Waltz",
+  "bpm": 168,
+  "kit": "drums",
+  "rows": {
+   "kick": "x. .. ..",
+   "snare": ".. x. x."
+  },
+  "style": "Classical"
+ },
+ {
+  "meter": {
+   "beats": 2,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "polka",
+  "name": "Polka",
+  "bpm": 120,
+  "kit": "drums",
+  "rows": {
+   "kick": "x... x...",
+   "snare": "..x. ..x."
+  },
+  "style": "Classical"
+ },
+ {
+  "meter": {
+   "beats": 2,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "march",
+  "name": "March",
+  "bpm": 120,
+  "kit": "drums",
+  "rows": {
+   "crash": "X... ....",
+   "kick": "x... x...",
+   "snare": "x.xx x.x."
+  },
+  "style": "Classical"
+ },
+ {
+  "meter": {
+   "beats": 3,
+   "unit": 4
+  },
+  "perBeat": 6,
+  "id": "bolero",
+  "name": "Boléro",
+  "bpm": 72,
+  "kit": "drums",
+  "rows": {
+   "snare": "x..xxx x..xxx x..x.. x..xxx x..xxx xxxxxx"
+  },
+  "style": "Classical"
+ },
+ {
+  "meter": {
+   "beats": 2,
+   "unit": 4
+  },
+  "perBeat": 4,
+  "id": "habanera",
+  "name": "Habanera",
+  "bpm": 72,
+  "kit": "drums",
+  "rows": {
+   "lowTom": "x..x x.x.",
+   "stick": "x... x..."
+  },
+  "style": "Classical"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "teentaal",
+  "name": "Teentaal",
+  "bpm": 120,
+  "kit": "tabla",
+  "rows": {
+   "dha": "x.....x.x.....x.x.............x.",
+   "dhin": "..x.x.....x.x.............x.x...",
+   "tin": "..................x.x...........",
+   "na": "......................x.x......."
+  },
+  "style": "South Asian"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "keherwa",
+  "name": "Keherwa",
+  "bpm": 96,
+  "kit": "tabla",
+  "rows": {
+   "dha": "x.......",
+   "ge": ".x......",
+   "na": "..x.x..x",
+   "te": "...x....",
+   "ke": ".....x..",
+   "dhin": "......x."
+  },
+  "style": "South Asian"
+ },
+ {
+  "meter": {
+   "beats": 6,
+   "unit": 8
+  },
+  "perBeat": 2,
+  "id": "dadra",
+  "name": "Dadra",
+  "bpm": 200,
+  "kit": "tabla",
+  "rows": {
+   "dha": "x.....x.....",
+   "dhin": "..x.........",
+   "na": "....x.....x.",
+   "tin": "........x..."
+  },
+  "style": "South Asian"
+ },
+ {
+  "meter": {
+   "beats": 7,
+   "unit": 8
+  },
+  "perBeat": 2,
+  "id": "rupak",
+  "name": "Rupak",
+  "bpm": 180,
+  "kit": "tabla",
+  "rows": {
+   "tin": "x.x...........",
+   "na": "....x...x...x.",
+   "dhin": "......x...x..."
+  },
+  "style": "South Asian"
+ },
+ {
+  "meter": {
+   "beats": 5,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "jhaptaal",
+  "name": "Jhaptaal",
+  "bpm": 132,
+  "kit": "tabla",
+  "rows": {
+   "dhin": "x...x.x.......x.x...",
+   "na": "..x.....x...x.....x.",
+   "tin": "..........x........."
+  },
+  "style": "South Asian"
+ },
+ {
+  "meter": {
+   "beats": 12,
+   "unit": 8
+  },
+  "perBeat": 2,
+  "id": "ektaal",
+  "name": "Ektaal",
+  "bpm": 120,
+  "kit": "tabla",
+  "rows": {
+   "dhin": "x.x.................x...",
+   "dha": "....x...........x.......",
+   "te": "......x...........x.....",
+   "tun": "........x...............",
+   "na": "..........x...x.......x.",
+   "ke": "............x..........."
+  },
+  "style": "South Asian"
+ },
+ {
+  "meter": {
+   "beats": 6,
+   "unit": 8
+  },
+  "perBeat": 2,
+  "id": "jhyaure",
+  "name": "Jhyaure",
+  "bpm": 210,
+  "kit": "madal",
+  "rows": {
+   "dha": "x...........",
+   "ti": "..x.....x...",
+   "ta": "....x.....x.",
+   "dhin": "......x....."
+  },
+  "style": "South Asian"
+ },
+ {
+  "meter": {
+   "beats": 4,
+   "unit": 4
+  },
+  "perBeat": 2,
+  "id": "madalFour",
+  "name": "Folk four",
+  "bpm": 110,
+  "kit": "madal",
+  "rows": {
+   "dha": "x...............",
+   "ti": "..x...x...x...x.",
+   "ta": "....x.......x...",
+   "dhin": "........x.......",
+   "ka": "..............x."
+  },
+  "style": "South Asian"
+ }
+]

@@ -1,3 +1,5 @@
+//! The master LFO the LFO view sets: one modulator over the whole mix.
+
 use std::f64::consts::{PI, SQRT_2};
 
 use crate::dsp::delay_line::DelayLine;
@@ -7,7 +9,9 @@ use crate::dsp::svf::{Svf, SvfMode};
 /// Pitch swings by up to ±3% at full depth; the swept delay is capped at
 /// 8 ms, which only limits the slowest rates.
 const PITCH_SWING: f64 = 0.03;
+/// The longest the pitch's delay sweeps, in seconds.
 const MAX_SWEEP: f64 = 0.008;
+/// The filter's cutoff is recomputed every 16 samples.
 const FILTER_UPDATE: u64 = 16;
 
 /// One LFO over the whole mix: pitch (a swept delay), volume (tremolo),
@@ -28,6 +32,7 @@ pub struct MasterLfo {
 }
 
 impl MasterLfo {
+  /// The LFO at `fs`, at zero depth, so the mix passes untouched.
   pub fn new(fs: f64) -> Self {
     Self {
       fs,
@@ -44,6 +49,9 @@ impl MasterLfo {
     }
   }
 
+  /// Sets the rate in hertz, depth (0–1), shape (the LFO's index) and target: 0
+  /// pitch, 1 volume, 2 filter, else pan. The depth glides; switching to or
+  /// from pitch crossfades the delay in or out.
   pub fn set(&mut self, rate: f64, depth: f64, shape: i32, target: i32) {
     self.rate = rate;
     self.lfo.set_rate(rate);
@@ -55,6 +63,8 @@ impl MasterLfo {
       .set(if depth > 0. && target == 0 { 1. } else { 0. });
   }
 
+  /// Runs `n` frames of the mix through the LFO's target, in place. At zero
+  /// depth it passes through, still feeding the pitch's delay.
   pub fn process(&mut self, left: &mut [f32], right: &mut [f32], n: usize) {
     let pitch = self.target == 0;
     if !pitch && self.depth.settled() && self.depth.value == 0. {

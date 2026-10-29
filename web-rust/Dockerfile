@@ -1,7 +1,7 @@
 # Builds web-rust with Trunk (the app, its sound engine's worklet and the
 # docs) and serves it with nginx on $PORT (8080 unless the host sets it, as
-# Railway does). Build from the repo's root, which holds the crates, docs and
-# images it reads:
+# Railway does). Build from the repo's root, which holds the crates (one
+# Cargo workspace), docs and images it reads:
 #   docker build -f web-rust/Dockerfile -t studio-web-rust .
 #   docker run --rm -p 8080:8080 studio-web-rust
 
@@ -13,7 +13,7 @@ RUN rustup target add wasm32-unknown-unknown
 RUN curl -fsSL "https://github.com/trunk-rs/trunk/releases/download/v${TRUNK_VERSION}/trunk-$(uname -m)-unknown-linux-gnu.tar.gz" \
   | tar -xz -C /usr/local/bin trunk
 WORKDIR /studio
-COPY README.md ./
+COPY Cargo.toml Cargo.lock README.md ./
 COPY docs docs
 COPY web-react/public/docs web-react/public/docs
 COPY web-react/public/screenshot.png web-react/public/

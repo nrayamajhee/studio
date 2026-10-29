@@ -8,11 +8,13 @@
 // `worklet_new` returned; marking them `unsafe` would change nothing there.
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
-use sound_engine::engine::Engine;
+use sound_engine::engine::{Engine, Overrides};
 
 /// The most frames one call renders; a render quantum is 128.
 const MAX_FRAMES: usize = 2048;
 
+/// The engine and the buffers processor.js shares with it: the rendered left
+/// and right channels, and the text events come in by and warnings go out by.
 pub struct Worklet {
   engine: Engine,
   left: Vec<f32>,
@@ -28,6 +30,9 @@ unsafe fn worklet<'a>(pointer: *mut Worklet) -> &'a mut Worklet {
   unsafe { &mut *pointer }
 }
 
+/// Makes a worklet's engine at `sample_rate`, every instrument at its defaults,
+/// and returns the pointer every other export takes. It lives as long as the
+/// processor.
 #[unsafe(no_mangle)]
 pub extern "C" fn worklet_new(sample_rate: f64) -> *mut Worklet {
   Box::into_raw(Box::new(Worklet {
@@ -44,6 +49,18 @@ pub extern "C" fn worklet_text(pointer: *mut Worklet, len: usize) -> *mut u8 {
   let worklet = unsafe { worklet(pointer) };
   worklet.text.resize(len, 0);
   worklet.text.as_mut_ptr()
+}
+
+/// Starts the engine over at the params written as JSON into the text
+/// (by owner, as an offline render sets one up), before anything plays.
+#[unsafe(no_mangle)]
+pub extern "C" fn worklet_overrides(pointer: *mut Worklet) {
+  let worklet = unsafe { worklet(pointer) };
+  let overrides: Overrides = std::str::from_utf8(&worklet.text)
+    .ok()
+    .and_then(|json| serde_json::from_str(json).ok())
+    .unwrap_or_default();
+  worklet.engine = Engine::with_overrides(worklet.engine.fs, &overrides);
 }
 
 /// Queues the events written as JSON into the text.
@@ -70,21 +87,25 @@ pub extern "C" fn worklet_render(pointer: *mut Worklet, frame: f64, frames: usiz
     .render(&mut worklet.left[..frames], &mut worklet.right[..frames]);
 }
 
+/// Where the left channel's last render is, `frames` long.
 #[unsafe(no_mangle)]
 pub extern "C" fn worklet_left(pointer: *mut Worklet) -> *const f32 {
   unsafe { worklet(pointer) }.left.as_ptr()
 }
 
+/// Where the right channel's last render is, `frames` long.
 #[unsafe(no_mangle)]
 pub extern "C" fn worklet_right(pointer: *mut Worklet) -> *const f32 {
   unsafe { worklet(pointer) }.right.as_ptr()
 }
 
+/// How many voices are sounding, for the stats.
 #[unsafe(no_mangle)]
 pub extern "C" fn worklet_active_voices(pointer: *mut Worklet) -> u32 {
   unsafe { worklet(pointer) }.engine.active_voices() as u32
 }
 
+/// Whether the reverb is ringing (1) or asleep (0), for the stats.
 #[unsafe(no_mangle)]
 pub extern "C" fn worklet_reverb_awake(pointer: *mut Worklet) -> u32 {
   u32::from(unsafe { worklet(pointer) }.engine.stats().reverb_awake)

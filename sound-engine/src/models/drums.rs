@@ -1,3 +1,6 @@
+//! The drum kit model: membranes, loaded drums, cymbals and claps, one voice
+//! per piece, and the metronome's woodblock.
+
 use std::f64::consts::PI;
 
 use super::exciters::{stick, velocity_gain};
@@ -19,14 +22,22 @@ use crate::patches::{
 const MEMBRANE_RATIOS: [f64; 10] = [
   1.0, 1.593, 2.136, 2.295, 2.653, 2.917, 3.155, 3.5, 3.598, 3.647,
 ];
+/// Each membrane mode's m index: how many diameters cross it. Only m = 0 modes
+/// sound at the centre of the head.
 const MEMBRANE_M: [u8; 10] = [0, 1, 2, 0, 3, 1, 4, 2, 0, 5];
+/// A membrane's pitch drop is recomputed every 32 samples.
 const PITCH_UPDATE: u64 = 32;
+/// How long (s) a choked piece rings on: an open hi-hat closed, say.
 const CHOKE_T60: f64 = 0.03;
 /// A brush's bristles land over a few milliseconds, sooner on a harder
 /// stroke, and push the head softly with a fraction of a stick's weight.
 const BRUSH_RISE: (f64, f64) = (0.008, 0.003);
+/// How hard a brush pushes the head, a share of a stick's weight.
 const BRUSH_PUSH: f64 = 0.15;
 
+/// One piece of the kit: its modes, its stick (or brush) pulse, and the noises
+/// a piece can add (a click, snare wires, a cymbal's wash, a brush's hiss, a
+/// clap's bursts).
 struct DrumVoice {
   core: VoiceCore,
   spec: &'static DrumPieceSpec,
@@ -94,6 +105,9 @@ impl Voice for DrumVoice {
 }
 
 impl DrumVoice {
+  /// An idle voice for the piece `spec` at `fs`, its modes laid out from the
+  /// spec (a membrane's ratios, a drum's partials, a cymbal's seeded or listed
+  /// modes), its filters set, and its noise seeded by `seed`.
   fn new(spec: &'static DrumPieceSpec, fs: f64, mods: &ModuleSettings, seed: u32) -> Self {
     // The wires buzz on after the head for their own release.
     let release = match spec {
@@ -274,6 +288,7 @@ impl DrumVoice {
     voice
   }
 
+  /// The piece's level in the kit.
   fn level(&self) -> f64 {
     match self.spec {
       DrumPieceSpec::Membrane { level, .. }
@@ -284,6 +299,7 @@ impl DrumVoice {
     }
   }
 
+  /// Where the piece sits in the stereo field (−1 to 1).
   fn pan(&self) -> f64 {
     match self.spec {
       DrumPieceSpec::Membrane { pan, .. }
@@ -315,6 +331,10 @@ impl DrumVoice {
     self.bank.scale_frequencies(self.tune_ratio);
   }
 
+  /// Strikes the piece at `velocity` with the kit's stick `hardness` and
+  /// `strength`, its pitch drop, click and wires scaled by the kit's params, at
+  /// `clock` and `gain` (a combo's level): the pulse (or the brush's bristles),
+  /// the pitch drop, the click, the wash and the clap all start over.
   #[allow(clippy::too_many_arguments)]
   fn strike(
     &mut self,
@@ -424,6 +444,7 @@ impl DrumVoice {
     self.hiss_level = brush.level;
   }
 
+  /// Damps the ringing piece to ring out in [`CHOKE_T60`].
   fn choke(&mut self) {
     if !self.core.busy() {
       return;
@@ -438,6 +459,9 @@ impl DrumVoice {
     self.noise_coef = (-LN_1000 / (CHOKE_T60 * self.core.fs)).exp();
   }
 
+  /// Renders the frames `start..end`: the pulse and bristles into the modes,
+  /// the pitch settling, and each noise the piece adds, scaled by the hit's
+  /// level and the master ADSR, panned into the bus.
   fn render(&mut self, start: usize, end: usize, left: &mut [f32], right: &mut [f32]) {
     let gains = self.core.chain.gains;
     let membrane = matches!(
@@ -502,6 +526,8 @@ impl DrumVoice {
     self.core.track(peak, end - start);
   }
 
+  /// The next sample of the brush's bristles: noise under a raised-cosine rise,
+  /// then an exponential decay.
   fn bristle(&mut self) -> f64 {
     let n = self.brush_pos;
     self.brush_pos += 1.;
@@ -555,6 +581,8 @@ pub struct DrumModel {
 }
 
 impl DrumModel {
+  /// The kit for `patch` at `fs`: a voice for each piece it has (combos strike
+  /// others, so they have none), each seeded by its place in the piece order.
   pub fn new(patch: &'static DrumKitPatch, fs: f64, mods: &ModuleSettings) -> Self {
     let mut voices = Vec::new();
     let mut by_piece = [-1; PIECE_ORDER.len()];
@@ -584,10 +612,13 @@ impl DrumModel {
     }
   }
 
+  /// Every voice's shared core, for the instrument to retarget.
   pub fn voices_mut(&mut self) -> impl Iterator<Item = &mut VoiceCore> {
     self.voices.iter_mut().map(|voice| &mut voice.core)
   }
 
+  /// Reads the stick, pitch drop, click, wires, stereo width and the kit's
+  /// filter from the params, and tunes, damps and pans every piece.
   pub fn read_params(&mut self, bus: &Bus) {
     let p = &bus.params;
     self.hardness = p.get("exciter.hardness");
@@ -613,6 +644,7 @@ impl DrumModel {
     }
   }
 
+  /// How many pieces are sounding.
   pub fn active_voices(&self) -> usize {
     self.voices.iter().filter(|voice| voice.core.busy()).count()
   }
@@ -629,11 +661,14 @@ impl DrumModel {
     }
   }
 
+  /// The voice of the piece named `piece`, if the kit has one.
   fn voice(&self, piece: &str) -> Option<usize> {
     let index = self.by_piece[piece_index(piece)?];
     (index >= 0).then_some(index as usize)
   }
 
+  /// Strikes `piece` at `velocity`, scaled by `gain`, and chokes the pieces it
+  /// closes (a closed hi-hat chokes an open one).
   fn strike(&mut self, bus: &Bus, piece: &str, velocity: f64, gain: f64) {
     let Some(index) = self.voice(piece) else {
       return;
@@ -662,6 +697,7 @@ impl DrumModel {
     }
   }
 
+  /// Frees every voice at once.
   pub fn panic(&mut self) {
     for voice in &mut self.voices {
       voice.free();
@@ -679,6 +715,7 @@ impl DrumModel {
     }
   }
 
+  /// Renders the sounding pieces into the bus for the frames `start..end`.
   pub fn render(&mut self, bus: &mut Bus, start: usize, end: usize) {
     for voice in &mut self.voices {
       if voice.core.busy() {
@@ -687,6 +724,7 @@ impl DrumModel {
     }
   }
 
+  /// Frees the pieces that fell silent.
   pub fn free_finished(&mut self) {
     for voice in &mut self.voices {
       if voice.core.busy() && voice.core.finished() {
@@ -709,6 +747,7 @@ pub struct Woodblock {
 }
 
 impl Woodblock {
+  /// A silent woodblock at `fs`.
   pub fn new(fs: f64) -> Self {
     let mut bank = ModalBank::new(2, fs);
     bank.count = 2;
@@ -723,10 +762,12 @@ impl Woodblock {
     }
   }
 
+  /// Whether the click is still sounding.
   pub fn active(&self) -> bool {
     self.remaining > 0.
   }
 
+  /// Clicks, higher and louder when `accent`ed, ringing for a quarter second.
   pub fn hit(&mut self, accent: bool) {
     self
       .bank
@@ -740,6 +781,8 @@ impl Woodblock {
     self.remaining = js_round(0.25 * self.fs);
   }
 
+  /// Adds the click, dry and centred, into `left` and `right` for the frames
+  /// `start..end`.
   pub fn render(&mut self, left: &mut [f32], right: &mut [f32], start: usize, end: usize) {
     if self.remaining <= 0. {
       return;

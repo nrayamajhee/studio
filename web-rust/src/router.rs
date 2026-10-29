@@ -9,12 +9,18 @@ use gloo_utils::{document, window};
 use wasm_bindgen::JsCast;
 use web_sys::{Element, Event, MouseEvent};
 
+/// The app's two pages.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Page {
+  /// The Device, at `/`.
   Home,
+  /// The docs, under `/docs`.
   Docs,
 }
 
+/// The two pages as a signal of the location's path, as web-react's routes are:
+/// [`Router::page`] says which page shows, and [`Router::navigate`] moves
+/// between them in place, with the history.
 pub struct Router {
   /// The location's path, without its hash.
   pub path: Rc<Signal<String>>,
@@ -76,6 +82,7 @@ impl Router {
     router
   }
 
+  /// The page the path shows, tracked.
   pub fn page(&self) -> Page {
     self.path.with(|path| page_of(path))
   }
@@ -111,6 +118,7 @@ impl Router {
   }
 }
 
+/// The location's path.
 fn location_path() -> String {
   window()
     .location()
@@ -118,6 +126,7 @@ fn location_path() -> String {
     .unwrap_or_else(|_| "/".into())
 }
 
+/// The page `path` shows.
 pub fn page_of(path: &str) -> Page {
   if path == "/docs" || path.starts_with("/docs/") {
     Page::Docs

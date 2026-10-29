@@ -1,3 +1,6 @@
+//! The oscillator model: one or two plain waveforms per voice, for the modules
+//! and the master ADSR to shape.
+
 use crate::dsp::adsr::Adsr;
 use crate::dsp::generators::Oscillator;
 use crate::dsp::math::{fold_note, js_round, midi_to_hz, pan_gains};
@@ -6,6 +9,8 @@ use crate::engine::modules::{LfoRouting, ModuleSettings};
 use crate::engine::voice::{ACTIVE, RELEASED, STOLEN, Voice, VoiceCore, allocate, legato_note};
 use crate::patches::OscillatorPatch;
 
+/// The oscillators take the vibrato's pitch themselves; its level goes to the
+/// voice's output as tremolo.
 pub const ROUTING: LfoRouting = LfoRouting {
   pitch_output: false,
   level_output: true,
@@ -13,6 +18,7 @@ pub const ROUTING: LfoRouting = LfoRouting {
   fade_in: None,
 };
 
+/// One note: its two oscillators, their levels and the gate.
 struct OscillatorVoice {
   core: VoiceCore,
   oscillator: Oscillator,
@@ -40,6 +46,8 @@ impl Voice for OscillatorVoice {
 }
 
 impl OscillatorVoice {
+  /// Renders the frames `start..end`: both oscillators, bent by the vibrato,
+  /// summed through the gate into the chain.
   fn render(
     &mut self,
     start: usize,
@@ -76,6 +84,8 @@ pub struct OscillatorModel {
 }
 
 impl OscillatorModel {
+  /// The model for `patch` at `fs`, with two voices to spare over its polyphony
+  /// for steals to fade.
   pub fn new(patch: &'static OscillatorPatch, fs: f64, mods: &ModuleSettings) -> Self {
     Self {
       patch,
@@ -93,10 +103,13 @@ impl OscillatorModel {
     }
   }
 
+  /// Every voice's shared core, for the instrument to retarget.
   pub fn voices_mut(&mut self) -> impl Iterator<Item = &mut VoiceCore> {
     self.voices.iter_mut().map(|voice| &mut voice.core)
   }
 
+  /// Reads the waves, the second oscillator's level and phase, the gate's
+  /// attack and release, and the glide from the params, into every voice.
   pub fn read_params(&mut self, bus: &Bus) {
     let p = &bus.params;
     let wave = js_round(p.get("exciter.wave")) as i32;
@@ -121,10 +134,14 @@ impl OscillatorModel {
     }
   }
 
+  /// How many voices are sounding.
   pub fn active_voices(&self) -> usize {
     self.voices.iter().filter(|voice| voice.core.busy()).count()
   }
 
+  /// Plays `note` (folded into the patch's range): again if it's still
+  /// sounding, else on a free voice, gliding from the note it follows when
+  /// played legato.
   pub fn note_on(&mut self, bus: &Bus, note: i32, velocity: f64) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     let existing = self.by_note[n as usize];
@@ -165,6 +182,7 @@ impl OscillatorModel {
     Self::gate_on(voice, velocity);
   }
 
+  /// Closes the gate on `note` once every press of it is let go.
   pub fn note_off(&mut self, note: i32) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     let index = self.by_note[n as usize];
@@ -182,6 +200,7 @@ impl OscillatorModel {
     Self::gate_off(voice);
   }
 
+  /// Closes every gate.
   pub fn all_notes_off(&mut self) {
     for voice in &mut self.voices {
       if voice.core.busy() && voice.core.state != STOLEN {
@@ -191,6 +210,7 @@ impl OscillatorModel {
     }
   }
 
+  /// Frees every voice at once.
   pub fn panic(&mut self) {
     for voice in &mut self.voices {
       voice.free();
@@ -198,6 +218,7 @@ impl OscillatorModel {
     self.by_note = [-1; 128];
   }
 
+  /// Renders the sounding voices into the bus for the frames `start..end`.
   pub fn render(&mut self, bus: &mut Bus, start: usize, end: usize) {
     for voice in &mut self.voices {
       if voice.core.busy() {
@@ -206,6 +227,7 @@ impl OscillatorModel {
     }
   }
 
+  /// Frees the voices that fell silent, forgetting their notes.
   pub fn free_finished(&mut self) {
     for (i, voice) in self.voices.iter_mut().enumerate() {
       if voice.core.busy() && voice.core.finished() {
@@ -218,12 +240,14 @@ impl OscillatorModel {
     }
   }
 
+  /// Opens the voice's gate (and the master ADSR) at `velocity`.
   fn gate_on(voice: &mut OscillatorVoice, velocity: f64) {
     voice.level = velocity;
     voice.gate.note_on();
     voice.core.chain.shape.note_on();
   }
 
+  /// Closes the voice's gate (and the master ADSR), releasing it.
   fn gate_off(voice: &mut OscillatorVoice) {
     voice.core.state = RELEASED;
     voice.gate.note_off();

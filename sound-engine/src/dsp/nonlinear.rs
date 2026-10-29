@@ -1,10 +1,14 @@
 //! Tables ported from STK (The Synthesis ToolKit, Perry Cook & Gary Scavone,
 //! MIT-style license): JetTable, ReedTable and BowTable.
 
+/// STK's jet table: the cubic x·(x² − 1), clamped to [−1, 1], for a flute's air
+/// jet.
 pub fn jet_table(x: f64) -> f64 {
   (x * (x * x - 1.)).clamp(-1., 1.)
 }
 
+/// STK's reed table: a reed's reflection, `offset + slope·x` clamped to [−1,
+/// 1].
 pub fn reed_table(x: f64, offset: f64, slope: f64) -> f64 {
   (offset + slope * x).clamp(-1., 1.)
 }

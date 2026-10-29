@@ -1,9 +1,16 @@
+//! What every model's voices share: their lifecycle, and how an instrument
+//! picks a voice for a new note.
+
 use super::chain::VoiceChain;
 use super::modules::ModuleSettings;
 
+/// A voice that's free for a new note.
 pub const IDLE: u8 = 0;
+/// A voice sounding a note that's still held.
 pub const ACTIVE: u8 = 1;
+/// A voice ringing out after its note was let go.
 pub const RELEASED: u8 = 2;
+/// A voice fading out over 5 ms to make room for another.
 pub const STOLEN: u8 = 3;
 
 /// −90 dBFS.
@@ -25,6 +32,7 @@ pub struct VoiceCore {
 }
 
 impl VoiceCore {
+  /// An idle voice at `fs`, its chain set up for the instrument's `mods`.
   pub fn new(fs: f64, mods: &ModuleSettings) -> Self {
     Self {
       state: IDLE,
@@ -37,10 +45,13 @@ impl VoiceCore {
     }
   }
 
+  /// Whether the voice is sounding (active, released or stolen).
   pub fn busy(&self) -> bool {
     self.state != IDLE
   }
 
+  /// Whether the voice can be freed: released or stolen and silent for 50 ms,
+  /// or silent for a second whatever its state.
   pub fn finished(&self) -> bool {
     let released = self.state == RELEASED || self.state == STOLEN;
     (released && self.quiet_samples > 0.05 * self.fs) || self.quiet_samples > 1.0 * self.fs
@@ -61,6 +72,7 @@ impl VoiceCore {
     self.track(peak, count);
   }
 
+  /// Starts sounding `note` at the engine's `clock`, held once, at full level.
   pub fn begin(&mut self, note: i32, clock: f64) {
     self.state = ACTIVE;
     self.note = note;
@@ -71,6 +83,7 @@ impl VoiceCore {
     self.chain.fade_step = 0.;
   }
 
+  /// Starts the 5 ms fade-out that makes room for another note.
   pub fn steal(&mut self) {
     self.state = STOLEN;
     self.holds = 0;
@@ -91,10 +104,14 @@ impl VoiceCore {
 
 /// A model's voice: its shared core and its own reset.
 pub trait Voice {
+  /// The voice's shared core.
   fn core(&self) -> &VoiceCore;
+  /// The voice's shared core, to change.
   fn core_mut(&mut self) -> &mut VoiceCore;
+  /// Silences the model's own state (delay lines, envelopes) for the next note.
   fn reset(&mut self);
 
+  /// Frees the voice: the core goes idle and the model resets its own state.
   fn free(&mut self) {
     self.core_mut().free();
     self.reset();

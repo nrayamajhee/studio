@@ -31,7 +31,7 @@ The DSP is plain Rust with no web types, so the engine runs and is tested native
 
 ## Build
 
-web-rust's Trunk build runs `worklet/build.sh` into its output, so `trunk serve` there is all it takes. To build the worklet alone:
+The crate and its worklet are in the repo's Cargo workspace with web-rust (`Cargo.toml` at the root), which holds the release profiles and the `worklet` profile the worklet is built with. web-rust's Trunk build runs `worklet/build.sh` into its output before every build, so `trunk serve` there is all it takes. To build the worklet alone:
 
 ```bash
 rustup target add wasm32-unknown-unknown

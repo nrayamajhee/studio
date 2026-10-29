@@ -7,12 +7,11 @@
 set -eu
 here=$(cd "$(dirname "$0")/.." && pwd)
 out=${1:?usage: rust-doc.sh <out-dir>}
-# Their own target folder, so they never wait on the app's wasm build.
-target="$here/target/rust-doc"
-cargo doc --manifest-path "$here/Cargo.toml" --target-dir "$target" \
-  --no-deps --document-private-items -p web-rust -p sound-engine -p fluid
-cargo doc --manifest-path "$here/../sound-engine/worklet/Cargo.toml" --target-dir "$target" \
-  --no-deps --document-private-items
+# Their own target folder in the workspace's, so they never wait on the
+# app's wasm build.
+target="${CARGO_TARGET_DIR:-$here/../target}/rust-doc"
+cargo doc --manifest-path "$here/Cargo.toml" --target-dir "$target" --no-deps \
+  --document-private-items -p web-rust -p sound-engine -p sound-worklet -p fluid
 rm -rf "$out/rust-doc"
 cp -r "$target/doc" "$out/rust-doc"
 # rustdoc has no page above the crates; start at the app's.

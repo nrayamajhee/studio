@@ -1,3 +1,6 @@
+//! The struck-bar model: xylophone, steel pan and kalimba, each key a bank of
+//! modes.
+
 use super::exciters::stick;
 use crate::dsp::math::{fold_note, key_table, lerp, midi_to_hz, pan_gains};
 use crate::dsp::modal::ModalBank;
@@ -6,10 +9,12 @@ use crate::engine::modules::ModuleSettings;
 use crate::engine::voice::{ACTIVE, RELEASED, STOLEN, Voice, VoiceCore, allocate};
 use crate::patches::BarPatch;
 
+/// The most modes a key rings with.
 const MAX_MODES: usize = 8;
 /// A hard hit stays on for less time than a soft one at the same hardness.
 const VELOCITY_CONTACT: f64 = 0.3;
 
+/// One key sounding: its bank of modes and the strike's pulse feeding it.
 struct BarVoice {
   core: VoiceCore,
   modes: ModalBank,
@@ -34,6 +39,7 @@ impl Voice for BarVoice {
 }
 
 impl BarVoice {
+  /// An idle voice whose pulse buffer fits the softest, longest strike.
   fn new(fs: f64, mods: &ModuleSettings, longest_contact: f64) -> Self {
     Self {
       core: VoiceCore::new(fs, mods),
@@ -44,6 +50,8 @@ impl BarVoice {
     }
   }
 
+  /// Renders the frames `start..end`: the pulse into the modes, the modes
+  /// through the chain.
   fn render(
     &mut self,
     start: usize,
@@ -84,6 +92,8 @@ pub struct BarModel {
 }
 
 impl BarModel {
+  /// The model for `patch` at `fs`, with two voices to spare over its polyphony
+  /// for steals to fade.
   pub fn new(patch: &'static BarPatch, fs: f64, mods: &ModuleSettings) -> Self {
     let longest = (patch.contact.0 / 1000.) * (1. + VELOCITY_CONTACT);
     Self {
@@ -99,10 +109,13 @@ impl BarModel {
     }
   }
 
+  /// Every voice's shared core, for the instrument to retarget.
   pub fn voices_mut(&mut self) -> impl Iterator<Item = &mut VoiceCore> {
     self.voices.iter_mut().map(|voice| &mut voice.core)
   }
 
+  /// Reads the mallet's hardness and strength and the modes' decay and
+  /// brightness from the params.
   pub fn read_params(&mut self, bus: &Bus) {
     let p = &bus.params;
     self.hardness = p.get("exciter.hardness");
@@ -111,10 +124,13 @@ impl BarModel {
     self.brightness = p.get("resonator.brightness");
   }
 
+  /// How many voices are sounding.
   pub fn active_voices(&self) -> usize {
     self.voices.iter().filter(|voice| voice.core.busy()).count()
   }
 
+  /// Strikes the key for `note` (folded into the patch's range): again if it's
+  /// still ringing, else on a free voice, tuned, panned by key and struck.
   pub fn note_on(&mut self, bus: &Bus, note: i32, velocity: f64) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     let existing = self.by_note[n as usize];
@@ -171,6 +187,7 @@ impl BarModel {
     voice.core.chain.shape.note_off();
   }
 
+  /// Releases every key, letting each ring out.
   pub fn all_notes_off(&mut self) {
     for voice in &mut self.voices {
       if voice.core.busy() && voice.core.state != STOLEN {
@@ -181,6 +198,7 @@ impl BarModel {
     }
   }
 
+  /// Frees every voice at once.
   pub fn panic(&mut self) {
     for voice in &mut self.voices {
       voice.free();
@@ -188,6 +206,7 @@ impl BarModel {
     self.by_note = [-1; 128];
   }
 
+  /// Renders the sounding voices into the bus for the frames `start..end`.
   pub fn render(&mut self, bus: &mut Bus, start: usize, end: usize) {
     for voice in &mut self.voices {
       if voice.core.busy() {
@@ -196,6 +215,7 @@ impl BarModel {
     }
   }
 
+  /// Frees the voices that fell silent, forgetting their keys.
   pub fn free_finished(&mut self) {
     for (i, voice) in self.voices.iter_mut().enumerate() {
       if voice.core.busy() && voice.core.finished() {
@@ -226,6 +246,8 @@ impl BarModel {
     }
   }
 
+  /// Strikes the voice's modes with a half-sine pulse, shorter for a harder
+  /// mallet and a harder hit, louder by the velocity and the strength.
   fn strike(&mut self, bus: &Bus, index: usize, velocity: f64) {
     let (soft, hard) = self.patch.contact;
     let contact =

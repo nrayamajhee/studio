@@ -1,11 +1,12 @@
 //! The Debug panel, as web-react's DebugOverlay: a dark see-through panel
-//! over the page with the app's state, its parts down the side and the
-//! picked one as pretty-printed JSON. web-react keeps all of its state in
-//! `localStorage`; web-rust keeps the Device and the engine in memory, so
-//! those two show live, the engine's how it started (or why it didn't), its
-//! voices, load and warnings. A part's dot flashes when it changes, and the
-//! keys still play the Device under it. ⌘D (Ctrl D) opens and closes it.
+//! over the page with the state kept in `localStorage`, by the key each
+//! part is kept under, read from its store, and the picked one as
+//! pretty-printed JSON. web-rust adds the sound engine's state last: how it
+//! started (or why it didn't), its voices, load and warnings. A part's dot
+//! flashes when it changes, and the keys still play the Device under it.
+//! ⌘D (Ctrl D) opens and closes it.
 
+use crate::midi::{MIDI_KEY, midi};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -19,35 +20,56 @@ use wasm_bindgen_futures::{JsFuture, spawn_local};
 use web_sys::Element;
 
 use super::{icon, is_mac};
-use crate::device::{Device, device};
+use crate::chrome::chrome;
 use crate::docs::store::{DOCS_COLLAPSED_KEY, collapsed};
 use crate::icons::{CHECK, COPY, X};
-use crate::notes::note_name;
-use crate::pads::CHORDS;
-use crate::presets::PRESETS;
+use crate::state::app;
+use crate::store::chords::{PAD_CHORDS_KEY, PLAY_STYLE_KEY, PLAY_STYLES_KEY};
+use crate::store::favorites::FAVORITES_KEY;
+use crate::store::library::PRESETS_KEY;
+use crate::store::session::{MODULES_KEY, PATTERN_KEY, TAKE_KEY, TAPE_KEY, TAPES_KEY};
+use crate::store::storage::js_numbers;
 
-pub const TOGGLE_CODE: &str = "KeyD";
-
-const PARTS: [&str; 4] = [
-  "studio.device",
-  "studio.engine",
+/// The parts the panel lists: every store web-react keeps, by its key, then the
+/// theme and the engine.
+const PARTS: [&str; 14] = [
+  PRESETS_KEY,
+  FAVORITES_KEY,
+  PAD_CHORDS_KEY,
+  PLAY_STYLE_KEY,
+  PLAY_STYLES_KEY,
+  TAKE_KEY,
+  MODULES_KEY,
+  PATTERN_KEY,
+  TAPES_KEY,
+  TAPE_KEY,
+  MIDI_KEY,
   DOCS_COLLAPSED_KEY,
   "theme",
+  "studio.engine",
 ];
 /// How often the engine's part refreshes while the panel is open.
 const ENGINE_MS: u32 = 250;
 
+/// The panel: a dark glass card over the page.
 const BASE: &str = "fixed inset-x-3 top-20 bottom-28 z-60 flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/65 text-white/80 shadow-high backdrop-blur-xl sm:inset-x-8 sm:bottom-20 sm:grid sm:grid-cols-[16rem_minmax(0,1fr)] sm:grid-rows-[auto_minmax(0,1fr)]";
+/// The panel's header, over the JSON.
 const HEADER: &str = "flex min-w-0 items-center gap-3 border-b border-white/10 py-2 pr-2 pl-4 text-sm sm:col-start-2 sm:row-start-1";
+/// The panel's list of parts.
 const SIDEBAR: &str = "flex max-h-48 shrink-0 flex-col gap-0.5 overflow-y-auto border-b border-white/10 p-2 sm:col-start-1 sm:row-span-2 sm:row-start-1 sm:max-h-none sm:border-r sm:border-b-0";
+/// A part in the list.
 const ITEM: &str =
   "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left font-mono text-xs";
+/// The dot that flashes when a part changes.
 const WRITTEN: &str =
   "ml-auto size-1.5 shrink-0 animate-[fade-out_2s_ease-in_forwards] rounded-full bg-emerald-400";
+/// The JSON of the part picked.
 const CODE: &str = "min-h-0 min-w-0 flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed whitespace-pre text-white/80 sm:col-start-2 sm:row-start-2";
 /// web-react's ghost Button at its small size.
 const GHOST: &str = "relative inline-flex items-center font-medium border-2 transition-colors duration-150 ease-in-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none bg-transparent border-transparent focus-visible:ring-primary px-3.5 py-2 text-xs rounded-lg gap-2 w-auto justify-center text-center hover:bg-primary/10 active:bg-primary/20 text-white/60 hover:text-white";
+/// The ghost button's icon.
 const GHOST_ICON: &str = "flex-shrink-0 inline-flex items-center justify-center";
+/// The ghost button's label.
 const GHOST_LABEL: &str = "text-base transition-colors font-semibold leading-snug tracking-tight text-inherit dark:text-inherit truncate !text-xs";
 
 /// ⌘ on a Mac, Ctrl elsewhere.
@@ -55,8 +77,38 @@ fn command() -> &'static str {
   if is_mac() { "⌘" } else { "Ctrl " }
 }
 
+/// A store's state as JSON, its numbers written as JavaScript writes them.
+fn js<T: serde::Serialize>(value: &T) -> Value {
+  let mut value = serde_json::to_value(value).unwrap_or(Value::Null);
+  js_numbers(&mut value);
+  value
+}
+
+/// A part's state, read from the store that keeps it.
+fn part(key: &str) -> Value {
+  let a = app();
+  match key {
+    PRESETS_KEY => a.library.library.with(js),
+    FAVORITES_KEY => a.favorites.favorites.with(js),
+    PAD_CHORDS_KEY => a.chords.pad_chords.with(js),
+    PLAY_STYLE_KEY => a.chords.play_style.with(js),
+    PLAY_STYLES_KEY => a.chords.saved_styles.with(js),
+    TAKE_KEY => a.session.session.with(|session| js(&session.take)),
+    MODULES_KEY => a.session.session.with(|session| js(&session.modules)),
+    PATTERN_KEY => a.session.session.with(|session| js(&session.pattern)),
+    TAPES_KEY => a.session.session.with(|session| js(&session.tapes)),
+    TAPE_KEY => a.session.session.with(|session| json!(session.tape)),
+    MIDI_KEY => midi().stored(),
+    DOCS_COLLAPSED_KEY => json!(collapsed().cloned()),
+    "theme" => json!(chrome().theme.value().name()),
+    _ => engine_state(),
+  }
+}
+
+/// web-react's Debug panel, with web-rust's state: every part web-react keeps
+/// (as it keeps it), the theme and the engine, with a dot that flashes on each
+/// change, and buttons to copy them all and to close.
 pub fn overlay() -> Element {
-  let device = device();
   let picked = Rc::new(Signal::new(PARTS[0]));
   // The engine isn't signals; while the panel is open it's read again.
   let tick = Rc::new(Signal::new(0u32));
@@ -65,14 +117,6 @@ pub fn overlay() -> Element {
     move || tick.update(|tick| *tick += 1)
   });
   fluid::on_cleanup(move || drop(interval));
-  let part = move |key: &str| -> Value {
-    match key {
-      "studio.device" => device_state(device),
-      "studio.engine" => engine_state(device),
-      DOCS_COLLAPSED_KEY => json!(collapsed().cloned()),
-      _ => json!(device.theme.value().name()),
-    }
-  };
   // How many times each part changed while the panel showed it.
   let changes: Rc<Vec<Rc<Signal<u32>>>> =
     Rc::new(PARTS.iter().map(|_| Rc::new(Signal::new(0))).collect());
@@ -146,7 +190,7 @@ pub fn overlay() -> Element {
             }
           }
         }
-        button title={ close.clone() } aria-label={ format!("Close the saved state ({}D)", command()) } class={ GHOST } @click={ move |_| device.debug.set(false) } {
+        button title={ close.clone() } aria-label={ format!("Close the saved state ({}D)", command()) } class={ GHOST } @click={ move |_| chrome().set_debug(false) } {
           span class={ GHOST_ICON } { { icon(X, "size-4") } }
           span class="flex flex-col min-w-0 items-center" { span class={ GHOST_LABEL } { { close } } }
         }
@@ -177,48 +221,10 @@ fn item(key: &'static str, picked: Rc<Signal<&'static str>>, changes: Rc<Signal<
   }
 }
 
-fn device_state(device: &Device) -> Value {
-  let preset = device.current();
-  let (param, step) = device.param();
-  let edits: serde_json::Map<String, Value> = device.values.with(|values| {
-    PRESETS
-      .iter()
-      .zip(values)
-      .filter_map(|(preset, steps)| {
-        let changed: serde_json::Map<String, Value> = preset
-          .params
-          .iter()
-          .zip(steps)
-          .filter(|(param, step)| param.step != **step)
-          .map(|(param, &step)| (param.id.to_owned(), json!(param.sends[step])))
-          .collect();
-        (!changed.is_empty()).then(|| (preset.name.to_owned(), Value::Object(changed)))
-      })
-      .collect()
-  });
-  let held: Vec<String> = device.held.with(|held| {
-    held
-      .values()
-      .flatten()
-      .map(|&(_, midi)| note_name(midi))
-      .collect()
-  });
-  json!({
-    "preset": preset.name,
-    "instrument": preset.target,
-    "octave": device.octave.value(),
-    "volume": device.volume.value() * 10,
-    "level": device.level.value() * 10,
-    "parameter": { "name": param.name, "id": param.id, "value": param.sends[step], "shows": param.values[step] },
-    "chord": device.active_chord.value().map(|chord| CHORDS[chord].name),
-    "shift": device.shift(),
-    "held": held,
-    "edits": edits,
-  })
-}
-
-fn engine_state(device: &Device) -> Value {
-  let status = device.sound.status();
+/// The engine's part: whether it started (and if not, why), its voices, load
+/// and warnings.
+fn engine_state() -> Value {
+  let status = app().engine.status();
   let (phase, error) = match &status.phase {
     Phase::Off => ("off: waiting for a key, click or tap", None),
     Phase::Starting => ("starting", None),
@@ -295,6 +301,7 @@ fn highlight(json: &str) -> String {
   out
 }
 
+/// `text` escaped for HTML.
 fn escape(text: &str) -> String {
   text
     .replace('&', "&amp;")

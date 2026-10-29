@@ -12,6 +12,8 @@ watch = [
   "index.html",
   "favicon.svg",
   "Cargo.toml",
+  "../Cargo.toml",
+  "../Cargo.lock",
   "build.rs",
   "src",
   "../README.md",
@@ -30,9 +32,11 @@ watch = [
 tailwindcss = "4.3.3"
 
 # The AudioWorklet's engine is a separate wasm module with its own
-# processor script, served next to the page.
+# processor script, served next to the page. It's built first on every
+# build, `trunk serve`'s included, so the page never runs a stale engine and
+# an engine that doesn't compile stops the build before the app.
 [[hooks]]
-stage = "post_build"
+stage = "pre_build"
 command = "sh"
 command_arguments = ["-c", "../sound-engine/worklet/build.sh \"$TRUNK_STAGING_DIR\""]
 

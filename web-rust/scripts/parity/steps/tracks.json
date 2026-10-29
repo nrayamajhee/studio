@@ -1,0 +1,137 @@
+[
+  {
+    "press": "Escape",
+    "note": "open tracks"
+  },
+  {
+    "knob": 3,
+    "turns": 1,
+    "note": "pick track 1"
+  },
+  {
+    "knob": 2,
+    "turns": 2,
+    "note": "volume"
+  },
+  {
+    "press": "ArrowRight",
+    "note": "slide later"
+  },
+  {
+    "press": "ArrowLeft"
+  },
+  {
+    "press": "ArrowDown",
+    "note": "next track"
+  },
+  {
+    "press": "Comma",
+    "note": "mute"
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "press": "Comma",
+    "note": "solo"
+  },
+  {
+    "knob": 2,
+    "turns": 2,
+    "note": "zoom"
+  },
+  {
+    "knob": 3,
+    "turns": 2,
+    "note": "scroll"
+  },
+  {
+    "knob": 1,
+    "turns": 2,
+    "note": "slide by beats"
+  },
+  {
+    "press": "ArrowRight",
+    "note": "repeat more"
+  },
+  {
+    "press": "ArrowDown",
+    "note": "next copy / add"
+  },
+  {
+    "press": "ArrowDown",
+    "note": "add copy"
+  },
+  {
+    "press": "ArrowUp",
+    "note": "previous copy"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "press": "Backspace",
+    "note": "delete copy prompt"
+  },
+  {
+    "press": "Backspace",
+    "note": "delete copy"
+  },
+  {
+    "press": "KeyX",
+    "note": "clip"
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "knob": 2,
+    "turns": 1,
+    "note": "clip start"
+  },
+  {
+    "knob": 3,
+    "turns": 1,
+    "note": "clip end"
+  },
+  {
+    "press": "KeyX",
+    "note": "trim"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "press": "Digit2",
+    "note": "instrument on track"
+  },
+  {
+    "press": "ArrowUp"
+  },
+  {
+    "press": "ArrowUp"
+  },
+  {
+    "press": "ArrowUp",
+    "note": "take row"
+  },
+  {
+    "press": "Backspace",
+    "note": "discard take prompt"
+  },
+  {
+    "press": "ArrowDown"
+  },
+  {
+    "press": "Backspace",
+    "note": "delete track prompt"
+  },
+  {
+    "press": "Backspace",
+    "note": "delete track"
+  },
+  {
+    "press": "Escape",
+    "note": "close tracks"
+  }
+]

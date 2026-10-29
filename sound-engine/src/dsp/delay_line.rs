@@ -1,3 +1,6 @@
+//! A circular delay line, read a whole number of samples back or between
+//! samples through a Lagrange interpolator.
+
 use super::math::next_pow2;
 
 /// Circular buffer. After write(x), read_int(1) returns x, so a loop that
@@ -9,6 +12,7 @@ pub struct DelayLine {
 }
 
 impl DelayLine {
+  /// A silent line long enough for `max_delay` samples.
   pub fn new(max_delay: f64) -> Self {
     let size = next_pow2(max_delay.ceil() as usize + 4);
     Self {
@@ -18,21 +22,25 @@ impl DelayLine {
     }
   }
 
+  /// Silences the line.
   pub fn clear(&mut self) {
     self.buffer.fill(0.);
   }
 
+  /// Writes the next sample.
   #[inline]
   pub fn write(&mut self, x: f64) {
     self.buffer[self.index] = x as f32;
     self.index = (self.index + 1) & self.mask;
   }
 
+  /// The sample written `back` samples ago (1 is the last).
   #[inline]
   fn at(&self, back: i64) -> f64 {
     self.buffer[(self.index as i64 - back) as usize & self.mask] as f64
   }
 
+  /// The sample written `n` samples ago.
   #[inline]
   pub fn read_int(&self, n: usize) -> f64 {
     self.at(n as i64)

@@ -25,10 +25,19 @@ function readText(wasm, engine, length) {
 class SoundWorklet extends AudioWorkletProcessor {
   constructor(options) {
     super(options);
-    const { bytes } = options.processorOptions;
+    const { bytes, overrides, events } = options.processorOptions;
     const module = new WebAssembly.Module(bytes);
     this.wasm = new WebAssembly.Instance(module, {}).exports;
     this.engine = this.wasm.worklet_new(sampleRate);
+    // An offline render starts at a track's params, its events all queued.
+    if (overrides) {
+      writeText(this.wasm, this.engine, overrides);
+      this.wasm.worklet_overrides(this.engine);
+    }
+    if (events) {
+      writeText(this.wasm, this.engine, events);
+      this.wasm.worklet_schedule(this.engine);
+    }
     this.port.onmessage = (message) => {
       writeText(this.wasm, this.engine, message.data);
       this.wasm.worklet_schedule(this.engine);
