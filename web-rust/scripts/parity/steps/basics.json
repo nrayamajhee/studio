@@ -1,0 +1,123 @@
+[
+  {
+    "press": "Digit2"
+  },
+  {
+    "press": "ArrowUp"
+  },
+  {
+    "press": "ArrowUp"
+  },
+  {
+    "press": "ArrowDown"
+  },
+  {
+    "knob": 0,
+    "turns": 2
+  },
+  {
+    "knob": 1,
+    "turns": 3
+  },
+  {
+    "knob": 2,
+    "turns": 1
+  },
+  {
+    "knob": 3,
+    "turns": 4
+  },
+  {
+    "press": "Digit4"
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "pad": 24,
+    "note": "latch shift"
+  },
+  {
+    "press": "Digit3",
+    "note": "shift + pad 3"
+  },
+  {
+    "down": "Digit8",
+    "note": "hold chord 8"
+  },
+  {
+    "down": "KeyA"
+  },
+  {
+    "up": "KeyA"
+  },
+  {
+    "up": "Digit8"
+  },
+  {
+    "pad": 22,
+    "note": "latch chord pad"
+  },
+  {
+    "down": "KeyD"
+  },
+  {
+    "up": "KeyD"
+  },
+  {
+    "press": "Digit8",
+    "note": "latched chord's key lets go"
+  },
+  {
+    "press": "Backspace"
+  },
+  {
+    "press": "KeyN",
+    "note": "open ADSR"
+  },
+  {
+    "press": "KeyN",
+    "note": "close ADSR"
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "press": "KeyN",
+    "note": "shift ADSR on"
+  },
+  {
+    "press": "BracketRight"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "press": "KeyM"
+  },
+  {
+    "press": "KeyM"
+  },
+  {
+    "press": "Period",
+    "note": "arm record"
+  },
+  {
+    "press": "Period",
+    "note": "disarm"
+  },
+  {
+    "press": "Escape",
+    "note": "open tracks"
+  },
+  {
+    "press": "Escape",
+    "note": "close tracks"
+  }
+]

@@ -1,0 +1,134 @@
+[
+  {
+    "pageClick": "MIDI",
+    "note": "open MIDI panel"
+  },
+  {
+    "wait": 500,
+    "note": "turn MIDI on",
+    "panelClick": "MIDI input"
+  },
+  {
+    "midi": [144, 60, 100],
+    "note": "note on C4"
+  },
+  {
+    "midi": [128, 60, 0],
+    "note": "note off"
+  },
+  {
+    "midi": [144, 62, 50]
+  },
+  {
+    "midi": [144, 62, 0],
+    "note": "note on vel 0 = off"
+  },
+  {
+    "note": "learn green knob",
+    "panelClick": "Green knob: not mapped"
+  },
+  {
+    "midi": [176, 20, 64],
+    "note": "map CC 20"
+  },
+  {
+    "midi": [176, 20, 127],
+    "note": "turn green knob"
+  },
+  {
+    "midi": [176, 20, 0]
+  },
+  {
+    "note": "learn Play",
+    "panelClick": "Play: not mapped"
+  },
+  {
+    "midi": [144, 36, 90],
+    "note": "map note 36 to Play"
+  },
+  {
+    "midi": [128, 36, 0]
+  },
+  {
+    "note": "learn Synth",
+    "panelClick": "Synth: not mapped"
+  },
+  {
+    "midi": [176, 21, 127],
+    "note": "map CC 21"
+  },
+  {
+    "midi": [176, 21, 0]
+  },
+  {
+    "midi": [176, 21, 127],
+    "note": "press Synth"
+  },
+  {
+    "midi": [176, 21, 0]
+  },
+  {
+    "midi": [176, 64, 127],
+    "note": "pedal down"
+  },
+  {
+    "midi": [144, 64, 80]
+  },
+  {
+    "midi": [128, 64, 0],
+    "note": "held by pedal"
+  },
+  {
+    "midi": [176, 64, 0],
+    "note": "pedal up"
+  },
+  {
+    "midi": [153, 36, 100],
+    "note": "drum channel"
+  },
+  {
+    "midi": [137, 36, 0]
+  },
+  {
+    "midi": [224, 0, 64],
+    "note": "pitch bend"
+  },
+  {
+    "midi": [192, 5, 0],
+    "note": "program"
+  },
+  {
+    "note": "octave +1",
+    "panelClick": "Octave up"
+  },
+  {
+    "panelClick": "Fixed"
+  },
+  {
+    "note": "sustain off",
+    "panelClick": "Sustain pedal (CC 64) holds notes"
+  },
+  {
+    "note": "learn Synth again",
+    "panelClick": "Synth: CC 21"
+  },
+  {
+    "note": "forget it",
+    "panelClick": "Forget CC 21"
+  },
+  {
+    "panelClick": "Forget all"
+  },
+  {
+    "note": "close",
+    "panelClick": "Close MIDI"
+  },
+  {
+    "pageClick": "MIDI",
+    "note": "reopen"
+  },
+  {
+    "press": "Control+KeyD",
+    "note": "debug closes MIDI"
+  }
+]

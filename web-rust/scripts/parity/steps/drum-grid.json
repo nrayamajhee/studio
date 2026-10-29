@@ -1,0 +1,159 @@
+[
+  {
+    "press": "KeyB",
+    "note": "open drum grid, no kit"
+  },
+  {
+    "press": "Digit1",
+    "note": "piano pad refused"
+  },
+  {
+    "press": "Digit4",
+    "note": "kit"
+  },
+  {
+    "press": "KeyA",
+    "note": "hit at head"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "KeyD",
+    "note": "hit"
+  },
+  {
+    "knob": 1,
+    "turns": 3,
+    "note": "head knob"
+  },
+  {
+    "press": "KeyF"
+  },
+  {
+    "cell": [0, 8],
+    "note": "click cell"
+  },
+  {
+    "cell": [2, 12]
+  },
+  {
+    "cell": [2, 12],
+    "note": "unclick"
+  },
+  {
+    "knob": 2,
+    "turns": 1,
+    "note": "2 bars"
+  },
+  {
+    "knob": 3,
+    "turns": 1,
+    "note": "resolution"
+  },
+  {
+    "knob": 3,
+    "turns": 4,
+    "note": "resolution back"
+  },
+  {
+    "press": "ArrowLeft"
+  },
+  {
+    "press": "Space",
+    "note": "play pattern",
+    "skip": ["head", "knobs", "screen"]
+  },
+  {
+    "press": "Space",
+    "note": "stop pattern",
+    "skip": ["head", "knobs", "screen"]
+  },
+  {
+    "press": "Backquote",
+    "note": "stop: head to start"
+  },
+  {
+    "press": "Backspace",
+    "note": "clear prompt"
+  },
+  {
+    "press": "KeyA",
+    "note": "key cancels?"
+  },
+  {
+    "press": "Backspace"
+  },
+  {
+    "press": "Backspace",
+    "note": "cleared"
+  },
+  {
+    "press": "KeyA"
+  },
+  {
+    "press": "KeyB",
+    "note": "close grid"
+  },
+  {
+    "press": "KeyB",
+    "note": "open again"
+  },
+  {
+    "press": "KeyB"
+  },
+  {
+    "press": "KeyV",
+    "note": "open roll"
+  },
+  {
+    "knob": 2,
+    "turns": 2,
+    "note": "meter"
+  },
+  {
+    "knob": 3,
+    "turns": 3,
+    "note": "octave"
+  },
+  {
+    "press": "ArrowUp",
+    "note": "semitone up"
+  },
+  {
+    "press": "ArrowDown"
+  },
+  {
+    "press": "ArrowDown"
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "knob": 2,
+    "turns": 1,
+    "note": "transpose"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "press": "Period",
+    "note": "arm"
+  },
+  {
+    "press": "Period",
+    "note": "disarm"
+  },
+  {
+    "press": "Control+KeyS",
+    "note": "save with no take"
+  },
+  {
+    "press": "KeyV",
+    "note": "close roll"
+  }
+]

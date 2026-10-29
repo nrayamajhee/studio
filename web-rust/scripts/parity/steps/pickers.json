@@ -1,0 +1,282 @@
+[
+  {
+    "press": "KeyI",
+    "note": "open instruments"
+  },
+  {
+    "knob": 3,
+    "turns": 2,
+    "note": "blue picks"
+  },
+  {
+    "knob": 2,
+    "turns": 1,
+    "note": "red category"
+  },
+  {
+    "press": "ArrowRight",
+    "note": "next model"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "Comma",
+    "note": "star"
+  },
+  {
+    "press": "ArrowLeft"
+  },
+  {
+    "press": "ArrowLeft"
+  },
+  {
+    "press": "ArrowLeft",
+    "note": "favorites page"
+  },
+  {
+    "press": "Digit2",
+    "note": "bind prompt"
+  },
+  {
+    "press": "Digit2",
+    "note": "bind"
+  },
+  {
+    "tile": 3,
+    "note": "tile click"
+  },
+  {
+    "knob": 1,
+    "turns": 1,
+    "note": "repage by band"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "click": "Back a page",
+    "note": "pager arrow"
+  },
+  {
+    "press": "KeyI",
+    "note": "close instruments"
+  },
+  {
+    "press": "KeyC",
+    "note": "open chords"
+  },
+  {
+    "knob": 3,
+    "turns": 3
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "Digit7",
+    "note": "set chord prompt"
+  },
+  {
+    "press": "Digit7",
+    "note": "set chord"
+  },
+  {
+    "press": "Comma",
+    "note": "star chord"
+  },
+  {
+    "tile": 5
+  },
+  {
+    "press": "KeyC",
+    "note": "close chords"
+  },
+  {
+    "press": "KeyQ",
+    "note": "open play style"
+  },
+  {
+    "knob": 3,
+    "turns": 2
+  },
+  {
+    "knob": 1,
+    "turns": 2,
+    "note": "rate"
+  },
+  {
+    "press": "Control+KeyS",
+    "note": "save play style"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "ArrowRight",
+    "note": "saved page"
+  },
+  {
+    "press": "Backspace",
+    "note": "delete prompt"
+  },
+  {
+    "press": "Backspace",
+    "note": "delete style"
+  },
+  {
+    "press": "KeyQ",
+    "note": "close play style"
+  },
+  {
+    "press": "KeyT",
+    "note": "open tapes"
+  },
+  {
+    "press": "Control+KeyS",
+    "note": "new tape"
+  },
+  {
+    "press": "ArrowLeft"
+  },
+  {
+    "knob": 1,
+    "turns": 1
+  },
+  {
+    "press": "Backspace"
+  },
+  {
+    "press": "Backspace",
+    "note": "delete tape"
+  },
+  {
+    "dbltile": 0,
+    "note": "double-click tape",
+    "wait": 1800
+  },
+  {
+    "press": "Escape",
+    "note": "close tracks"
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "press": "Backspace",
+    "note": "open revert"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "knob": 1,
+    "turns": 2
+  },
+  {
+    "press": "Backspace",
+    "note": "revert prompt"
+  },
+  {
+    "press": "Backspace",
+    "note": "revert pads"
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "press": "Backspace",
+    "note": "open revert again"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "tile": 3
+  },
+  {
+    "press": "KeyA",
+    "note": "a key closes? no, plays"
+  },
+  {
+    "press": "KeyI",
+    "note": "instruments closes revert"
+  },
+  {
+    "press": "KeyI"
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "press": "KeyV",
+    "note": "open progressions"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "knob": 3,
+    "turns": 2
+  },
+  {
+    "press": "ArrowRight"
+  },
+  {
+    "press": "Comma",
+    "note": "star progression"
+  },
+  {
+    "press": "Control+KeyS",
+    "note": "await home"
+  },
+  {
+    "press": "Control+KeyS",
+    "note": "cancel"
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "press": "KeyV",
+    "note": "close progressions"
+  },
+  {
+    "press": "KeyB",
+    "note": "open beats"
+  },
+  {
+    "up": "ShiftLeft"
+  },
+  {
+    "knob": 3,
+    "turns": 3
+  },
+  {
+    "press": "ArrowRight",
+    "note": "next style"
+  },
+  {
+    "press": "Comma",
+    "note": "star beat"
+  },
+  {
+    "down": "ShiftLeft"
+  },
+  {
+    "press": "KeyB",
+    "note": "close beats"
+  },
+  {
+    "up": "ShiftLeft"
+  }
+]

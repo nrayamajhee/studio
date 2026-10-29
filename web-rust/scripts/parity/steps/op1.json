@@ -1,0 +1,28 @@
+[
+  {
+    "pageClick": "MIDI"
+  },
+  {
+    "panelClick": "MIDI input",
+    "wait": 500,
+    "note": "OP-1 maps itself"
+  },
+  {
+    "midi": [176, 2, 100],
+    "note": "encoder 2: green"
+  },
+  {
+    "midi": [176, 39, 127],
+    "note": "play button"
+  },
+  {
+    "midi": [176, 39, 0]
+  },
+  {
+    "midi": [176, 64, 127],
+    "note": "cc64 = instrument 4"
+  },
+  {
+    "midi": [176, 64, 0]
+  }
+]
