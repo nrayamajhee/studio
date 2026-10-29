@@ -4,7 +4,7 @@ order = 8
 
 # Oscillator
 
-The one source with nothing to simulate (`models/OscillatorInstrument.ts`, not a physical model): two band-limited waves, each a sine, triangle, square or saw (the **Wave** param, in the vibrato's shape order, without random), the second optional with its own level and phase (the Device's Oscillator preset puts a saw at half level 216° behind the sine), summed through the shared [filter](../voices-and-modules.md#modules) and an ADSR, for the modules to shape. It runs on its own bus like any instrument, so it reaches the [master ADSR, LFO and FX](../master-effects.md) the same way.
+The one source with nothing to simulate (`models/OscillatorInstrument.ts`, not a physical model): two band-limited waves, each a sine, triangle, square or saw (the **Wave** param, in the vibrato's shape order, without random), the second optional with its own level and phase (off on the Device's Oscillator preset; Starter 1's last track puts a saw at half level 216° behind the sine), summed through the shared [filter](../voices-and-modules.md#modules) and an ADSR, for the modules to shape. It runs on its own bus like any instrument, so it reaches the [master ADSR, LFO and FX](../master-effects.md) the same way.
 
 ![The oscillator's Exciter page: wave 1 a sine, wave 2 a saw at half its level, 216° behind, and the two together](../../../web-react/public/docs/synth-engine/screen-exciter-oscillator.webp)
 

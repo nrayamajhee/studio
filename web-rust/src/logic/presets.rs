@@ -179,12 +179,8 @@ const BUILTINS: [Builtin; 35] = [
   on_shift_pad(builtin("drums909", "drum909", "909 kit", "drums909", 0), 4),
   on_pad(builtin("madal", "madal", "Madal", "madal", 0), 5),
   on_shift_pad(builtin("tabla", "tabla", "Tabla", "tabla", 0), 5),
-  // A saw at half level under the sine, 216° behind it.
   on_shift_pad(
-    with(
-      builtin("oscillator", "waveform", "Oscillator", "oscillator", 0),
-      &[("exciter.wave2", 4.), ("exciter.phase", 216.)],
-    ),
+    builtin("oscillator", "waveform", "Oscillator", "oscillator", 0),
     0,
   ),
 ];

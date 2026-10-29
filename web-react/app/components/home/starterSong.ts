@@ -20,8 +20,7 @@ import { makeTrack, type TrackSource } from "./tracks";
 // guide builds, at 96 BPM: the Suspended progression (Isus4 I Isus2 I) with D
 // as home in a folk strum on the oscillator's plain sine, three times round;
 // the New jack swing beat from the third bar to a bar past the end; and over
-// the middle round, once, the same strum on the oscillator as it comes, a saw
-// under its sine.
+// the middle round, once, the same strum with a saw under the sine.
 const TIMING: Timing = { bpm: 96, meter: METERS[2], perBeat: 0 };
 // D above middle C, the key the guide has you press for the home note.
 const HOME = 62;
@@ -31,8 +30,9 @@ const ROUNDS = 3;
 // chords end.
 const DRUMS_IN = 2;
 const DRUMS_OUT = 1;
-// The first oscillator's Synth settings: Wave 2 Off, leaving the sine.
-const PLAIN_SINE = { "exciter.wave2": 0 };
+// The second oscillator's Synth settings: a saw at half level under the sine,
+// 216° behind it.
+const SINE_AND_SAW = { "exciter.wave2": 4, "exciter.phase": 216 };
 
 // Starter 2, at 92 BPM: Homecoming (I IV I IV V IV Isus4 Isus2) with A as
 // home, folk-strummed three times round on the oscillator as a triangle over
@@ -142,7 +142,7 @@ function starterOne(): Tape {
     swing: beat.swing,
     tracks: [
       {
-        ...kept(0, oscillator, strum, soundOf(oscillator, PLAIN_SINE), TIMING),
+        ...kept(0, oscillator, strum, soundOf(oscillator), TIMING),
         id: "starter-oscillator",
         repeats: ROUNDS,
       },
@@ -154,7 +154,7 @@ function starterOne(): Tape {
       },
       {
         // Saved after the beat, with its swing.
-        ...kept(2, oscillator, strum, soundOf(oscillator), {
+        ...kept(2, oscillator, strum, soundOf(oscillator, SINE_AND_SAW), {
           ...TIMING,
           swing: beat.swing,
         }),

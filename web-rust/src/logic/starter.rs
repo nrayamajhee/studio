@@ -36,7 +36,7 @@ pub const INITIAL_VOLUME_STEP: usize = 10;
 /// Starter 1, at 96 BPM: the Suspended progression with D as home in a
 /// folk strum on the oscillator's plain sine, three times round; the New
 /// jack swing beat from the third bar to a bar past the end; and over the
-/// middle round, once, the same strum on the oscillator as it comes.
+/// middle round, once, the same strum with a saw under the sine.
 const TIMING: Timing = Timing {
   bpm: 96.,
   meter: FOUR_FOUR,
@@ -51,8 +51,9 @@ const ROUNDS: u32 = 3;
 const DRUMS_IN: u32 = 2;
 /// The bars Starter 1's beat plays on past the last chord.
 const DRUMS_OUT: u32 = 1;
-/// The oscillator's second wave off: a plain sine.
-const PLAIN_SINE: &[(&str, f64)] = &[("exciter.wave2", 0.)];
+/// The second oscillator's Synth settings: a saw at half level under the
+/// sine, 216° behind it.
+const SINE_AND_SAW: &[(&str, f64)] = &[("exciter.wave2", 4.), ("exciter.phase", 216.)];
 
 /// Starter 2, at 92 BPM: Homecoming with A as home, folk-strummed on the
 /// oscillator, the beat, the bass guitar's up-down from bar 9 and the
@@ -187,7 +188,7 @@ fn starter_one() -> Tape {
           0,
           oscillator,
           &strum,
-          &sound_of(oscillator, PLAIN_SINE),
+          &sound_of(oscillator, &[]),
           TIMING,
           TrackSource::Roll,
           &modules,
@@ -207,7 +208,7 @@ fn starter_one() -> Tape {
           2,
           oscillator,
           &strum,
-          &sound_of(oscillator, &[]),
+          &sound_of(oscillator, SINE_AND_SAW),
           Timing {
             swing: beat.swing,
             ..TIMING

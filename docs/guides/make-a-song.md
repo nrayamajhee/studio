@@ -4,7 +4,7 @@ order = 5
 
 # Make a song
 
-A song on the Device is a **tape**: a stack of **tracks** that play together, each one a take you kept. The Device comes with two, **Starter 1** and **Starter 2**, and this guide builds Starter 1 step by step. First come the Suspended chords in D, strummed on the oscillator's sine three times round. Then a New jack swing beat comes in on the third bar and plays a bar past the end of the chords. Last, the same strum plays once more over the middle round, on the oscillator with its saw wave back under the sine. After that, the guide shows what else the tracks can do. Starter 2 is a longer one to take apart: Homecoming in A strummed on the oscillator, with the beat, a bass guitar and a fingerstyle electric coming in under it.
+A song on the Device is a **tape**: a stack of **tracks** that play together, each one a take you kept. The Device comes with two, **Starter 1** and **Starter 2**, and this guide builds Starter 1 step by step. First come the Suspended chords in D, strummed on the oscillator's sine three times round. Then a New jack swing beat comes in on the third bar and plays a bar past the end of the chords. Last, the same strum plays once more over the middle round, on the oscillator with a saw wave added under the sine. After that, the guide shows what else the tracks can do. Starter 2 is a longer one to take apart: Homecoming in A strummed on the oscillator, with the beat, a bass guitar and a fingerstyle electric coming in under it.
 
 ## Start a new tape
 
@@ -40,23 +40,19 @@ A **chord progression** is a short run of chords that a song repeats. The Device
 
 ![Suspended in D as the take, each chord strummed down, down-up, up-down-up](../../web-react/public/docs/user-manual/progression-on-the-take.webp)
 
-**5. Pick the oscillator.** The take plays on whatever instrument is on the keys, so you can change it now. Hold **Shift** and press instrument pad 1 (`Shift 1`) for the **Oscillator**, the Grand piano's alternate. Picking an alternate brings it to the top of its pad: from now on pad 1 plays the oscillator, and Shift + pad 1 the piano.
+**5. Pick the oscillator.** The take plays on whatever instrument is on the keys, so you can change it now. Hold **Shift** and press instrument pad 1 (`Shift 1`) for the **Oscillator**, the Grand piano's alternate: a plain sine wave. Picking an alternate brings it to the top of its pad: from now on pad 1 plays the oscillator, and Shift + pad 1 the piano.
 
 ![Shift + pad 1 put the take on the Oscillator](../../web-react/public/docs/user-manual/oscillator.webp)
-
-**6. Make it a plain sine.** The oscillator comes with two waves: a sine, and a saw at half its level under it. For now, just the sine. Press **Synth** (`Z`) for the oscillator's synth parameters, and **→** to open the **Exciter** page: its two waves, how loud the second is and where it sits against the first. Turn the green knob down to **Wave 2: Off**. Press Synth again to close it, then **Piano roll** (`V`) for the take.
-
-![The Exciter page: Wave 1 Sine, Wave 2 Off](../../web-react/public/docs/user-manual/plain-sine.webp)
 
 Press **Play** to hear it loop, and Stop (`` ` ``) when you're done.
 
 ![The take playing](../../web-react/public/docs/user-manual/take-playing.webp)
 
-**7. Keep it.** Press **Save** in the piano roll. The take becomes track #1, on the oscillator, and the Tracks view opens with it picked.
+**6. Keep it.** Press **Save** in the piano roll. The take becomes track #1, on the oscillator, and the Tracks view opens with it picked.
 
 ![Track #1 Oscillator](../../web-react/public/docs/user-manual/progression-saved-as-track.webp)
 
-**8. Play it three times.** **Shift + →** plays the picked track again right after itself. Press it twice and the four bars go round three times, marked ×2 and ×3: twelve bars. (Shift + ← plays it fewer times.)
+**7. Play it three times.** **Shift + →** plays the picked track again right after itself. Press it twice and the four bars go round three times, marked ×2 and ×3: twelve bars. (Shift + ← plays it fewer times.)
 
 ![Shift + → twice: the chords play three times, marked ×2 and ×3](../../web-react/public/docs/user-manual/repeat.webp)
 
@@ -82,11 +78,11 @@ Press **Play** to loop it. Stopped, the green knob moves the head and the keys s
 
 ![→ twice, then Shift + → ten times: the beat from bar 3 to a bar past the chords](../../web-react/public/docs/user-manual/drums-placed.webp)
 
-## The second oscillator: the saw back under the sine
+## The second oscillator: a saw under the sine
 
 **1. Load Suspended again.** Press **Tracks** for the main screen. `Shift V` opens the progressions on Suspended: press **Save**, then **D**, and the same strum is the take on the piano roll. The beat left the 808 kit on the keys, so press pad 1 (`1`) for the oscillator again.
 
-**2. Bring the saw back.** The oscillator still has Wave 2 off, as you left it. Press **Synth** (`Z`), and **→** for the **Exciter** page. Turn the green knob back up to **Wave 2: Saw**: the saw is under the sine again, at half its level and 216° behind it. The two play together, the saw's buzz under the sine's round tone. Press Synth again to close it, then **Piano roll** (`V`) for the take.
+**2. Add a saw.** The oscillator has a second wave, off until you pick one. Press **Synth** (`Z`) for the oscillator's synth parameters, and **→** to open the **Exciter** page: its two waves, how loud the second is and where it sits against the first. Turn the green knob up to **Wave 2: Saw**: a saw comes in under the sine at half its level. Then turn the blue knob up to **Phase: 216°**, putting the saw 216° behind the sine. The two play together, the saw's buzz under the sine's round tone. Press Synth again to close it, then **Piano roll** (`V`) for the take.
 
 ![The Exciter page: Wave 1 Sine, Wave 2 Saw, Osc 2 level 50%, Phase 216°](../../web-react/public/docs/user-manual/sine-and-saw.webp)
 

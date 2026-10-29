@@ -309,14 +309,12 @@ export const DEVICE_PRESETS: readonly DevicePreset[] = [
     octave: 0,
     shiftPad: 5,
   },
-  // A saw at half level under the sine, 216° behind it.
   {
     id: "oscillator",
     icon: "waveform",
     name: "Oscillator",
     target: "oscillator",
     octave: 0,
-    overrides: { "exciter.wave2": 4, "exciter.phase": 216 },
     shiftPad: 0,
   },
 ];

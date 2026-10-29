@@ -18,7 +18,7 @@ use super::{
   Bindings, Callback, GAP, Knob, KnobBinding, PadSlot, PagerColor, Rich, ScreenPager, ScreenReadout,
 };
 use crate::logic::params::{format_param, to_unit, value_to_step};
-use crate::logic::presets::engine_name;
+use crate::logic::presets::{Values, engine_name};
 use crate::logic::synth_graphs::{GraphInput, KNOB_TONES, Tone, graph_note, page_scene};
 use crate::logic::synth_pages::{CHAIN_STOPS, KnobSlots, note_name};
 use crate::state::App;
@@ -33,6 +33,17 @@ const EMPTY: ScreenReadout = ScreenReadout {
   display: String::new(),
   amount: 0.,
 };
+
+/// Whether `spec` does anything at these values: Osc 2's level and phase
+/// don't while Wave 2 is Off, so they leave their knobs and readouts.
+fn live(spec: &ParamSpec, values: &Values) -> bool {
+  match spec.id.as_str() {
+    "exciter.level2" | "exciter.phase" => values
+      .get("exciter.wave2")
+      .is_some_and(|wave| wave.round() > 0.),
+    _ => true,
+  }
+}
 
 /// Whether the reset can run: not over the piano roll or the drum grid.
 pub fn resettable(a: &'static App) -> bool {
@@ -59,12 +70,13 @@ pub fn mode(a: &'static App, b: &mut Bindings) {
   let values = a.sound.values();
   let patch = a.sound.patch();
   let value_of = |spec: &ParamSpec| values.get(&spec.id).copied().unwrap_or(spec.default);
+  let shown = |slots: KnobSlots| slots.map(|spec| spec.filter(|spec| live(spec, &values)));
   let has_shift = page.shift.iter().any(Option::is_some);
-  let layer: KnobSlots = if shift && has_shift {
+  let layer = shown(if shift && has_shift {
     page.shift
   } else {
     page.main
-  };
+  });
   let note = graph_note(patch);
   let chain = page.id == "chain";
   let stops: Vec<&'static str> = CHAIN_STOPS
@@ -188,7 +200,7 @@ pub fn mode(a: &'static App, b: &mut Bindings) {
     );
   }
 
-  let extras: Vec<&ParamSpec> = (if shift { page.main } else { page.shift })
+  let extras: Vec<&ParamSpec> = shown(if shift { page.main } else { page.shift })
     .iter()
     .flatten()
     .copied()
@@ -241,7 +253,7 @@ pub fn mode(a: &'static App, b: &mut Bindings) {
   screen.footer = (Rich::text(note_name(note)), Rich::text(hint));
   screen.readouts = if chain {
     picked_page.map_or(Vec::new(), |page| {
-      page.main.iter().map(|spec| readout(*spec)).collect()
+      shown(page.main).iter().map(|spec| readout(*spec)).collect()
     })
   } else {
     layer.iter().map(|spec| readout(*spec)).collect()
