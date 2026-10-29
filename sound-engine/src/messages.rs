@@ -1,6 +1,6 @@
 //! The events the engine plays, in the same JSON shape as web-react's
-//! `EngineEvent` (`app/lib/physical/messages.ts`), so the host can send
-//! them as text and a test can play one list through both engines.
+//! `EngineEvent` (`web-react/app/lib/physical/messages.ts`), so the host
+//! can send them as text and a test can play one list through both engines.
 
 use serde::{Deserialize, Serialize};
 

@@ -1,7 +1,7 @@
 //! The page, built with fluid's `html!` as web-react's home route lays it
 //! out. Each part is a function returning its element, placed in its
-//! parent's `html!` as a child (`{ pads() }`). The [`Device`] is shared
-//! through fluid's context as a `&'static` reference, so closures capture it
+//! parent's `html!` as a child (`{ pads() }`). They reach the Device's
+//! state through [`app`], a `&'static` reference, so closures capture it
 //! without cloning.
 //!
 //! Styling is Tailwind only, built by Trunk from `src/tailwind.css`, which

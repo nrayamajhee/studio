@@ -1,4 +1,4 @@
-//! The DSP building blocks, ported from web-react's `app/lib/physical/dsp`.
+//! The DSP building blocks, ported from `web-react/app/lib/physical/dsp`.
 //!
 //! Numbers follow the TypeScript engine: arithmetic in `f64` (JavaScript's
 //! number), storage in `f32` wherever it keeps a `Float32Array`, so the two

@@ -1,6 +1,6 @@
 //! The Device's sound: web-react's physical-modeling engine
-//! (`app/lib/physical`) in Rust. `worklet/` builds it into the module the
-//! AudioWorklet runs; with the `web` feature this crate is also the main
+//! (`web-react/app/lib/physical`) in Rust. `worklet/` builds it into the module
+//! the AudioWorklet runs; with the `web` feature this crate is also the main
 //! thread's host (`host`), which starts the worklet and sends it events.
 
 // The port follows the TypeScript line by line, so it keeps its index loops

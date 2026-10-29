@@ -1,5 +1,5 @@
 //! The engine: every instrument, the shared reverb and the master stage,
-//! ported from web-react's `app/lib/physical/engine/Engine.ts`.
+//! ported from `web-react/app/lib/physical/engine/Engine.ts`.
 
 pub mod bus;
 pub mod chain;

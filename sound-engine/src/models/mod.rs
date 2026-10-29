@@ -1,5 +1,5 @@
-//! The instruments' physical models, ported from web-react's
-//! `app/lib/physical/models`.
+//! The instruments' physical models, ported from
+//! `web-react/app/lib/physical/models`.
 
 pub mod bar;
 pub mod body;
