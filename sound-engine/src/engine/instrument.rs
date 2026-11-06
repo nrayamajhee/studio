@@ -155,9 +155,9 @@ impl Instrument {
     match &mut self.model {
       Model::String(m) => m.note_off(bus, note),
       Model::Bore(m) => m.note_off(bus, note),
-      Model::Bowed(m) => m.note_off(note),
+      Model::Bowed(m) => m.note_off(bus, note),
       Model::Drums(_) => {}
-      Model::Oscillator(m) => m.note_off(note),
+      Model::Oscillator(m) => m.note_off(bus, note),
       Model::Reed(m) => m.note_off(note),
       Model::Bar(m) => m.note_off(note),
     }
@@ -184,9 +184,9 @@ impl Instrument {
     match &mut self.model {
       Model::String(m) => m.all_notes_off(bus),
       Model::Bore(m) => m.all_notes_off(),
-      Model::Bowed(m) => m.all_notes_off(),
+      Model::Bowed(m) => m.all_notes_off(bus),
       Model::Drums(_) => {}
-      Model::Oscillator(m) => m.all_notes_off(),
+      Model::Oscillator(m) => m.all_notes_off(bus),
       Model::Reed(m) => m.all_notes_off(),
       Model::Bar(m) => m.all_notes_off(),
     }

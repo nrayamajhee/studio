@@ -17,6 +17,8 @@ pub const STOLEN: u8 = 3;
 const SILENCE: f64 = 3.1623e-5;
 /// Notes starting this close together are a chord, and don't glide.
 const CHORD_SECONDS: f64 = 0.03;
+/// How long after it is let go a voice can still carry a chord glide.
+const CARRY_SECONDS: f64 = 0.25;
 
 /// The lifecycle every voice shares: idle → active → released → idle, plus
 /// stolen (a 5 ms fade-out). Voices report each rendered segment's peak and
@@ -26,6 +28,10 @@ pub struct VoiceCore {
   pub note: i32,
   pub holds: i32,
   pub age: f64,
+  /// When a note was last struck on it (frames).
+  pub struck: f64,
+  /// When it was let go (frames).
+  pub released_at: f64,
   pub quiet_samples: f64,
   pub fs: f64,
   pub chain: VoiceChain,
@@ -39,6 +45,8 @@ impl VoiceCore {
       note: -1,
       holds: 0,
       age: 0.,
+      struck: 0.,
+      released_at: 0.,
       quiet_samples: 0.,
       fs,
       chain: VoiceChain::new(fs, mods),
@@ -78,9 +86,27 @@ impl VoiceCore {
     self.note = note;
     self.holds = 1;
     self.age = clock;
+    self.struck = clock;
     self.quiet_samples = 0.;
     self.chain.fade = 1.;
     self.chain.fade_step = 0.;
+  }
+
+  /// Lets go at `clock`: it rings out, and can still carry a chord glide.
+  pub fn release(&mut self, clock: f64) {
+    self.state = RELEASED;
+    self.released_at = clock;
+  }
+
+  /// Carried on to a new note by a chord glide: it sounds `note` from here,
+  /// as a voice just struck.
+  pub fn carry(&mut self, note: i32, clock: f64, mods: &ModuleSettings) {
+    self.state = ACTIVE;
+    self.note = note;
+    self.holds = 1;
+    self.age = clock;
+    self.struck = clock;
+    self.chain.retarget(note, mods);
   }
 
   /// Starts the 5 ms fade-out that makes room for another note.
@@ -152,6 +178,35 @@ pub fn legato_note<V: Voice>(voices: &[V], clock: f64, fs: f64) -> i32 {
     Some(l) if clock - l.age >= CHORD_SECONDS * fs => l.note,
     _ => -1,
   }
+}
+
+/// The voice a chord glide carries on to `note`: the nearest in pitch of those
+/// let go in the last `CARRY_SECONDS`, else of those still held, leaving out
+/// any struck with this chord.
+pub fn chord_source<V: Voice>(voices: &[V], note: i32, clock: f64, fs: f64) -> Option<usize> {
+  let nearer = |i: usize, best: Option<usize>| {
+    best.is_none_or(|b| {
+      let (a, b) = (voices[i].core().note, voices[b].core().note);
+      let (da, db) = ((a - note).abs(), (b - note).abs());
+      da < db || (da == db && a < b)
+    })
+  };
+  let mut released: Option<usize> = None;
+  let mut held: Option<usize> = None;
+  for (i, voice) in voices.iter().enumerate() {
+    let voice = voice.core();
+    if clock - voice.struck < CHORD_SECONDS * fs {
+      continue;
+    }
+    if voice.state == RELEASED {
+      if clock - voice.released_at <= CARRY_SECONDS * fs && nearer(i, released) {
+        released = Some(i);
+      }
+    } else if voice.state == ACTIVE && nearer(i, held) {
+      held = Some(i);
+    }
+  }
+  released.or(held)
 }
 
 /// Finds a voice for a new note in a keyed, polyphonic instrument: the first

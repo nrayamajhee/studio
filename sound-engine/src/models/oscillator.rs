@@ -6,7 +6,7 @@ use crate::dsp::generators::Oscillator;
 use crate::dsp::math::{fold_note, js_round, midi_to_hz, pan_gains};
 use crate::engine::bus::Bus;
 use crate::engine::modules::{LfoRouting, ModuleSettings};
-use crate::engine::voice::{ACTIVE, RELEASED, STOLEN, Voice, VoiceCore, allocate, legato_note};
+use crate::engine::voice::{ACTIVE, STOLEN, Voice, VoiceCore, allocate, chord_source, legato_note};
 use crate::patches::OscillatorPatch;
 
 /// The oscillators take the vibrato's pitch themselves; its level goes to the
@@ -81,6 +81,9 @@ pub struct OscillatorModel {
   patch: &'static OscillatorPatch,
   voices: Vec<OscillatorVoice>,
   by_note: [i32; 128],
+  /// Glide mode Chords: a note carries on the nearest voice of the chord
+  /// before it.
+  chords: bool,
 }
 
 impl OscillatorModel {
@@ -100,6 +103,7 @@ impl OscillatorModel {
         })
         .collect(),
       by_note: [-1; 128],
+      chords: false,
     }
   }
 
@@ -123,6 +127,7 @@ impl OscillatorModel {
     let attack = p.get("envelope.attack");
     let release = p.get("envelope.release");
     let glide = 1. - (-3. / (p.get("exciter.glide") * bus.fs)).exp();
+    self.chords = js_round(p.get("exciter.glideMode")) as i32 == 1;
     for voice in &mut self.voices {
       voice.oscillator.wave = wave;
       voice.oscillator.glide = glide;
@@ -150,9 +155,25 @@ impl OscillatorModel {
       if voice.core.busy() && voice.core.state != STOLEN {
         voice.core.holds += 1;
         voice.core.state = ACTIVE;
+        voice.core.struck = bus.clock;
         Self::gate_on(voice, velocity);
         return;
       }
+    }
+    if self.chords
+      && let Some(source) = chord_source(&self.voices, n, bus.clock, bus.fs)
+    {
+      let old = self.voices[source].core.note;
+      if old >= 0 && self.by_note[old as usize] == source as i32 {
+        self.by_note[old as usize] = -1;
+      }
+      self.by_note[n as usize] = source as i32;
+      let voice = &mut self.voices[source];
+      voice.core.carry(n, bus.clock, &bus.mods);
+      voice.oscillator.glide_to(midi_to_hz(n as f64));
+      voice.osc2.glide_to(midi_to_hz(n as f64));
+      Self::gate_on(voice, velocity);
+      return;
     }
     let from = legato_note(&self.voices, bus.clock, bus.fs);
     let (idle, forgotten) = allocate(&mut self.voices, self.patch.polyphony);
@@ -183,7 +204,7 @@ impl OscillatorModel {
   }
 
   /// Closes the gate on `note` once every press of it is let go.
-  pub fn note_off(&mut self, note: i32) {
+  pub fn note_off(&mut self, bus: &Bus, note: i32) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     let index = self.by_note[n as usize];
     if index < 0 {
@@ -197,15 +218,15 @@ impl OscillatorModel {
     if voice.core.holds > 0 {
       return;
     }
-    Self::gate_off(voice);
+    Self::gate_off(voice, bus.clock);
   }
 
   /// Closes every gate.
-  pub fn all_notes_off(&mut self) {
+  pub fn all_notes_off(&mut self, bus: &Bus) {
     for voice in &mut self.voices {
       if voice.core.busy() && voice.core.state != STOLEN {
         voice.core.holds = 0;
-        Self::gate_off(voice);
+        Self::gate_off(voice, bus.clock);
       }
     }
   }
@@ -248,8 +269,8 @@ impl OscillatorModel {
   }
 
   /// Closes the voice's gate (and the master ADSR), releasing it.
-  fn gate_off(voice: &mut OscillatorVoice) {
-    voice.core.state = RELEASED;
+  fn gate_off(voice: &mut OscillatorVoice, clock: f64) {
+    voice.core.release(clock);
     voice.gate.note_off();
     voice.core.chain.shape.note_off();
   }

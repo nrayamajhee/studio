@@ -98,6 +98,20 @@ for (const patch of PATCHES) {
     events.push({ type: "sustain", instrument: id, down: false, time: 2.2 });
   }
   cases.push({ name: patch.id, events });
+  // Glide mode Chords: the same notes, and a chord let go and struck at the
+  // same moment carried on to the next.
+  const glideMode = patch.params.find((p) => p.id.endsWith(".glideMode"));
+  if (glideMode)
+    cases.push({
+      name: `${patch.id}-chords`,
+      events: [
+        ...events,
+        ...[n, n + 4, n + 7].map((m) => note(true, m, 2.0)),
+        ...[n, n + 4, n + 7].map((m) => note(false, m, 2.2)),
+        ...[n + 2, n + 5, n + 9].map((m) => note(true, m, 2.2)),
+      ],
+      overrides: { [patch.id]: { [glideMode.id]: 1 } },
+    });
 }
 
 // The master stage: reverb, LFO, FX, the ADSR and the metronome.

@@ -12,6 +12,15 @@ A voice is one sounding note (or one string, or one drum piece). Every model sha
 
 When all voices are busy, `pickVictim` chooses which one to reuse: the **quietest released** voice first, otherwise the **oldest active** one. Voice pools hold a few spares above the polyphony so a stolen voice can fade out while its replacement starts.
 
+### Gliding through chords
+
+The oscillator and the bowed strings glide, and their **Glide mode** says what a note glides from. **Legato**, the default, glides from the note still held before it, and notes starting within 30 ms of each other are a chord and don't glide. **Chords** carries voices over instead: a new note takes the voice nearest it in pitch from the chord before (`chordSource` in `engine/Voice.ts`) and that voice slides to it, so C–E–G into D–F–A moves C to D, E to F and G to A, each voice its own short way. It doesn't start a new note. Nothing changes in how a take is recorded or played, because it is decided as each note starts:
+
+- It takes a voice let go in the last 250 ms first, so a take, where a chord is let go at the very moment the next is struck, slides straight through. Only if none was let go does it take one still held, so holding a chord and pressing the next slides too.
+- A voice already carried on, or struck, in the last 30 ms is part of the new chord, so no two of its notes take the same voice.
+- A chord with more notes than the one before starts its extra notes on their own pitch. One with fewer lets the voices left over ring out.
+- A carried voice keeps its phase and its filter, which glides to the new note's keytracked cutoff, and its envelope and the master ADSR start again from where they are, so a voice let go is brought back without a click.
+
 ## Modules
 
 Inside each instrument, every voice carries the same **filter** and **vibrato** (an LFO of its own), set from the same params on every melodic instrument (`engine/Modules.ts`, `ModuleSettings`), alongside the model's own **envelope** (the breath, the bow, the bellows; a string's attack and damper; the oscillator's gate). These belong to the instrument. The **master ADSR** and **master LFO** are the engine's ([Master effects](master-effects.md)): the Device sets them over every instrument (its ADSR and LFO modes, kept per track), with their own params (`adsr.*`, `lfo.*`) apart from any instrument's. A model renders only its raw signal and hands each sample to its voice's chain (`engine/VoiceChain.ts`), which runs the rest of the voice the same way for all of them. In the order a note goes through:

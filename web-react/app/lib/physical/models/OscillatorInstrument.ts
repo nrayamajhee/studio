@@ -6,9 +6,9 @@ import type { ModuleSettings } from "../engine/Modules";
 import {
   ACTIVE,
   IDLE,
-  RELEASED,
   STOLEN,
   Voice,
+  chordSource,
   legatoNote,
   pickVictim,
 } from "../engine/Voice";
@@ -64,6 +64,9 @@ export class OscillatorInstrument extends Instrument {
   readonly patch: OscillatorPatch;
   private readonly voices: OscillatorVoice[] = [];
   private readonly byNote = new Int16Array(128).fill(-1);
+  // Glide mode Chords: a note carries on the nearest voice of the chord
+  // before it.
+  private chords = false;
 
   constructor(
     patch: OscillatorPatch,
@@ -88,6 +91,7 @@ export class OscillatorInstrument extends Instrument {
     const attack = p.get("envelope.attack");
     const release = p.get("envelope.release");
     const glide = 1 - Math.exp(-3 / (p.get("exciter.glide") * this.fs));
+    this.chords = Math.round(p.get("exciter.glideMode")) === 1;
     for (let i = 0; i < this.voices.length; i++) {
       const voice = this.voices[i];
       voice.oscillator.wave = wave;
@@ -119,8 +123,22 @@ export class OscillatorInstrument extends Instrument {
     if (voice && voice.busy && voice.state !== STOLEN) {
       voice.holds++;
       voice.state = ACTIVE;
+      voice.struck = this.clock;
       this.gateOn(voice, velocity);
       return;
+    }
+    if (this.chords) {
+      const source = chordSource(this.voices, n, this.clock, this.fs);
+      if (source >= 0) {
+        voice = this.voices[source];
+        if (this.byNote[voice.note] === source) this.byNote[voice.note] = -1;
+        this.byNote[n] = source;
+        voice.carry(n, this.clock);
+        voice.oscillator.glideTo(midiToHz(n));
+        voice.osc2.glideTo(midiToHz(n));
+        this.gateOn(voice, velocity);
+        return;
+      }
     }
     const from = legatoNote(this.voices, this.clock, this.fs);
     let sounding = 0;
@@ -213,7 +231,7 @@ export class OscillatorInstrument extends Instrument {
   }
 
   private gateOff(voice: OscillatorVoice) {
-    voice.state = RELEASED;
+    voice.release(this.clock);
     voice.gate.noteOff();
     voice.shape.noteOff();
   }

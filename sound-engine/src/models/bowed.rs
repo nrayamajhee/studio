@@ -5,12 +5,12 @@
 use super::waveguide::Waveguide;
 use crate::dsp::adsr::{Adsr, AdsrStages};
 use crate::dsp::filters::{Biquad, OnePoleLowpass, rescale_quadratic};
-use crate::dsp::math::{KeyTable, TWO_PI, fold_note, key_table, midi_to_hz, pan_gains};
+use crate::dsp::math::{KeyTable, TWO_PI, fold_note, js_round, key_table, midi_to_hz, pan_gains};
 use crate::dsp::nonlinear::bow_table;
 use crate::dsp::phase_delay::one_pole_phase_delay;
 use crate::engine::bus::Bus;
 use crate::engine::modules::{LfoRouting, ModuleSettings};
-use crate::engine::voice::{ACTIVE, RELEASED, STOLEN, Voice, VoiceCore, allocate, legato_note};
+use crate::engine::voice::{ACTIVE, STOLEN, Voice, VoiceCore, allocate, chord_source, legato_note};
 use crate::patches::{BowedPatch, pick_tuning};
 
 /// The sample rate STK's body filter was designed at; the sections are rescaled
@@ -170,6 +170,9 @@ pub struct BowedModel {
   position: f64,
   speed: f64,
   glide: f64,
+  /// Glide mode Chords: a note carries on the nearest voice of the chord
+  /// before it.
+  chords: bool,
   envelope: AdsrStages,
   body_mix: f64,
 }
@@ -190,6 +193,7 @@ impl BowedModel {
       position: 0.127,
       speed: 1.,
       glide: 1.,
+      chords: false,
       envelope: AdsrStages {
         attack: 0.05,
         decay: 0.1,
@@ -213,6 +217,7 @@ impl BowedModel {
     self.position = p.get("exciter.position");
     self.speed = p.get("exciter.speed");
     self.glide = 1. - (-3. / (p.get("resonator.portamento") * bus.fs)).exp();
+    self.chords = js_round(p.get("resonator.glideMode")) as i32 == 1;
     self.envelope = p.envelope("envelope");
     self.body_mix = p.get_or("body.violin", 0.);
     for voice in &mut self.voices {
@@ -240,9 +245,25 @@ impl BowedModel {
       if voice.core.busy() && voice.core.state != STOLEN {
         voice.core.holds += 1;
         voice.core.state = ACTIVE;
+        voice.core.struck = bus.clock;
         self.bow_on(existing as usize, velocity);
         return;
       }
+    }
+    if self.chords
+      && let Some(source) = chord_source(&self.voices, n, bus.clock, bus.fs)
+    {
+      // The finger slides along the string to the new note.
+      let old = self.voices[source].core.note;
+      if old >= 0 && self.by_note[old as usize] == source as i32 {
+        self.by_note[old as usize] = -1;
+      }
+      self.by_note[n as usize] = source as i32;
+      self.voices[source].core.carry(n, bus.clock, &bus.mods);
+      self.voices[source].delay_target = self.loop_delay(bus, source, n);
+      self.pan(source, n);
+      self.bow_on(source, velocity);
+      return;
     }
     let from = legato_note(&self.voices, bus.clock, bus.fs);
     let (idle, forgotten) = allocate(&mut self.voices, self.patch.polyphony);
@@ -265,7 +286,7 @@ impl BowedModel {
   }
 
   /// Lifts the bow from `note` once every press of it is let go.
-  pub fn note_off(&mut self, note: i32) {
+  pub fn note_off(&mut self, bus: &Bus, note: i32) {
     let n = fold_note(note, self.patch.base.range.0, self.patch.base.range.1);
     let index = self.by_note[n as usize];
     if index < 0 {
@@ -279,17 +300,17 @@ impl BowedModel {
     if voice.core.holds > 0 {
       return;
     }
-    voice.core.state = RELEASED;
+    voice.core.release(bus.clock);
     voice.bow.note_off();
     voice.core.chain.shape.note_off();
   }
 
   /// Lifts the bow from every string.
-  pub fn all_notes_off(&mut self) {
+  pub fn all_notes_off(&mut self, bus: &Bus) {
     for voice in &mut self.voices {
       if voice.core.busy() && voice.core.state != STOLEN {
         voice.core.holds = 0;
-        voice.core.state = RELEASED;
+        voice.core.release(bus.clock);
         voice.bow.note_off();
         voice.core.chain.shape.note_off();
       }
@@ -352,12 +373,17 @@ impl BowedModel {
     } else {
       target
     };
-    let (low, high) = self.patch.base.range;
-    let pan = self.patch.base.pan.center
-      + self.patch.base.pan.spread * ((2. * (n - low) as f64) / (high - low) as f64 - 1.);
     let voice = &mut self.voices[index];
     voice.delay_target = target;
     voice.base_delay = base;
-    pan_gains(pan, &mut voice.core.chain.gains);
+    self.pan(index, n);
+  }
+
+  /// Pans the voice by its note across the patch's range.
+  fn pan(&mut self, index: usize, n: i32) {
+    let (low, high) = self.patch.base.range;
+    let pan = self.patch.base.pan.center
+      + self.patch.base.pan.spread * ((2. * (n - low) as f64) / (high - low) as f64 - 1.);
+    pan_gains(pan, &mut self.voices[index].core.chain.gains);
   }
 }
