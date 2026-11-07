@@ -105,6 +105,75 @@ describe("Engine", () => {
     expect(engine.instrument("piano")?.activeVoices()).toBe(1);
   });
 
+  it("carries a chord's voices to the next chord in Glide mode Chords", () => {
+    const on = (time: number) => (note: number) =>
+      ({
+        type: "noteOn",
+        instrument: "oscillator",
+        note,
+        velocity: 0.8,
+        time,
+      }) as const;
+    const off = (time: number) => (note: number) =>
+      ({ type: "noteOff", instrument: "oscillator", note, time }) as const;
+    // Let go and struck at the same moment, as a take plays them.
+    const events: EngineEvent[] = [
+      ...[60, 64, 67].map(on(0)),
+      ...[60, 64, 67].map(off(0.5)),
+      ...[62, 65, 69].map(on(0.5)),
+    ];
+    const voices = (mode: number) =>
+      renderEngine(events, {
+        sampleRate: 48000,
+        duration: 0.55,
+        overrides: { oscillator: { "exciter.glideMode": mode } },
+      })
+        .engine.instrument("oscillator")
+        ?.activeVoices();
+    expect(voices(0)).toBe(6);
+    expect(voices(1)).toBe(3);
+  });
+
+  it("slides a note let go into the next in Glide mode Chords", () => {
+    const events: EngineEvent[] = [
+      {
+        type: "noteOn",
+        instrument: "oscillator",
+        note: 60,
+        velocity: 0.8,
+        time: 0,
+      },
+      { type: "noteOff", instrument: "oscillator", note: 60, time: 0.5 },
+      {
+        type: "noteOn",
+        instrument: "oscillator",
+        note: 67,
+        velocity: 0.8,
+        time: 0.5,
+      },
+    ];
+    // Mid-glide, 30 ms into a 200 ms slide, the pitch is still well under G.
+    const cents = (mode: number) => {
+      const { left } = renderEngine(events, {
+        sampleRate: 48000,
+        duration: 0.6,
+        overrides: {
+          oscillator: { "exciter.glideMode": mode, "exciter.glide": 0.2 },
+        },
+      });
+      return measurePitch(
+        left.subarray(24000),
+        48000,
+        midiToHz(67),
+        0,
+        0.02,
+        0.04,
+      ).cents;
+    };
+    expect(Math.abs(cents(0))).toBeLessThan(5);
+    expect(cents(1)).toBeLessThan(-100);
+  });
+
   it("spreads a guitar chord across strings", () => {
     const chord = [52, 56, 59, 64];
     const events: EngineEvent[] = chord.map((note) => ({

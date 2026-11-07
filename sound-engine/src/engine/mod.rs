@@ -511,6 +511,38 @@ mod tests {
   }
 
   #[test]
+  fn glide_mode_chords_carries_a_chords_voices_to_the_next() {
+    let voices = |mode: u8| {
+      let mut engine = Engine::new(FS);
+      engine.schedule_json(&format!(
+        r#"{{"type":"param","target":"oscillator","id":"exciter.glideMode","value":{mode}}}"#
+      ));
+      // Let go and struck at the same moment, as a take plays them.
+      let mut events = vec![];
+      for note in [60, 64, 67] {
+        events.push(format!(
+          r#"{{"type":"noteOn","instrument":"oscillator","note":{note},"velocity":0.8,"time":0}}"#
+        ));
+      }
+      for note in [60, 64, 67] {
+        events.push(format!(
+          r#"{{"type":"noteOff","instrument":"oscillator","note":{note},"time":0.5}}"#
+        ));
+      }
+      for note in [62, 65, 69] {
+        events.push(format!(
+          r#"{{"type":"noteOn","instrument":"oscillator","note":{note},"velocity":0.8,"time":0.5}}"#
+        ));
+      }
+      engine.schedule_json(&format!("[{}]", events.join(",")));
+      render(&mut engine, 0.55);
+      engine.active_voices()
+    };
+    assert_eq!(voices(0), 6);
+    assert_eq!(voices(1), 3);
+  }
+
+  #[test]
   fn events_land_on_their_frame() {
     // The limiter's lookahead delays both alike.
     let onset = |time: f64| {

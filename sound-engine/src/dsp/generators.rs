@@ -202,6 +202,11 @@ impl Oscillator {
     self.target = hz / self.fs;
   }
 
+  /// Glides from wherever it is now to `hz`.
+  pub fn glide_to(&mut self, hz: f64) {
+    self.target = hz / self.fs;
+  }
+
   /// Restarts the cycle.
   pub fn reset(&mut self) {
     self.phase = 0.;

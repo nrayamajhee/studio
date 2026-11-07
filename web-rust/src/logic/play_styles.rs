@@ -80,7 +80,7 @@ const STRUM: &[Setting] = &[Setting::Strum];
 const BOTH: &[Setting] = &[Setting::Rate, Setting::Strum];
 
 /// Every built-in play style, by group.
-pub const PLAY_STYLES: [PlayStyleSpec; 21] = {
+pub const PLAY_STYLES: [PlayStyleSpec; 33] = {
   use PlayStyleGroup::*;
   [
     style("block", "Block", "Every note at once", Held, &[]),
@@ -171,6 +171,90 @@ pub const PLAY_STYLES: [PlayStyleSpec; 21] = {
       Strum,
       BOTH,
     ),
+    style(
+      "boomChuck",
+      "Boom-chuck",
+      "The root on the beat, the top strings chucked between",
+      Strum,
+      BOTH,
+    ),
+    style(
+      "backbeatStrum",
+      "Backbeat strum",
+      "A down on every beat, two and four hit hardest",
+      Strum,
+      BOTH,
+    ),
+    style(
+      "popPush",
+      "Pop push",
+      "Down, down-up, a pushed up ringing over three",
+      Strum,
+      BOTH,
+    ),
+    style(
+      "rumbaStrum",
+      "Rumba strum",
+      "Down-ups with a slapped chuck on two and four",
+      Strum,
+      BOTH,
+    ),
+    style(
+      "funkSixteenths",
+      "Funk sixteenths",
+      "Ghosted sixteenths, the one and the backbeat struck",
+      Strum,
+      BOTH,
+    ),
+    style(
+      "chopStrum",
+      "Chop",
+      "Sharp, short top strings on two and four",
+      Strum,
+      BOTH,
+    ),
+    style(
+      "shuffleStrum",
+      "Shuffle strum",
+      "Long downs and light ups, in triplets",
+      Strum,
+      BOTH,
+    ),
+    style(
+      "sixEightStrum",
+      "Six-eight strum",
+      "Two lilting threes, the first leaned on",
+      Strum,
+      BOTH,
+    ),
+    style(
+      "bossaStrum",
+      "Bossa strum",
+      "The thumb on the root, the fingers off the beat",
+      Strum,
+      RATE,
+    ),
+    style(
+      "swellStrum",
+      "Swell strum",
+      "Four downs, each harder than the last",
+      Strum,
+      BOTH,
+    ),
+    style(
+      "fadeStrum",
+      "Fade strum",
+      "Four downs, each softer than the last",
+      Strum,
+      BOTH,
+    ),
+    style(
+      "tremoloStrum",
+      "Tremolo strum",
+      "Fast down-ups that swell and fall back",
+      Strum,
+      BOTH,
+    ),
     style("up", "Arp up", "One at a time, low to high", Arpeggio, RATE),
     style(
       "down",
@@ -221,15 +305,61 @@ pub enum Sweep {
   Falling,
 }
 
+/// Which of a chord's notes a strike catches, when not all of them.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Strings {
+  /// Only the root: a thumb on the bass string.
+  Root,
+  /// All but the root: an up strum or a chuck on the top strings.
+  High,
+}
+
 /// A rhythm's strike: the step it lands on, how many steps it holds (a
-/// little short of the next, so that one speaks), its sweep, and how hard
-/// it plays against the key's velocity.
+/// little short of the next, so that one speaks), its sweep, how hard it
+/// plays against the key's velocity, the strings it catches, and how much
+/// it fades across its sweep, the first string it meets the loudest.
 #[derive(Clone, Copy, Debug)]
 pub struct Strike {
   pub at: u32,
   pub hold: f64,
   pub sweep: Option<Sweep>,
   pub level: f64,
+  pub strings: Option<Strings>,
+  pub taper: f64,
+}
+
+impl Strike {
+  /// The strike catching only `strings`.
+  const fn on(mut self, strings: Strings) -> Self {
+    self.strings = Some(strings);
+    self
+  }
+
+  /// The strike fading by `TAPER` across its sweep.
+  const fn tapered(mut self) -> Self {
+    self.taper = TAPER;
+    self
+  }
+}
+
+/// The notes a strike sounds, in the order it sweeps them, each at its
+/// level.
+pub fn strike_notes(notes: &[i32], strike: &Strike) -> Vec<(i32, f64)> {
+  let caught = match strike.strings {
+    Some(Strings::Root) => &notes[..notes.len().min(1)],
+    Some(Strings::High) => &notes[notes.len().min(1)..],
+    None => notes,
+  };
+  let order: Vec<i32> = match strike.sweep {
+    Some(Sweep::Falling) => caught.iter().rev().copied().collect(),
+    _ => caught.to_vec(),
+  };
+  let last = order.len().saturating_sub(1).max(1) as f64;
+  order
+    .into_iter()
+    .enumerate()
+    .map(|(i, note)| (note, strike.level * (1. - (strike.taper * i as f64) / last)))
+    .collect()
 }
 
 /// A rhythm: how many steps it runs before it repeats, and its strikes.
@@ -246,6 +376,12 @@ const ACCENT: f64 = 0.9 / 0.8;
 const LIGHT: f64 = 0.7 / 0.8;
 /// A piano player's four to the bar: the third struck full and let ring.
 const FULL: f64 = 1. / 0.8;
+/// Softer still (0.6), against the keys' velocity.
+const SOFT: f64 = 0.6 / 0.8;
+/// A ghost (0.35): a stroke the hand barely lets touch the strings.
+const GHOST: f64 = 0.35 / 0.8;
+/// How much a leaned-on strum fades from its first string to its last.
+const TAPER: f64 = 0.25;
 
 /// A strike, for the rhythms' tables.
 const fn strike(at: u32, hold: f64, sweep: Option<Sweep>, level: f64) -> Strike {
@@ -254,6 +390,8 @@ const fn strike(at: u32, hold: f64, sweep: Option<Sweep>, level: f64) -> Strike 
     hold,
     sweep,
     level,
+    strings: None,
+    taper: 0.,
   }
 }
 
@@ -327,6 +465,148 @@ pub fn rhythm(id: &str) -> Option<&'static Rhythm> {
       strike(5, 0.9, DOWN, LIGHT),
     ],
   };
+  // Country's bass and chuck: the thumb on the root, then the top strings
+  // brushed short and light.
+  const BOOM_CHUCK: Rhythm = Rhythm {
+    cycle: 4,
+    strikes: &[
+      strike(0, 1.9, None, ACCENT).on(Strings::Root),
+      strike(2, 0.6, UP, LIGHT).on(Strings::High),
+    ],
+  };
+  // A bar of downs on the beats, the backbeat hit hardest, and an up
+  // brushing the top strings into the next bar.
+  const BACKBEAT: Rhythm = Rhythm {
+    cycle: 8,
+    strikes: &[
+      strike(0, 1.9, UP, LIGHT),
+      strike(2, 1.9, UP, FULL).tapered(),
+      strike(4, 1.9, UP, LIGHT),
+      strike(6, 0.9, UP, FULL).tapered(),
+      strike(7, 0.9, DOWN, SOFT).on(Strings::High),
+    ],
+  };
+  // Down, down-up, then an up on the and of two pushed hard and let ring
+  // over the third beat, and down-up to finish.
+  const POP_PUSH: Rhythm = Rhythm {
+    cycle: 8,
+    strikes: &[
+      strike(0, 1.9, UP, ACCENT).tapered(),
+      strike(2, 0.9, UP, LIGHT),
+      strike(3, 2.9, DOWN, ACCENT).tapered(),
+      strike(6, 0.9, UP, 1.),
+      strike(7, 0.9, DOWN, LIGHT).on(Strings::High),
+    ],
+  };
+  // Eighths of down-ups, the downs on two and four slapped short and hard.
+  const RUMBA: Rhythm = Rhythm {
+    cycle: 8,
+    strikes: &[
+      strike(0, 0.9, UP, ACCENT).tapered(),
+      strike(1, 0.9, DOWN, LIGHT).on(Strings::High),
+      strike(2, 0.25, UP, FULL),
+      strike(3, 0.9, DOWN, LIGHT).on(Strings::High),
+      strike(4, 0.9, UP, 1.).tapered(),
+      strike(5, 0.9, DOWN, LIGHT).on(Strings::High),
+      strike(6, 0.25, UP, FULL),
+      strike(7, 0.9, DOWN, SOFT).on(Strings::High),
+    ],
+  };
+  // Two beats of sixteenths, the hand never stopping: ghosts between, the
+  // one leaned on, a short hard chuck on the backbeat.
+  const FUNK: Rhythm = Rhythm {
+    cycle: 8,
+    strikes: &[
+      strike(0, 0.9, UP, ACCENT).tapered(),
+      strike(1, 0.2, DOWN, GHOST).on(Strings::High),
+      strike(2, 0.2, UP, GHOST),
+      strike(3, 0.9, DOWN, LIGHT).on(Strings::High),
+      strike(4, 0.3, UP, FULL).tapered(),
+      strike(5, 0.2, DOWN, GHOST).on(Strings::High),
+      strike(6, 0.9, UP, LIGHT),
+      strike(7, 0.2, DOWN, GHOST).on(Strings::High),
+    ],
+  };
+  // A mandolin's chop: the top strings struck and choked on the backbeat.
+  const CHOP: Rhythm = Rhythm {
+    cycle: 8,
+    strikes: &[
+      strike(2, 0.3, UP, ACCENT).on(Strings::High),
+      strike(6, 0.3, UP, ACCENT).on(Strings::High),
+    ],
+  };
+  // In triplets: a long down on the beat, a light up on its last third.
+  const SHUFFLE: Rhythm = Rhythm {
+    cycle: 6,
+    strikes: &[
+      strike(0, 1.9, UP, ACCENT).tapered(),
+      strike(2, 0.9, DOWN, LIGHT).on(Strings::High),
+      strike(3, 1.9, UP, 1.).tapered(),
+      strike(5, 0.9, DOWN, SOFT).on(Strings::High),
+    ],
+  };
+  // A bar of 6/8 in triplets: the first of each three leaned on, the first
+  // of the bar hardest.
+  const SIX_EIGHT: Rhythm = Rhythm {
+    cycle: 6,
+    strikes: &[
+      strike(0, 1.9, UP, FULL).tapered(),
+      strike(2, 0.9, DOWN, SOFT).on(Strings::High),
+      strike(3, 0.9, UP, ACCENT).tapered(),
+      strike(4, 0.9, DOWN, SOFT).on(Strings::High),
+      strike(5, 0.9, UP, LIGHT),
+    ],
+  };
+  // Two bars of eighths: the thumb on the root of each beat it doesn't
+  // share with the fingers, which pluck the top strings at once, mostly off
+  // it.
+  const BOSSA: Rhythm = Rhythm {
+    cycle: 16,
+    strikes: &[
+      strike(0, 2.9, None, ACCENT),
+      strike(3, 0.9, None, LIGHT).on(Strings::High),
+      strike(4, 1.9, None, 1.).on(Strings::Root),
+      strike(6, 1.9, None, LIGHT).on(Strings::High),
+      strike(8, 1.9, None, 1.).on(Strings::Root),
+      strike(10, 1.9, None, 1.).on(Strings::High),
+      strike(12, 0.9, None, 1.).on(Strings::Root),
+      strike(13, 2.9, None, LIGHT).on(Strings::High),
+    ],
+  };
+  // A bar of downs growing from soft to full, and one fading from full.
+  const SWELL: Rhythm = Rhythm {
+    cycle: 8,
+    strikes: &[
+      strike(0, 1.9, UP, SOFT),
+      strike(2, 1.9, UP, LIGHT),
+      strike(4, 1.9, UP, 1.),
+      strike(6, 1.9, UP, FULL).tapered(),
+    ],
+  };
+  const FADE: Rhythm = Rhythm {
+    cycle: 8,
+    strikes: &[
+      strike(0, 1.9, UP, FULL).tapered(),
+      strike(2, 1.9, UP, 1.),
+      strike(4, 1.9, UP, LIGHT),
+      strike(6, 1.9, UP, SOFT),
+    ],
+  };
+  // Sixteenths of down-ups rising to a peak and falling back each two
+  // beats.
+  const TREMOLO: Rhythm = Rhythm {
+    cycle: 8,
+    strikes: &[
+      strike(0, 0.9, UP, SOFT),
+      strike(1, 0.9, DOWN, LIGHT),
+      strike(2, 0.9, UP, 1.),
+      strike(3, 0.9, DOWN, ACCENT),
+      strike(4, 0.9, UP, FULL),
+      strike(5, 0.9, DOWN, ACCENT),
+      strike(6, 0.9, UP, 1.),
+      strike(7, 0.9, DOWN, LIGHT),
+    ],
+  };
   const OFFBEAT: Rhythm = Rhythm {
     cycle: 2,
     strikes: &[strike(1, 0.5, None, 1.)],
@@ -357,6 +637,18 @@ pub fn rhythm(id: &str) -> Option<&'static Rhythm> {
     "rockEighths" => &ROCK,
     "skank" => &SKANK,
     "waltzStrum" => &WALTZ,
+    "boomChuck" => &BOOM_CHUCK,
+    "backbeatStrum" => &BACKBEAT,
+    "popPush" => &POP_PUSH,
+    "rumbaStrum" => &RUMBA,
+    "funkSixteenths" => &FUNK,
+    "chopStrum" => &CHOP,
+    "shuffleStrum" => &SHUFFLE,
+    "sixEightStrum" => &SIX_EIGHT,
+    "bossaStrum" => &BOSSA,
+    "swellStrum" => &SWELL,
+    "fadeStrum" => &FADE,
+    "tremoloStrum" => &TREMOLO,
     "offbeat" => &OFFBEAT,
     "tresillo" => &TRESILLO,
     "gallop" => &GALLOP,
@@ -422,14 +714,15 @@ impl SavedPlayStyle {
 }
 
 /// The rate a built-in style starts at: the pulses a strike a beat, the
+/// triplet strums in triplets and the sixteenth strums in sixteenths, the
 /// other rhythms, strums and arpeggios in eighths, and a roll in sixteenths.
 fn starting_rate(id: &str, group: PlayStyleGroup) -> u32 {
-  if id == "pulse" || id == "accentPulse" {
-    1
-  } else if group == PlayStyleGroup::Held {
-    PlayStyle::default().per_beat
-  } else {
-    2
+  match id {
+    "pulse" | "accentPulse" => 1,
+    "shuffleStrum" | "sixEightStrum" => 3,
+    "funkSixteenths" | "tremoloStrum" => 4,
+    _ if group == PlayStyleGroup::Held => PlayStyle::default().per_beat,
+    _ => 2,
   }
 }
 
@@ -538,18 +831,14 @@ pub fn chord_notes(
       let at = count % rhythm.cycle;
       let start = f64::from(count) * step_ms;
       for strike in rhythm.strikes.iter().filter(|strike| strike.at == at) {
-        let order: Vec<i32> = match strike.sweep {
-          Some(Sweep::Falling) => notes.iter().rev().copied().collect(),
-          _ => notes.clone(),
-        };
         let gap = if strike.sweep.is_some() {
           f64::from(style.strum)
         } else {
           0.
         };
         let end = start + strike.hold * step_ms;
-        for (i, &note) in order.iter().enumerate() {
-          add(note, start + i as f64 * gap, end, strike.level);
+        for (i, (note, level)) in strike_notes(&notes, strike).into_iter().enumerate() {
+          add(note, start + i as f64 * gap, end, level);
         }
       }
       count += 1;
@@ -645,9 +934,10 @@ mod tests {
       strum: 40,
     };
     let options = play_style_options(&[saved]);
-    assert_eq!(options.len(), 22);
+    assert_eq!(options.len(), PLAY_STYLES.len() + 1);
     assert_eq!(options[3].style.per_beat, 1);
-    assert_eq!(options[21].group, "Saved");
-    assert!(style_edited(&style("strum", 4), &options[21]));
+    let last = options.len() - 1;
+    assert_eq!(options[last].group, "Saved");
+    assert!(style_edited(&style("strum", 4), &options[last]));
   }
 }

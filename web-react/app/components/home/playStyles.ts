@@ -20,6 +20,18 @@ export type PlayStyleId =
   | "rockEighths"
   | "skank"
   | "waltzStrum"
+  | "boomChuck"
+  | "backbeatStrum"
+  | "popPush"
+  | "rumbaStrum"
+  | "funkSixteenths"
+  | "chopStrum"
+  | "shuffleStrum"
+  | "sixEightStrum"
+  | "bossaStrum"
+  | "swellStrum"
+  | "fadeStrum"
+  | "tremoloStrum"
   | "up"
   | "down"
   | "upDown"
@@ -154,6 +166,90 @@ export const PLAY_STYLES: readonly {
     settings: ["rate", "strum"],
   },
   {
+    id: "boomChuck",
+    name: "Boom-chuck",
+    detail: "The root on the beat, the top strings chucked between",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "backbeatStrum",
+    name: "Backbeat strum",
+    detail: "A down on every beat, two and four hit hardest",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "popPush",
+    name: "Pop push",
+    detail: "Down, down-up, a pushed up ringing over three",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "rumbaStrum",
+    name: "Rumba strum",
+    detail: "Down-ups with a slapped chuck on two and four",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "funkSixteenths",
+    name: "Funk sixteenths",
+    detail: "Ghosted sixteenths, the one and the backbeat struck",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "chopStrum",
+    name: "Chop",
+    detail: "Sharp, short top strings on two and four",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "shuffleStrum",
+    name: "Shuffle strum",
+    detail: "Long downs and light ups, in triplets",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "sixEightStrum",
+    name: "Six-eight strum",
+    detail: "Two lilting threes, the first leaned on",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "bossaStrum",
+    name: "Bossa strum",
+    detail: "The thumb on the root, the fingers off the beat",
+    group: "Strum",
+    settings: ["rate"],
+  },
+  {
+    id: "swellStrum",
+    name: "Swell strum",
+    detail: "Four downs, each harder than the last",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "fadeStrum",
+    name: "Fade strum",
+    detail: "Four downs, each softer than the last",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
+    id: "tremoloStrum",
+    name: "Tremolo strum",
+    detail: "Fast down-ups that swell and fall back",
+    group: "Strum",
+    settings: ["rate", "strum"],
+  },
+  {
     id: "up",
     name: "Arp up",
     detail: "One at a time, low to high",
@@ -199,12 +295,36 @@ export const STRUM_GAPS: readonly number[] = [5, 10, 15, 20, 30, 40, 60, 80];
 // steps it holds (a little short of the next, so that one speaks), whether
 // it sweeps the chord a strum's gap at a time, rising (a down strum) or
 // falling (an up strum), and how hard it plays against the key's velocity.
-type Strike = {
+// A strike can catch only the chord's root (a thumb on the bass string) or
+// all but the root (an up strum or a chuck on the top strings), and fade by
+// `taper` across its sweep, the first string it meets the loudest.
+export type Strike = {
   at: number;
   hold: number;
   sweep?: "rising" | "falling";
   level?: number;
+  strings?: "root" | "high";
+  taper?: number;
 };
+
+// The notes a strike sounds, in the order it sweeps them, each at its level.
+export function strikeNotes(
+  notes: readonly number[],
+  { sweep, level = 1, strings, taper = 0 }: Strike,
+) {
+  const caught =
+    strings === "root"
+      ? notes.slice(0, 1)
+      : strings === "high"
+        ? notes.slice(1)
+        : notes;
+  const order = sweep === "falling" ? [...caught].reverse() : caught;
+  const last = Math.max(1, order.length - 1);
+  return order.map((note, i) => ({
+    note,
+    level: level * (1 - (taper * i) / last),
+  }));
+}
 
 // Strike levels against the keys' velocity (0.8): a touch harder (0.9) or a
 // touch lighter (0.7), as a player leans into a beat or eases off an upstroke.
@@ -215,6 +335,12 @@ const LIGHT = 0.7 / 0.8;
 // lengths carry the accent as much as the levels, since a full chord already
 // rides the limiter.
 const FULL = 1 / 0.8;
+// Softer still (0.6), and a ghost (0.35): a stroke the hand barely lets touch
+// the strings, more feel than note.
+const SOFT = 0.6 / 0.8;
+const GHOST = 0.35 / 0.8;
+// How much a leaned-on strum fades from its first string to its last.
+const TAPER = 0.25;
 
 const RHYTHMS: Partial<
   Record<PlayStyleId, { cycle: number; strikes: readonly Strike[] }>
@@ -279,6 +405,144 @@ const RHYTHMS: Partial<
       { at: 5, hold: 0.9, sweep: "falling", level: LIGHT },
     ],
   },
+  // Country's bass and chuck: the thumb on the root, then the top strings
+  // brushed short and light.
+  boomChuck: {
+    cycle: 4,
+    strikes: [
+      { at: 0, hold: 1.9, strings: "root", level: ACCENT },
+      { at: 2, hold: 0.6, sweep: "rising", strings: "high", level: LIGHT },
+    ],
+  },
+  // A bar of downs on the beats, the backbeat hit hardest, and an up
+  // brushing the top strings into the next bar.
+  backbeatStrum: {
+    cycle: 8,
+    strikes: [
+      { at: 0, hold: 1.9, sweep: "rising", level: LIGHT },
+      { at: 2, hold: 1.9, sweep: "rising", level: FULL, taper: TAPER },
+      { at: 4, hold: 1.9, sweep: "rising", level: LIGHT },
+      { at: 6, hold: 0.9, sweep: "rising", level: FULL, taper: TAPER },
+      { at: 7, hold: 0.9, sweep: "falling", strings: "high", level: SOFT },
+    ],
+  },
+  // Down, down-up, then an up on the and of two pushed hard and let ring
+  // over the third beat, and down-up to finish.
+  popPush: {
+    cycle: 8,
+    strikes: [
+      { at: 0, hold: 1.9, sweep: "rising", level: ACCENT, taper: TAPER },
+      { at: 2, hold: 0.9, sweep: "rising", level: LIGHT },
+      { at: 3, hold: 2.9, sweep: "falling", level: ACCENT, taper: TAPER },
+      { at: 6, hold: 0.9, sweep: "rising" },
+      { at: 7, hold: 0.9, sweep: "falling", strings: "high", level: LIGHT },
+    ],
+  },
+  // Eighths of down-ups, the downs on two and four slapped short and hard.
+  rumbaStrum: {
+    cycle: 8,
+    strikes: [
+      { at: 0, hold: 0.9, sweep: "rising", level: ACCENT, taper: TAPER },
+      { at: 1, hold: 0.9, sweep: "falling", strings: "high", level: LIGHT },
+      { at: 2, hold: 0.25, sweep: "rising", level: FULL },
+      { at: 3, hold: 0.9, sweep: "falling", strings: "high", level: LIGHT },
+      { at: 4, hold: 0.9, sweep: "rising", taper: TAPER },
+      { at: 5, hold: 0.9, sweep: "falling", strings: "high", level: LIGHT },
+      { at: 6, hold: 0.25, sweep: "rising", level: FULL },
+      { at: 7, hold: 0.9, sweep: "falling", strings: "high", level: SOFT },
+    ],
+  },
+  // Two beats of sixteenths, the hand never stopping: ghosts between, the one
+  // leaned on, a short hard chuck on the backbeat.
+  funkSixteenths: {
+    cycle: 8,
+    strikes: [
+      { at: 0, hold: 0.9, sweep: "rising", level: ACCENT, taper: TAPER },
+      { at: 1, hold: 0.2, sweep: "falling", strings: "high", level: GHOST },
+      { at: 2, hold: 0.2, sweep: "rising", level: GHOST },
+      { at: 3, hold: 0.9, sweep: "falling", strings: "high", level: LIGHT },
+      { at: 4, hold: 0.3, sweep: "rising", level: FULL, taper: TAPER },
+      { at: 5, hold: 0.2, sweep: "falling", strings: "high", level: GHOST },
+      { at: 6, hold: 0.9, sweep: "rising", level: LIGHT },
+      { at: 7, hold: 0.2, sweep: "falling", strings: "high", level: GHOST },
+    ],
+  },
+  // A mandolin's chop: the top strings struck and choked on the backbeat.
+  chopStrum: {
+    cycle: 8,
+    strikes: [
+      { at: 2, hold: 0.3, sweep: "rising", strings: "high", level: ACCENT },
+      { at: 6, hold: 0.3, sweep: "rising", strings: "high", level: ACCENT },
+    ],
+  },
+  // In triplets: a long down on the beat, a light up on its last third.
+  shuffleStrum: {
+    cycle: 6,
+    strikes: [
+      { at: 0, hold: 1.9, sweep: "rising", level: ACCENT, taper: TAPER },
+      { at: 2, hold: 0.9, sweep: "falling", strings: "high", level: LIGHT },
+      { at: 3, hold: 1.9, sweep: "rising", taper: TAPER },
+      { at: 5, hold: 0.9, sweep: "falling", strings: "high", level: SOFT },
+    ],
+  },
+  // A bar of 6/8 in triplets: the first of each three leaned on, the first
+  // of the bar hardest.
+  sixEightStrum: {
+    cycle: 6,
+    strikes: [
+      { at: 0, hold: 1.9, sweep: "rising", level: FULL, taper: TAPER },
+      { at: 2, hold: 0.9, sweep: "falling", strings: "high", level: SOFT },
+      { at: 3, hold: 0.9, sweep: "rising", level: ACCENT, taper: TAPER },
+      { at: 4, hold: 0.9, sweep: "falling", strings: "high", level: SOFT },
+      { at: 5, hold: 0.9, sweep: "rising", level: LIGHT },
+    ],
+  },
+  // Two bars of eighths: the thumb on the root of each beat it doesn't share
+  // with the fingers, which pluck the top strings at once, mostly off it.
+  bossaStrum: {
+    cycle: 16,
+    strikes: [
+      { at: 0, hold: 2.9, level: ACCENT },
+      { at: 3, hold: 0.9, strings: "high", level: LIGHT },
+      { at: 4, hold: 1.9, strings: "root" },
+      { at: 6, hold: 1.9, strings: "high", level: LIGHT },
+      { at: 8, hold: 1.9, strings: "root" },
+      { at: 10, hold: 1.9, strings: "high" },
+      { at: 12, hold: 0.9, strings: "root" },
+      { at: 13, hold: 2.9, strings: "high", level: LIGHT },
+    ],
+  },
+  // A bar of downs growing from soft to full, and one fading from full.
+  swellStrum: {
+    cycle: 8,
+    strikes: [
+      { at: 0, hold: 1.9, sweep: "rising", level: SOFT },
+      { at: 2, hold: 1.9, sweep: "rising", level: LIGHT },
+      { at: 4, hold: 1.9, sweep: "rising" },
+      { at: 6, hold: 1.9, sweep: "rising", level: FULL, taper: TAPER },
+    ],
+  },
+  fadeStrum: {
+    cycle: 8,
+    strikes: [
+      { at: 0, hold: 1.9, sweep: "rising", level: FULL, taper: TAPER },
+      { at: 2, hold: 1.9, sweep: "rising" },
+      { at: 4, hold: 1.9, sweep: "rising", level: LIGHT },
+      { at: 6, hold: 1.9, sweep: "rising", level: SOFT },
+    ],
+  },
+  // Sixteenths of down-ups rising to a peak and falling back each two beats.
+  tremoloStrum: {
+    cycle: 8,
+    strikes: [SOFT, LIGHT, 1, ACCENT, FULL, ACCENT, 1, LIGHT].map(
+      (level, at): Strike => ({
+        at,
+        hold: 0.9,
+        sweep: at % 2 ? "falling" : "rising",
+        level,
+      }),
+    ),
+  },
   offbeat: { cycle: 2, strikes: [{ at: 1, hold: 0.5 }] },
   tresillo: {
     cycle: 8,
@@ -297,6 +561,9 @@ const RHYTHMS: Partial<
     ],
   },
 };
+
+// The rhythm `id` plays, if it is one.
+export const rhythmOf = (id: PlayStyleId) => RHYTHMS[id];
 
 export type PlayStyle = {
   id: PlayStyleId;
@@ -345,14 +612,20 @@ export const isSavedPlayStyle = (value: unknown): value is SavedPlayStyle => {
   );
 };
 
-// The rate a built-in style starts at: the pulses a strike a beat, the other
+// The rate a built-in style starts at: the pulses a strike a beat, the
+// triplet strums in triplets and the sixteenth strums in sixteenths, the other
 // rhythms, strums and arpeggios in eighths, and a roll in sixteenths.
+const STARTING_RATES: Partial<Record<PlayStyleId, number>> = {
+  pulse: 1,
+  accentPulse: 1,
+  shuffleStrum: 3,
+  sixEightStrum: 3,
+  funkSixteenths: 4,
+  tremoloStrum: 4,
+};
+
 const startingRate = (id: PlayStyleId, group: PlayStyleGroup) =>
-  id === "pulse" || id === "accentPulse"
-    ? 1
-    : group === "Held"
-      ? DEFAULT_PLAY_STYLE.perBeat
-      : 2;
+  STARTING_RATES[id] ?? (group === "Held" ? DEFAULT_PLAY_STYLE.perBeat : 2);
 
 // A play style as the view lists it: the built-in ones at their starting
 // rate and the default strum, then the saved ones, each at its own, in a
@@ -453,12 +726,13 @@ export function chordNotes(
     for (let count = 0; count * stepMs < length; count++) {
       const at = count % rhythm.cycle;
       const start = count * stepMs;
-      for (const { at: hit, hold, sweep, level } of rhythm.strikes) {
-        if (hit !== at) continue;
-        const order = sweep === "falling" ? [...notes].reverse() : notes;
-        const gap = sweep ? style.strum : 0;
-        const end = start + hold * stepMs;
-        order.forEach((note, i) => add(note, start + i * gap, end, level));
+      for (const strike of rhythm.strikes) {
+        if (strike.at !== at) continue;
+        const gap = strike.sweep ? style.strum : 0;
+        const end = start + strike.hold * stepMs;
+        strikeNotes(notes, strike).forEach(({ note, level }, i) =>
+          add(note, start + i * gap, end, level),
+        );
       }
     }
   } else if (style.id === "rollPulse") {
@@ -539,15 +813,14 @@ export function playChord(
       struck.splice(0).forEach(clearTimeout);
       [...sounding].forEach(off);
     };
-    const strike = ({ hold, sweep, level }: Strike, step: number) => {
+    const strike = (hit: Strike, step: number) => {
       letGo();
-      const order = sweep === "falling" ? [...notes].reverse() : notes;
-      const gap = sweep ? style.strum : 0;
-      order.forEach((midi, i) => {
-        if (i === 0 || gap === 0) on(midi, level);
-        else struck.push(setTimeout(() => on(midi, level), i * gap));
+      const gap = hit.sweep ? style.strum : 0;
+      strikeNotes(notes, hit).forEach(({ note, level }, i) => {
+        if (i === 0 || gap === 0) on(note, level);
+        else struck.push(setTimeout(() => on(note, level), i * gap));
       });
-      struck.push(setTimeout(letGo, hold * step));
+      struck.push(setTimeout(letGo, hit.hold * step));
     };
     let count = 0;
     let next = performance.now();

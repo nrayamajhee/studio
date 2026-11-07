@@ -1,7 +1,7 @@
 import type { ComponentType, SVGProps } from "react";
 import { Bell, Drum, Hand } from "lucide-react";
 import type { DrumPieceId } from "../../lib/physical";
-import type { PlayStyleId } from "./playStyles";
+import { rhythmOf, strikeNotes, type PlayStyleId } from "./playStyles";
 
 // Stroke icons in the lucide style for instruments and drum pieces lucide
 // doesn't cover.
@@ -356,6 +356,26 @@ const strokes = (
   });
 };
 
+// A strum drawn from the rhythm it plays: each strike a short sweep of the
+// icons' three-note chord (or its root, or its top two), from the string it
+// meets first, fainter for a softer strike and across a tapering one, as the
+// piano roll draws velocity.
+const strikes = (id: PlayStyleId) => {
+  const rhythm = rhythmOf(id);
+  if (!rhythm) return [];
+  const width = 20 / rhythm.cycle;
+  return rhythm.strikes.flatMap((strike) => {
+    const x = 2 + strike.at * width;
+    const end = x + width * Math.max(0.45, Math.min(strike.hold, 0.9));
+    return strikeNotes([0, 1, 2], strike).map(({ note, level }, i) => [
+      x + (strike.sweep ? i * width * 0.15 : 0),
+      end,
+      17 - 5 * note,
+      Math.min(1, Math.max(0.25, (0.8 * level - 0.2) / 0.8)),
+    ]);
+  });
+};
+
 // How a play style plays a chord, as a little piano roll: a bar a note, time
 // to the right and pitch upwards, [from, to, height, opacity], fainter for a
 // softer note as the piano roll draws velocity.
@@ -427,6 +447,18 @@ const STYLE_NOTES: Readonly<Record<PlayStyleId, readonly number[][]>> = {
     [4, "d", 0.75],
     [5, "u", 0.5],
   ]),
+  boomChuck: strikes("boomChuck"),
+  backbeatStrum: strikes("backbeatStrum"),
+  popPush: strikes("popPush"),
+  rumbaStrum: strikes("rumbaStrum"),
+  funkSixteenths: strikes("funkSixteenths"),
+  chopStrum: strikes("chopStrum"),
+  shuffleStrum: strikes("shuffleStrum"),
+  sixEightStrum: strikes("sixEightStrum"),
+  bossaStrum: strikes("bossaStrum"),
+  swellStrum: strikes("swellStrum"),
+  fadeStrum: strikes("fadeStrum"),
+  tremoloStrum: strikes("tremoloStrum"),
   rollPulse: [3, 12].flatMap((x) => [
     [x, x + 7, 17],
     [x + 2.5, x + 7, 12],

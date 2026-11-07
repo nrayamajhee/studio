@@ -32,13 +32,32 @@ A chord is several notes sounding together, and the Device plays one from a sing
 
 ## Choose how a chord plays
 
-A chord's notes don't have to start together. **Play style** (`Q`) sets how they come out: all at once (Block), strummed low to high, rolled, spread into a rhythm (pulses, a tresillo, a gallop), strummed like a guitar (down-up, folk, rock eighths, a reggae skank, a waltz) or broken into an arpeggio. The accented rhythms and strums lean a touch harder on some strikes and ease off the upstrokes, and the piano roll keeps how hard each one was. The chord stays the same; only the timing and weight of its notes change. Where a style has a rate or a strum gap, the green knob sets it, and Save keeps your version as a new style. Your favorites come first, and Mute stars or unstars the picked style; they start out empty. **Nishan's Picks** come next: Block, Pulse, Accent pulse, Accent down-up, Folk strum and the Up-down and Alberti arpeggios.
+A chord's notes don't have to start together. **Play style** (`Q`) sets how they come out: all at once (Block), strummed low to high, rolled, spread into a rhythm (pulses, a tresillo, a gallop), strummed like a guitar (down-up, folk, rock eighths, a reggae skank, a waltz and a dozen more) or broken into an arpeggio. The accented rhythms and strums lean a touch harder on some strikes and ease off the upstrokes, and the piano roll keeps how hard each one was. The chord stays the same; only the timing and weight of its notes change. Where a style has a rate or a strum gap, the green knob sets it, and Save keeps your version as a new style. Your favorites come first, and Mute stars or unstars the picked style; they start out empty. **Nishan's Picks** come next: Block, Pulse, Accent pulse, Accent down-up, Folk strum and the Up-down and Alberti arpeggios.
 
 ![Play style: the Nishan's Picks page, Block picked](../../web-react/public/docs/user-manual/play-style.webp)
 
 ![The Rhythm group: pulse, accent pulse, roll pulse, offbeat, tresillo and gallop](../../web-react/public/docs/user-manual/play-style-rhythm.webp)
 
-![The Strum group: strum pulse, the down-up strums, folk strum, rock eighths, reggae skank and waltz strum](../../web-react/public/docs/user-manual/play-style-strum.webp)
+![The Strum group's first page: strum pulse, the down-up strums, folk strum, rock eighths, reggae skank, waltz strum, boom-chuck, backbeat strum, pop push, rumba strum and funk sixteenths](../../web-react/public/docs/user-manual/play-style-strum.webp)
+
+The strums mix their velocities the way a strumming hand does. A leaned-on stroke fades across the strings, the first string it meets the loudest. An upstroke often catches only the top strings, and a thumb picks the root alone. Ghost strokes barely touch the strings between the real ones. The Strum group, past the first page:
+
+| Strum           | How it goes                                                                                           |
+| --------------- | ----------------------------------------------------------------------------------------------------- |
+| Boom-chuck      | The root alone on the beat, the top strings chucked short and light between: country's bass and strum |
+| Backbeat strum  | A down on every beat, two and four hit hardest, and an up on the top strings into the next bar        |
+| Pop push        | Down, down-up, then a hard up on the and of two that rings over the third beat                        |
+| Rumba strum     | Eighths of down-ups, slapped short and hard on two and four                                           |
+| Funk sixteenths | Sixteenths that never stop: ghosts between, the one leaned on, a short hard chuck on the backbeat     |
+| Chop            | Only the top strings, struck sharp and choked on two and four, as a mandolin chops                    |
+| Shuffle strum   | In triplets: a long down on the beat and a light up on its last third                                 |
+| Six-eight strum | A bar of 6/8 in triplets, the first of each three leaned on and the bar's first hardest               |
+| Bossa strum     | Two bars: the thumb on the root, the fingers plucking the top strings together, mostly off the beat   |
+| Swell strum     | Four downs, each harder than the last                                                                 |
+| Fade strum      | Four downs, each softer than the last                                                                 |
+| Tremolo strum   | Fast sixteenth down-ups that swell to a peak and fall back every two beats                            |
+
+The triplet strums start at 1/8T and the sixteenth strums at 1/16; the rest start in eighths, as every other strum does.
 
 ## From chords to progressions
 

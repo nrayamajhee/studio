@@ -10,6 +10,8 @@ export const STOLEN = 3;
 const SILENCE = 3.1623e-5; // −90 dBFS
 // Notes starting this close together are a chord, and don't glide.
 const CHORD_SECONDS = 0.03;
+// How long after it is let go a voice can still carry a chord glide.
+const CARRY_SECONDS = 0.25;
 
 // Shared lifecycle: idle → active → released → idle, plus stolen (a 5 ms
 // fade-out). Voices report each rendered segment's peak through endBlock()
@@ -21,6 +23,9 @@ export abstract class Voice {
   note = -1;
   holds = 0;
   age = 0;
+  // When a note was last struck on it, and when it was let go (frames).
+  struck = 0;
+  releasedAt = 0;
   quietSamples = 0;
   protected readonly fs: number;
   // The master ADSR, applied on top of the model's own envelopes.
@@ -66,9 +71,27 @@ export abstract class Voice {
     this.note = note;
     this.holds = 1;
     this.age = clock;
+    this.struck = clock;
     this.quietSamples = 0;
     this.chain.fade = 1;
     this.chain.fadeStep = 0;
+  }
+
+  // Let go at `clock`: rings out, and can still carry a chord glide.
+  release(clock: number) {
+    this.state = RELEASED;
+    this.releasedAt = clock;
+  }
+
+  // Carried on to a new note by a chord glide: it sounds `note` from here,
+  // as a voice just struck.
+  carry(note: number, clock: number) {
+    this.state = ACTIVE;
+    this.note = note;
+    this.holds = 1;
+    this.age = clock;
+    this.struck = clock;
+    this.retarget(note);
   }
 
   steal() {
@@ -144,4 +167,34 @@ export function legatoNote(
       latest = voice;
   }
   return latest && clock - latest.age >= CHORD_SECONDS * fs ? latest.note : -1;
+}
+
+// The voice a chord glide carries on to `note`: the nearest in pitch of those
+// let go in the last CARRY_SECONDS, else of those still held, leaving out any
+// struck with this chord. −1 for none.
+export function chordSource(
+  voices: readonly Voice[],
+  note: number,
+  clock: number,
+  fs: number,
+) {
+  let released = -1;
+  let held = -1;
+  const nearer = (i: number, best: number) => {
+    if (best < 0) return true;
+    const a = Math.abs(voices[i].note - note);
+    const b = Math.abs(voices[best].note - note);
+    return a < b || (a === b && voices[i].note < voices[best].note);
+  };
+  for (let i = 0; i < voices.length; i++) {
+    const voice = voices[i];
+    if (clock - voice.struck < CHORD_SECONDS * fs) continue;
+    if (voice.state === RELEASED) {
+      if (clock - voice.releasedAt <= CARRY_SECONDS * fs && nearer(i, released))
+        released = i;
+    } else if (voice.state === ACTIVE && nearer(i, held)) {
+      held = i;
+    }
+  }
+  return released >= 0 ? released : held;
 }

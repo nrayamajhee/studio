@@ -156,6 +156,11 @@ export class Oscillator {
     this.target = hz / this.fs;
   }
 
+  // Glides from wherever it is now to `hz`.
+  glideTo(hz: number) {
+    this.target = hz / this.fs;
+  }
+
   reset() {
     this.phase = 0;
   }

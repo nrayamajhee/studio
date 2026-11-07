@@ -278,6 +278,16 @@ const glideParam = (id: string, section: SectionId, value: number, max = 0.3) =>
     primary: true,
   });
 
+// What a note glides from: Legato, the note still held before it; Chords,
+// the nearest note of the chord before it, whose voice slides over to it.
+export const GLIDE_MODES = ["Legato", "Chords"] as const;
+
+const glideModeParam = (id: string, section: SectionId) =>
+  param(id, "Glide mode", section, 0, GLIDE_MODES.length - 1, 0, {
+    options: GLIDE_MODES,
+    primary: true,
+  });
+
 // The output module: drive (where the model has it), level and reverb send.
 const outputParams = (send: number, drive?: number): ParamSpec[] => [
   ...(drive === undefined
@@ -514,6 +524,7 @@ export function bowedParams(
       primary: true,
     }),
     glideParam("resonator.portamento", "resonator", portamento),
+    glideModeParam("resonator.glideMode", "resonator"),
     body === "violin"
       ? param("body.violin", "Body", "body", 0, 1, 1, primary)
       : param("body.mix", "Body", "body", 0, 1, 0.6, primary),
@@ -648,6 +659,7 @@ export function oscillatorParams(send: number, glide: number): ParamSpec[] {
       primary: true,
     }),
     glideParam("exciter.glide", "exciter", glide, 0.5),
+    glideModeParam("exciter.glideMode", "exciter"),
     ...filterParams(16000),
     // Only a gate's attack and release: the track ADSR shapes the rest, so
     // two volume envelopes never stack.

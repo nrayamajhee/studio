@@ -12,9 +12,9 @@ import type { ModuleSettings } from "../engine/Modules";
 import {
   ACTIVE,
   IDLE,
-  RELEASED,
   STOLEN,
   Voice,
+  chordSource,
   legatoNote,
   pickVictim,
 } from "../engine/Voice";
@@ -127,6 +127,9 @@ export class BowedInstrument extends Instrument {
   private position = 0.127;
   private speed = 1;
   private glide = 1;
+  // Glide mode Chords: a note carries on the nearest voice of the chord
+  // before it.
+  private chords = false;
   private envelope: AdsrStages = {
     attack: 0.05,
     decay: 0.1,
@@ -161,6 +164,7 @@ export class BowedInstrument extends Instrument {
     this.position = p.get("exciter.position");
     this.speed = p.get("exciter.speed");
     this.glide = 1 - Math.exp(-3 / (p.get("resonator.portamento") * this.fs));
+    this.chords = Math.round(p.get("resonator.glideMode")) === 1;
     this.envelope = p.envelope("envelope");
     this.bodyMix = p.has("body.violin") ? p.get("body.violin") : 0;
     for (let i = 0; i < this.voices.length; i++) {
@@ -193,8 +197,23 @@ export class BowedInstrument extends Instrument {
     if (voice && voice.busy && voice.state !== STOLEN) {
       voice.holds++;
       voice.state = ACTIVE;
+      voice.struck = this.clock;
       this.bowOn(voice, velocity);
       return;
+    }
+    if (this.chords) {
+      const source = chordSource(this.voices, n, this.clock, this.fs);
+      if (source >= 0) {
+        // The finger slides along the string to the new note.
+        voice = this.voices[source];
+        if (this.byNote[voice.note] === source) this.byNote[voice.note] = -1;
+        this.byNote[n] = source;
+        voice.carry(n, this.clock);
+        voice.delayTarget = this.loopDelay(voice, n);
+        this.pan(voice, n);
+        this.bowOn(voice, velocity);
+        return;
+      }
     }
     const from = legatoNote(this.voices, this.clock, this.fs);
     let sounding = 0;
@@ -237,7 +256,7 @@ export class BowedInstrument extends Instrument {
     if (voice.holds === 0) return;
     voice.holds--;
     if (voice.holds > 0) return;
-    voice.state = RELEASED;
+    voice.release(this.clock);
     voice.bow.noteOff();
     voice.shape.noteOff();
   }
@@ -247,7 +266,7 @@ export class BowedInstrument extends Instrument {
       const voice = this.voices[i];
       if (voice.busy && voice.state !== STOLEN) {
         voice.holds = 0;
-        voice.state = RELEASED;
+        voice.release(this.clock);
         voice.bow.noteOff();
         voice.shape.noteOff();
       }
@@ -299,6 +318,10 @@ export class BowedInstrument extends Instrument {
     voice.delayTarget = this.loopDelay(voice, n);
     voice.baseDelay =
       from >= 0 ? this.loopDelay(voice, from) : voice.delayTarget;
+    this.pan(voice, n);
+  }
+
+  private pan(voice: BowedVoice, n: number) {
     const [low, high] = this.patch.range;
     const pan =
       this.patch.pan.center +
