@@ -14,7 +14,8 @@ use super::clock::{delay, now};
 use super::view::ScreenView;
 use crate::logic::chords::{Chord, chord_by_id};
 use crate::logic::play_styles::{
-  PlayStyle, PlayStyleOption, Strike, Sweep, play_style_options, rhythm, steps_of, style_edited,
+  PlayStyle, PlayStyleOption, Strike, play_style_options, rhythm, steps_of, strike_notes,
+  style_edited,
 };
 use crate::logic::progressions::{Progression, progression_take};
 use crate::logic::swing::{swing_on, swing_time};
@@ -409,17 +410,12 @@ impl ChordPlayer {
   fn strike(self: &Rc<Self>, strike: &Strike, step: f64) {
     self.struck.borrow_mut().clear();
     self.let_go_all();
-    let order: Vec<i32> = match strike.sweep {
-      Some(Sweep::Falling) => self.notes.iter().rev().copied().collect(),
-      _ => self.notes.clone(),
-    };
     let gap = if strike.sweep.is_some() {
       f64::from(self.style.strum)
     } else {
       0.
     };
-    let level = strike.level;
-    for (i, midi) in order.into_iter().enumerate() {
+    for (i, (midi, level)) in strike_notes(&self.notes, strike).into_iter().enumerate() {
       if i == 0 || gap == 0. {
         self.on(midi, level);
       } else {
